@@ -3,12 +3,6 @@
 #
 # closer.py
 #
-# Copyright 2012 Alejandro Lorca <alejandro.lorca@fis.ucm.es>
-#
-# Based on the work of the On-Site-Analysis crew for the MAGIC telescope:
-#   R. de los Reyes <reyes@gae.ucm.es>, J.L. Contreras <contrera@gae.ucm.es>,
-#   I. Oya <oya@gae.ucm.es>, D. Nieto <nieto@gae.ucm.es>,
-#   S. Pardo <spardo@gae.ucm.es>, K. Satalecka <satalk@gae.ucm.es>
 #
 ##############################################################################
 from standardhandle import output, verbose, warning, error, stringify, gettag
