@@ -99,6 +99,7 @@ def single_process(telescope, process_mode):
 
     """ Building the sequences """
     night = readnightsummary()  # night corresponds to f.read()
+    print(night)
     subrun_list = extract.extractsubruns(night)
     run_list = extract.extractruns(subrun_list)
     # Modifies run_list by adding the seq and parent info into runs

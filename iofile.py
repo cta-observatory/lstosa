@@ -1,5 +1,5 @@
-from standardhandle import output, verbose, error, errornonfatal, gettag
-import options
+from osa.utils.standardhandle import output, verbose, error, errornonfatal, gettag
+from osa.utils import options
 ##############################################################################
 #
 # readfromfile

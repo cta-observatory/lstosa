@@ -266,7 +266,8 @@ def lstdate_to_dir(night):
     nightdir = night.split(cfg.get('LST', 'DATESEPARATOR'))
     if len(nightdir) != 3:
         error(tag, "Error: night directory structure could not be created from {0}\n".format(nightdir), 1)
-    dir = join(nightdir[0], nightdir[1], nightdir[2])
+   # dir = join(nightdir[0], nightdir[1], nightdir[2])
+    dir = "".join(nightdir)
     return dir
 ##############################################################################
 #

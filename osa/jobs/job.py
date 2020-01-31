@@ -211,7 +211,8 @@ def setsequencecalibfilenames(sequence_list):
             pedfile = '666ped.root'
             drivefile = '666drive.txt'
         else:
-            run_string = str(s.parent_list[0].run).zfill(8)
+            run_string = str(s.parent_list[0].run).zfill(5)
+            ped_run_string = str(s.parent_list[0].previousrun).zfill(5)
      #       print("DEBUG",s.subrun_list[0].time)
      #       print("DEBUG2",s.subrun_list[0].date)
             date_string = str(s.subrun_list[0].date).zfill(8)
@@ -222,7 +223,7 @@ def setsequencecalibfilenames(sequence_list):
                 calfile = "calibration.Run{0}.0000{1}".\
                  format(run_string, scalib_suffix)
                 pedfile = "drs4_pedestal.Run{0}.0000{1}".\
-                 format(run_string, pedestal_suffix)
+                 format(ped_run_string, pedestal_suffix)
                 drivefile = "drive_log_{0}_{1}_{2}{3}".\
                  format(yy, mm, dd, drive_suffix)
             elif ( options.mode == 'S' or options.mode == 'T' ):
@@ -289,10 +290,14 @@ def createjobtemplate(s):
     import os
     import iofile
     from osa.configs import config
+    from osa.utils.utils import lstdate_to_dir
     bindir = config.cfg.get('LSTOSA', 'PYTHONDIR')
     calibdir = config.cfg.get('LST1', 'CALIBDIR')
     pedestaldir = config.cfg.get('LST1', 'PEDESTALDIR')
     drivedir = config.cfg.get('LST1', 'DRIVEDIR')
+    nightdir = lstdate_to_dir(options.date)
+    version  = config.cfg.get('LST1', 'VERSION')
+
     command = None
     if s.type == 'CALIBRATION':
         command = os.path.join(bindir, 'calibrationsequence.py')
@@ -326,10 +331,11 @@ def createjobtemplate(s):
     commandargs.append('-d')
     commandargs.append(options.date)
     if s.type == 'DATA':
-        commandargs.append(os.path.join(calibdir, s.calibration))
-        commandargs.append(os.path.join(pedestaldir, s.pedestal))
+        commandargs.append(os.path.join(calibdir, nightdir, version, s.calibration))
+        commandargs.append(os.path.join(pedestaldir, nightdir, version, s.pedestal))
+        commandargs.append(os.path.join(calibdir, nightdir, version, 'time_'+ s.calibration))
         commandargs.append(os.path.join(drivedir, s.drive))
-    commandargs.append(str(s.run).zfill(8))
+    commandargs.append(str(s.run).zfill(5))
     if s.type != 'STEREO':
         commandargs.append(options.tel_id)
 
