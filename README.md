@@ -1,3 +1,3 @@
 # This is a repository for LST OSA
 
-# How to install
+On-Site data reduction pipeline for LST
