@@ -259,7 +259,7 @@ def extractsequencesstereo(s1_list, s2_list):
                     if s2.run == s1.run:
                         ss = SequenceStereo(s1, s2)
                         ss.seq = len(ss_list)
-                        ss.jobname = "{0}_{1}".format(ss.telescope, str(ss.run).zfill(8))
+                        ss.jobname = "{0}_{1}".format(ss.telescope, str(ss.run).zfill(5))
                         setsequencefilenames(ss)
                         ss_list.append(ss)
                         break
@@ -308,7 +308,7 @@ def generateworkflow(run_list, store, require):
                         break
                 
                 s.previousrun = previousrun
-                s.jobname = "{0}_{1}".format(r.telescope, str(r.run).zfill(8))
+                s.jobname = "{0}_{1}".format(r.telescope, str(r.run).zfill(5))
                 job.setsequencefilenames(s)
                 if s not in sequence_list: sequence_list.append(s)
         elif r.type == 'CALIBRATION':
@@ -322,7 +322,7 @@ def generateworkflow(run_list, store, require):
                     s.seq = seq
                     s.parent = None
                     s.previousrun = previousrun
-                    s.jobname = "{0}_{1}".format(r.telescope, str(r.run).zfill(8))
+                    s.jobname = "{0}_{1}".format(r.telescope, str(r.run).zfill(5))
                     job.setsequencefilenames(s)
                     verbose(tag, "Sequence {0} assigned to run {1} whose parent is {2} with run {3}".format(\
                             s.seq, r.run, s.parent, s.previousrun))

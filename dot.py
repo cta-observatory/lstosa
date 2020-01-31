@@ -1,5 +1,5 @@
-from standardhandle import output, warning, verbose, error, gettag
-import options, cliopts
+from osa.utils.standardhandle import output, warning, verbose, error, gettag
+from osa.utils import options, cliopts
 ##############################################################################
 #
 # writeworkflow
