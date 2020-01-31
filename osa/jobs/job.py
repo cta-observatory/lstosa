@@ -547,7 +547,7 @@ def date_in_yymmdd(datestring,timestring):
     # Change the day
     time = timestring.split(':')
     if (int(time[0]) >= 17 and int(time[0]) <= 23):
-       dd = str(int(date[2]) +1)
+       dd = str(int(date[2]))
     else:
        dd   = date[2]
     return yy,mm,dd
