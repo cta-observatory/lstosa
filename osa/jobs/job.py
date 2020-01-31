@@ -335,9 +335,9 @@ def createjobtemplate(s):
         commandargs.append(os.path.join(pedestaldir, nightdir, version, s.pedestal))
         commandargs.append(os.path.join(calibdir, nightdir, version, 'time_'+ s.calibration))
         commandargs.append(os.path.join(drivedir, s.drive))
-    commandargs.append(str(s.run).zfill(5))
-    if s.type != 'STEREO':
-        commandargs.append(options.tel_id)
+    #commandargs.append(str(s.run).zfill(5))
+ #   if s.type != 'STEREO':
+      #  commandargs.append(options.tel_id)
 
 
     content = "#!/bin/env python\n"
@@ -352,8 +352,23 @@ def createjobtemplate(s):
     content += "#SBATCH -e ./log/slurm.%j.%N.err\n"
      #
     content +="import subprocess\n"
-    content +="subprocess.call({0})\n".format(commandargs)
-   
+    subruns = []
+    dat = ''
+    for sub in s.subrun_list:
+        dat += formatrunsubrun(s.run, sub.subrun) + ' '
+        srun = str(sub.subrun).zfill(4)
+        subruns.append(srun)
+    content += "subruns={0}\n".format(subruns)
+    content += "for subrun in subruns:\n"
+
+  #  content +="subprocess.call({0})\n".format(commandargs)
+    content += "	subprocess.call(["
+    for i in commandargs: 
+        content += "	'{0}',\n".format(i)
+    content += "	'{0}".format(str(s.run).zfill(5))+".{0}'"+'.format(subrun)'+','
+    content += "	'{0}'".format(options.tel_id)
+    content +="		])"
+    
     print("S.script",s.script)  
     if not options.simulate:
         iofile.writetofile(s.script, content)
