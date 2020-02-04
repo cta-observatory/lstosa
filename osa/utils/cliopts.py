@@ -427,9 +427,9 @@ def set_default_date_if_needed():
     if is_defined(options.date):
         return options.date
     else:
-        from utils import getcurrentdate2
-        from config import cfg
-        return getcurrentdate2(cfg.get('MAGIC', 'DATESEPARATOR'))
+        from .utils import getcurrentdate2
+        from osa.configs.config import cfg
+        return getcurrentdate2(cfg.get('LST', 'DATESEPARATOR'))
 ##############################################################################
 #
 # set_default_directory_if_needed

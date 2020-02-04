@@ -343,8 +343,9 @@ def createjobtemplate(s):
     content = "#!/bin/env python\n"
     # SLURM assignments
     content += "#SBATCH -p compute\n"
-    content += "#SBATCH --tasks=60\n"
-    content += "#SBATCH --nodes=2\n"
+    content += "#SBATCH --tasks=2\n"
+    if s.type == DATA:
+       content += "#SBATCH --array=1-{0}\n".format(len(s.subrun_list))
     content += "#SBATCH --cpus-per-task=1\n"
     content += "#SBATCH --mem-per-cpu=1600\n"
     content += "#SBATCH -t 0-48:00\n"
@@ -377,75 +378,88 @@ def createjobtemplate(s):
 # submitjobs
 #
 ##############################################################################
-def submitjobs(sequence_list, queue_list, veto_list):
+#def submitjobs(sequence_list, queue_list, veto_list):
+def submitjobs(sequence_list):
     tag = gettag()
     import subprocess
     from os.path import join
     from osa.configs import config
     job_list = []
-    command = 'qsub'
+    command = 'sbatch'
     for s in sequence_list:
-        commandargs = [command, s.script] # List of two elements
-        commandargs.append('-W')
-        commandargs.append('umask=0022')
-        """ Introduce the job dependencies """
-        if len(s.parent_list) != 0:
-            commandargs.append('-W')
-            depend_string = 'depend='
-            if s.type == 'DATA':
-                depend_string += 'afterok'
-            elif s.type == 'STEREO':
-                depend_string += 'afterany'
-            for pseq in s.parent_list:
-                if pseq.jobid > 0:
-                    depend_string += ":{0}".format(pseq.jobid)
-            commandargs.append(depend_string)
-        """ Skip vetoed """
-        if s.action == 'Veto':
-            verbose(tag, "job {0} has been vetoed".format(s.jobname))
-        elif s.action == 'Closed':
-            verbose(tag, "job {0} is already closed".format(s.jobname))
-        elif s.action == 'Check' and s.state != 'C':
-            verbose(tag, "job {0} checked to be dispatched but not completed yet".format(s.jobname))
-            if s.state == 'H' or s.state == 'R':
-                # Reset values
-                s.exit = None
-                if s.state == 'H':
-                    s.jobhost = None
-                    s.cputime = None
-                    s.walltime = None
-        elif s.action == 'Check' and s.state == 'C' and s.exit == 0:
-            verbose(tag, "job {0} checked to be successful".format(s.jobname))
-        else:
-            if options.simulate == True:
-                commandargs.insert(0, 'echo')
-                s.action = 'Simulate'
-                # This jobid is negative showing it belongs to a simulated environment (not real jobid)
-                s.jobid = -1 - s.seq
-            else:
-                s.action = 'Submit'
-                # Reset the values to avoid misleading info from previous jobs
-                s.jobhost = None
-                s.state = 'Q'
-                s.cputime = None
-                s.walltime = None
-                s.exit = None
-            try:
-                stdout = subprocess.check_output(commandargs)
-            except subprocess.CalledProcessError as Error:
+         commandargs = [command, s.script] # List of two elements
+#        commandargs.append('-W')
+#        commandargs.append('umask=0022')
+#        """ Introduce the job dependencies """
+#        if len(s.parent_list) != 0:
+#            commandargs.append('-W')
+#            depend_string = 'depend='
+#            if s.type == 'DATA':
+#                depend_string += 'afterok'
+#            elif s.type == 'STEREO':
+#                depend_string += 'afterany'
+#            for pseq in s.parent_list:
+#                if pseq.jobid > 0:
+#                    depend_string += ":{0}".format(pseq.jobid)
+#            commandargs.append(depend_string)
+#        """ Skip vetoed """
+#        if s.action == 'Veto':
+#            verbose(tag, "job {0} has been vetoed".format(s.jobname))
+#        elif s.action == 'Closed':
+#            verbose(tag, "job {0} is already closed".format(s.jobname))
+#        elif s.action == 'Check' and s.state != 'C':
+#            verbose(tag, "job {0} checked to be dispatched but not completed yet".format(s.jobname))
+#            if s.state == 'H' or s.state == 'R':
+#                # Reset values
+#                s.exit = None
+#                if s.state == 'H':
+#                    s.jobhost = None
+#                    s.cputime = None
+#                    s.walltime = None
+#        elif s.action == 'Check' and s.state == 'C' and s.exit == 0:
+#            verbose(tag, "job {0} checked to be successful".format(s.jobname))
+#        else:
+#            if options.simulate == True:
+#                commandargs.insert(0, 'echo')
+#                s.action = 'Simulate'
+#                # This jobid is negative showing it belongs to a simulated environment (not real jobid)
+#                s.jobid = -1 - s.seq
+#            else:
+#                s.action = 'Submit'
+#                # Reset the values to avoid misleading info from previous jobs
+#                s.jobhost = None
+#                s.state = 'Q'
+#                s.cputime = None
+#                s.walltime = None
+#                s.exit = None
+#            try:
+#                stdout = subprocess.check_output(commandargs)
+#            except subprocess.CalledProcessError as Error:
+#                error(tag, Error, 2)
+#            except OSError (ValueError, NameError):
+#                error(tag, "Command {0}, {1}".format(stringify(commandargs), NameError), ValueError)
+#            else:
+#                if options.simulate == False:
+#                    try:
+#                        s.jobid = int(stdout.split('.', 1)[0])
+#                    except ValueError as e:
+#                        warning(tag, "Wrong parsing of jobid {0} not being an integer, {1}".format(stdout.split('.', 1)[0], e))
+#        job_list.append(s.jobid)
+#        verbose(tag, "{0} {1}".format(s.action, stringify(commandargs)))
+         print("Launching scripts {0} ".format(str(s.script)))
+         try:
+             verbose(tag,"Launching scripts {0} ".format(str(s.script)))
+             stdout = subprocess.check_output(commandargs)
+         except subprocess.CalledProcessError as Error:
                 error(tag, Error, 2)
-            except OSError (ValueError, NameError):
-                error(tag, "Command {0}, {1}".format(stringify(commandargs), NameError), ValueError)
-            else:
-                if options.simulate == False:
-                    try:
-                        s.jobid = int(stdout.split('.', 1)[0])
-                    except ValueError as e:
-                        warning(tag, "Wrong parsing of jobid {0} not being an integer, {1}".format(stdout.split('.', 1)[0], e))
-        job_list.append(s.jobid)
-        verbose(tag, "{0} {1}".format(s.action, stringify(commandargs)))
+         except OSError (ValueError, NameError):
+                error(tag, "Command {0}, {1}".format(stringify(commandargs), NameError), ValueError)  
+
+         print(commandargs)
+         job_list.append(s.script) 
+        
     return job_list
-##############################################################################
+ ##############################################################################
 #
 # getqueuejoblist
 #
@@ -459,7 +473,7 @@ def getqueuejoblist(sequence_list):
     command = config.cfg.get('ENV', 'SBATCHBIN')
     commandargs = [command]
     queue_list = []
-    print("DEBUG",command)
+    print("DEBUG",commandargs)
     try:
         xmloutput = subprocess.check_output(commandargs)
     except subprocess.CalledProcessError as Error:
@@ -474,6 +488,7 @@ def getqueuejoblist(sequence_list):
             document = xml.dom.minidom.parseString(xmloutput)
             queue_list = xmlhandle.xmlhandleData(document)
             setqueuevalues(queue_list, sequence_list)
+    print("DEBUG",command)
     return queue_list
 ##############################################################################
 #
