@@ -9,18 +9,18 @@ def writeworkflow(sequence_list):
     tag = gettag()
     from iofile import writetofile
     from os.path import join, exists
-    from config import cfg
-    from utils import magicdate_to_number
+    from osa.configs.config import cfg
+    from osa.utils.utils import lstdate_to_number
     replaced = None
     dot_basename = "{0}_{1}_{2}{3}".\
-     format(cfg.get('OSA', 'WORKFLOWPREFIX'),\
-     magicdate_to_number(options.date),\
-     options.tel_id, cfg.get('OSA', 'GRAPHSUFFIX'))
+     format(cfg.get('LSTOSA', 'WORKFLOWPREFIX'),\
+     lstdate_to_number(options.date),\
+     options.tel_id, cfg.get('LSTOSA', 'GRAPHSUFFIX'))
     dot_path = join(options.directory, dot_basename)
 
     # We could think of using the pydot interface as well, but this is relatively simple anyway
     content = "strict digraph {\n"
-    content += "label=\"OSA workflow for " + options.tel_id + " on " + options.date + "\";"
+    content += "label=\"LSTOSA workflow for " + options.tel_id + " on " + options.date + "\";"
     content += "labelloc=t;\n"
     content += "rankdir=LR;\n"
     content += "node [shape=box];\n"
@@ -49,7 +49,7 @@ def writeworkflow(sequence_list):
     if not options.simulate:
         replaced = writetofile(dot_path, content)
     verbose(tag, "Workflow updated? {0} in {1}".format(replaced, dot_path))
-    svg_path = dot_path.rsplit('.', 1)[0] + cfg.get('OSA', 'SVGSUFFIX')
+    svg_path = dot_path.rsplit('.', 1)[0] + cfg.get('LSTOSA', 'SVGSUFFIX')
     if replaced or not exists(svg_path):
         verbose(tag, "Updating workflow file: {0}".format(dot_path))
         convert_dot_into_svg(dot_path, svg_path)
@@ -62,10 +62,10 @@ def convert_dot_into_svg(dotfile, svgfile):
     tag = gettag()
     # Pretty clear what it does, isn't it?
     import subprocess
-    from config import cfg
+    from osa.configs.config import cfg
 
-    command = cfg.get('OSA', 'GRAPH')
-    svgflag = '-' + cfg.get('OSA', 'SVGSUFFIX').replace('.', 'T')
+    command = cfg.get('LSTOSA', 'GRAPH')
+    svgflag = '-' + cfg.get('LSTOSA', 'SVGSUFFIX').replace('.', 'T')
     try:
         commandoutput = subprocess.check_output(['which', command])
     except subprocess.CalledProcessError as Error:

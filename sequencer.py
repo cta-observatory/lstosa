@@ -108,13 +108,15 @@ def single_process(telescope, process_mode):
 #    dot.writeworkflow(sequence_list)
     # Adds the scripts
     job.preparejobs(sequence_list, subrun_list)
-    queue_list = job.getqueuejoblist(sequence_list)
+
+#    queue_list = job.getqueuejoblist(sequence_list)
 #    veto_list = veto.getvetolist(sequence_list)
 #    closed_list = veto.getclosedlist(sequence_list)
 #    updatelstchainstatus(sequence_list)
 #    updatesequencedb(sequence_list)
     # actually, submitjobs does not need the queue_list nor veto_list
 #    job_list = job.submitjobs(sequence_list, queue_list, veto_list)
+    job_list = job.submitjobs(sequence_list)
 #    combine_muon(job_list)
 #    # Report
 #    if is_report_needed:
