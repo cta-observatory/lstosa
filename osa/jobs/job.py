@@ -208,7 +208,10 @@ def setsequencecalibfilenames(sequence_list):
     for s in sequence_list:
         if len(s.parent_list) == 0:
             calfile = '666calib.root'
-            pedfile = '666ped.root'
+            #pedfile = '666ped.root'
+            ped_run_string = str(s.previousrun).zfill(5) 
+            pedfile = "drs4_pedestal.Run{0}.0000{1}".\
+                 format(ped_run_string, pedestal_suffix)
             drivefile = '666drive.txt'
         else:
             run_string = str(s.parent_list[0].run).zfill(5)
@@ -330,11 +333,22 @@ def createjobtemplate(s):
     commandargs.append('--stdout=sequence_{0}_$SLURM_JOB_ID.log'.format(s.jobname))
     commandargs.append('-d')
     commandargs.append(options.date)
+    
+     
+    if s.type == 'CALIBRATION':
+        commandargs.append(os.path.join(pedestaldir, nightdir, version, s.pedestal))
+        ped_run = str(s.previousrun).zfill(5)
+        commandargs.append(ped_run)
+   
     if s.type == 'DATA':
         commandargs.append(os.path.join(calibdir, nightdir, version, s.calibration))
         commandargs.append(os.path.join(pedestaldir, nightdir, version, s.pedestal))
         commandargs.append(os.path.join(calibdir, nightdir, version, 'time_'+ s.calibration))
         commandargs.append(os.path.join(drivedir, s.drive))
+        pedfile = s.pedestal
+
+
+
     #commandargs.append(str(s.run).zfill(5))
  #   if s.type != 'STEREO':
       #  commandargs.append(options.tel_id)
@@ -344,7 +358,7 @@ def createjobtemplate(s):
     # SLURM assignments
     content += "#SBATCH -p compute\n"
     content += "#SBATCH --tasks=2\n"
-    if s.type == DATA:
+    if s.type == 'DATA':
        content += "#SBATCH --array=1-{0}\n".format(len(s.subrun_list))
     content += "#SBATCH --cpus-per-task=1\n"
     content += "#SBATCH --mem-per-cpu=1600\n"

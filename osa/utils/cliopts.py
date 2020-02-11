@@ -68,6 +68,69 @@ def closercliparsing():
 
     # Setting on the usage of night summary
     options.nightsum = True
+
+
+##############################################################################
+#
+# pedestalsequencecliparsing
+#
+##############################################################################
+def pedestalsequencecliparsing(command):
+    tag = standardhandle.gettag()
+    message = "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <PED_RUN_ID>  <TEL_ID>"
+    parser = OptionParser(usage = message)
+    parser.add_option("-c", "--config", action = "store", dest = "configfile", default = None,
+                      help = "use specific config file [default cfg/osa.cfg]")
+    parser.add_option("-d", "--date", action = "store", type = "string", dest = "date",
+                      help = "observation ending date YYYY_MM_DD [default today]")
+    parser.add_option("-o", "--outputdir", action = "store", type = "string", dest = "directory",
+                      help = "write files to output directory")
+    parser.add_option("-v", "--verbose", action = "store_true", dest = "verbose", default = False,
+                      help = "make lots of noise for debugging")
+    parser.add_option("-w", "--warnings", action = "store_true", dest = "warning", default = False,
+                      help = "show useful warnings")
+    parser.add_option("-z", "--rawzip", action = "store_true", dest = "compressed", default = False,
+                      help = "Use input as compressed raw.gz files")
+    parser.add_option("--stderr", action = "store", type = "string", dest = "stderr",
+                      help = "file for standard error")
+    parser.add_option("--stdout", action = "store", type = "string", dest = "stdout",
+                      help = "file for standard output")
+
+
+    # Parse the command line
+    (opts, args) = parser.parse_args()
+
+    # Set global variables
+    options.configfile = opts.configfile
+    options.stderr = opts.stderr
+    options.stdout = opts.stdout
+    options.date = opts.date
+    options.directory = opts.directory
+    options.verbose = opts.verbose
+    options.warning = opts.warning
+    options.compressed = opts.compressed
+
+    # The standardhandle has to be declared here, since verbose and warnings are options from the cli
+    standardhandle.verbose(tag, "the options are {0}".format(opts))
+    standardhandle.verbose(tag, "the argument is {0}".format(args))
+
+    # Mapping the telescope argument to an option parameter (it might become an option in the future)
+    if len(args) != 2:
+        standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
+    elif args[1] == 'ST':
+        standardhandle.error(tag, "not yet ready for telescope {0}".format(options.options.tel_id), 2)
+    elif args[1] != 'LST1' and args[1] != 'LST2':
+        standardhandle.error(tag, "wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
+
+    options.tel_id = args[1]
+
+    # Setting the default date and directory if needed
+    options.configfile = set_default_configfile_if_needed(command)
+    
+    return args
+    
+
+    
 ##############################################################################
 #
 # calibrationsequencecliparsing
@@ -112,14 +175,14 @@ def calibrationsequencecliparsing(command):
     standardhandle.verbose(tag, "the argument is {0}".format(args))
 
     # Mapping the telescope argument to an option parameter (it might become an option in the future)
-    if len(args) != 3:
+    if len(args) != 4:
         standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
-    elif args[1] == 'ST':
+    elif args[3] == 'ST':
         standardhandle.error(tag, "not yet ready for telescope {0}".format(options.options.tel_id), 2)
-    elif args[1] != 'LST1' and args[1] != 'LST2':
+    elif args[3] != 'LST1' and args[3] != 'LST2':
         standardhandle.error(tag, "wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
 
-    options.tel_id = args[1]
+    options.tel_id = args[3]
 
     # Setting the default date and directory if needed
     options.configfile = set_default_configfile_if_needed(command)

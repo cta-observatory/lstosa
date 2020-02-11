@@ -8,16 +8,18 @@
 #   A. Baquero <>, I. Aguado<>
 #   J. L. Contrera <>
 # Last modified on:
-# Credits: This script is written and modified following scripts from  MAGIC OSA. Hence, a big portion
+# Credits: This script is written and modified following scripts from 
+# MAGIC OSA. Hence, a #big portion
 # of the credits goes to the authors of MAGIC OSA.
 ##############################################################################
-#from utils import standardhandle
-#from .. import utils 
-#import sys
-#sys.path.append("..")
-from osa.utils.standardhandle import output, verbose, warning, error, stringify, gettag
+# from utils import standardhandle
+# from .. import utils 
+# import sys
+# sys.path.append("..")
+from osa.utils.standardhandle import output, verbose, \
+      warning, error, stringify, gettag
 from osa.utils import options, cliopts
-#report import start
+# report import start
 # Only these functions will be considered when building the docs
 __all__ = ["sequencer", "single_process", "stereo_process"]
 ##############################################################################
@@ -26,10 +28,16 @@ __all__ = ["sequencer", "single_process", "stereo_process"]
 #
 # This is the main script to be called in crontab
 ##############################################################################
-#def sequencer():
+# def sequencer():
+
 def main():
-    """Runs the sequencer
+
     """
+
+    Runs the sequencer
+
+    """
+
     tag = gettag()
     from osa.reports.report import start
     from osa.configs import config
@@ -53,7 +61,9 @@ def main():
 # single_process
 #
 ##############################################################################
+
 def single_process(telescope, process_mode):
+
     """Runs the single process
     
     Parameters
@@ -116,7 +126,7 @@ def single_process(telescope, process_mode):
 #    updatesequencedb(sequence_list)
     # actually, submitjobs does not need the queue_list nor veto_list
 #    job_list = job.submitjobs(sequence_list, queue_list, veto_list)
-    job_list = job.submitjobs(sequence_list)
+#    job_list = job.submitjobs(sequence_list)
 #    combine_muon(job_list)
 #    # Report
 #    if is_report_needed:
@@ -135,7 +145,7 @@ def single_process(telescope, process_mode):
 # stereo_process
 #
 ##############################################################################
-#def stereo_process(telescope, s1_list, s2_list):
+# def stereo_process(telescope, s1_list, s2_list):
 #    tag = gettag()
 #    import extract
 #    import dot
@@ -173,6 +183,7 @@ def single_process(telescope, process_mode):
 # updatelstchainstatus
 #
 ##############################################################################
+
 def updatelstchainstatus(seq_list):
     tag = gettag()
     from decimal import Decimal
@@ -191,6 +202,7 @@ def updatelstchainstatus(seq_list):
 # getlstchainforsequence
 #
 ##############################################################################
+
 def getlstchainforsequence(s, program):
     tag = gettag()
     from os.path import join
@@ -496,5 +508,5 @@ if __name__ == '__main__':
     # Set the options through parsing of the command line interface
     cliopts.sequencercliparsing(sys.argv[0])
     # Run the routine
- #   sequencer()
+#   sequencer()
     main()
