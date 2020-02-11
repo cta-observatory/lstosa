@@ -1,7 +1,6 @@
 from . import jobs
 from . import nightsummary
 from . import reports
-from . import sequencers
 from . import rawcopy
 from . import utils
 from . import autocloser
