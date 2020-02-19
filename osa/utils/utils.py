@@ -298,7 +298,7 @@ def dir_to_lstdate(dir):
 def build_lstbasename(prefix, suffix):
     tag = gettag()
     from osa.utils.utils import lstdate_to_number
-    basename ="{0}_{1}_{2}{3}".format(prefix, lstdate_to_number(options.date), options.tel_id, suffix)
+    basename ="{0}_{1}{2}".format(prefix, lstdate_to_number(options.date), suffix)
     return basename
 ##############################################################################
 #

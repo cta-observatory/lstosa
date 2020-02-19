@@ -135,7 +135,7 @@ def createsequencetxt(s, sequence_list):
     ped = ''
     cal = ''
     dat = ''
-    if s.type == 'CALIBRATION':
+    if s.type == 'CALI':
         ped = formatrunsubrun(s.previousrun, 1)
         cal = formatrunsubrun(s.run, 1)
     elif s.type == 'DATA':
@@ -302,7 +302,7 @@ def createjobtemplate(s):
     version  = config.cfg.get('LST1', 'VERSION')
 
     command = None
-    if s.type == 'CALIBRATION':
+    if s.type == 'CALI':
         command = os.path.join(bindir, 'calibrationsequence.py')
     elif s.type == 'DATA':
         command = os.path.join(bindir, 'datasequence.py')
@@ -335,7 +335,7 @@ def createjobtemplate(s):
     commandargs.append(options.date)
     
      
-    if s.type == 'CALIBRATION':
+    if s.type == 'CALI':
         commandargs.append(os.path.join(pedestaldir, nightdir, version, s.pedestal))
         ped_run = str(s.previousrun).zfill(5)
         commandargs.append(ped_run)
@@ -371,8 +371,12 @@ def createjobtemplate(s):
     dat = ''
     for sub in s.subrun_list:
         dat += formatrunsubrun(s.run, sub.subrun) + ' '
-        srun = str(sub.subrun).zfill(4)
-        subruns.append(srun)
+        if s.type == 'DATA':
+        	for i in range(int(sub.subrun)):
+            		srun = str(i).zfill(4)
+            		subruns.append(srun)
+        else:
+                subruns.append(str(0).zfill(4))
     content += "subruns={0}\n".format(subruns)
     content += "for subrun in subruns:\n"
 

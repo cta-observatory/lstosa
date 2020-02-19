@@ -24,7 +24,7 @@ def extractsubruns(nightsummary):
             sr = SubrunObj()
             sr.subrun_str = word[1]
             sr.subrun = int(sr.subrun_str.lstrip('0'))
-            sr.kind = str(word[12])
+            #sr.kind = str(word[12])
             sr.date = str(word[3])
             sr.time = str(word[4])
             sr.timestamp = datetime.strptime(str(word[3] + ' ' + word[4]), "%Y-%m-%d %H:%M:%S")
@@ -40,35 +40,36 @@ def extractsubruns(nightsummary):
                 sr.runobj.run_str = current_run_str
                 sr.runobj.run = current_run
                 sr.runobj.type = str(word[2])
-                sr.runobj.sourcewobble = str(word[5])
-                sr.runobj.source, sep, sr.runobj.wobble = sr.runobj.sourcewobble.partition('-W')
+                #sr.runobj.sourcewobble = str(word[5])
+                #sr.runobj.source, sep, sr.runobj.wobble = sr.runobj.sourcewobble.partition('-W')
                 if sr.runobj.wobble == '':
                     sr.runobj.wobble = None
                 sr.runobj.telescope = options.tel_id
                 sr.runobj.night = lstdate_to_iso(options.date)
 
                 """ Include extra information that might be used in the future """
-                sr.runobj.number_events = word[6]
-                sr.runobj.zd_deg = word[7]
-                sr.runobj.source_ra = word[8]
-                sr.runobj.source_dec = word[9]
-                sr.runobj.l2_table = word[10]
-                sr.runobj.test_run = word[11]
-                sr.runobj.hv_setting = word[12]
-                sr.runobj.moonfilter = word[13]
+                #sr.runobj.number_events = word[6]
+                #sr.runobj.zd_deg = word[7]
+                #sr.runobj.source_ra = word[8]
+                #sr.runobj.source_dec = word[9]
+                #sr.runobj.l2_table = word[10]
+                #sr.runobj.test_run = word[11]
+                #sr.runobj.hv_setting = word[12]
+                #sr.runobj.moonfilter = word[13]
 
                 run_to_obj[sr.runobj.run] = sr.runobj
             else:
                """ Check if we have a GRB, then update the source name """
-               if "GRB" not in sr.runobj.source and "GRB" in str(word[5]):
-                   sr.runobj.sourcewobble = str(word[5])
-                   sr.runobj.source, sep, sr.runobj.wobble = sr.runobj.sourcewobble.partition('-W')
-                   if sr.runobj.wobble == '':
-                       sr.runobj.wobble = None
+#               if "GRB" not in sr.runobj.source:# and "GRB" in str(word[5]):
+               if "GRB" not in sr.runobj.type:# and "GRB" in str(word[5]):
+                   #sr.runobj.sourcewobble = str(word[5])
+                   #sr.runobj.source, sep, sr.runobj.wobble = sr.runobj.sourcewobble.partition('-W')
+#                   if sr.runobj.wobble == '':
+#                       sr.runobj.wobble = None
                    
-                   subrun_list[-1] = sr
-                   run_to_obj[sr.runobj.run] = sr.runobj
-                   sr.runobj = sr.runobj
+                    subrun_list[-1] = sr
+                    run_to_obj[sr.runobj.run] = sr.runobj
+                    sr.runobj = sr.runobj
             
             sr.runobj.subrun_list.append(sr)
             sr.runobj.subruns = len(sr.runobj.subrun_list)
@@ -130,11 +131,11 @@ def extractsequences(run_list):
             hascal = False
             sources.append(currentsrc)
         
-        if currenttype == 'PEDESTAL':
+        if currenttype == 'DRS4':
             verbose(tag, "Detected a new PED run %s for %s" %(currentrun, currentsrc))
             hasped = True
             run_list_sorted.append(r)
-        elif currenttype == 'CALIBRATION':
+        elif currenttype == 'CALI':
             verbose(tag, "Detected a new CAL run %s for %s" %(currentrun, currentsrc))
             hascal = True
             run_list_sorted.append(r)
@@ -148,7 +149,7 @@ def extractsequences(run_list):
                 # Normal case, we have the PED, the SUB, then append the DATA 
                 verbose(tag, "Detected a new DATA run %s for %s" %(currentrun, currentsrc))
                 run_list_sorted.append(r)
-            elif (currenttype == 'CALIBRATION' and pending!=[]):
+            elif (currenttype == 'CALI' and pending!=[]):
                 # We just took the CAL, and we had the PED, so we can add the pending runs.
                 verbose(tag, "PED/CAL are now available, adding the runs in the pending queue")
                 for pr in pending:
@@ -166,7 +167,7 @@ def extractsequences(run_list):
         currenttype = i.type
         
         if len(head) == 0:
-            if currenttype == 'PEDESTAL':
+            if currenttype == 'DRS4':
                 # Normal case 
                 verbose(tag, "appending [{0}, {1}, {2}]".format(currentrun, currenttype, None))
                 head.append([currentrun, currenttype, None])
@@ -178,25 +179,25 @@ def extractsequences(run_list):
             if currentrun == previousrun:
                 # It shouldn't happen, same run number, just skip to next run
                 continue
-            if currenttype == 'PEDESTAL':
+            if currenttype == 'DRS4':
                 if previoustype == 'DATA':
                     # replace the first head element, keeping its previous run or requirement run, depending on mode
                     if dependsonpreviousseq(previousrun, currentrun):
                         whichreq = previousrun
                     else:
                         whichreq = previousreq
-                elif previoustype == 'PEDESTAL':
+                elif previoustype == 'DRS4':
                     # One pedestal after another, keep replacing
                     whichreq = None
                 verbose(tag, "replacing [{0}, {1}, {2}]".format(currentrun, currenttype, whichreq))
                 head[0] = [currentrun, currenttype, whichreq]
-            elif currenttype == 'CALIBRATION' and previoustype == 'PEDESTAL':
+            elif currenttype == 'CALI' and previoustype == 'DRS4':
                 # add it too
                 verbose(tag, "appending [{0}, {1}, {2}]".format(currentrun, currenttype, None))
                 head.append([currentrun, currenttype, None])
                 require[currentrun] = previousrun
             elif currenttype == 'DATA':
-                if previoustype == 'PEDESTAL':
+                if previoustype == 'DRS4':
                     #   it is the pedestal->data mistake from shifters; 
                     #   replace and store if they are not the first of observations
                     #   required run requirement inherited from pedestal run
@@ -221,7 +222,7 @@ def extractsequences(run_list):
                     require[currentrun] = whichreq
         elif len(head) == 2:
             previoustype =  head[1][1]
-            if currenttype == 'DATA' and previoustype == 'CALIBRATION':
+            if currenttype == 'DATA' and previoustype == 'CALI':
                 #   it is the pedestal->calibration->data case, append, store, resize and replace
                 previousrun = head[1][0]
                 head.pop()
@@ -230,7 +231,7 @@ def extractsequences(run_list):
                 store.append(currentrun)
                 # This is different from currentrun since it marks parent sequence run
                 require[currentrun] = previousrun  
-            elif currenttype == 'PEDESTAL' and previoustype == 'CALIBRATION':
+            elif currenttype == 'DRS4' and previoustype == 'CALI':
                 # There was a problem with the previous calibration and shifters decide to give another try
                 head.pop()
                 verbose(tag, "P->C->P, deleting and replacing [{0}, {1}, {2}]".format(currentrun, currenttype, None))
@@ -311,7 +312,7 @@ def generateworkflow(run_list, store, require):
                 s.jobname = "{0}_{1}".format(r.telescope, str(r.run).zfill(5))
                 job.setsequencefilenames(s)
                 if s not in sequence_list: sequence_list.append(s)
-        elif r.type == 'CALIBRATION':
+        elif r.type == 'CALI':
             # Calibration sequence are appended to the sequence list if they are parent from data sequences
             for k in iter(require):
                 if r.run == require[k]:
