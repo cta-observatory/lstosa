@@ -116,9 +116,25 @@ def calibrate(run, historyfile):
     inputcard = cfg.get(options.tel_id, 'CALIBRATIONCONFIGCARD')
     #configcard = join(carddir, inputcard)
     commandargs = [join(bindir, cfg.get('PROGRAM', 'CALIBRATION'))]
-    commandargs.append('-r' + calibration_run_id)
-    commandargs.append('-p' + predestal_run_id)
-    commandargs.append('-v' + version_lstchain )
+
+    calibration_version = cfg.get('LSTOSA', 'CALIBRATION_VERSION')  #def: 0
+    n_events_statistics = cfg.get('LSTOSA', 'STATISTICS')  #def: 10000
+    calibration_base_dir = cfg.get('LSTOSA', 'CALIB_BASE_DIRECTORY')  #def: '/fefs/aswg/data/real'
+    calculate_time_run = cfg.get('LSTOSA', 'CALCULATE_TIME_RUN')  #def: '1625'
+
+    commandargs.append('--run_number' + calibration_run_id)
+    commandargs.append('--pedestal_run' + predestal_run_id)
+
+    commandargs.append('--version' + calibration_version)
+    commandargs.append('--statistics' + n_events_statistics)
+    commandargs.append('--base_dir' + calibration_base_dir)
+    commandargs.append('--default_time_run' + calculate_time_run)
+
+'''
+optional.add_argument('--ff_calibration', help="Perform the charge calibration (yes/no)",type=str, default='yes')
+optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
+'''
+
     print("COMAND for calib:",commandargs)
     commandconcept = 'calibration'
     calibrationfile = 'new_calib'
