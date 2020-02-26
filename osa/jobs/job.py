@@ -33,14 +33,17 @@ def historylevel(historyfile, type):
     from osa.configs.config import cfg
     level = 3
     exit_status = 0
+    if type == 'PEDESTAL':
+       level -= 2
     if type == 'CALIBRATION':
-        level -= 2
+        level -= 1
     if exists(historyfile):
         for line in readfromfile(historyfile).splitlines():
             words = line.split()
             try:
                 program = words[1]
                 exit_status = int(words[10])
+                print("DEBUG:",program, exit_status)
             except IndexError as e:
                 error(tag, "Malformed history file {0}, e".format(historyfile), 3)
             except ValueError as e:
@@ -63,10 +66,16 @@ def historylevel(historyfile, type):
                         level = 0
                     else:
                         level = 1
+                elif program == 'drs4_pedestal':
+                    if exit_status == 0:
+                        level = 1
+                    else:
+                        level = 0
+
                 else:
                     error(tag, 'Programme name not identified {0}'.format(program), 6)
                    
-    
+    print(level,exit_status) 
     return level, exit_status
 ##############################################################################
 #
@@ -207,7 +216,11 @@ def setsequencecalibfilenames(sequence_list):
     drive_suffix = cfg.get('LSTOSA', 'DRIVESUFFIX')
     for s in sequence_list:
         if len(s.parent_list) == 0:
-            calfile = '666calib.root'
+            #calfile = '666calib.root'
+
+            cal_run_string = str(s.run).zfill(5)
+            calfile = "calibration.Run{0}.0000{1}".\
+                 format(cal_run_string, scalib_suffix)
             #pedfile = '666ped.root'
             ped_run_string = str(s.previousrun).zfill(5) 
             pedfile = "drs4_pedestal.Run{0}.0000{1}".\
@@ -337,6 +350,7 @@ def createjobtemplate(s):
      
     if s.type == 'CALI':
         commandargs.append(os.path.join(pedestaldir, nightdir, version, s.pedestal))
+        commandargs.append(os.path.join(calibdir, nightdir, version, s.calibration))
         ped_run = str(s.previousrun).zfill(5)
         commandargs.append(ped_run)
    
@@ -352,14 +366,16 @@ def createjobtemplate(s):
     #commandargs.append(str(s.run).zfill(5))
  #   if s.type != 'STEREO':
       #  commandargs.append(options.tel_id)
+    for sub in s.subrun_list:
+        n_subruns = int(sub.subrun)
 
-
+    
     content = "#!/bin/env python\n"
     # SLURM assignments
     content += "#SBATCH -p compute\n"
     content += "#SBATCH --tasks=2\n"
     if s.type == 'DATA':
-       content += "#SBATCH --array=1-{0}\n".format(len(s.subrun_list))
+       content += "#SBATCH --array=0-{0}\n".format(int(n_subruns)-1)
     content += "#SBATCH --cpus-per-task=1\n"
     content += "#SBATCH --mem-per-cpu=1600\n"
     content += "#SBATCH -t 0-48:00\n"
@@ -367,24 +383,32 @@ def createjobtemplate(s):
     content += "#SBATCH -e ./log/slurm.%j.%N.err\n"
      #
     content +="import subprocess\n"
-    subruns = []
+    content +="import os\n"
+    content +="subruns=os.getenv('SLURM_ARRAY_TASK_ID')\n"
     dat = ''
-    for sub in s.subrun_list:
-        dat += formatrunsubrun(s.run, sub.subrun) + ' '
-        if s.type == 'DATA':
-        	for i in range(int(sub.subrun)):
-            		srun = str(i).zfill(4)
-            		subruns.append(srun)
-        else:
-                subruns.append(str(0).zfill(4))
-    content += "subruns={0}\n".format(subruns)
-    content += "for subrun in subruns:\n"
+    #for sub in s.subrun_list:
+    #    dat += formatrunsubrun(s.run, sub.subrun) + ' '
+    #    if s.type == 'DATA':
+    #    	for i in range(int(sub.subrun)):
+    #        		srun = str(i).zfill(4)
+    #        		subruns.append(srun)
+#   #             content += "subruns={0}\n".format(subruns)
+
+    #dat += formatrunsubrun(s.run, sub.subrun) + ' '
+
+        #else:
+        #        #subruns.append(str(0).zfill(4))
+    #content += "subruns={0}\n".format(subruns)
+   # content += "for subrun in subruns:\n"
 
   #  content +="subprocess.call({0})\n".format(commandargs)
-    content += "	subprocess.call(["
+    content += "subprocess.call(["
     for i in commandargs: 
         content += "	'{0}',\n".format(i)
-    content += "	'{0}".format(str(s.run).zfill(5))+".{0}'"+'.format(subrun)'+','
+    if s.type == 'DATA':
+       content += "	     '{0}".format(str(s.run).zfill(5))+".{0}'"+'.format(str(subruns).zfill(4))'+','
+    else:
+       content += "          '{0}'".format(str(s.run).zfill(5)) + ','
     content += "	'{0}'".format(options.tel_id)
     content +="		])"
     
