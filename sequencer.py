@@ -188,7 +188,7 @@ def updatelstchainstatus(seq_list):
     tag = gettag()
     from decimal import Decimal
     for s in seq_list:
-        if s.type == 'CALIBRATION':
+        if s.type == 'CALI':
             s.scalibstatus = int(Decimal( getlstchainforsequence(s, 'Scalib')  * 100 ) / s.subruns)
         elif s.type == 'DATA':
             s.dl1status = int(Decimal( getlstchainforsequence(s, 'R0-DL1')  * 100 ) / s.subruns)
@@ -237,7 +237,7 @@ def reportsequences(seqlist):
     matrix.append(header)
     for s in seqlist:
         row_list = [s.telescope, s.seq, s.parent, s.type, s.run, s.subruns, s.source, s.wobble, s.action, s.tries, s.jobid, s.state, s.jobhost, s.cputime, s.walltime, s.exit]
-        if s.type == 'CALIBRATION':
+        if s.type == 'CALI':
             row_list.append(None)
             row_list.append(None)
             row_list.append(None)
@@ -335,7 +335,7 @@ def updatesequencedb(seqlist):
          'EXIT_STATUS': s.exit,\
          }
 
-        if s.type == 'CALIBRATION':
+        if s.type == 'CALI':
             assignments.update({'PROGRESS_SCALIB': s.scalibstatus})
         elif s.type == 'DATA':
             assignments.update({\

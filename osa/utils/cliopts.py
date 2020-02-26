@@ -138,7 +138,7 @@ def pedestalsequencecliparsing(command):
 ##############################################################################
 def calibrationsequencecliparsing(command):
     tag = standardhandle.gettag()
-    message = "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <CAL_RUN_ID> <PED_RUN_ID>  <TEL_ID>"
+    message = "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <pedoutfile> <caloutfile> <CAL_RUN_ID> <PED_RUN_ID>  <TEL_ID>"
     parser = OptionParser(usage = message)
     parser.add_option("-c", "--config", action = "store", dest = "configfile", default = None,
                       help = "use specific config file [default cfg/osa.cfg]")
@@ -175,14 +175,14 @@ def calibrationsequencecliparsing(command):
     standardhandle.verbose(tag, "the argument is {0}".format(args))
 
     # Mapping the telescope argument to an option parameter (it might become an option in the future)
-    if len(args) != 4:
+    if len(args) != 5:
         standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
-    elif args[3] == 'ST':
+    elif args[4] == 'ST':
         standardhandle.error(tag, "not yet ready for telescope {0}".format(options.options.tel_id), 2)
-    elif args[3] != 'LST1' and args[3] != 'LST2':
+    elif args[4] != 'LST1' and args[4] != 'LST2':
         standardhandle.error(tag, "wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
 
-    options.tel_id = args[3]
+    options.tel_id = args[4]
 
     # Setting the default date and directory if needed
     options.configfile = set_default_configfile_if_needed(command)
