@@ -211,6 +211,7 @@ def setsequencefilenames(s):
 def setsequencecalibfilenames(sequence_list):
     tag = gettag()
     from osa.configs.config import cfg
+    from osa.utils.utils import lstdate_to_dir
     scalib_suffix = cfg.get('LSTOSA', 'SCALIBSUFFIX')
     pedestal_suffix = cfg.get('LSTOSA', 'PEDESTALSUFFIX')
     drive_suffix = cfg.get('LSTOSA', 'DRIVESUFFIX')
@@ -233,8 +234,9 @@ def setsequencecalibfilenames(sequence_list):
      #       print("DEBUG2",s.subrun_list[0].date)
             date_string = str(s.subrun_list[0].date).zfill(8)
             time_string = str(s.subrun_list[0].time).zfill(8)
+            nightdir = lstdate_to_dir(options.date)
      #       print(date_string,time_string)
-            yy,mm,dd = date_in_yymmdd(date_string,time_string)            
+            yy,mm,dd = date_in_yymmdd(nightdir)            
             if options.mode == 'P':
                 calfile = "calibration.Run{0}.0000{1}".\
                  format(run_string, scalib_suffix)
@@ -591,20 +593,22 @@ def sumtime(a, b):
     return c
 
 #=============================================================
-def date_in_yymmdd(datestring,timestring):
+def date_in_yymmdd(datestring):
     # This is convert date string(yyyy_mm_dd) from the NightSummary in
     # (yy_mm_dd) format 
     # Depending on the time, +1 is added to date to consider the convention of
     # filenaming based on observation date
     from os.path import join
-    date = datestring.split('-')
-    da   = [ch for ch in date[0]]
-    yy   =''.join(da[2:4])
-    mm   = date[1]
-    # Change the day
-    time = timestring.split(':')
-    if (int(time[0]) >= 17 and int(time[0]) <= 23):
-       dd = str(int(date[2]))
-    else:
-       dd   = date[2]
+    #date = datestring.split('-')
+    #da   = [ch for ch in date[0]]
+    date = list(datestring)
+    yy   =''.join(date[2:4])
+    mm   =''.join(date[4:6])
+    dd   =''.join(date[6:8])
+    ## Change the day
+    #time = timestring.split(':')
+    #if (int(time[0]) >= 17 and int(time[0]) <= 23):
+    #   dd = str(int(date[2]))
+    #else:
+    #   dd   = date[2]
     return yy,mm,dd
