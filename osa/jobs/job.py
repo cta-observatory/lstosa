@@ -373,12 +373,11 @@ def createjobtemplate(s):
     content = "#!/bin/env python\n"
     # SLURM assignments
     content += "#SBATCH -p compute\n"
-    content += "#SBATCH --tasks=2\n"
     if s.type == 'DATA':
        content += "#SBATCH --array=0-{0}\n".format(int(n_subruns)-1)
     content += "#SBATCH --cpus-per-task=1\n"
-    content += "#SBATCH --mem-per-cpu=1600\n"
-    content += "#SBATCH -t 0-48:00\n"
+    content += "#SBATCH --mem-per-cpu=2G\n"
+    content += "#SBATCH -t 0-24:00\n"
     content += "#SBATCH -o ./log/slurm.%j.%N.out\n"
     content += "#SBATCH -e ./log/slurm.%j.%N.err\n"
      #
