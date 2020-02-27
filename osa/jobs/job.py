@@ -219,17 +219,17 @@ def setsequencecalibfilenames(sequence_list):
         if len(s.parent_list) == 0:
             #calfile = '666calib.root'
 
-            cal_run_string = str(s.run).zfill(5)
+            cal_run_string = str(s.run).zfill(4)
             calfile = "calibration.Run{0}.0000{1}".\
                  format(cal_run_string, scalib_suffix)
             #pedfile = '666ped.root'
-            ped_run_string = str(s.previousrun).zfill(5) 
+            ped_run_string = str(s.previousrun).zfill(4) 
             pedfile = "drs4_pedestal.Run{0}.0000{1}".\
                  format(ped_run_string, pedestal_suffix)
             drivefile = '666drive.txt'
         else:
-            run_string = str(s.parent_list[0].run).zfill(5)
-            ped_run_string = str(s.parent_list[0].previousrun).zfill(5)
+            run_string = str(s.parent_list[0].run).zfill(4)
+            ped_run_string = str(s.parent_list[0].previousrun).zfill(4)
      #       print("DEBUG",s.subrun_list[0].time)
      #       print("DEBUG2",s.subrun_list[0].date)
             date_string = str(s.subrun_list[0].date).zfill(8)
@@ -344,8 +344,8 @@ def createjobtemplate(s):
         commandargs.append(guesscorrectinputcard(s))
     if options.compressed:
         commandargs.append('-z')
-    commandargs.append('--stderr=sequence_{0}_$SLURM_JOB_ID.log'.format(s.jobname))
-    commandargs.append('--stdout=sequence_{0}_$SLURM_JOB_ID.log'.format(s.jobname))
+    #commandargs.append('--stderr=sequence_{0}_'.format(s.jobname) + "{0}.err'" + ".format(str(job_id))")
+    #commandargs.append('--stdout=sequence_{0}_'.format(s.jobname) + "{0}.out'" + ".format(str(job_id))")
     commandargs.append('-d')
     commandargs.append(options.date)
     
@@ -380,12 +380,14 @@ def createjobtemplate(s):
     content += "#SBATCH --cpus-per-task=1\n"
     content += "#SBATCH --mem-per-cpu=2G\n"
     content += "#SBATCH -t 0-24:00\n"
-    content += "#SBATCH -o ./log/slurm.%j.%N.out\n"
-    content += "#SBATCH -e ./log/slurm.%j.%N.err\n"
+    # TODO: Change log to night directory
+    content += "#SBATCH -o ./log/slurm.%A_%a.%N.out\n"
+    content += "#SBATCH -e ./log/slurm.%A_$a.%N.err\n"
      #
     content +="import subprocess\n"
     content +="import os\n"
     content +="subruns=os.getenv('SLURM_ARRAY_TASK_ID')\n"
+    content +="job_id=os.getenv('SLURM_JOB_ID')\n"
     dat = ''
     #for sub in s.subrun_list:
     #    dat += formatrunsubrun(s.run, sub.subrun) + ' '
@@ -406,6 +408,8 @@ def createjobtemplate(s):
     content += "subprocess.call(["
     for i in commandargs: 
         content += "	'{0}',\n".format(i)
+    content += "          '--stderr=sequence_{0}_".format(s.jobname) + "{0}.err'" + '.format(str(job_id))'+',\n'
+    content += "          '--stdout=sequence_{0}_".format(s.jobname) + "{0}.out'" + '.format(str(job_id))'+',\n'
     if s.type == 'DATA':
        content += "	     '{0}".format(str(s.run).zfill(5))+".{0}'"+'.format(str(subruns).zfill(4))'+','
     else:
