@@ -4,7 +4,7 @@
 # sequencer.py
 # Date: 12th January 2020
 #   Authors
-#   L. Saha <lab.saha@gmail.com>, D. Morcuende <morcuende@gae.ucm.es>
+#   L. Saha <lab.saha@gmail.com>, D. Morcuende <dmorcuen@ucm.es>
 #   A. Baquero <>, I. Aguado<>
 #   J. L. Contrera <>
 # Last modified on:
@@ -16,6 +16,7 @@
 # from .. import utils 
 # import sys
 # sys.path.append("..")
+import os
 from osa.utils.standardhandle import output, verbose, \
       warning, error, stringify, gettag
 from osa.utils import options, cliopts
@@ -64,7 +65,8 @@ def main():
 
 def single_process(telescope, process_mode):
 
-    """Runs the single process
+    """
+    Runs the single process for a single telescope
     
     Parameters
     ----------
@@ -79,7 +81,6 @@ def single_process(telescope, process_mode):
     """
     tag = gettag()
 
-    """ This function processes everything for a single telescope """
     from osa.nightsummary import extract
     from osa.jobs import job
     from osa.veto import veto
@@ -87,11 +88,14 @@ def single_process(telescope, process_mode):
     from osa.nightsummary.nightsummary import readnightsummary
     from osa.reports.report import rule
     from osa.autocloser.closer import is_day_closed
+
+
     sequence_list = []
     options.tel_id = telescope
     options.directory = cliopts.set_default_directory_if_needed()
-    print("DIR",options.directory)
-#    options.directory = "./"
+    options.log_directory = os.path.join(options.directory,'log') 
+    os.makedirs(options.log_directory, exist_ok=True)
+    print("DIR: ", options.directory)
     simulate_save = options.simulate
     is_report_needed = True
 
