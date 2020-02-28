@@ -154,7 +154,7 @@ def createsequencetxt(s, sequence_list):
             dat += formatrunsubrun(s.run, sub.subrun) + ' '
 
     content = "# Sequence number (identifier)\n"
-#    content += "Sequence: {0}_{0}\n".format(s.run)    # Not clear why the same number twice
+#    content += "Sequence: {0}_{0}\n".format(s.run)  # Not clear why the same number twice
     content += "Sequence: {0}\n".format(s.run)
     content += "# Date of sunrise of the observation night\n"
     content += "Night: {0}\n".format(s.night)
@@ -199,7 +199,6 @@ def setsequencefilenames(s):
     basename = "sequence_{0}".format(s.jobname)
 
     s.script = os.path.join(options.directory, basename + script_suffix)
-#    print("DEBUG",options.directory)
     s.veto = os.path.join(options.directory, basename + veto_suffix )
     s.history = os.path.join(options.directory, basename + history_suffix)
     # Calibfiles cannot be set here, since they require the runfromparent
@@ -370,10 +369,10 @@ def createjobtemplate(s):
       #  commandargs.append(options.tel_id)
     for sub in s.subrun_list:
         n_subruns = int(sub.subrun)
-
     
     content = "#!/bin/env python\n"
     # SLURM assignments
+    content += "\n"
     content += "#SBATCH -p compute\n"
     if s.type == 'DATA':
        content += "#SBATCH --array=0-{0}\n".format(int(n_subruns)-1)
@@ -381,11 +380,14 @@ def createjobtemplate(s):
     content += "#SBATCH --mem-per-cpu=2G\n"
     content += "#SBATCH -t 0-24:00\n"
     # TODO: Change log to night directory
-    content += "#SBATCH -o ./log/slurm.%A_%a.%N.out\n"
-    content += "#SBATCH -e ./log/slurm.%A_$a.%N.err\n"
-     #
+    content += "#SBATCH -o {0}/slurm.%A_%a.%N.out\n".format(options.log_directory)
+    content += "#SBATCH -e {0}/slurm.%A_%a.%N.err\n".format(options.log_directory)
+    content += "\n"
+
     content +="import subprocess\n"
     content +="import os\n"
+    content += "\n\n"
+
     content +="subruns=os.getenv('SLURM_ARRAY_TASK_ID')\n"
     content +="job_id=os.getenv('SLURM_JOB_ID')\n"
     dat = ''
@@ -405,17 +407,17 @@ def createjobtemplate(s):
    # content += "for subrun in subruns:\n"
 
   #  content +="subprocess.call({0})\n".format(commandargs)
-    content += "subprocess.call(["
+    content += "subprocess.call([\n"
     for i in commandargs: 
-        content += "	'{0}',\n".format(i)
-    content += "          '--stderr=sequence_{0}_".format(s.jobname) + "{0}.err'" + '.format(str(job_id))'+',\n'
-    content += "          '--stdout=sequence_{0}_".format(s.jobname) + "{0}.out'" + '.format(str(job_id))'+',\n'
+        content += "    '{0}',\n".format(i)
+    content += "    '--stderr=sequence_{0}_".format(s.jobname) + "{0}.err'" + '.format(str(job_id))' + ',\n'
+    content += "    '--stdout=sequence_{0}_".format(s.jobname) + "{0}.out'" + '.format(str(job_id))' + ',\n'
     if s.type == 'DATA':
-       content += "	     '{0}".format(str(s.run).zfill(5))+".{0}'"+'.format(str(subruns).zfill(4))'+','
+        content += "    '{0}".format(str(s.run).zfill(5))+".{0}'"+'.format(str(subruns).zfill(4))' + ',\n' 
     else:
-       content += "          '{0}'".format(str(s.run).zfill(5)) + ','
-    content += "	'{0}'".format(options.tel_id)
-    content +="		])"
+       content += "    '{0}'".format(str(s.run).zfill(5)) + ',\n'
+    content += "    '{0}'".format(options.tel_id) + '\n'
+    content += "    ])"
     
     print("S.script",s.script)  
     if not options.simulate:
