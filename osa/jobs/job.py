@@ -380,8 +380,8 @@ def createjobtemplate(s):
     content += "#SBATCH --mem-per-cpu=2G\n"
     content += "#SBATCH -t 0-24:00\n"
     # TODO: Change log to night directory
-    content += "#SBATCH -o {0}/log/slurm.%A_%a.%N.out\n".format(options.directory)
-    content += "#SBATCH -e {0}/log/slurm.%A_%a.%N.err\n".format(options.directory)
+    content += "#SBATCH -o {0}/slurm.%A_%a.%N.out\n".format(options.log_directory)
+    content += "#SBATCH -e {0}/slurm.%A_%a.%N.err\n".format(options.log_directory)
     content += "\n"
 
     content +="import subprocess\n"
