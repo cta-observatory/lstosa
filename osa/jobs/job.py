@@ -199,7 +199,6 @@ def setsequencefilenames(s):
     basename = "sequence_{0}".format(s.jobname)
 
     s.script = os.path.join(options.directory, basename + script_suffix)
-#    print("DEBUG",options.directory)
     s.veto = os.path.join(options.directory, basename + veto_suffix )
     s.history = os.path.join(options.directory, basename + history_suffix)
     # Calibfiles cannot be set here, since they require the runfromparent
@@ -381,8 +380,8 @@ def createjobtemplate(s):
     content += "#SBATCH --mem-per-cpu=2G\n"
     content += "#SBATCH -t 0-24:00\n"
     # TODO: Change log to night directory
-    content += "#SBATCH -o ./log/slurm.%A_%a.%N.out\n"
-    content += "#SBATCH -e ./log/slurm.%A_%a.%N.err\n"
+    content += "#SBATCH -o {0}/log/slurm.%A_%a.%N.out\n".format(options.directory)
+    content += "#SBATCH -e {0}/log/slurm.%A_%a.%N.err\n".format(options.directory)
     content += "\n"
 
     content +="import subprocess\n"
