@@ -13,6 +13,7 @@ tel_id = None
 nightsum = 'True'
 reason = None
 directory = None
+log_directory = None
 simulate = None
 noninteractive = None
 verbose = None
