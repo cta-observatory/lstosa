@@ -152,7 +152,7 @@ def createsequencetxt(s, sequence_list):
         cal = formatrunsubrun(s.parent_list[0].run, 1)
         for sub in s.subrun_list:
             dat += formatrunsubrun(s.run, sub.subrun) + ' '
-
+    
     content = "# Sequence number (identifier)\n"
 #    content += "Sequence: {0}_{0}\n".format(s.run)  # Not clear why the same number twice
     content += "Sequence: {0}\n".format(s.run)

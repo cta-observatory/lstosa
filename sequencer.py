@@ -44,7 +44,6 @@ def main():
     from osa.configs import config
     process_mode = None
     single_array = ['LST1', 'LST2']
-    print('TEl ID',options.tel_id)
     start(tag)
     if options.tel_id in single_array: 
         process_mode = 'single'
