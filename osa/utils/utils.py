@@ -54,11 +54,14 @@ def getnightdirectory():
     from osa.utils.utils import lstdate_to_dir
     from osa.configs.config import cfg
     # Get lstchain version
-    from version import get_version
+#    from version import get_version
     verbose(tag, "Getting analysis path for tel_id {0}".format(options.tel_id))
     subdir = lstdate_to_dir(options.date)
-    directory = join(cfg.get(options.tel_id, 'ANALYSISDIR'),
-            subdir, 'v' + get_version() + '_' + cfg.get(options.tel_id, 'VERSION'))
+#    directory = join(cfg.get(options.tel_id, 'ANALYSISDIR'),
+#            subdir, 'v' + get_version() + '_' + cfg.get(options.tel_id, 'VERSION'))
+    directory = join(cfg.get(options.tel_id, 'ANALYSISDIR'), subdir,
+                     cfg.get('LSTOSA', 'LSTCHAIN-VERSION') + '_' +
+                     cfg.get(options.tel_id, 'VERSION'))
     if not exists(directory):
         if options.nightsum == True and options.tel_id != 'ST':
             error(tag, "Night directory {0} does not exists!".format(directory), 2)
