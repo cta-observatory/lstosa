@@ -67,7 +67,7 @@ distribute-*.tar.gz
 
 *.out
 
-#sonarlint command-line output
+# sonarlint command-line output
 .sonarlint
 
 # output files (should not be stored in git)
@@ -79,3 +79,6 @@ distribute-*.tar.gz
 *.pstats
 target
 .mypy_cache
+
+# Ignore NightSummary directory
+./NightSummary
