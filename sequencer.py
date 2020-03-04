@@ -87,6 +87,8 @@ def single_process(telescope, process_mode):
     from osa.nightsummary.nightsummary import readnightsummary
     from osa.reports.report import rule
     from osa.autocloser.closer import is_day_closed
+    from shutil import copy                                                                                                                                                                                         
+    from osa.configs.config import cfg
 
 
     sequence_list = []
@@ -113,15 +115,24 @@ def single_process(telescope, process_mode):
     """ Building the sequences """
     night = readnightsummary()  # night corresponds to f.read()
     print(night)
+                                                                                                                                                                                                                    
+    configfile = cfg.get('LSTOSA','CONFIGFILE')                                                                                                                                                                     
+                                                                                                                                                                                                                    
+    # Copy used lstchain config file to log directory                                                                                                                                                                    
+    copy(configfile, options.log_directory)  
+
     subrun_list = extract.extractsubruns(night)
     run_list = extract.extractruns(subrun_list)
+
     # Modifies run_list by adding the seq and parent info into runs
     sequence_list = extract.extractsequences(run_list)
+
     # Workflow and Submission
 #    dot.writeworkflow(sequence_list)
+
     # Adds the scripts
     job.preparejobs(sequence_list, subrun_list)
-
+    
 #    queue_list = job.getqueuejoblist(sequence_list)
 #    veto_list = veto.getvetolist(sequence_list)
 #    closed_list = veto.getclosedlist(sequence_list)
@@ -129,7 +140,9 @@ def single_process(telescope, process_mode):
 #    updatesequencedb(sequence_list)
     # actually, submitjobs does not need the queue_list nor veto_list
 #    job_list = job.submitjobs(sequence_list, queue_list, veto_list)
-#    job_list = job.submitjobs(sequence_list)
+
+    job_list = job.submitjobs(sequence_list)
+
 #    combine_muon(job_list)
 #    # Report
 #    if is_report_needed:
