@@ -24,7 +24,6 @@ def datasequence(args):
     from osa.jobs.job import historylevel
     from osa.configs.config import cfg
 
-     
     
     calibrationfile = args[0]
     pedestalfile = args[1]
@@ -69,8 +68,13 @@ def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_st
     from osa.jobs.job import historylevel
     from osa.reports import report
     from osa.utils.utils import lstdate_to_dir
+    from shutil import copy
+
 
     configfile = cfg.get('LSTOSA','CONFIGFILE')
+
+    # TODO: Copy lstchain config file to log directory
+    #copy(configfile, options.log_directory)
     
     pythondir = cfg.get('LSTOSA', 'PYTHONDIR')
     lstchaincommand = cfg.get('LSTOSA', 'R0-DL1')
