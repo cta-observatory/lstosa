@@ -419,7 +419,6 @@ def createjobtemplate(s):
     content += "    '{0}'".format(options.tel_id) + '\n'
     content += "    ])"
     
-    print("S.script",s.script)  
     if not options.simulate:
         iofile.writetofile(s.script, content)
 ##############################################################################
