@@ -93,7 +93,7 @@ def finished_assignments(sequence_list):
     from datetime import datetime
     from fnmatch import fnmatchcase
     from osa.configs.config import cfg
-    from raw import getrawdir
+    from osa.rawcopy.raw import getrawdir
     concept_set = []
     anadir = options.directory
     disk_space_GB = 0
@@ -105,7 +105,7 @@ def finished_assignments(sequence_list):
             for s in sequence_list:
                 rawnum += s.subruns
         data_files = glob(join(rawdir, '*{0}*{1}*'\
-         .format(cfg.get('LSTOSA', 'DL1PATTERN'), cfg.get('LSTOSA', 'RAWSUFFIX'))))
+         .format(cfg.get('LSTOSA', 'R0-DL1PATTERN'), cfg.get('LSTOSA', 'RAWSUFFIX'))))
         disk_space = 0
         for d in data_files:
             disk_space += getsize(d)
