@@ -89,10 +89,12 @@ def single_process(telescope, process_mode):
     from osa.autocloser.closer import is_day_closed
     from shutil import copy                                                                                                                                                                                         
     from osa.configs.config import cfg
+    from version import get_version
 
 
     sequence_list = []
     options.tel_id = telescope
+    options.lstchain_version = 'v' + get_version()
     options.directory = cliopts.set_default_directory_if_needed()
     options.log_directory = os.path.join(options.directory,'log') 
     os.makedirs(options.log_directory, exist_ok=True)
@@ -141,7 +143,7 @@ def single_process(telescope, process_mode):
     # actually, submitjobs does not need the queue_list nor veto_list
 #    job_list = job.submitjobs(sequence_list, queue_list, veto_list)
 
-    job_list = job.submitjobs(sequence_list)
+#    job_list = job.submitjobs(sequence_list)
 
 #    combine_muon(job_list)
 #    # Report
