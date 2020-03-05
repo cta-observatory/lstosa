@@ -61,7 +61,6 @@ def getnightdirectory():
                      options.lstchain_version + '_' +
                      cfg.get(options.tel_id, 'VERSION')
                      )
-#    directory = join(cfg.get(options.tel_id, 'ANALYSISDIR'), subdir)
     if not exists(directory):
         if options.nightsum == True and options.tel_id != 'ST':
             error(tag, "Night directory {0} does not exists!".format(directory), 2)
