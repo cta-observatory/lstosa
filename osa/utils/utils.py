@@ -55,12 +55,10 @@ def getnightdirectory():
     from osa.configs.config import cfg
 
     verbose(tag, "Getting analysis path for tel_id {0}".format(options.tel_id))
-    date_subdir = lstdate_to_dir(options.date)
+    nightdir = lstdate_to_dir(options.date)
     directory = join(cfg.get(options.tel_id, 'ANALYSISDIR'),
-                     date_subdir,
-                     options.lstchain_version + '_' +
-                     cfg.get(options.tel_id, 'VERSION')
-                     )
+                     nightdir,
+                     options.prod_id)
     if not exists(directory):
         if options.nightsum == True and options.tel_id != 'ST':
             error(tag, "Night directory {0} does not exists!".format(directory), 2)
