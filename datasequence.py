@@ -41,29 +41,26 @@ def datasequence(args):
     level, rc = historylevel(historyfile, 'DATA')
     print("LEVEL:",level,rc)
     verbose(tag, "Going to level {0}".format(level))
+
     if level == 3:
-        rc = r0_to_dl1(calibrationfile,
-                       pedestalfile,
-                       time_calibration,
-                       drivefile,
-                       run_str,
-                       sequencefile,
-                       historyfile) 
+        rc = r0_to_dl1(calibrationfile, pedestalfile, time_calibration,
+                       drivefile, run_str, sequencefile, historyfile) 
         level -= 1
         verbose(tag, "Going to level {0}".format(level))
     if level == 2:
-        rc = dl1_to_dl2(run_str,
-                       sequencefile,
-                       historyfile)
-        level -= 1
+        rc = dl1_to_dl2(run_str, sequencefile, historyfile)
+        level -= 2
         verbose(tag, "Going to level {0}".format(level))
     if level == 0:
-       verbose(tag, "Job for sequence {0} finished without fatal errors"
-                .format(run_str))    
+        verbose(tag, "Job for sequence {0} finished without fatal errors".format(run_str))    
     return rc
 
 
 def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_str, sequencefile, historyfile):
+    """
+    Perform low and high-level calibration to raw camera images. 
+    Apply calibration and obtain shower parameters. 
+    """
     
     import sys
     import os
@@ -79,12 +76,6 @@ def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_st
 
 
     configfile = cfg.get('LSTOSA','CONFIGFILE')
-
-    '''
-    TODO: Copy lstchain config file to log directory.
-    Now it is done in sequencer.py
-    ''' 
-
     pythondir = cfg.get('LSTOSA', 'PYTHONDIR')
     lstchaincommand = cfg.get('LSTOSA', 'R0-DL1')
     python = os.path.join(cfg.get('ENV', 'PYTHONBIN'), 'python')
@@ -92,8 +83,12 @@ def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_st
 #    fullcommand = join(pythondir, lstchaincommand)
     fullcommand = lstchaincommand
     print("Run_str", run_str)
-    datafile = join(cfg.get('LST1','RAWDIR'),nightdir,
-            'LST-1.1.Run{0}{1}{2}'.format(run_str,cfg.get('LSTOSA','FITSSUFFIX'),cfg.get('LSTOSA','COMPRESSEDSUFFIX'))) 
+    datafile = join(cfg.get('LST1','RAWDIR'), nightdir,
+                    'LST-1.1.Run{0}{1}{2}'.format(run_str,
+                                                  cfg.get('LSTOSA','FITSSUFFIX'),
+                                                  cfg.get('LSTOSA','COMPRESSEDSUFFIX')
+                                                  )
+                    ) 
 
 #    commandargs = [python,fullcommand]
     commandargs = [fullcommand]
@@ -161,7 +156,7 @@ def dl1_to_dl2(run_str, sequencefile, historyfile):
                     cfg.get('LSTOSA','R0-DL1PREFIX') +
                     'LST-1.1.Run{0}{1}{2}'.format(run_str, 
                                                   cfg.get('LSTOSA','FITSSUFFIX'),
-                                                  cfg.get('LSTOSA','HDF5SUFFIX'),
+                                                  cfg.get('LSTOSA','DATA-HDF5SUFFIX')
                                                   )
                     )
     
@@ -169,6 +164,7 @@ def dl1_to_dl2(run_str, sequencefile, historyfile):
                          nightdir,
                          options.prod_id)
 
+    print(dl2_directory)
     print(datafile)
 
 #    commandargs = [python,fullcommand]
@@ -194,8 +190,9 @@ def dl1_to_dl2(run_str, sequencefile, historyfile):
         error(tag, "Command \"{0}\" failed, {1}"\
          .format(stringify(commandargs), NameError), ValueError)
     else:
-        report.history(run_str, basename(fullcommand),\
-         basename(calibrationfile), basename(pedestalfile), rc, historyfile)
+        report.history(run_str, basename(fullcommand),
+                       basename(datafile), basename(configfile),
+                       rc, historyfile)
         return rc
 
 
