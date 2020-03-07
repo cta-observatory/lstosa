@@ -204,7 +204,7 @@ def datasequencecliparsing(command):
     parser.add_option("-d", "--date", action = "store", type = "string", dest = "date",
                       help = "observation ending date YYYY_MM_DD [default today]")
     parser.add_option("-o", "--outputdir", action = "store", type = "string", dest = "directory",
-                          help = "analysis output directory")
+                      help = "analysis output directory")
     parser.add_option("-v", "--verbose", action = "store_true", dest = "verbose", default = False,
                       help = "make lots of noise for debugging")
     parser.add_option("-w", "--warnings", action = "store_true", dest = "warning", default = False,
@@ -215,6 +215,8 @@ def datasequencecliparsing(command):
                       help = "file for standard error")
     parser.add_option("--stdout", action = "store", type = "string", dest = "stdout",
                       help = "file for standard output")
+    parser.add_option("--prod_id", action = "store", type = str, dest = "prod_id",
+                      help="Set the prod_id variable which defines data directories")
 
     # Parse the command line
     (opts, args) = parser.parse_args()
@@ -228,6 +230,7 @@ def datasequencecliparsing(command):
     options.verbose = opts.verbose
     options.warning = opts.warning
     options.compressed = opts.compressed
+    options.prod_id = opts.prod_id
 
     # The standardhandle has to be declared here, since verbose and warnings are options from the cli
     standardhandle.verbose(tag, "the options are {0}".format(opts))

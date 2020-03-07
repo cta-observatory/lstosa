@@ -93,6 +93,8 @@ def single_process(telescope, process_mode):
 
 
     sequence_list = []
+
+    # Define global variables and create night directory
     options.tel_id = telescope
     options.lstchain_version = 'v' + get_version()
     options.prod_id = options.lstchain_version + '_' + cfg.get('LST1', 'VERSION')
@@ -100,6 +102,7 @@ def single_process(telescope, process_mode):
     options.log_directory = os.path.join(options.directory,'log') 
     os.makedirs(options.log_directory, exist_ok=True)
     print("DIR: ", options.directory)
+
     simulate_save = options.simulate
     is_report_needed = True
 
@@ -144,7 +147,8 @@ def single_process(telescope, process_mode):
     # actually, submitjobs does not need the queue_list nor veto_list
 #    job_list = job.submitjobs(sequence_list, queue_list, veto_list)
 
-    job_list = job.submitjobs(sequence_list)
+    if not options.simulate:
+        job_list = job.submitjobs(sequence_list)
 
 #    combine_muon(job_list)
 #    # Report

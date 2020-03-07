@@ -58,9 +58,9 @@ def historylevel(historyfile, type):
                 elif program == cfg.get('LSTOSA','DL1-DL2'):
                     nonfatalrcs = [int(k) for k in cfg.get('NONFATALRCS','DL1-DL2').split(",")]
                     if exit_status in nonfatalrcs:
-                        level = 2
+                        level = 0
                     else:
-                        level = 3
+                        level = 2
                 elif program == 'calibration':
                     if exit_status == 0:
                         level = 0
@@ -347,6 +347,8 @@ def createjobtemplate(s):
     #commandargs.append('--stdout=sequence_{0}_'.format(s.jobname) + "{0}.out'" + ".format(str(job_id))")
     commandargs.append('-d')
     commandargs.append(options.date)
+    commandargs.append('--prod_id')
+    commandargs.append(options.prod_id)
     
      
     if s.type == 'CALI':
@@ -377,7 +379,7 @@ def createjobtemplate(s):
     if s.type == 'DATA':
        content += "#SBATCH --array=0-{0}\n".format(int(n_subruns)-1)
     content += "#SBATCH --cpus-per-task=1\n"
-    content += "#SBATCH --mem-per-cpu=2G\n"
+    content += "#SBATCH --mem-per-cpu=6G\n"
     content += "#SBATCH -t 0-24:00\n"
     # TODO: Change log to night directory
     content += "#SBATCH -o {0}/slurm.%A_%a.%N.out\n".format(options.log_directory)
