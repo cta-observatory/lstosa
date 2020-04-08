@@ -249,11 +249,8 @@ def setsequencecalibfilenames(sequence_list):
         s.calibration = calfile
         s.pedestal = pedfile
         s.drive    = drivefile
-##############################################################################
-#
-# guesscorrectinputcard
-#
-##############################################################################
+
+
 def guesscorrectinputcard(s):
     '''
     Returns guessed input card for:
@@ -296,11 +293,6 @@ def guesscorrectinputcard(s):
     return(options.configfile)
 
 
-##############################################################################
-#
-# createjobtemplate/
-#
-##############################################################################
 def createjobtemplate(s):
     tag = gettag()
     #   This file contains instruction to be submitted to torque
@@ -377,11 +369,10 @@ def createjobtemplate(s):
     content += "\n"
     content += "#SBATCH -p compute\n"
     if s.type == 'DATA':
-       content += "#SBATCH --array=0-{0}\n".format(int(n_subruns)-1)
+       content += "#SBATCH --array=0-{0}\n".format(int(n_subruns) - 1)
     content += "#SBATCH --cpus-per-task=1\n"
-    content += "#SBATCH --mem-per-cpu=6G\n"
+    content += "#SBATCH --mem-per-cpu=25G\n"
     content += "#SBATCH -t 0-24:00\n"
-    # TODO: Change log to night directory
     content += "#SBATCH -o {0}/slurm.%A_%a.%N.out\n".format(options.log_directory)
     content += "#SBATCH -e {0}/slurm.%A_%a.%N.err\n".format(options.log_directory)
     content += "\n"
@@ -423,12 +414,9 @@ def createjobtemplate(s):
     
     if not options.simulate:
         iofile.writetofile(s.script, content)
-##############################################################################
-#
-# submitjobs
-#
-##############################################################################
-#def submitjobs(sequence_list, queue_list, veto_list):
+
+
+# def submitjobs(sequence_list, queue_list, veto_list):
 def submitjobs(sequence_list):
     tag = gettag()
     import subprocess
@@ -496,7 +484,6 @@ def submitjobs(sequence_list):
 #                        warning(tag, "Wrong parsing of jobid {0} not being an integer, {1}".format(stdout.split('.', 1)[0], e))
 #        job_list.append(s.jobid)
 #        verbose(tag, "{0} {1}".format(s.action, stringify(commandargs)))
-         print("Launching scripts {0} ".format(str(s.script)))
          try:
              verbose(tag,"Launching scripts {0} ".format(str(s.script)))
              stdout = subprocess.check_output(commandargs)
@@ -509,11 +496,8 @@ def submitjobs(sequence_list):
          job_list.append(s.script) 
         
     return job_list
- ##############################################################################
-#
-# getqueuejoblist
-#
-##############################################################################
+
+
 def getqueuejoblist(sequence_list):
     tag = gettag()
 # We have to work out the method to get if the sequence has been submitted or not
@@ -598,12 +582,13 @@ def sumtime(a, b):
         c = '0' + c
     return c
 
-#=============================================================
+
 def date_in_yymmdd(datestring):
-    # This is convert date string(yyyy_mm_dd) from the NightSummary in
-    # (yy_mm_dd) format 
-    # Depending on the time, +1 is added to date to consider the convention of
-    # filenaming based on observation date
+    """
+    This is convert date string(yyyy_mm_dd) from the NightSummary into
+    (yy_mm_dd) format. Depending on the time, +1 is added to date to
+    consider the convention of filenaming based on observation date.
+    """
     from os.path import join
     #date = datestring.split('-')
     #da   = [ch for ch in date[0]]
@@ -617,4 +602,4 @@ def date_in_yymmdd(datestring):
     #   dd = str(int(date[2]))
     #else:
     #   dd   = date[2]
-    return yy,mm,dd
+    return yy, mm, dd
