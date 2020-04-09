@@ -320,6 +320,11 @@ def log_session(class_instance, start):
             "name": session_name,
             "startTime": start,
             "system": system,
+            # OSA specific
+            "script": sys.argv[0],
+            "version": class_instance.version,
+            "obsdate": class_instance.obsdate,
+            "runID": class_instance.runID,
         }
         log_prov_info(log_record)
     return session_id
