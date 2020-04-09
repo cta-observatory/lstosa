@@ -20,7 +20,7 @@ import yaml
 #    get_info_version,
 # )
 
-__all__ = ["provenance"]
+__all__ = ["provenance", "trace"]
 
 _interesting_env_vars = [
     "CONDA_DEFAULT_ENV",
@@ -64,7 +64,7 @@ def setup_logging():
 
 
 def provenance(cls):
-    """A function decorator which decorates the methods with trace function."""
+    """A function decorator which decorates the methods of a class with trace function."""
 
     setup_logging()
     for attr in cls.__dict__:
@@ -74,14 +74,17 @@ def provenance(cls):
 
 
 def trace(func):
-    """Trace and capture provenance info."""
+    """Trace and capture provenance info inside a method /function."""
+
+    setup_logging()
 
     @wraps(func)
     def wrapper(*args, **kwargs):
 
         activity = func.__name__
         activity_id = get_activity_id()
-        class_instance = args[0]
+        # class_instance = args[0]
+        class_instance = func
         class_instance.args = args
         class_instance.kwargs = kwargs
 
