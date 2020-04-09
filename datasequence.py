@@ -10,6 +10,7 @@
 # of the credits goes to the authors of MAGIC OSA.
 ##############################################################################
 from osa.utils.standardhandle import output, verbose, warning, error, stringify, gettag
+from provenance import trace
 from sys import exit
 
 __all__ = ["datasequence", "r0_to_dl1", 'dl1_to_dl2']
@@ -63,7 +64,8 @@ def datasequence(args):
     return rc
 
 
-def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, ucts_t0_dragon, dragon_counter0, ucts_t0_tib, tib_counter0, run_str, sequencefile, historyfile):
+@trace
+def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_str, sequencefile, historyfile):
     """
     Perform low and high-level calibration to raw camera images. 
     Apply calibration and obtain shower parameters. 
