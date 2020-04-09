@@ -77,42 +77,30 @@ def historylevel(historyfile, type):
                    
     print(level,exit_status) 
     return level, exit_status
-##############################################################################
-#
-# preparejobs
-#
-##############################################################################
-def preparejobs(sequence_list, subrun_list):
+
+
+def preparejobs(sequence_list):
     tag = gettag()
     for s in sequence_list:
         verbose(tag, "Creating sequence.txt and sequence.sh for sequence {0}".format(s.seq))
         createsequencetxt(s, sequence_list)
         createjobtemplate(s)
-##############################################################################
-#
-# preparejobs
-#
-##############################################################################
+
+
 def preparestereojobs(sequence_list):
     tag = gettag()
     for s in sequence_list:
         verbose(tag, "Creating sequence.sh for sequence {0}".format(s.seq))
         createjobtemplate(s)
-##############################################################################
-#
-# preparejobs
-#
-##############################################################################
+
+
 def preparedailyjobs(sequence_list):
     tag = gettag()
     for s in sequence_list:
         verbose(tag, "Creating sequence.sh for source {0}".format(s.name))
         createjobtemplate(s)
-##############################################################################
-#
-# setrunfromparent
-#
-##############################################################################
+
+
 def setrunfromparent(sequence_list):
     tag = gettag()
     # This is a dictionary, seq -> parent's run number
@@ -524,11 +512,8 @@ def getqueuejoblist(sequence_list):
             setqueuevalues(queue_list, sequence_list)
     print("DEBUG",command)
     return queue_list
-##############################################################################
-#
-# setqueuevalues
-#
-##############################################################################
+
+
 def setqueuevalues(queue_list, sequence_list):
     tag = gettag()
     for s in sequence_list:

@@ -9,8 +9,7 @@
 #   J. L. Contrera <>
 # Last modified on:
 # Credits: This script is written and modified following scripts from 
-# MAGIC OSA. Hence, a #big portion
-# of the credits goes to the authors of MAGIC OSA.
+# MAGIC OSA. Hence, a big portion of the credits goes to its authors.
 ##############################################################################
 # from utils import standardhandle
 # from .. import utils 
@@ -32,13 +31,7 @@ __all__ = ["sequencer", "single_process", "stereo_process"]
 # def sequencer():
 
 def main():
-
-    """
-
-    Runs the sequencer
-
-    """
-
+    """Runs the sequencer"""
     tag = gettag()
     from osa.reports.report import start
     from osa.configs import config
@@ -56,14 +49,9 @@ def main():
         sequence_LST1 = single_process('LST1', process_mode)
         sequence_LST2 = single_process('LST2', process_mode)
         sequence_ST = stereo_process('ST', sequence_M1, sequence_M2)
-##############################################################################
-#
-# single_process
-#
-##############################################################################
+
 
 def single_process(telescope, process_mode):
-
     """
     Runs the single process for a single telescope
     
@@ -137,7 +125,7 @@ def single_process(telescope, process_mode):
 #    dot.writeworkflow(sequence_list)
 
     # Adds the scripts
-    job.preparejobs(sequence_list, subrun_list)
+    job.preparejobs(sequence_list)
     
 #    queue_list = job.getqueuejoblist(sequence_list)
 #    veto_list = veto.getvetolist(sequence_list)
@@ -163,11 +151,8 @@ def single_process(telescope, process_mode):
 #    options.simulate = simulate_save
 
     return sequence_list
-##############################################################################
-#
-# stereo_process
-#
-##############################################################################
+
+
 # def stereo_process(telescope, s1_list, s2_list):
 #    tag = gettag()
 #    import extract
@@ -201,11 +186,6 @@ def single_process(telescope, process_mode):
 #    options.directory = None
 #    return sequence_list
 
-##############################################################################
-#
-# updatelstchainstatus
-#
-##############################################################################
 
 def updatelstchainstatus(seq_list):
     tag = gettag()
@@ -220,11 +200,6 @@ def updatelstchainstatus(seq_list):
             s.dl2status = int(Decimal( getlstchainforsequence(s, 'DL1-DL2')  * 100 ) )
             s.dl3status = int(Decimal( getlstchainforsequence(s, 'DL2-DL3')  * 100 ) )
 
-##############################################################################
-#
-# getlstchainforsequence
-#
-##############################################################################
 
 def getlstchainforsequence(s, program):
     tag = gettag()
@@ -239,11 +214,8 @@ def getlstchainforsequence(s, program):
     numberoffiles = len(files)
     verbose(tag, "Found {0} {1}ed for sequence name {2}".format(numberoffiles, program, s.jobname))
     return numberoffiles
-##############################################################################
-#
-# reportsequences
-#
-##############################################################################
+
+
 def reportsequences(seqlist):
     tag = gettag()
     import config
@@ -275,11 +247,8 @@ def reportsequences(seqlist):
         matrix.append(row_list)
     padding = int(config.cfg.get('OUTPUT', 'PADDING')) # space chars inserted between columnns
     prettyoutputmatrix(matrix, padding)
-##############################################################################
-#
-# insert_if_new_activity_db
-#
-##############################################################################
+
+
 def insert_if_new_activity_db(sequence_list):
     tag = gettag()
     import config
@@ -311,11 +280,8 @@ def insert_if_new_activity_db(sequence_list):
             assignments['END'] = None 
             conditions = {}
             insert_db(server, user, database, table, assignments, conditions)
-##############################################################################
-#
-# updatesequencedb
-#
-##############################################################################
+
+
 def updatesequencedb(seqlist):
     tag = gettag()
     import config
@@ -518,13 +484,10 @@ def prettyoutputmatrix(m, paddingspace):
                 # Should be a string, left aligned
                 stringrow += "{0}{1}{2}".format(col, lpadding, rpadding)
         output(tag, stringrow)
-##############################################################################
-#
-# MAIN
-#
-##############################################################################
-""" Sequencer called as a script does the full job """
+
+
 if __name__ == '__main__':
+    """ Sequencer called as a script does the full job """
     tag = gettag()
     import sys
     from osa.utils import options, cliopts
