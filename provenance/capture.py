@@ -14,6 +14,7 @@ from pathlib import Path
 import psutil
 import yaml
 from .utils import parse_variables
+from .io import read_prov
 
 # gammapy specific
 # from gammapy.scripts.info import (
@@ -45,12 +46,12 @@ LOGGER_FILE = CONFIG_PATH / "logger.yaml"
 definition = yaml.safe_load(SCHEMA_FILE.read_text())
 provconfig = yaml.safe_load(LOGGER_FILE.read_text())
 logger = logging.getLogger('provLogger')
-
+LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 PROV_PREFIX = provconfig["PREFIX"]
 SUPPORTED_HASH_TYPE = "md5"
 
 # global variables
-sessions = []
+sessions = set()
 traced_entities = {}
 
 
@@ -308,12 +309,20 @@ def log_prov_info(prov_dict):
 def log_session(class_instance, start):
     """Log start of a session."""
 
-    session_id = abs(hash(class_instance))
+    # OSA specific
+    # prov session is outside scripting
+    try:
+        lines = read_prov(logname=LOG_FILENAME)
+        session_id = lines[0]["session_id"]
+        sessions.add(session_id)
+    except (FileNotFoundError, IndexError, KeyError):
+        session_id = abs(hash(class_instance))
+
     module_name = class_instance.__class__.__module__
-    class_name = class_instance.__class__.__name__
-    session_name = f"{module_name}.{class_name}"
+    class_name = class_instance.__name__
+    session_name = f"{class_name}"
     if session_id not in sessions:
-        sessions.append(session_id)
+        sessions.add(session_id)
         system = get_system_provenance()
         log_record = {
             "session_id": session_id,
