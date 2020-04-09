@@ -13,6 +13,8 @@ from functools import wraps
 from pathlib import Path
 import psutil
 import yaml
+from .utils import parse_variables
+
 # gammapy specific
 # from gammapy.scripts.info import (
 #    get_info_dependencies,
@@ -87,6 +89,10 @@ def trace(func):
         class_instance = func
         class_instance.args = args
         class_instance.kwargs = kwargs
+
+        # OSA specific
+        # variables parsing
+        class_instance = parse_variables(class_instance)
 
         # provenance capture before execution
         derivation_records = get_derivation_records(class_instance, activity)
