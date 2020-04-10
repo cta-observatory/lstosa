@@ -52,242 +52,88 @@
 #
 
 activities:
-
-    get_observations:
+    r0_to_dl1:
         description:
-            "Fetch observations from datastore and list of identifiers filtering by optional spatial/temporal criteria."
+            "Create DL1 files for an observation run and subrun"
         parameters:
-            - name: datastore_path
-              description: "DataStore file path as string"
-              value: config.observations.datastore.__str__()
-            - name: obslist_path
-              description: "Observations list file path as string"
-              value: config.observations.obs_file
-            - name: obs_ids
-              description: "Observations list of identifiers"
-              value: config.observations.obs_ids
-            - name: obs_cone
-              description: "Conesearch criteria to select observations"
-              value: config.observations.obs_cone.json()
-            - name: obs_time
-              description: "Time criteria to select observations"
-              value: config.observations.obs_time.json()
+            - name: ObservationRun
+              description: "Observation run number"
+              value: ObservationRun
+            - name: ObservationSubRun
+              description: "Observation subrun number"
+              value: ObservationSubRun
+            - name: CalibrationRun
+              description: "Calibration run number"
+              value: CalibrationRun
+            - name: PedestalRun
+              description: "Pedestal run number"
+              value: PedestalRun
+            - name: ProdID
+              description: "Production ID"
+              value: ProdID
         usage:
-            - role: datastore
-              description: "DataStore object file"
-              entityName: DataStore
-              value: config.observations.datastore
-            - role: obslist_file
-              description: "Observations list file"
-              entityName: DataStore
-              value: config.observations.obs_file
+            - role: "Pedestal file"
+              description: "Pedestal file used"
+              entityName: FITSFile
+              value: PedestalFile
+              filepath: /fefs/aswg/data/real/calibration/20200218/v00/drs4_pedestal.Run2005.0000.fits
+            - role: "Coefficients calibration file"
+              description: "Coefficients calibration file"
+              entityName: HDF5File
+              value: CoefficientsCalibrationFile
+              filepath: /fefs/aswg/data/real/calibration/20200218/v00/calibration.Run2006.0000.hdf5
+            - role: "Time calibration file"
+              description: "Time calibration file"
+              entityName: HDF5File
+              value: TimeCalibrationFile
+              filepath: /fefs/aswg/data/real/calibration/20191124/v00/time_calibration.Run1625.0000.hdf5
+            - role: "Pointing file"
+              description: "Pointing filename for DL1"
+              entityName: TextFile
+              value: PointingFile
+              filepath: /fefs/home/lapp/DrivePositioning/drive_log_20_02_18.txt
+            - role: "Configuration file"
+              description: "Configuration file"
+              entityName: JSONFile
+              value: AnalysisConfigFile
+              filepath: /fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/data/lstchain_standard_config.json
         generation:
-            - role: observations_selected
-              description: "Observations selected"
-              entityName: Observations
-              value: observations
-              has_members:
-                  list: observations._observations
-                  entityName: Observation
-                  id: obs_id
-                  location: _events_hdu.base_dir
-                  namespace: gamma-events
+            - role: "DL1 subrun dataset"
+              description: "DL1 dataset produced from a given observation subrun"
+              entityName: HDF5File
+              value: DL1SubrunDataset
+              filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST1.1.Run2006.0001.fits.hdf5
 
-    get_datasets:
-        description: "Produce reduced datasets"
-        parameters:
-            - name: stack
-              description: "Stack datasets flag"
-              value: config.datasets.stack
-            - name: dataset-type
-              description: "Datasets type"
-              value: config.datasets.type.json()
-            - name: geom
-              description: "Geometry parameters"
-              value: config.datasets.geom.json()
-            - name: maps
-              description: "Maps selected"
-              value: config.datasets.map_selection.json()
-            - name: background
-              description: "Background parameters"
-              value: config.datasets.background.json()
-            - name: safe-mask
-              description: "Safe mask applied"
-              value: config.datasets.safe_mask.json()
-            - name: on-region
-              description: "On region"
-              value: config.datasets.on_region.json()
-            - name: containment_correction
-              description: "Containment_correction used in spectrum extraction"
-              value: config.datasets.containment_correction
-        usage:
-            - role: observations_selected
-              description: "Observations selected"
-              entityName: Observations
-              value: observations
-            - role: exclusion_mask
-              description: "Exclusion mask for spectral background estimation"
-              entityName: Mask
-              location: config.datasets.background.exclusion
-        generation:
-            - role: reduced_datasets
-              description: "Datasets produced in the reduction process"
-              entityName: Datasets
-              value: datasets
-              has_members:
-                  list: datasets._datasets
-                  entityName: Dataset
-                  id: name
-              has_progenitors:
-                  entityName: Observations
-                  value: observations
-    read_models:
-        description: "Read and set models from filename"
-        parameters:
-            - name: filename
-              description: "File path with the YAML model description"
-              value: kwargs.path
-        usage:
-        generation:
-            - role: initial_models
-              description: "Parametric composed models"
-              entityName: Models
-              value: models
-
-    set_models:
-        description:
-            "Read the model from YAML string or model instance"
-        parameters:
-            - name: models
-              description: "Models to set"
-              value: kwargs.models
-        usage:
-            - role: model_read
-              entityName: Models
-              location: models
-        generation:
-            - role: initial_models
-              description: "Parametric composed models"
-              entityName: Models
-              value: models
-
-    run_fit:
-        description: "Fitting reduced data sets to model"
-        parameters:
-            - name: fit_range
-              description: "Energy range where to perform the fit"
-              value: config.fit.fit_range.json()
-            - name: optimize_opts
-              description: "Options passed to `Fit.optimize`."
-              value: kwargs.optimize_opts
-        usage:
-            - role: datasets
-              description: "Datasets produced"
-              entityName: Datasets
-              value: datasets
-            - role: initial_models
-              description: "Parametric composed models"
-              entityName: Models
-              value: models
-        generation:
-            - role: fit_object
-              description: "Object that stores fitting parameters"
-              entityName: Fit
-              value: fit
-            - role: fit_result
-              description: "Object that stores fitting results parameters"
-              entityName: FitResult
-              value: fit_result
-            # TODO this is a derived model
-            - role: fitted_model
-              description: "Parametric composed models fitted on datasets"
-              entityName: Models
-              value: models
-
-    get_flux_points:
-        description: "Calculate flux points"
-        parameters:
-            - name: source
-              description: "Source name parameter in the model component"
-              value: config.flux_points.source
-            - name: fp_binning
-              description: "Energy binning"
-              value: config.flux_points.energy.json()
-            - name: fp_params
-              description: "Flux points parameters"
-              value: config.flux_points.params
-        usage:
-            - role: fitted_model
-              description: "Parametric composed models fitted on datasets"
-              entityName: Models
-              value: model
-            - role: datasets
-              description: "Datasets with fitted model where to calculate the flux points"
-              entityName: Datasets
-              value: datasets
-            - role: fitted_model
-              description: "Parametric composed model"
-              entityName: SkyModel
-              value: models
-        generation:
-            - role: flux_points_dataset
-              description: "Calculated flux points dataset"
-              entityName: FluxPointsDataset
-              value: flux_points
+            # - role: "DL1 Collection run"
+            #   description: "Set of DL1 files for a given run"
+            #   entityName: DL1CollectionRun
+            #   value: DL1CollectionRun
+            #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
+            #   size: 128
 
 entities:
     PythonObject:
         description: "A Python variable in memory"
         type: PythonObject
-    DataStore:
-        description: "A directory pointing to a collection of files on the disk"
-        docurl: https://docs.gammapy.org/dev/api/gammapy.data.DataStore
-        type: FileCollection
-        index: "obs-index.fits.gz"
-    Observation:
-        description: "An observation from the DataStore with a unique obs_id"
-        docurl: https://docs.gammapy.org/dev/api/gammapy.data.DataStoreObservation
-        type: File
-        contentType: application/fits
-    Observations:
-        description: "A list of observations"
-        docurl: https://docs.gammapy.org/dev/api/gammapy.data.Observations
-        type: PythonObject
-    Dataset:
-        description: "A Dataset (i.e. spectrum, map)"
-        docurl: https://docs.gammapy.org/dev/api/gammapy.modeling.Dataset
-        type: PythonObject
-    Datasets:
-        description: "A list of datasets (i.e. spectrum, map)"
-        docurl: https://docs.gammapy.org/dev/api/gammapy.modeling.Datasets
-        type: PythonObject
-    Models:
-        description: "A generic SkyModel"
-        docurl: https://docs.gammapy.org/dev/api/gammapy.modeling.models.Models
-        type: PythonObject
-    Fit:
-        description: "A Fit object"
-        docurl: https://docs.gammapy.org/dev/api/gammapy.modeling.Fit
-        type: PythonObject
-    FitResult:
-        description: "A FitResult object"
-        docurl: https://docs.gammapy.org/dev/api/gammapy.modeling.FitResult
-        type: PythonObject
-    FluxPointsDataset:
-        description: "A FluxPointsDataset object"
-        docurl: https://docs.gammapy.org/dev/api/gammapy.spectrum.FluxPointsDataset
-        type: PythonObject
     File:
         description: "A File on the disk"
         type: File
+    TextFile:
+        description: "A TXT File on the disk"
+        type: File
+        contentType: text/plain
     FITSFile:
         description: "A FITS File on the disk"
         type: File
         contentType: application/fits
-    Mask:
-        description: "A 2D or 3D mask as FITS file"
+    HDF5File:
+        description: "A HDF5 File on the disk"
         type: File
-        contentType: application/fits
+        contentType: application/x-hdf
+    JSONFile:
+        description: "A JSON File on the disk"
+        type: File
+        contentType: application/json
     YAMLFile:
         description: "A YAML File on the disk"
         type: File
