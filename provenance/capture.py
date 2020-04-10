@@ -331,9 +331,9 @@ def log_session(class_instance, start):
             "system": system,
             # OSA specific
             "script": sys.argv[0],
-            "version": class_instance.version,
-            "obsdate": class_instance.obsdate,
-            "runID": class_instance.runID,
+            "software_version": class_instance.SoftwareVersion,
+            "observation_date": class_instance.ObservationDate,
+            "observation_run": class_instance.ObservationRun,
         }
         log_prov_info(log_record)
     return session_id
