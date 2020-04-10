@@ -17,5 +17,6 @@ loggers:
         propagate: False
 disable_existing_loggers: False
 PREFIX: __PROV__
-HASH_TYPE: md5
+HASH_METHOD: md5
+HASH_BUFFER: path
 capture: True
