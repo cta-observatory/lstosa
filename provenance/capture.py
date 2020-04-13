@@ -306,10 +306,13 @@ def get_item_properties(nested, item):
                 logger.warning(f"{repr(ex)} for {value}")
     if value and "id" not in properties:
         properties["id"] = get_entity_id(value, item)
-        if "File" in entity_type and properties["id"] != value:
-            method = get_hash_method()
-            properties["hash"] = properties["id"]
-            properties["hash_type"] = method
+        if "File" in entity_type:
+            properties["filepath"] = value
+            if properties["id"] != value:
+                method = get_hash_method()
+                properties["hash"] = properties["id"]
+                properties["hash_type"] = method
+
     if entity_name:
         properties["name"] = entity_name
         for attr in ["type", "contentType"]:
