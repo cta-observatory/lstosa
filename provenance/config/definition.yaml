@@ -72,6 +72,11 @@ activities:
               description: "Production ID"
               value: ProdID
         usage:
+            - role: "Observation subrun"
+              description: "Observation subrun used"
+              entityName: FITSFile
+              value: R0SubrunDataset
+              # filepath: /fefs/aswg/data/real/R0/20200218/LST1.1Run2006.0001.fits.fz
             - role: "Pedestal file"
               description: "Pedestal file used"
               entityName: FITSFile
