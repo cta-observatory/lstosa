@@ -41,6 +41,10 @@ class SubrunObj(RunObj):
         self.timestamp = None
         self.time = None
         self.date = None
+        self.ucts_t0_dragon = None
+        self.dragon_counter0 = None
+        self.ucts_t0_tib = None
+        self.tib_counter0 = None
 
 class Sequence(RunObj):
     def __init__(self):

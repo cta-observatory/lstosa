@@ -28,6 +28,10 @@ def extractsubruns(nightsummary):
             sr.date = str(word[3])
             sr.time = str(word[4])
             sr.timestamp = datetime.strptime(str(word[3] + ' ' + word[4]), "%Y-%m-%d %H:%M:%S")
+            sr.ucts_t0_dragon = str(word[6])
+            sr.dragon_counter0 = str(word[7])
+            sr.ucts_t0_tib = str(word[9])
+            sr.tib_counter0 = str(word[10])
             try:
                 sr.runobj = run_to_obj[current_run]
             except:

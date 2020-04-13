@@ -132,6 +132,11 @@ def createsequencetxt(s, sequence_list):
     ped = ''
     cal = ''
     dat = ''
+#   These fields are written on sequenceXX.py
+#    ucts_t0_dragon = s.subrun_list[0].ucts_t0_dragon
+#    dragon_counter0 = s.subrun_list[0].dragon_counter0
+#    ucts_t0_tib = s.subrun_list[0].ucts_t0_tib
+#    tib_counter0 = s.subrun_list[0].tib_counter0
     if s.type == 'CALI':
         ped = formatrunsubrun(s.previousrun, 1)
         cal = formatrunsubrun(s.run, 1)
@@ -155,6 +160,11 @@ def createsequencetxt(s, sequence_list):
     content += "PedRuns: {0}\n".format(ped)
     content += "CalRuns: {0}\n".format(cal)
     content += "DatRuns: {0}\n".format(dat)
+#   These fields are written on sequenceXX.py
+#    content += "ucts_t0_dragon: {0}\n".format(ucts_t0_dragon)
+#    content += "dragon_counter0: {0}\n".format(dragon_counter0)
+#    content += "ucts_t0_tib: {0}\n".format(ucts_t0_tib)
+#    content += "tib_counter0: {0}\n".format(tib_counter0)
 
     if not options.simulate:
         iofile.writetofile(f, content)
@@ -343,7 +353,14 @@ def createjobtemplate(s):
         commandargs.append(os.path.join(calibdir, nightdir, version, 'time_'+ s.calibration))
         commandargs.append(os.path.join(drivedir, s.drive))
         pedfile = s.pedestal
-
+        ucts_t0_dragon = s.subrun_list[0].ucts_t0_dragon
+        commandargs.append(ucts_t0_dragon)
+        dragon_counter0 = s.subrun_list[0].dragon_counter0
+        commandargs.append(dragon_counter0)
+        ucts_t0_tib = s.subrun_list[0].ucts_t0_tib
+        commandargs.append(ucts_t0_tib)
+        tib_counter0 = s.subrun_list[0].tib_counter0
+        commandargs.append(tib_counter0)
 
 
     #commandargs.append(str(s.run).zfill(5))

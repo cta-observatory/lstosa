@@ -27,7 +27,15 @@ def datasequence(args):
     pedestalfile = args[1]
     time_calibration = args[2]
     drivefile = args[3]
-    run_str = args[4]
+
+#  New arguments to build dragon time 
+    ucts_t0_dragon = args[4]
+    dragon_counter0 = args[5]
+    ucts_t0_tib = args[6]
+    tib_counter0 = args[7]
+
+
+    run_str = args[8]
 
     textsuffix = cfg.get('LSTOSA', 'TEXTSUFFIX')
     historysuffix = cfg.get('LSTOSA', 'HISTORYSUFFIX')
@@ -43,8 +51,7 @@ def datasequence(args):
     verbose(tag, "Going to level {0}".format(level))
 
     if level == 3:
-        rc = r0_to_dl1(calibrationfile, pedestalfile, time_calibration,
-                       drivefile, run_str, sequencefile, historyfile) 
+        rc = r0_to_dl1(calibrationfile, pedestalfile, time_calibration,drivefile, ucts_t0_dragon, dragon_counter0, ucts_t0_tib, tib_counter0, run_str, sequencefile, historyfile) 
         level -= 1
         verbose(tag, "Going to level {0}".format(level))
     if level == 2:
@@ -56,7 +63,7 @@ def datasequence(args):
     return rc
 
 
-def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_str, sequencefile, historyfile):
+def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, ucts_t0_dragon, dragon_counter0, ucts_t0_tib, tib_counter0, run_str, sequencefile, historyfile):
     """
     Perform low and high-level calibration to raw camera images. 
     Apply calibration and obtain shower parameters. 
@@ -106,6 +113,14 @@ def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_st
     commandargs.append(time_calibration)
     commandargs.append('-pointing')
     commandargs.append(drivefile)
+    commandargs.append('--ucts_t0_dragon')
+    commandargs.append(ucts_t0_dragon)
+    commandargs.append('--dragon_counter0')
+    commandargs.append(dragon_counter0)
+    commandargs.append('--ucts_t0_tib')
+    commandargs.append(ucts_t0_tib)
+    commandargs.append('--tib_counter0')
+    commandargs.append(tib_counter0)
 #    commandargs.append('--drive=' + drivefile)
     
     print("fullcommand",python,commandargs)    

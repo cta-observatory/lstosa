@@ -237,14 +237,14 @@ def datasequencecliparsing(command):
     standardhandle.verbose(tag, "the argument is {0}".format(args))
 
     # Checking arguments
-    if len(args) != 6:
+    if len(args) != 10:
         standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
     # Mapping the telescope argument to an option parameter (it might become an option in the future)
-    elif args[5] == 'ST':
+    elif args[9] == 'ST':
         standardhandle.error(tag, "not yet ready for telescope {0}".format(options.options.tel_id), 2)
-    elif args[5] != 'LST1' and args[5] != 'LST2':
+    elif args[9] != 'LST1' and args[9] != 'LST2':
         standardhandle.error(tag, "wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
-    options.tel_id = args[5]
+    options.tel_id = args[9]
 
     # Setting the default date and directory if needed
     options.configfile = set_default_configfile_if_needed(command)
