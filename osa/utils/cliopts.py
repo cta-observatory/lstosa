@@ -507,7 +507,7 @@ def provprocessparsing():
     options.out = args[1]
     options.src = opts.provfile
 
-    return options
+    return options, tag
 
 
 ##############################################################################

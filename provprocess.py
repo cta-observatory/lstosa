@@ -46,24 +46,24 @@ def make_graph(filepath):
 
 
 if __name__ == "__main__":
-    from osa.utils import cliopts
-    options = cliopts.provprocessparsing()
+    from osa.utils import cliopts, standardhandle
+    options, tag = cliopts.provprocessparsing()
 
     # check options.src is a file
-    #
-    #
+    if not Path(options.src).exists():
+        standardhandle.error(tag, f"file {options.src} does not exist", 2)
 
-    # check options.out is a valid folder
+    # check options.out is a folder
+    if not Path(options.out).exists():
+        standardhandle.error(tag, f"path {options.out} does not exist", 2)
+
     # make folder log/ if does not exist
-    # add log/ to options.out = /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00
-    #
-    #
-    options.out = Path(options.out)
+    options.out = Path(options.out) / "log"
+    if not options.out.exists():
+        options.out.mkdir()
 
     # process prov file
     processed_lines = parse_lines_dl1(read_prov(logname=options.src), options.out)
-    #
-    #
 
     # build base_filename with options.run and options.out
     #
