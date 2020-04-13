@@ -491,19 +491,21 @@ def rawcopycliparsing(command):
 ##############################################################################
 def provprocessparsing():
     tag = standardhandle.gettag()
-    message = "usage: %prog <RUN_NUMBER> <SOURCE_FILE> <DESTINATION_FOLDER>"
+    message = "usage: %prog [-p PROVFILE] <RUN_NUMBER> <DESTINATION_FOLDER>"
     parser = OptionParser(usage=message)
+    parser.add_option("-p", "--prov", action="store", dest="provfile", default="prov.log",
+                      help="provenance file to process [default prov.log]")
 
     # Parse the command line
     (opts, args) = parser.parse_args()
     # Checking arguments
-    if len(args) != 3:
+    if len(args) != 2:
         standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
 
     # Set global variables
     options.run = args[0]
-    options.src = args[1]
-    options.out = args[2]
+    options.out = args[1]
+    options.src = opts.provfile
 
     return options
 

@@ -49,6 +49,10 @@ if __name__ == "__main__":
     from osa.utils import cliopts
     options = cliopts.provprocessparsing()
 
+    # check options.src is a file
+    #
+    #
+
     # check options.out is a valid folder
     # make folder log/ if does not exist
     # add log/ to options.out = /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00
@@ -56,6 +60,7 @@ if __name__ == "__main__":
     #
     options.out = Path(options.out)
 
+    # process prov file
     processed_lines = parse_lines_dl1(read_prov(logname=options.src), options.out)
     #
     #
@@ -63,7 +68,6 @@ if __name__ == "__main__":
     # build base_filename with options.run and options.out
     #
     #
-
     base_filename = ""
     json_filepath = options.out / f"{base_filename}.json"
     png_filepath = options.out / f"{base_filename}.png"
