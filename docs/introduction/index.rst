@@ -20,5 +20,5 @@ The basic scheme is shown in the :numref:`data flow`:
 
 .. figure:: LSTOSA_flow.png
 
-    Data flow scheme at the MAGIC site.
+    Data flow scheme of LST onsite analysis.
 
