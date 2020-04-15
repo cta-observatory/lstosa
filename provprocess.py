@@ -166,3 +166,9 @@ if __name__ == "__main__":
         provdoc.serialize(str(json_filepath), indent=4)
     except Exception as ex:
         standardhandle.error(tag, f"problem while creating json: {ex}", 2)
+
+    # make graph
+    try:
+        provdoc2png(provdoc, str(png_filepath))
+    except Exception as ex:
+        standardhandle.error(tag, f"problem while creating graph: {ex}", 2)

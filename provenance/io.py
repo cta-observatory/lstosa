@@ -16,7 +16,7 @@ provconfig = yaml.safe_load(LOGGER_FILE.read_text())
 PROV_PREFIX = provconfig["PREFIX"]
 DEFAULT_NS = "id"      # "logprov"
 
-__all__ = ["provlist2provdoc", "provdoc2svg", "read_prov"]
+__all__ = ["provlist2provdoc", "provdoc2png", "read_prov"]
 
 
 def provlist2provdoc(provlist):
@@ -183,22 +183,18 @@ def provlist2provdoc(provlist):
     return pdoc
 
 
-def provdoc2svg(provdoc, filename):
+def provdoc2png(provdoc, filename):
     """Create a graph of a provenance workflow session."""
 
-    try:
-        dot = prov_to_dot(
-            provdoc,
-            use_labels=True,
-            show_element_attributes=True,
-            show_relation_attributes=True,
-        )
-        svg_content = dot.create(format="svg")
-    except InvocationException as e:
-        svg_content = ""
-        print(f"problem while creating svg content: {repr(e)}")
+    dot = prov_to_dot(
+        provdoc,
+        use_labels=True,
+        show_element_attributes=True,
+        show_relation_attributes=True,
+    )
+    content = dot.create(format="png")
     with open(filename, "wb") as f:
-        f.write(svg_content)
+        f.write(content)
 
 
 def read_prov(logname="prov.log", start=None, end=None):
