@@ -109,7 +109,7 @@ activities:
             #   value: R0Collection
             #   filepath: /fefs/aswg/data/real/R0/20200218
             #   size: 128
-            -
+
         generation:
             - role: "DL1 subrun dataset"
               description: "DL1 dataset produced from a given observation subrun"
