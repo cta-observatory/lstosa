@@ -40,7 +40,11 @@ def provlist2provdoc(provlist):
                     "prov:type": "ExecutionSession",
                     "prov:generatedAtTime": provdict.pop("startTime"),
                     # 'configFile': provdict.pop('configFile'),
-                    'system': str(provdict.pop('system'))[:50],
+                    # "system": str(provdict.pop('system')),
+                    "script": provdict.pop("script"),
+                    "software_version": provdict.pop("software_version"),
+                    "observation_date": provdict.pop("observation_date"),
+                    "observation_run": provdict.pop("observation_run"),
                 }
             )
         # activity
