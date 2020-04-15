@@ -53,15 +53,19 @@ def parse_lines_dl1(prov_lines, out, tag_handle):
         session_id = line.get("session_id", "")
         activity_id = line.get("activity_id", "")
         filepath = line.get("filepath", "")
-        used_role = line.get("generated_role", "")
+        used_role = line.get("used_role", "")
         generated_role = line.get("generated_role", "")
         parameters = line.get("parameters", "")
         name = line.get("name", "")
 
         # remove subruns info
         if "data/real/R0/" in filepath or used_role == "Observation subrun":
+            if filepath:
+                r0filepath = filepath
             remove = True
         if "data/real/DL1/" in filepath or generated_role == "DL1 subrun dataset":
+            if filepath:
+                dl1filepath = filepath
             remove = True
         if parameters:
             del line["parameters"]["ObservationSubRun"]
@@ -79,6 +83,42 @@ def parse_lines_dl1(prov_lines, out, tag_handle):
         # copy used files
         if filepath and not remove:
             copy_used_file(filepath, out, tag_handle)
+
+        # keep endtime
+        # append collection run used and generated
+        if endTime:
+            if i == len(prov_lines):
+                remove = False
+                #
+                entity_id = get_file_hash(r0filepath, buffer="path")
+                r0filepath = r0filepath.replace(PurePath(r0filepath).name, "")
+                used = {"entity_id": entity_id}
+                used.update({"name": "R0Collection"})
+                used.update({"type": "SetCollection"})
+                used.update({"size": size})
+                used.update({"filepath": r0filepath})
+                working_lines.append(used)
+                used = {"activity_id": id_activity_run}
+                used.update({"used_id": entity_id})
+                used.update({"used_role": "R0 Collection"})
+                working_lines.append(used)
+                #
+                entity_id = get_file_hash(dl1filepath, buffer="path")
+                dl1filepath = dl1filepath.replace(PurePath(dl1filepath).name, "")
+                generated = {"entity_id": entity_id}
+                generated.update({"name": "DL1Collection"})
+                generated.update({"type": "SetCollection"})
+                generated.update({"size": size})
+                generated.update({"filepath": dl1filepath})
+                working_lines.append(generated)
+                generated = {"activity_id": id_activity_run}
+                generated.update({"generated_id": entity_id})
+                generated.update({"generated_role": "DL1 Collection"})
+                working_lines.append(generated)
+
+            else:
+                remove = True
+
         if not remove:
             working_lines.append(line)
 
@@ -112,7 +152,7 @@ if __name__ == "__main__":
     if not options.out.exists():
         options.out.mkdir()
 
-    # process prov file
+    # process provenance file
     processed_lines = parse_lines_dl1(read_prov(logname=options.src), options.out, tag)
 
     # build base_filename with options.run and options.out

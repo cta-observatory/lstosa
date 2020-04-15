@@ -102,6 +102,14 @@ activities:
               entityName: JSONFile
               value: AnalysisConfigFile
               # filepath: /fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/data/lstchain_standard_config.json
+
+            # - role: "R0 Collection"
+            #   description: "Set of subruns for a given run"
+            #   entityName: R0Collection
+            #   value: R0Collection
+            #   filepath: /fefs/aswg/data/real/R0/20200218
+            #   size: 128
+            -
         generation:
             - role: "DL1 subrun dataset"
               description: "DL1 dataset produced from a given observation subrun"
@@ -109,10 +117,10 @@ activities:
               value: DL1SubrunDataset
               # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST1.1.Run2006.0001.fits.hdf5
 
-            # - role: "DL1 Collection run"
+            # - role: "DL1 Collection"
             #   description: "Set of DL1 files for a given run"
-            #   entityName: DL1CollectionRun
-            #   value: DL1CollectionRun
+            #   entityName: Dl1Collection
+            #   value: DL1Collection
             #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
             #   size: 128
 
@@ -120,9 +128,6 @@ entities:
     PythonObject:
         description: "A Python variable in memory"
         type: PythonObject
-    File:
-        description: "A File on the disk"
-        type: File
     TextFile:
         description: "A TXT File on the disk"
         type: File
@@ -143,3 +148,9 @@ entities:
         description: "A YAML File on the disk"
         type: File
         contentType: application/x-yaml
+    R0Collection:
+        description: "Set of subruns for a given run"
+        type: SetCollection
+    DL1Collection:
+        description: "Set of DL1 files for a given run"
+        type: SetCollection
