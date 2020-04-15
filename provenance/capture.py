@@ -23,7 +23,7 @@ from .io import read_prov
 #    get_info_version,
 # )
 
-__all__ = ["provenance", "trace"]
+__all__ = ["provenance", "trace", "get_file_hash", "get_activity_id"]
 
 _interesting_env_vars = [
     "CONDA_DEFAULT_ENV",
@@ -171,15 +171,13 @@ def get_hash_buffer():
     return buffer
 
 
-def get_file_hash(path):
+def get_file_hash(path, buffer=get_hash_buffer(), method=get_hash_method()):
     """Helper function that returns hash of the content of a file."""
 
-    buffer = get_hash_buffer()
-    method = get_hash_method()
     full_path = Path(os.path.expandvars(path))
 
     if full_path.is_file():
-        hash_func = getattr(hashlib, "md5")()
+        hash_func = getattr(hashlib, method)()
         if buffer == "content":
             block_size = 65536
             with open(full_path, "rb") as f:
