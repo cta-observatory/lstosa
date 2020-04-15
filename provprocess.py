@@ -40,9 +40,6 @@ def copy_used_file(src, out, tag_handle):
 def parse_lines_dl1(prov_lines, out, tag_handle):
     """Process r0 to dl1 provenance info to bundle session at run scope."""
 
-def move_logfile(src, out):
-    """Rename and move logfile"""
-    pass
     i = 0
     size = 0
     working_lines = []
@@ -82,6 +79,9 @@ def move_logfile(src, out):
         # copy used files
         if filepath and not remove:
             copy_used_file(filepath, out, tag_handle)
+        if not remove:
+            working_lines.append(line)
+
     return working_lines
 
 
@@ -122,6 +122,6 @@ if __name__ == "__main__":
     json_filepath = options.out / f"{base_filename}.json"
     png_filepath = options.out / f"{base_filename}.png"
 
-    move_logfile(options.src, options.out)
+    # shutil.move(options.src, log_path)
     make_json(json_filepath)
     make_graph(png_filepath)
