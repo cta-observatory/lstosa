@@ -65,7 +65,8 @@ def datasequence(args):
 
 
 @trace
-def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_str, sequencefile, historyfile):
+def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, ucts_t0_dragon, dragon_counter0, ucts_t0_tib,
+              tib_counter0, run_str, sequencefile, historyfile):
     """
     Perform low and high-level calibration to raw camera images. 
     Apply calibration and obtain shower parameters. 
