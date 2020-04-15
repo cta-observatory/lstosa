@@ -7,22 +7,34 @@ from provenance.capture import get_file_hash, get_activity_id
 from provenance.io import *
 from pathlib import Path, PurePath
 import re
+import shutil
 
 
-def copy_used_file(src, out):
+def copy_used_file(src, out, tag_handle):
     """Copy file used in process"""
 
-    # move file hashing from capture.py to io.py
-    # use file hashing from io.py
-    #
+    # check src file exists
+    if not Path(src).is_file():
+        standardhandle.error(tag_handle, f"{src} file cannot be accessed", 2)
 
-    # check src can be accessed in read mode
-    #
-    # copy file
-    #
+    hash_src = get_file_hash(src, buffer="content")
+    filename = PurePath(src).name
+    outpath = Path(out) / filename
+    hash_out = ""
 
-    pass
+    # get hash and new name
+    if outpath.exists():
+        hash_out = get_file_hash(str(outpath), buffer="content")
+        filename = filename + "_"
+        outpath = Path(out) / filename
 
+    # try copy file
+    if hash_src != hash_out:
+        try:
+            shutil.copyfile(src, str(outpath))
+        except Exception as ex:
+            standardhandle.warning(tag_handle, f"could not copy {src} file into {str(outpath)}")
+            standardhandle.warning(tag_handle, f"{ex}")
 
 
 def parse_lines_dl1(prov_lines, out, tag_handle):
@@ -66,6 +78,10 @@ def move_logfile(src, out):
         # new id
         if activity_id:
             line["activity_id"] = id_activity_run
+
+        # copy used files
+        if filepath and not remove:
+            copy_used_file(filepath, out, tag_handle)
     return working_lines
 
 
