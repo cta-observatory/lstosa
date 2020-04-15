@@ -116,9 +116,9 @@ if __name__ == "__main__":
     processed_lines = parse_lines_dl1(read_prov(logname=options.src), options.out, tag)
 
     # build base_filename with options.run and options.out
-    #
-    #
-    base_filename = ""
+    # ObservationDate = re.findall(r"DL1/(\d{8})/", str(options.out))[0]
+    base_filename = f"DL1_{options.run}_prov"
+    log_path = options.out / f"{base_filename}.log"
     json_filepath = options.out / f"{base_filename}.json"
     png_filepath = options.out / f"{base_filename}.png"
 
