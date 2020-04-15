@@ -25,7 +25,8 @@ def parse_variables(class_instance):
     # LST1
 
     from osa.configs.config import cfg
-    configfile = cfg.get('LSTOSA', 'CONFIGFILE')
+
+    configfile = cfg.get("LSTOSA", "CONFIGFILE")
 
     if class_instance.__name__ == "r0_to_dl1":
         class_instance.AnalysisConfigFile = configfile
@@ -44,13 +45,12 @@ def parse_variables(class_instance):
         # /fefs/aswg/data/real/calibration/20200218/v00/drs4_pedestal.Run2005.0000.fits
         class_instance.PedestalRun = re.findall(r"Run(\d{4}).", class_instance.args[1])[0]
         # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST1.1Run2006.0001.fits.fz.h5
-        fits = cfg.get('LSTOSA', 'FITSSUFFIX')
-        fz = cfg.get('LSTOSA', 'COMPRESSEDSUFFIX')
+        fits = cfg.get("LSTOSA", "FITSSUFFIX")
+        fz = cfg.get("LSTOSA", "COMPRESSEDSUFFIX")
         outdir = re.findall(r"(.*)sequence", class_instance.args[9])[0]
         class_instance.DL1SubrunDataset = f"{outdir}dl1_LST1.1Run{class_instance.args[8]}{fits}{fz}.h5"
         # /fefs/aswg/data/real/R0/20200218/LST1.1Run2006.0001.fits.fz
-        rawdir = cfg.get('LST1', 'RAWDIR')
+        rawdir = cfg.get("LST1", "RAWDIR")
         class_instance.R0SubrunDataset = f"{rawdir}/{class_instance.ObservationDate}/LST1.1Run{class_instance.args[8]}{fits}{fz}"
 
     return class_instance
-

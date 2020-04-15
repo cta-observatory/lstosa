@@ -11,10 +11,12 @@ import sys
 import uuid
 from functools import wraps
 from pathlib import Path
+
 import psutil
 import yaml
-from .utils import parse_variables
+
 from .io import read_prov
+from .utils import parse_variables
 
 # gammapy specific
 # from gammapy.scripts.info import (
@@ -45,7 +47,7 @@ SCHEMA_FILE = CONFIG_PATH / "definition.yaml"
 LOGGER_FILE = CONFIG_PATH / "logger.yaml"
 definition = yaml.safe_load(SCHEMA_FILE.read_text())
 provconfig = yaml.safe_load(LOGGER_FILE.read_text())
-logger = logging.getLogger('provLogger')
+logger = logging.getLogger("provLogger")
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 PROV_PREFIX = provconfig["PREFIX"]
 SUPPORTED_HASH_METHOD = ["md5"]
@@ -62,8 +64,8 @@ def setup_logging():
     try:
         logging.config.dictConfig(provconfig)
     except Exception as ex:
-        print(str(ex))
-        print('Failed to set up the logger.')
+        print(ex)
+        print("Failed to set up the logger.")
         logging.basicConfig(level="INFO")
 
 
@@ -171,10 +173,10 @@ def get_hash_buffer():
     return buffer
 
 
-def get_file_hash(path, buffer=get_hash_buffer(), method=get_hash_method()):
+def get_file_hash(str_path, buffer=get_hash_buffer(), method=get_hash_method()):
     """Helper function that returns hash of the content of a file."""
 
-    full_path = Path(os.path.expandvars(path))
+    full_path = Path(str_path)
 
     if full_path.is_file():
         hash_func = getattr(hashlib, method)()
@@ -186,15 +188,15 @@ def get_file_hash(path, buffer=get_hash_buffer(), method=get_hash_method()):
                     hash_func.update(buf)
                     buf = f.read(block_size)
             file_hash = hash_func.hexdigest()
-            logger.debug(f"File entity {path} has {method} hash {file_hash}")
+            logger.debug(f"File entity {str_path} has {method} hash {file_hash}")
             return file_hash
         elif "path":
             hash_func.update(str(full_path).encode())
             hash_path = hash_func.hexdigest()
             return hash_path
     else:
-        logger.warning(f"File entity {path} not found")
-        return path
+        logger.warning(f"File entity {str_path} not found")
+        return str_path
 
 
 def get_entity_id(value, item):
@@ -204,14 +206,14 @@ def get_entity_id(value, item):
         entity_name = item["entityName"]
         entity_type = definition["entities"][entity_name]["type"]
     except Exception as ex:
-        logger.warning(f"{repr(ex)} in {item}")
+        logger.warning(f"{ex} in {item}")
         entity_name = ""
         entity_type = ""
 
     if entity_type == "FileCollection":
         filename = value
         index = definition["entities"][entity_name].get("index", "")
-        if Path(os.path.expandvars(value)).is_dir() and index:
+        if Path(value).is_dir() and index:
             filename = Path(value) / index
         return get_file_hash(filename)
     if entity_type == "File":
@@ -274,7 +276,7 @@ def get_item_properties(nested, item):
         entity_name = item["entityName"]
         entity_type = definition["entities"][entity_name]["type"]
     except Exception as ex:
-        logger.warning(f"{repr(ex)} in {item}")
+        logger.warning(f"{ex} in {item}")
         entity_name = ""
         entity_type = ""
     value = ""
@@ -301,7 +303,7 @@ def get_item_properties(nested, item):
             try:
                 setattr(value, "entity_version", 1)
             except AttributeError as ex:
-                logger.warning(f"{repr(ex)} for {value}")
+                logger.warning(f"{ex} for {value}")
     if value and "id" not in properties:
         properties["id"] = get_entity_id(value, item)
         if "File" in entity_type:
@@ -332,7 +334,7 @@ def log_session(class_instance, start):
     # OSA specific
     # prov session is outside scripting
     try:
-        lines = read_prov(logname=LOG_FILENAME)
+        lines = read_prov(filename=LOG_FILENAME)
         session_id = lines[0]["session_id"]
         sessions.add(session_id)
     except (FileNotFoundError, IndexError, KeyError):
@@ -538,22 +540,22 @@ def log_progenitors(entity_id, subitem, class_instance):
             log_prov_info(log_record)
 
 
-def log_file_generation(file_path, entity_name="", used=None, role="", activity_name=""):
+def log_file_generation(str_path, entity_name="", used=None, role="", activity_name=""):
     """Log properties of a generated file."""
 
     if used is None:
         used = []
-    if os.path.isfile(file_path):
+    if Path(str_path).isfile():
         method = get_hash_method()
         item = dict(
-            file_path=file_path,
+            file_path=str_path,
             entityName=entity_name,
         )
-        entity_id = get_entity_id(file_path, item)
+        entity_id = get_entity_id(str_path, item)
         log_record = {
             "entity_id": entity_id,
             "name": entity_name,
-            "location": file_path,
+            "location": str_path,
             "hash": entity_id,
             "hash_type": method,
         }

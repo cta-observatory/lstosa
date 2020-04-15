@@ -3,18 +3,20 @@ Provenance i/o conversion functions
 """
 
 import datetime
-import yaml
 from pathlib import Path
-from prov.model import ProvDocument
-from prov.dot import prov_to_dot
-from pydotplus.graphviz import InvocationException
 
+import yaml
+from prov.dot import prov_to_dot
+from prov.model import ProvDocument
+
+# TODO: check prefix, roles instead of entity labels, _ in used /wasGeneratedBy
+#
 # config
 CONFIG_PATH = Path(__file__).resolve().parent / "config"
 LOGGER_FILE = CONFIG_PATH / "logger.yaml"
 provconfig = yaml.safe_load(LOGGER_FILE.read_text())
 PROV_PREFIX = provconfig["PREFIX"]
-DEFAULT_NS = "id"      # "logprov"
+DEFAULT_NS = "id"  # "logprov"
 
 __all__ = ["provlist2provdoc", "provdoc2png", "read_prov"]
 
@@ -90,9 +92,7 @@ def provlist2provdoc(provlist):
                 # act.wasAssociatedWith(agent, attributes={"prov:role": "Creator"})
             if "parameters" in provdict:
                 params_record = provdict.pop("parameters")
-                params = {
-                    k: str(params_record[k]) for k in params_record
-                }
+                params = {k: str(params_record[k]) for k in params_record}
                 par = pdoc.entity(act_id + "_parameters", other_attributes=params)
                 par.add_attributes({"prov:type": "Parameters"})
                 par.add_attributes({"prov:label": "Parameters"})
@@ -201,7 +201,7 @@ def provdoc2png(provdoc, filename):
         f.write(content)
 
 
-def read_prov(logname="prov.log", start=None, end=None):
+def read_prov(filename="prov.log", start=None, end=None):
     """Read a list of provenance dictionaries from the logfile."""
 
     start_dt = None
@@ -211,9 +211,9 @@ def read_prov(logname="prov.log", start=None, end=None):
     if end:
         end_dt = datetime.datetime.fromisoformat(end)
     prov_list = []
-    with open(logname, "r") as f:
-        for l in f.readlines():
-            ll = l.split(PROV_PREFIX)
+    with open(filename, "r") as f:
+        for line in f.readlines():
+            ll = line.split(PROV_PREFIX)
             if len(ll) >= 2:
                 prov_str = ll.pop()
                 prov_dt = datetime.datetime.fromisoformat(ll.pop())

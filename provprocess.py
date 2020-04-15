@@ -2,12 +2,12 @@
 Provenance post processing script for OSA pipeline
 """
 
-from osa.utils import cliopts, standardhandle
-from provenance.capture import get_file_hash, get_activity_id
-from provenance.io import *
-from pathlib import Path, PurePath
-import re
 import shutil
+from pathlib import Path, PurePath
+
+from osa.utils import cliopts, standardhandle
+from provenance.capture import get_activity_id, get_file_hash
+from provenance.io import *
 
 
 def copy_used_file(src, out, tag_handle):
@@ -19,21 +19,21 @@ def copy_used_file(src, out, tag_handle):
 
     hash_src = get_file_hash(src, buffer="content")
     filename = PurePath(src).name
-    outpath = Path(out) / filename
+    destpath = Path(out) / filename
     hash_out = ""
 
     # get hash and new name
-    if outpath.exists():
-        hash_out = get_file_hash(str(outpath), buffer="content")
+    if destpath.exists():
+        hash_out = get_file_hash(str(destpath), buffer="content")
         filename = filename + "_"
-        outpath = Path(out) / filename
+        destpath = Path(out) / filename
 
     # try copy file
     if hash_src != hash_out:
         try:
-            shutil.copyfile(src, str(outpath))
+            shutil.copyfile(src, str(destpath))
         except Exception as ex:
-            standardhandle.warning(tag_handle, f"could not copy {src} file into {str(outpath)}")
+            standardhandle.warning(tag_handle, f"could not copy {src} file into {str(destpath)}")
             standardhandle.warning(tag_handle, f"{ex}")
 
 
@@ -61,11 +61,11 @@ def parse_lines_dl1(prov_lines, out, tag_handle):
         # remove subruns info
         if "data/real/R0/" in filepath or used_role == "Observation subrun":
             if filepath:
-                r0filepath = filepath
+                r0filepath_str = filepath
             remove = True
         if "data/real/DL1/" in filepath or generated_role == "DL1 subrun dataset":
             if filepath:
-                dl1filepath = filepath
+                dl1filepath_str = filepath
             remove = True
         if parameters:
             del line["parameters"]["ObservationSubRun"]
@@ -90,26 +90,26 @@ def parse_lines_dl1(prov_lines, out, tag_handle):
             if i == len(prov_lines):
                 remove = False
                 #
-                entity_id = get_file_hash(r0filepath, buffer="path")
-                r0filepath = r0filepath.replace(PurePath(r0filepath).name, "")
+                entity_id = get_file_hash(r0filepath_str, buffer="path")
+                r0filepath_str = r0filepath_str.replace(PurePath(r0filepath_str).name, "")
                 used = {"entity_id": entity_id}
                 used.update({"name": "R0Collection"})
                 used.update({"type": "SetCollection"})
                 used.update({"size": size})
-                used.update({"filepath": r0filepath})
+                used.update({"filepath": r0filepath_str})
                 working_lines.append(used)
                 used = {"activity_id": id_activity_run}
                 used.update({"used_id": entity_id})
                 used.update({"used_role": "R0 Collection"})
                 working_lines.append(used)
                 #
-                entity_id = get_file_hash(dl1filepath, buffer="path")
-                dl1filepath = dl1filepath.replace(PurePath(dl1filepath).name, "")
+                entity_id = get_file_hash(dl1filepath_str, buffer="path")
+                dl1filepath_str = dl1filepath_str.replace(PurePath(dl1filepath_str).name, "")
                 generated = {"entity_id": entity_id}
                 generated.update({"name": "DL1Collection"})
                 generated.update({"type": "SetCollection"})
                 generated.update({"size": size})
-                generated.update({"filepath": dl1filepath})
+                generated.update({"filepath": dl1filepath_str})
                 working_lines.append(generated)
                 generated = {"activity_id": id_activity_run}
                 generated.update({"generated_id": entity_id})
@@ -125,11 +125,6 @@ def parse_lines_dl1(prov_lines, out, tag_handle):
     return working_lines
 
 
-def make_graph(filepath):
-    """Produce a provenance graph"""
-    pass
-
-
 if __name__ == "__main__":
 
     options, tag = cliopts.provprocessparsing()
@@ -143,20 +138,21 @@ if __name__ == "__main__":
         standardhandle.error(tag, f"path {options.out} does not exist", 2)
 
     # make folder log/ if does not exist
-    options.out = Path(options.out) / "log"
-    if not options.out.exists():
-        options.out.mkdir()
+    outpath = Path(options.out) / "log"
+    if not outpath.exists():
+        outpath.mkdir()
 
     # process provenance file
-    processed_lines = parse_lines_dl1(read_prov(logname=options.src), options.out, tag)
+    processed_lines = parse_lines_dl1(read_prov(filename=options.src), options.out, tag)
 
     # build base_filename with options.run and options.out
-    # ObservationDate = re.findall(r"DL1/(\d{8})/", str(options.out))[0]
+    # ObservationDate = re.findall(r"DL1/(\d{8})/", options.out)[0]
     base_filename = f"DL1_{options.run}_prov"
-    log_path = options.out / f"{base_filename}.log"
-    json_filepath = options.out / f"{base_filename}.json"
-    png_filepath = options.out / f"{base_filename}.png"
+    log_path = outpath / f"{base_filename}.log"
+    json_filepath = outpath / f"{base_filename}.json"
+    png_filepath = outpath / f"{base_filename}.png"
 
+    # TODO uncomment
     # move log file
     # shutil.move(options.src, log_path)
 
