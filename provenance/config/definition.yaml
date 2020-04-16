@@ -74,32 +74,32 @@ activities:
         usage:
             - role: "Observation subrun"
               description: "Observation subrun used"
-              entityName: FITSFile
+              entityName: R0SubrunDataset
               value: R0SubrunDataset
               # filepath: /fefs/aswg/data/real/R0/20200218/LST1.1Run2006.0001.fits.fz
             - role: "Pedestal file"
               description: "Pedestal file used"
-              entityName: FITSFile
+              entityName: PedestalFile
               value: PedestalFile
               # filepath: /fefs/aswg/data/real/calibration/20200218/v00/drs4_pedestal.Run2005.0000.fits
             - role: "Coefficients calibration file"
               description: "Coefficients calibration file"
-              entityName: HDF5File
+              entityName: CoefficientsCalibrationFile
               value: CoefficientsCalibrationFile
               # filepath: /fefs/aswg/data/real/calibration/20200218/v00/calibration.Run2006.0000.hdf5
             - role: "Time calibration file"
               description: "Time calibration file"
-              entityName: HDF5File
+              entityName: TimeCalibrationFile
               value: TimeCalibrationFile
               # filepath: /fefs/aswg/data/real/calibration/20191124/v00/time_calibration.Run1625.0000.hdf5
             - role: "Pointing file"
               description: "Pointing filename for DL1"
-              entityName: TextFile
+              entityName: PointingFile
               value: PointingFile
               # filepath: /fefs/home/lapp/DrivePositioning/drive_log_20_02_18.txt
             - role: "Configuration file"
               description: "Configuration file"
-              entityName: JSONFile
+              entityName: AnalysisConfigFile
               value: AnalysisConfigFile
               # filepath: /fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/data/lstchain_standard_config.json
 
@@ -113,7 +113,7 @@ activities:
         generation:
             - role: "DL1 subrun dataset"
               description: "DL1 dataset produced from a given observation subrun"
-              entityName: HDF5File
+              entityName: DL1SubrunDataset
               value: DL1SubrunDataset
               # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST1.1.Run2006.0001.fits.hdf5
 
@@ -126,28 +126,36 @@ activities:
 
 entities:
     PythonObject:
-        description: "A Python variable in memory"
+        description: "Python variable in memory"
         type: PythonObject
-    TextFile:
-        description: "A TXT File on the disk"
-        type: File
-        contentType: text/plain
-    FITSFile:
-        description: "A FITS File on the disk"
+    R0SubrunDataset:
+        description: "R0 subrun file in FITS format on the disk"
         type: File
         contentType: application/fits
-    HDF5File:
-        description: "A HDF5 File on the disk"
+    PointingFile:
+        description: "Pointing text file on the disk"
+        type: File
+        contentType: text/plain
+    PedestalFile:
+        description: "Pedestal file in FITS format on the disk"
+        type: File
+        contentType: application/fits
+    CoefficientsCalibrationFile:
+        description: "Coefficients calibration file in HDF5 format on the disk"
         type: File
         contentType: application/x-hdf
-    JSONFile:
-        description: "A JSON File on the disk"
+    TimeCalibrationFile:
+        description: "Time calibration file in HDF5 format on the disk"
+        type: File
+        contentType: application/x-hdf
+    AnalysisConfigFile:
+        description: "Analysis configuration file in JSON File on the disk"
         type: File
         contentType: application/json
-    YAMLFile:
-        description: "A YAML File on the disk"
+    DL1SubrunDataset:
+        description: "DL1 subrun file produced in HDF5 format on the disk"
         type: File
-        contentType: application/x-yaml
+        contentType: application/x-hdf
     R0Collection:
         description: "Set of subruns for a given run"
         type: SetCollection

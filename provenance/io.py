@@ -9,8 +9,7 @@ import yaml
 from prov.dot import prov_to_dot
 from prov.model import ProvDocument
 
-# TODO: check prefix, roles instead of entity labels, _ in used /wasGeneratedBy
-#
+
 # config
 CONFIG_PATH = Path(__file__).resolve().parent / "config"
 LOGGER_FILE = CONFIG_PATH / "logger.yaml"
@@ -194,7 +193,7 @@ def provdoc2png(provdoc, filename):
         provdoc,
         use_labels=True,
         show_element_attributes=True,
-        show_relation_attributes=True,
+        show_relation_attributes=False,
     )
     content = dot.create(format="png")
     with open(filename, "wb") as f:
