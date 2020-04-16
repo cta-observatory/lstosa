@@ -152,9 +152,8 @@ if __name__ == "__main__":
     json_filepath = outpath / f"{base_filename}.json"
     png_filepath = outpath / f"{base_filename}.png"
 
-    # TODO uncomment
     # move log file
-    # shutil.move(options.src, log_path)
+    shutil.move(options.src, log_path)
 
     # make json
     try:
