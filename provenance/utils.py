@@ -48,9 +48,9 @@ def parse_variables(class_instance):
         fits = cfg.get("LSTOSA", "FITSSUFFIX")
         fz = cfg.get("LSTOSA", "COMPRESSEDSUFFIX")
         outdir = re.findall(r"(.*)sequence", class_instance.args[9])[0]
-        class_instance.DL1SubrunDataset = f"{outdir}dl1_LST1.1Run{class_instance.args[8]}{fits}{fz}.h5"
+        class_instance.DL1SubrunDataset = f"{outdir}dl1_LST-1.1Run{class_instance.args[8]}{fits}{fz}.h5"
         # /fefs/aswg/data/real/R0/20200218/LST1.1Run2006.0001.fits.fz
         rawdir = cfg.get("LST1", "RAWDIR")
-        class_instance.R0SubrunDataset = f"{rawdir}/{class_instance.ObservationDate}/LST1.1Run{class_instance.args[8]}{fits}{fz}"
+        class_instance.R0SubrunDataset = f"{rawdir}/{class_instance.ObservationDate}/LST-1.1Run{class_instance.args[8]}{fits}{fz}"
 
     return class_instance
