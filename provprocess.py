@@ -143,7 +143,7 @@ if __name__ == "__main__":
         outpath.mkdir()
 
     # process provenance file
-    processed_lines = parse_lines_dl1(read_prov(filename=options.src), options.out, tag)
+    processed_lines = parse_lines_dl1(read_prov(filename=options.src), str(outpath), tag)
 
     # build base_filename with options.run and options.out
     # ObservationDate = re.findall(r"DL1/(\d{8})/", options.out)[0]
