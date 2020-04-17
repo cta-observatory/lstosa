@@ -369,7 +369,7 @@ def log_start_activity(activity, activity_id, session_id, start):
         "name": activity,
         "startTime": start,
         "in_session": session_id,
-        "agent_name": os.getlogin(),
+        "agent_name": os.getenv("USER", "Anonymous"),
     }
     log_prov_info(log_record)
 
