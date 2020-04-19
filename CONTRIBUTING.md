@@ -1,5 +1,6 @@
 * Lab Saha
 * Daniel Morcuende
-* Andres Abequero
+* Andrés Baquero
+* José Luis Contreras
+* José Enrique Ruiz
 * Isidro Aguado
-* Jose Luis Conteras
