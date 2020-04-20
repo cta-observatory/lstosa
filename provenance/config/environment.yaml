@@ -1,0 +1,17 @@
+# Conda environment for provenance package
+# conda env update -f environment.yaml
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python
+  - pyyaml
+  - prov
+  - pydot
+  - pydotplus
+  # dev dependencies
+  - pytest
+  - pytest-cov
+  - black
+  - isort

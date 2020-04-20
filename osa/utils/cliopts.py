@@ -482,6 +482,34 @@ def rawcopycliparsing(command):
     options.configfile = set_default_configfile_if_needed(command)
     options.date = set_default_date_if_needed()
     return args
+
+
+##############################################################################
+#
+# provprocessparsing
+#
+##############################################################################
+def provprocessparsing():
+    tag = standardhandle.gettag()
+    message = "usage: %prog [-p PROVFILE] <RUN_NUMBER> <DESTINATION_FOLDER>"
+    parser = OptionParser(usage=message)
+    parser.add_option("-p", "--prov", action="store", dest="provfile", default="prov.log",
+                      help="provenance file to process [default prov.log]")
+
+    # Parse the command line
+    (opts, args) = parser.parse_args()
+    # Checking arguments
+    if len(args) != 2:
+        standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
+
+    # Set global variables
+    options.run = args[0]
+    options.out = args[1]
+    options.src = opts.provfile
+
+    return options, tag
+
+
 ##############################################################################
 #
 # set_default_date_if_needed

@@ -1,0 +1,164 @@
+---
+#
+# Definition of ActivityDescription and EntityDescription
+#
+# activities:
+#   <activity_name>:
+#     description:
+#     contact:
+#     parameters:
+#       - name:
+#         description:
+#         value:         # Python variable that contains the parameter value
+#         datatype/arraysize/xtype:
+#         unit/ucd/utype:
+#         min/max/options/default:
+#     usage/generation:
+#       - role:
+#         description:
+#         entityType:
+#         multiplicity:
+#         location:      # Python variable that contains the location of the entity
+#                        # any object that may be serialised should have a location property
+#                        # location and value properties are not mutually exclusive
+#         value:         # Python variable that contains the value of the entity
+#         id:            # Python variable that contains the id of the entity
+#         has_members:
+#           list:        # Python list of members /not mandatory
+#           entityType:
+#           location:
+#           value:
+#           id:
+#           namespace:
+#         has_progenitors:
+#           list:        # Python list of progenitors /not mandatory
+#           entityType:
+#           location:
+#           value:
+#           id:
+#           namespace:
+#
+# entities:
+#   <entity_name>:
+#     description:
+#     docurl:
+#     contentType:
+#     type: PythonObject, File, FileCollection
+#     index: index file applicable for a FileCollection
+#
+# agents:
+#   <agent_name>:
+#     email:
+#
+
+activities:
+    r0_to_dl1:
+        description:
+            "Create DL1 files for an observation run and subrun"
+        parameters:
+            - name: ObservationRun
+              description: "Observation run number"
+              value: ObservationRun
+            - name: ObservationSubRun
+              description: "Observation subrun number"
+              value: ObservationSubRun
+            - name: CalibrationRun
+              description: "Calibration run number"
+              value: CalibrationRun
+            - name: PedestalRun
+              description: "Pedestal run number"
+              value: PedestalRun
+            - name: ProdID
+              description: "Production ID"
+              value: ProdID
+        usage:
+            - role: "Observation subrun"
+              description: "Observation subrun used"
+              entityName: R0SubrunDataset
+              value: R0SubrunDataset
+              # filepath: /fefs/aswg/data/real/R0/20200218/LST1.1Run2006.0001.fits.fz
+            - role: "Pedestal file"
+              description: "Pedestal file used"
+              entityName: PedestalFile
+              value: PedestalFile
+              # filepath: /fefs/aswg/data/real/calibration/20200218/v00/drs4_pedestal.Run2005.0000.fits
+            - role: "Coefficients calibration file"
+              description: "Coefficients calibration file"
+              entityName: CoefficientsCalibrationFile
+              value: CoefficientsCalibrationFile
+              # filepath: /fefs/aswg/data/real/calibration/20200218/v00/calibration.Run2006.0000.hdf5
+            - role: "Time calibration file"
+              description: "Time calibration file"
+              entityName: TimeCalibrationFile
+              value: TimeCalibrationFile
+              # filepath: /fefs/aswg/data/real/calibration/20191124/v00/time_calibration.Run1625.0000.hdf5
+            - role: "Pointing file"
+              description: "Pointing filename for DL1"
+              entityName: PointingFile
+              value: PointingFile
+              # filepath: /fefs/home/lapp/DrivePositioning/drive_log_20_02_18.txt
+            - role: "Configuration file"
+              description: "Configuration file"
+              entityName: AnalysisConfigFile
+              value: AnalysisConfigFile
+              # filepath: /fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/data/lstchain_standard_config.json
+
+            # - role: "R0 Collection"
+            #   description: "Set of subruns for a given run"
+            #   entityName: R0Collection
+            #   value: R0Collection
+            #   filepath: /fefs/aswg/data/real/R0/20200218
+            #   size: 128
+
+        generation:
+            - role: "DL1 subrun dataset"
+              description: "DL1 dataset produced from a given observation subrun"
+              entityName: DL1SubrunDataset
+              value: DL1SubrunDataset
+              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST1.1.Run2006.0001.fits.hdf5
+
+            # - role: "DL1 Collection"
+            #   description: "Set of DL1 files for a given run"
+            #   entityName: Dl1Collection
+            #   value: DL1Collection
+            #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
+            #   size: 128
+
+entities:
+    PythonObject:
+        description: "Python variable in memory"
+        type: PythonObject
+    R0SubrunDataset:
+        description: "R0 subrun file in FITS format on the disk"
+        type: File
+        contentType: application/fits
+    PointingFile:
+        description: "Pointing text file on the disk"
+        type: File
+        contentType: text/plain
+    PedestalFile:
+        description: "Pedestal file in FITS format on the disk"
+        type: File
+        contentType: application/fits
+    CoefficientsCalibrationFile:
+        description: "Coefficients calibration file in HDF5 format on the disk"
+        type: File
+        contentType: application/x-hdf
+    TimeCalibrationFile:
+        description: "Time calibration file in HDF5 format on the disk"
+        type: File
+        contentType: application/x-hdf
+    AnalysisConfigFile:
+        description: "Analysis configuration file in JSON File on the disk"
+        type: File
+        contentType: application/json
+    DL1SubrunDataset:
+        description: "DL1 subrun file produced in HDF5 format on the disk"
+        type: File
+        contentType: application/x-hdf
+    R0Collection:
+        description: "Set of subruns for a given run"
+        type: SetCollection
+    DL1Collection:
+        description: "Set of DL1 files for a given run"
+        type: SetCollection
