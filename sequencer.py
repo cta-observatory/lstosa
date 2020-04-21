@@ -21,8 +21,6 @@ from osa.nightsummary.nightsummary import readnightsummary
 from osa.reports.report import start
 from osa.utils.standardhandle import output, verbose, gettag
 
-# FIXME: find a better way of handling lstchain version
-# from lstchain.version import get_version
 
 __all__ = ["sequencer", "single_process"]
 
@@ -66,13 +64,15 @@ def single_process(telescope, process_mode):
     tag = gettag()
 
     from osa.configs import config
+    # FIXME: find a better way of handling lstchain version
+    from lstchain.version import get_version
 
     sequence_list = []
 
     # Define global variables and create night directory
     options.tel_id = telescope
-    # options.lstchain_version = 'v' + get_version()
-    # options.prod_id = options.lstchain_version + '_' + config.cfg.get('LST1', 'VERSION')
+    options.lstchain_version = 'v' + get_version()
+    options.prod_id = options.lstchain_version + '_' + config.cfg.get('LST1', 'VERSION')
     options.prod_id = config.cfg.get('LST1', 'VERSION')
     options.directory = cliopts.set_default_directory_if_needed()
     options.log_directory = os.path.join(options.directory, 'log')
