@@ -8,7 +8,7 @@ def arerawfilestransferredfortel(tel_id):
     from utils import magicdate_to_dir
     nightdir = magicdate_to_dir(options.date)
     dir = join(config.cfg.get(tel_id, 'ENDOFRAWTRANSFERDIR'), nightdir)
-    flagfile = join(dir, config.cfg.get('OSA', 'ENDOFACTIVITYPREFIX'))
+    flagfile = join(dir, config.cfg.get('LSTOSA', 'ENDOFACTIVITYPREFIX'))
 
     if exists(flagfile):
         output(tag, "Files for {0} {1} are completely transferred to raid".format(options.date, tel_id))
@@ -34,9 +34,9 @@ def get_check_rawdir():
     tag = gettag()
     from os.path import exists, join
     rawdir = getrawdir()
-    rawsuffix = config.cfg.get('OSA', 'RAWSUFFIX')
+    rawsuffix = config.cfg.get('LSTOSA', 'RAWSUFFIX')
     verbose(tag, "raw suffix = {0}".format(rawsuffix))
-    compressedsuffix = config.cfg.get('OSA', 'COMPRESSEDSUFFIX')
+    compressedsuffix = config.cfg.get('LSTOSA', 'COMPRESSEDSUFFIX')
     verbose(tag, "raw compressed suffix = {0}".format(rawsuffix + compressedsuffix))
 
     if not exists(rawdir):
@@ -72,7 +72,7 @@ def getreportdir():
     tag = gettag()
     from os.path import exists, join
     reportdir = join(config.cfg.get(options.tel_id, 'REPORTDIR'), options.date)
-    reportsuffix = config.cfg.get('OSA', 'REPORTSUFFIX')
+    reportsuffix = config.cfg.get('LSTOSA', 'REPORTSUFFIX')
     if not exists(reportdir):
         # The most sensible thing to do is to quit succesfully after a warning
         # warning (tag, 'rawdir set to . because ' + rawdir + ' does not exists!')
