@@ -74,8 +74,8 @@ def historylevel(historyfile, type):
 
                 else:
                     error(tag, 'Programme name not identified {0}'.format(program), 6)
-                   
-    print(level,exit_status) 
+
+    print(level,exit_status)
     return level, exit_status
 
 
@@ -145,7 +145,7 @@ def createsequencetxt(s, sequence_list):
         cal = formatrunsubrun(s.parent_list[0].run, 1)
         for sub in s.subrun_list:
             dat += formatrunsubrun(s.run, sub.subrun) + ' '
-    
+
     content = "# Sequence number (identifier)\n"
 #    content += "Sequence: {0}_{0}\n".format(s.run)  # Not clear why the same number twice
     content += "Sequence: {0}\n".format(s.run)
@@ -220,7 +220,7 @@ def setsequencecalibfilenames(sequence_list):
             calfile = "calibration.Run{0}.0000{1}".\
                  format(cal_run_string, scalib_suffix)
             #pedfile = '666ped.root'
-            ped_run_string = str(s.previousrun).zfill(4) 
+            ped_run_string = str(s.previousrun).zfill(4)
             pedfile = "drs4_pedestal.Run{0}.0000{1}".\
                  format(ped_run_string, pedestal_suffix)
             drivefile = '666drive.txt'
@@ -233,7 +233,7 @@ def setsequencecalibfilenames(sequence_list):
             time_string = str(s.subrun_list[0].time).zfill(8)
             nightdir = lstdate_to_dir(options.date)
      #       print(date_string,time_string)
-            yy,mm,dd = date_in_yymmdd(nightdir)            
+            yy,mm,dd = date_in_yymmdd(nightdir)
             if options.mode == 'P':
                 calfile = "calibration.Run{0}.0000{1}".\
                  format(run_string, scalib_suffix)
@@ -276,7 +276,7 @@ def guesscorrectinputcard(s):
         return(options.configfile)
 
     # Non standard input cards.
-   
+
     inputCardStr = ""
     if ("MoonSh" in s.source or "GRB" in s.source or "AZ-" in s.source):
         inputCardStr = "%s_noPos" % inputCardStr
@@ -287,7 +287,7 @@ def guesscorrectinputcard(s):
 
     if (inputCardStr != ""):
         return(join(bindir,'cfg','osa%s.cfg' % inputCardStr))
-    
+
     return(options.configfile)
 
 
@@ -317,8 +317,8 @@ def createjobtemplate(s):
 
     python = os.path.join(config.cfg.get('ENV', 'PYTHONBIN'), 'python')
     sbatchbin = config.cfg.get('ENV','SBATCHBIN')
-     
-   
+
+
 #    pedestalfile = ped
 #    drivefile = drive
     mode = 1
@@ -339,14 +339,14 @@ def createjobtemplate(s):
     commandargs.append(options.date)
     commandargs.append('--prod_id')
     commandargs.append(options.prod_id)
-    
-     
+
+
     if s.type == 'CALI':
         commandargs.append(os.path.join(pedestaldir, nightdir, version, s.pedestal))
         commandargs.append(os.path.join(calibdir, nightdir, version, s.calibration))
         ped_run = str(s.previousrun).zfill(5)
         commandargs.append(ped_run)
-   
+
     if s.type == 'DATA':
         commandargs.append(os.path.join(calibdir, nightdir, version, s.calibration))
         commandargs.append(os.path.join(pedestaldir, nightdir, version, s.pedestal))
@@ -368,7 +368,7 @@ def createjobtemplate(s):
       #  commandargs.append(options.tel_id)
     for sub in s.subrun_list:
         n_subruns = int(sub.subrun)
-    
+
     content = "#!/bin/env python\n"
     # SLURM assignments
     content += "\n"
@@ -406,17 +406,17 @@ def createjobtemplate(s):
 
   #  content +="subprocess.call({0})\n".format(commandargs)
     content += "subprocess.call([\n"
-    for i in commandargs: 
+    for i in commandargs:
         content += "    '{0}',\n".format(i)
     content += "    '--stderr=sequence_{0}_".format(s.jobname) + "{0}.err'" + '.format(str(job_id))' + ',\n'
     content += "    '--stdout=sequence_{0}_".format(s.jobname) + "{0}.out'" + '.format(str(job_id))' + ',\n'
     if s.type == 'DATA':
-        content += "    '{0}".format(str(s.run).zfill(5))+".{0}'"+'.format(str(subruns).zfill(4))' + ',\n' 
+        content += "    '{0}".format(str(s.run).zfill(5))+".{0}'"+'.format(str(subruns).zfill(4))' + ',\n'
     else:
        content += "    '{0}'".format(str(s.run).zfill(5)) + ',\n'
     content += "    '{0}'".format(options.tel_id) + '\n'
     content += "    ])"
-    
+
     if not options.simulate:
         iofile.writetofile(s.script, content)
 
@@ -430,7 +430,7 @@ def submitjobs(sequence_list):
     job_list = []
     command = 'sbatch'
     for s in sequence_list:
-         commandargs = [command, s.script] # List of two elements
+         commandargs = [command, s.script]
 #        commandargs.append('-W')
 #        commandargs.append('umask=0022')
 #        """ Introduce the job dependencies """
@@ -495,11 +495,11 @@ def submitjobs(sequence_list):
          except subprocess.CalledProcessError as Error:
                 error(tag, Error, 2)
          except OSError (ValueError, NameError):
-                error(tag, "Command {0}, {1}".format(stringify(commandargs), NameError), ValueError)  
+                error(tag, "Command {0}, {1}".format(stringify(commandargs), NameError), ValueError)
 
-         print(commandargs)
-         job_list.append(s.script) 
-        
+         output(tag, commandargs)
+         job_list.append(s.script)
+
     return job_list
 
 
@@ -517,7 +517,7 @@ def getqueuejoblist(sequence_list):
         xmloutput = subprocess.check_output(commandargs)
     except subprocess.CalledProcessError as Error:
         error(tag, 'Command "{0}" failed, {1}'.format(stringify(commandargs), Error), 2)
-    except OSError as ValueError: 
+    except OSError as ValueError:
         error(tag, 'Command "{0}" failed, {1}'.format(stringify(commandargs), NameError), ValueError)
     else:
 #        verbose(key, "qstat -x gives the folloging output\n{0}".format(xml).rstrip())
@@ -586,18 +586,21 @@ def sumtime(a, b):
 
 
 def date_in_yymmdd(datestring):
-    """
-    This is convert date string(yyyy_mm_dd) from the NightSummary into
+    """Convert date string(yyyy_mm_dd) from the NightSummary into
     (yy_mm_dd) format. Depending on the time, +1 is added to date to
     consider the convention of filenaming based on observation date.
+
+    Parameters
+    ----------
+    datestring: in format yyyy_mm_dd
     """
     from os.path import join
-    #date = datestring.split('-')
-    #da   = [ch for ch in date[0]]
+    # date = datestring.split('-')
+    # da = [ch for ch in date[0]]
     date = list(datestring)
-    yy   =''.join(date[2:4])
-    mm   =''.join(date[4:6])
-    dd   =''.join(date[6:8])
+    yy = ''.join(date[2:4])
+    mm = ''.join(date[4:6])
+    dd = ''.join(date[6:8])
     ## Change the day
     #time = timestring.split(':')
     #if (int(time[0]) >= 17 and int(time[0]) <= 23):
