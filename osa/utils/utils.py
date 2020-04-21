@@ -24,6 +24,7 @@ def getcurrentdate2(sep):
     tag = gettag()
     from datetime import datetime, timedelta
     from osa.configs.config import cfg
+    import sys
     limitnight = int(cfg.get('LST', 'NIGHTOFFSET'))
     now =  datetime.utcnow()
     if ( now.hour >= limitnight and limitnight >= 0 ) or (  now.hour < limitnight + 24 and limitnight < 0 ):
@@ -53,12 +54,18 @@ def getnightdirectory():
     from os.path import join, exists
     from osa.utils.utils import lstdate_to_dir
     from osa.configs.config import cfg
+    from lstchain.version import get_version
 
     verbose(tag, "Getting analysis path for tel_id {0}".format(options.tel_id))
     nightdir = lstdate_to_dir(options.date)
-    directory = join(cfg.get(options.tel_id, 'ANALYSISDIR'),
-                     nightdir,
-                     options.prod_id)
+
+    options.lstchain_version = 'v' + get_version()
+    options.prod_id = options.lstchain_version + '_' + cfg.get('LST1', 'VERSION')
+
+    directory = join(
+        cfg.get(options.tel_id, 'ANALYSISDIR'),
+        nightdir, options.prod_id
+    )
     if not exists(directory):
         if options.nightsum == True and options.tel_id != 'ST':
             error(tag, "Night directory {0} does not exists!".format(directory), 2)
