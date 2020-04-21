@@ -5,8 +5,8 @@ from osa.configs import config
 def arerawfilestransferredfortel(tel_id):
     tag = gettag()
     from os.path import join, exists
-    from utils import magicdate_to_dir
-    nightdir = magicdate_to_dir(options.date)
+    from osa.utils.utils import lstdate_to_dir
+    nightdir = lstdate_to_dir(options.date)
     dir = join(config.cfg.get(tel_id, 'ENDOFRAWTRANSFERDIR'), nightdir)
     flagfile = join(dir, config.cfg.get('LSTOSA', 'ENDOFACTIVITYPREFIX'))
 
