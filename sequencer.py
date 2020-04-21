@@ -1,16 +1,3 @@
-##############################################################################
-#
-# sequencer.py
-# Date: 12th January 2020
-#   Authors
-#   L. Saha <lab.saha@gmail.com>, D. Morcuende <dmorcuen@ucm.es>
-#   A. Baquero <>, I. Aguado<>
-#   J. L. Contrera <>
-# Last modified on:
-# Credits: This script is written and modified following scripts from 
-# MAGIC OSA. Hence, a big portion of the credits goes to its authors.
-##############################################################################
-
 import os
 from shutil import copy
 
@@ -344,7 +331,7 @@ def updatesequencedb(seqlist):
             })
 
         if s.parent is not None:
-            assignments['ID_NIGHTLY_PARENTS'] = '{0},'.format(s.parent)
+            assignments['ID_NIGHTLY_PARENTS'] = f'{s.parent},'
         if not id:
             conditions = {}
             insert_db(server, user, database, table, assignments, conditions)
@@ -374,10 +361,10 @@ def prettyoutputmatrix(m, paddingspace):
             rpadding = paddingspace * ' '
             if isinstance(col, int):
                 # We got an integer, right aligned
-                stringrow += "{0}{1}{2}".format(lpadding, col, rpadding)
+                stringrow += f"{lpadding}{col}{rpadding}"
             else:
                 # Should be a string, left aligned
-                stringrow += "{0}{1}{2}".format(col, lpadding, rpadding)
+                stringrow += f"{col}{lpadding}{rpadding}"
         output(tag, stringrow)
 
 
