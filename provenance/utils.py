@@ -61,9 +61,6 @@ def parse_variables(class_instance):
 def get_log_config():
     """Get logging configuration from an OSA config file"""
 
-    # default value
-    config_file = Path("cfg")/"osa.cfg"
-
     # default config filename value
     config_file = str(Path("cfg")/"sequencer.cfg")
 

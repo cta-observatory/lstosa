@@ -61,11 +61,13 @@ traced_entities = {}
 def setup_logging():
     """Setup logging configuration."""
 
+    log = logging.getLogger(__name__)
+
     try:
         logging.config.dictConfig(provconfig)
     except Exception as ex:
-        print(ex)
-        print("Failed to set up the logger.")
+        log.warning(ex)
+        log.warning("Failed to set up the logger.")
         logging.basicConfig(level="INFO")
 
 
