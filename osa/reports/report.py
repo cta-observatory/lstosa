@@ -1,7 +1,7 @@
 from osa.utils.standardhandle import output, verbose, warning, error, gettag
 from osa.utils import options, cliopts
 
-__all__ = ["history"]
+__all__ = ["history", "start"]
 ##############################################################################
 #
 # start

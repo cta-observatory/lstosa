@@ -1,216 +1,188 @@
-#!/usr/bin/env python
-##############################################################################
-#
-# datasequence.py
-# Date: 12th January 2020
-# Authors: L. Saha (lab.saha@gmail.com), D. Morcuende, I. Aguado
-#           A. Baquero, J. L. Contrera
-# Last changes made on: 
-# Credits: This script is written and modified following scripts from  MAGIC OSA. Hence, a big portion
-# of the credits goes to the authors of MAGIC OSA.
-##############################################################################
-from osa.utils.standardhandle import output, verbose, warning, error, stringify, gettag
+from osa.utils.standardhandle import verbose, error, stringify, gettag
 from provenance import trace
-from sys import exit
 
 __all__ = ["datasequence", "r0_to_dl1", 'dl1_to_dl2']
 
 
 def datasequence(args):
     tag = gettag()
-    import subprocess
     from os.path import join
     from osa.jobs.job import historylevel
     from osa.configs.config import cfg
 
-    
     calibrationfile = args[0]
     pedestalfile = args[1]
     time_calibration = args[2]
     drivefile = args[3]
-
-#  New arguments to build dragon time 
     ucts_t0_dragon = args[4]
     dragon_counter0 = args[5]
     ucts_t0_tib = args[6]
     tib_counter0 = args[7]
-
-
     run_str = args[8]
 
-    textsuffix = cfg.get('LSTOSA', 'TEXTSUFFIX')
     historysuffix = cfg.get('LSTOSA', 'HISTORYSUFFIX')
-    sequenceprebuild = join(options.directory,
-                            'sequence_{0}_{1}'.format(options.tel_id, run_str))
-    sequencefile = sequenceprebuild + textsuffix
+    sequenceprebuild = join(options.directory, f'sequence_{options.tel_id}_{run_str}')
     historyfile = sequenceprebuild + historysuffix
-    print("HistoryFile:",historyfile)
-    print("OPTION Directory:",options.directory)
-    print("sequence file:",sequencefile)
     level, rc = historylevel(historyfile, 'DATA')
-    print("LEVEL:",level,rc)
-    verbose(tag, "Going to level {0}".format(level))
+    verbose(tag, f"Going to level {level}")
 
     if level == 3:
-        rc = r0_to_dl1(calibrationfile, pedestalfile, time_calibration,drivefile, ucts_t0_dragon, dragon_counter0, ucts_t0_tib, tib_counter0, run_str, sequencefile, historyfile) 
+        rc = r0_to_dl1(
+            calibrationfile,
+            pedestalfile,
+            time_calibration,
+            drivefile,
+            ucts_t0_dragon,
+            dragon_counter0,
+            ucts_t0_tib,
+            tib_counter0,
+            run_str,
+            historyfile
+        )
         level -= 1
-        verbose(tag, "Going to level {0}".format(level))
+        verbose(tag, f"Going to level {level}")
     if level == 2:
-        rc = dl1_to_dl2(run_str, sequencefile, historyfile)
+        rc = dl1_to_dl2(run_str, historyfile)
         level -= 2
-        verbose(tag, "Going to level {0}".format(level))
+        verbose(tag, f"Going to level {level}")
     if level == 0:
-        verbose(tag, "Job for sequence {0} finished without fatal errors".format(run_str))    
+        verbose(tag, f"Job for sequence {run_str} finished without fatal errors")
     return rc
 
 
+# FIXME: Parse all different arguments via config file or sequence_list.txt
 @trace
-def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, ucts_t0_dragon, dragon_counter0, ucts_t0_tib,
-              tib_counter0, run_str, sequencefile, historyfile):
+def r0_to_dl1(
+        calibrationfile,
+        pedestalfile,
+        time_calibration,
+        drivefile,
+        ucts_t0_dragon,
+        dragon_counter0,
+        ucts_t0_tib,
+        tib_counter0,
+        run_str,
+        historyfile
+):
+
+    """Perform low and high-level calibration to raw camera images.
+    Apply image cleaning and obtain shower parameters.
+
+    Parameters
+    ----------
+    calibrationfile
+    pedestalfile
+    time_calibration
+    drivefile
+    ucts_t0_dragon
+    dragon_counter0
+    ucts_t0_tib
+    tib_counter0
+    run_str
+    historyfile
     """
-    Perform low and high-level calibration to raw camera images. 
-    Apply calibration and obtain shower parameters. 
-    """
-    
-    import sys
-    import os
+
     import subprocess
-    from os.path import join, dirname, basename
-    from glob import glob
+    from os.path import join, basename
     from osa.configs.config import cfg
-    from osa.rawcopy import raw
-    from register import register_run_concept_files
-    from osa.jobs.job import historylevel
     from osa.reports import report
     from osa.utils.utils import lstdate_to_dir
 
-
-    configfile = cfg.get('LSTOSA','CONFIGFILE')
-    pythondir = cfg.get('LSTOSA', 'PYTHONDIR')
+    configfile = cfg.get('LSTOSA', 'CONFIGFILE')
     lstchaincommand = cfg.get('LSTOSA', 'R0-DL1')
-    python = os.path.join(cfg.get('ENV', 'PYTHONBIN'), 'python')
     nightdir = lstdate_to_dir(options.date)
-#    fullcommand = join(pythondir, lstchaincommand)
     fullcommand = lstchaincommand
     print("Run_str", run_str)
-    datafile = join(cfg.get('LST1','RAWDIR'), nightdir,
-                    'LST-1.1.Run{0}{1}{2}'.format(run_str,
-                                                  cfg.get('LSTOSA','FITSSUFFIX'),
-                                                  cfg.get('LSTOSA','COMPRESSEDSUFFIX')
-                                                  )
-                    ) 
+    datafile = join(
+        cfg.get('LST1', 'RAWDIR'),
+        nightdir,
+        f'LST-1.1.Run{run_str}{cfg.get("LSTOSA", "FITSSUFFIX")}{cfg.get("LSTOSA", "COMPRESSEDSUFFIX")}'
+    )
 
-#    commandargs = [python,fullcommand]
-    commandargs = [fullcommand]
-    commandargs.append('-f')
-    commandargs.append(datafile)
-    commandargs.append('-o')
-    commandargs.append(options.directory)
-    commandargs.append('-pedestal')
-    commandargs.append(pedestalfile)
-    commandargs.append('-calib')
-    commandargs.append(calibrationfile)
-    commandargs.append('-conf')
-    commandargs.append( configfile)
-    commandargs.append('-time_calib')
-    commandargs.append(time_calibration)
-    commandargs.append('-pointing')
-    commandargs.append(drivefile)
-    commandargs.append('--ucts_t0_dragon')
-    commandargs.append(ucts_t0_dragon)
-    commandargs.append('--dragon_counter0')
-    commandargs.append(dragon_counter0)
-    commandargs.append('--ucts_t0_tib')
-    commandargs.append(ucts_t0_tib)
-    commandargs.append('--tib_counter0')
-    commandargs.append(tib_counter0)
-#    commandargs.append('--drive=' + drivefile)
-    
-    print("fullcommand",python,commandargs)    
+    commandargs = [
+        fullcommand,
+        '-f', datafile,
+        '-o', options.directory,
+        '-pedestal', pedestalfile,
+        '-calib', calibrationfile,
+        '-conf', configfile,
+        '-time_calib', time_calibration,
+        '-pointing', drivefile,
+        '--ucts_t0_dragon', ucts_t0_dragon,
+        '--dragon_counter0', dragon_counter0,
+        '--ucts_t0_tib', ucts_t0_tib,
+        '--tib_counter0', tib_counter0
+    ]
+
     try:
-        verbose(tag, "Executing \"{0}\"".format(stringify(commandargs)))
+        verbose(tag, f"Executing {'stringify(commandargs)'}")
         rc = subprocess.call(commandargs)
     except subprocess.CalledProcessError as Error:
-        error(tag, "{0}".format(Error), rc)
-    #except OSError as (ValueError, NameError):
+        error(tag, f"{Error}", rc)
     except OSError as ValueError:
-        error(tag, "Command \"{0}\" failed, {1}"\
-         .format(stringify(commandargs), NameError), ValueError)
+        error(tag, f"Command {'stringify(commandargs)'} failed, {NameError}", ValueError)
     else:
-        report.history(run_str, basename(fullcommand),\
-         basename(calibrationfile), basename(pedestalfile), rc, historyfile)
+        report.history(
+            run_str, basename(fullcommand),
+            basename(calibrationfile),
+            basename(pedestalfile),
+            rc, historyfile
+        )
         return rc
 
 
-def dl1_to_dl2(run_str, sequencefile, historyfile):
+def dl1_to_dl2(run_str, historyfile):
+    """ Apply already trained RFs models to DL1 files.
+    It identifies the primary particle, reconstructs the energy
+    and direction of the primary particle.
+
+    Parameters
+    ----------
+    run_str
+    historyfile
     """
-    Apply already trained RFs models to DL1 files.
-    It identifies the primary particle adn reconstructs the energy and position.
-    """
-    
-    import sys
-    import os
+
     import subprocess
-    from os.path import join, dirname, basename
-    from glob import glob
+    from os.path import join, basename
     from osa.configs.config import cfg
-    from osa.rawcopy import raw
-    from register import register_run_concept_files
-    from osa.jobs.job import historylevel
     from osa.reports import report
     from osa.utils.utils import lstdate_to_dir
 
-    configfile = cfg.get('LSTOSA','CONFIGFILE')
-    rf_models_directory = cfg.get('LSTOSA','RF-MODELS-DIR')
-
-    pythondir = cfg.get('LSTOSA', 'PYTHONDIR')
+    configfile = cfg.get('LSTOSA', 'CONFIGFILE')
+    rf_models_directory = cfg.get('LSTOSA', 'RF-MODELS-DIR')
     lstchaincommand = cfg.get('LSTOSA', 'DL1-DL2')
-    python = os.path.join(cfg.get('ENV', 'PYTHONBIN'), 'python')
     nightdir = lstdate_to_dir(options.date)
-#    fullcommand = join(pythondir, lstchaincommand)
     fullcommand = lstchaincommand
-    print("Run_str", run_str)
-    datafile = join(cfg.get('LST1','ANALYSISDIR'), nightdir, options.prod_id,
-                    cfg.get('LSTOSA','R0-DL1PREFIX') +
-                    'LST-1.1.Run{0}{1}{2}'.format(run_str, 
-                                                  cfg.get('LSTOSA','FITSSUFFIX'),
-                                                  cfg.get('LSTOSA','DATA-HDF5SUFFIX')
-                                                  )
-                    )
-    
-    dl2_directory = join(cfg.get('LST1','DL2-DIR'),
-                         nightdir,
-                         options.prod_id)
+    datafile = join(
+        cfg.get('LST1', 'ANALYSISDIR'),
+        nightdir, options.prod_id,
+        cfg.get('LSTOSA', 'R0-DL1PREFIX') +
+        f'LST-1.1.Run{run_str}{cfg.get("LSTOSA", "FITSSUFFIX")}{cfg.get("LSTOSA", "DATA-HDF5SUFFIX")}'
+    )
 
-    print(dl2_directory)
-    print(datafile)
+    dl2_directory = join(cfg.get('LST1', 'DL2-DIR'), nightdir, options.prod_id)
 
-#    commandargs = [python,fullcommand]
-    commandargs = [fullcommand]
-    commandargs.append('--datafile')
-    commandargs.append(datafile)
-    commandargs.append('--outdir')
-    commandargs.append(dl2_directory)
-    commandargs.append('--pathmodels')
-    commandargs.append(rf_models_directory)
-    commandargs.append('--config_file')
-    commandargs.append(configfile)
-
-    print("fullcommand", python, commandargs)    
+    commandargs = [
+        fullcommand,
+        '--datafile', datafile,
+        '--outdir', dl2_directory,
+        '--pathmodels', rf_models_directory,
+        '--config_file', configfile
+    ]
 
     try:
-        verbose(tag, "Executing \"{0}\"".format(stringify(commandargs)))
+        verbose(tag, f"Executing {'stringify(commandargs)'}")
         rc = subprocess.call(commandargs)
     except subprocess.CalledProcessError as Error:
-        error(tag, "{0}".format(Error), rc)
-    #except OSError as (ValueError, NameError):
+        error(tag, f"{Error}", rc)
     except OSError as ValueError:
-        error(tag, "Command \"{0}\" failed, {1}"\
-         .format(stringify(commandargs), NameError), ValueError)
+        error(tag, f"Command {'stringify(commandargs)'} failed, {NameError}", ValueError)
     else:
-        report.history(run_str, basename(fullcommand),
-                       basename(datafile), basename(configfile),
-                       rc, historyfile)
+        report.history(
+            run_str, basename(fullcommand),
+            basename(datafile), basename(configfile),
+            rc, historyfile
+        )
         return rc
 
 
