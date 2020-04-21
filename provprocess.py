@@ -127,6 +127,12 @@ def parse_lines_dl1(prov_lines, out, tag_handle):
 
 if __name__ == "__main__":
 
+    # provprocess.py
+    # 02006
+    # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00
+    # -p prov.log
+
+
     options, tag = cliopts.provprocessparsing()
 
     # check options.src is a file

@@ -4,7 +4,7 @@ Utility functions for OSA pipeline provenance
 
 import re
 
-__all__ = ["parse_variables"]
+__all__ = ["parse_variables", "get_log_config"]
 
 
 def parse_variables(class_instance):
@@ -54,3 +54,33 @@ def parse_variables(class_instance):
         class_instance.R0SubrunDataset = f"{rawdir}/{class_instance.ObservationDate}/LST-1.1.Run{class_instance.args[8]}{fits}{fz}"
 
     return class_instance
+
+
+def get_log_config():
+
+    conf = """
+version: 1
+formatters:
+    simple:
+        format: '%(levelname)s %(name)s %(message)s'
+        #format: '%(asctime)s.%(msecs)03d%(message)s'
+        datefmt: '%Y-%m-%dT%H:%M:%S'
+handlers:
+    provHandler:
+        class: logging.handlers.WatchedFileHandler
+        level: INFO
+        formatter: simple
+        filename: prov.log
+loggers:
+    provLogger:
+        level: INFO
+        handlers: [provHandler]
+        propagate: False
+disable_existing_loggers: False
+PREFIX: __PROV__
+HASH_METHOD: md5
+HASH_BUFFER: path
+capture: True    
+    """
+
+    return conf
