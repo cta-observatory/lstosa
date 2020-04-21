@@ -64,6 +64,9 @@ def get_log_config():
     # default value
     config_file = Path("cfg")/"osa.cfg"
 
+    # default config filename value
+    config_file = str(Path("cfg")/"sequencer.cfg")
+
     in_config_arg = False
     for args in sys.argv:
         if in_config_arg:
