@@ -495,6 +495,8 @@ def provprocessparsing():
     parser = OptionParser(usage=message)
     parser.add_option("-p", "--prov", action="store", dest="provfile", default="prov.log",
                       help="provenance file to process [default prov.log]")
+    parser.add_option("-c", "--config", action="store", dest="configfile", default = None,
+                      help="use specific config file [default cfg/osa.cfg]")
 
     # Parse the command line
     (opts, args) = parser.parse_args()
