@@ -342,7 +342,8 @@ def sequencer_argparser():
     parser.add_argument('tel_id', choices=['ST', 'LST1', 'LST2', 'all'], help = "telescope identifier LST1, LST2, ST or all.")
     return parser
 
-def sequencercliparsing(command):
+
+def sequencercliparsing():
     tag = standardhandle.gettag()
 
     # Parse the command line
@@ -372,6 +373,8 @@ def sequencercliparsing(command):
     # Setting the default date and directory if needed
     options.configfile = set_default_configfile_if_needed('sequencer.py')
     options.date = set_default_date_if_needed()
+
+
 ##############################################################################
 #
 # monolithcliparsing

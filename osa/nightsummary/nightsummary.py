@@ -86,7 +86,6 @@ def readnightsummary():
     nightsumfile = getnightsummaryfile()
     stdout = None
     options.nightsum = True
-    print('options.nightsum',options.nightsum)
     # When executing the closer, 'options.nightsum' is always True
     if options.nightsum == False:
         rawdir =  raw.get_check_rawdir() 
@@ -128,9 +127,8 @@ def getnightsummaryfile():
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
         nightsumprefix = config.cfg.get('LSTOSA', 'NIGHTSUMMARYPREFIX')
         nightsumsuffix = config.cfg.get('LSTOSA', 'TEXTSUFFIX')
-        nightsumdir    = config.cfg.get('LSTOSA', 'NIGHTSUMDIR')
+        nightsumdir = config.cfg.get('LSTOSA', 'NIGHTSUMDIR')
         basename = build_lstbasename(nightsumprefix, nightsumsuffix)
-        print("BASENAME",basename,options.directory)
         nightsummaryfile = join(nightsumdir, basename)
         return nightsummaryfile
     # Only the closer needs the night summary file in case of 'ST'.

@@ -12,10 +12,18 @@
 ##############################################################################
 
 import os
+from shutil import copy
 
+from osa.autocloser.closer import is_day_closed
+from osa.jobs import job
+from osa.nightsummary import extract
+from osa.nightsummary.nightsummary import readnightsummary
+from osa.reports.report import start
 from osa.utils.standardhandle import output, verbose, gettag
 
-# FIXME: add stereo_preocess to __all__
+# FIXME: find a better way of handling lstchain version
+# from lstchain.version import get_version
+
 __all__ = ["sequencer", "single_process"]
 
 
@@ -24,7 +32,7 @@ def sequencer():
     This is the main script to be called in crontab
     """
     tag = gettag()
-    from osa.reports.report import start
+
     process_mode = None
     single_array = ['LST1', 'LST2']
     start(tag)
@@ -57,24 +65,19 @@ def single_process(telescope, process_mode):
     """
     tag = gettag()
 
-    from osa.nightsummary import extract
-    from osa.jobs import job
-    from osa.nightsummary.nightsummary import readnightsummary
-    from osa.autocloser.closer import is_day_closed
-    from shutil import copy                                                                                                                                                                                         
-    from osa.configs.config import cfg
-    from lstchain.version import get_version
+    from osa.configs import config
 
     sequence_list = []
 
     # Define global variables and create night directory
     options.tel_id = telescope
-    options.lstchain_version = 'v' + get_version()
-    options.prod_id = options.lstchain_version + '_' + cfg.get('LST1', 'VERSION')
+    # options.lstchain_version = 'v' + get_version()
+    # options.prod_id = options.lstchain_version + '_' + config.cfg.get('LST1', 'VERSION')
+    options.prod_id = config.cfg.get('LST1', 'VERSION')
     options.directory = cliopts.set_default_directory_if_needed()
     options.log_directory = os.path.join(options.directory, 'log')
     os.makedirs(options.log_directory, exist_ok=True)
-    print("DIR: ", options.directory)
+    output(tag, f"Analysis directory: {options.directory}")
 
     simulate_save = options.simulate
     is_report_needed = True
@@ -92,9 +95,9 @@ def single_process(telescope, process_mode):
 
     """ Building the sequences """
     night = readnightsummary()  # night corresponds to f.read()
-    verbose(tag, night)
+    output(tag, f"NightSummary:\n{night}")
                                                                                                                                                                                                                     
-    configfile = cfg.get('LSTOSA', 'CONFIGFILE')
+    configfile = config.cfg.get('LSTOSA', 'CONFIGFILE')
     copy(configfile, options.log_directory)  
 
     subrun_list = extract.extractsubruns(night)
@@ -104,7 +107,7 @@ def single_process(telescope, process_mode):
     sequence_list = extract.extractsequences(run_list)
 
     # Workflow and Submission
-#    dot.writeworkflow(sequence_list)
+    # dot.writeworkflow(sequence_list)
 
     # Adds the scripts
     job.preparejobs(sequence_list)
@@ -118,9 +121,9 @@ def single_process(telescope, process_mode):
 #    job_list = job.submitjobs(sequence_list, queue_list, veto_list)
 
     if not options.simulate:
+        output(tag, "Launching the jobs")
         job_list = job.submitjobs(sequence_list)
 
-#    combine_muon(job_list)
 #    # Report
 #    if is_report_needed:
 #        insert_if_new_activity_db(sequence_list)
@@ -174,6 +177,7 @@ def updatelstchainstatus(seq_list):
     from decimal import Decimal
     for s in seq_list:
         if s.type == 'CALI':
+            # FIXME: Change scalib to LST proper name
             s.scalibstatus = int(Decimal(getlstchainforsequence(s, 'Scalib') * 100) / s.subruns)
         elif s.type == 'DATA':
             s.dl1status = int(Decimal(getlstchainforsequence(s, 'R0-DL1') * 100) / s.subruns)
@@ -187,10 +191,9 @@ def getlstchainforsequence(s, program):
     tag = gettag()
     from os.path import join
     from glob import glob
-    from osa.configs.config import cfg
-    prefix = cfg.get('LSTOSA', program + 'PREFIX')
-    pattern = cfg.get('LSTOSA', program + 'PATTERN')
-    suffix = cfg.get('LSTOSA', program + 'SUFFIX')
+    prefix = config.cfg.get('LSTOSA', program + 'PREFIX')
+    pattern = config.cfg.get('LSTOSA', program + 'PATTERN')
+    suffix = config.cfg.get('LSTOSA', program + 'SUFFIX')
 
     files = glob(join(options.directory, f"{prefix}*{s.run}*{pattern}*{suffix}"))
     numberoffiles = len(files)
@@ -200,7 +203,7 @@ def getlstchainforsequence(s, program):
 
 def reportsequences(seqlist):
     tag = gettag()
-    import config
+    from osa.configs import config
     matrix = []
     header = [
         'Tel', 'Seq', 'Parent', 'Type', 'Run', 'Subruns',
@@ -242,7 +245,7 @@ def reportsequences(seqlist):
 
 def insert_if_new_activity_db(sequence_list):
     tag = gettag()
-    import config
+    from osa.configs import config
     from datetime import datetime
     from mysql import insert_db, select_db
 
@@ -278,7 +281,7 @@ def insert_if_new_activity_db(sequence_list):
 
 def updatesequencedb(seqlist):
     tag = gettag()
-    import config
+    from osa.configs import config
     from mysql import update_db, insert_db, select_db
 
     server = config.cfg.get('MYSQL', 'SERVER')
@@ -381,10 +384,9 @@ def prettyoutputmatrix(m, paddingspace):
 
 if __name__ == '__main__':
     """ Sequencer called as a script does the full job """
-    tag = gettag()
-    import sys
     from osa.utils import options, cliopts
+    tag = gettag()
     # Set the options through parsing of the command line interface
-    cliopts.sequencercliparsing(sys.argv[0])
+    cliopts.sequencercliparsing()
     # Run the routine
     sequencer()
