@@ -24,12 +24,11 @@ def closer():
     """ Starting the algorithm. """
     if is_day_closed():
         # Exit
-        error(tag, "Night {0} already closed for {1}" \
-              .format(options.date, options.tel_id), 1)
+        error(tag, f"Night {options.date} already closed for {options.tel_id}", 1)
     else:
         # Proceed
         if options.seqtoclose is not None:
-            output(tag, "Closing sequence {0}".format(options.seqtoclose))
+            output(tag, f"Closing sequence {options.seqtoclose}")
         sequencer_tuple = []
         if options.reason is not None:
             # No data
@@ -42,12 +41,13 @@ def closer():
                 # Notify and Ask for closing and a reason
                 notify_neither_data_nor_reason_given()
                 ask_for_closing()
-                #FIXME: ask_for_reason is not defined anywhere
+                # FIXME: ask_for_reason is not defined anywhere
                 # ask_for_reason()
             # Proceed with a reason
-        elif is_raw_data_available() or use_night_summary():
+        # elif is_raw_data_available() or use_night_summary():
+        elif use_night_summary():
             # Proceed normally
-            verbose(tag, "Checking sequencer_tuple {0}".format(sequencer_tuple))
+            verbose(tag, f"Checking sequencer_tuple {sequencer_tuple}")
             night_summary_output = readnightsummary()
             sequencer_tuple = is_finished_check(night_summary_output)
 
@@ -244,8 +244,9 @@ def post_process_files(seq_list):
                     .format(pattern, r_basename, pattern_found))
             if options.seqtoclose != None:
                 seqtoclose_found = search(options.seqtoclose, r_basename)
-                verbose(tag, "Was pattern {0} found in {1} ?: {2}" \
-                        .format(options.seqtoclose, r_basename, seqtoclose_found))
+                verbose(
+                    tag,
+                    f"Was pattern {options.seqtoclose} found in {r_basename} ?: {seqtoclose_found}")
                 if seqtoclose_found is None:
                     pattern_found = None
             if pattern_found is not None:
@@ -255,30 +256,31 @@ def post_process_files(seq_list):
                     if exists(new_dst):
                         if islink(r):
                             # Delete because the link has been correctly copied
-                            verbose(tag, "Original file {0} is just a link".format(r))
+                            verbose(tag, f"Original file {r} is just a link")
                             if options.seqtoclose is None:
-                                verbose(tag, "Deleting {0}".format(r))
+                                verbose(tag, f"Deleting {r}")
                                 unlink(r)
                         elif cmp(r, new_dst):
                             # Delete
-                            verbose(tag, "Destination file exists and it is equal to {0}".format(r))
-                            if options.seqtoclose == None:
-                                verbose(tag, "Deleting {0}".format(r))
+                            verbose(tag, f"Destination file exists and it is equal to {r}")
+                            if options.seqtoclose is None:
+                                verbose(tag, f"Deleting {r}")
                                 unlink(r)
                         else:
-                            warning(tag,
-                                    "Original file {0} is not a link or is different than destination {1}".format(r,
-                                                                                                                  new_dst))
+                            warning(
+                                tag,
+                                f"Original file {r} is not a link or is different than destination {new_dst}"
+                            )
                     else:
                         verbose(tag, "Destination file {0} does not exists".format(new_dst))
                         for s in seq_list:
                             verbose(tag, "Looking for {0}".format(s))
                             run_str_found = search(s.run_str, r_basename)
-                            if run_str_found != None:
+                            if run_str_found is not None:
                                 # Register and delete
                                 verbose(tag, "Registering file {0}".format(run_str_found))
                                 register_run_concept_files(s.run_str, concept)
-                                if options.seqtoclose == None:
+                                if options.seqtoclose is None:
                                     unlink(r)
                                 setclosedfilename(s)
                                 createclosed(s.closed)
@@ -302,7 +304,7 @@ def set_closed_in_db(ana_dict):
     servername = config.cfg.get('MYSQL', 'SERVER')
     username = config.cfg.get('MYSQL', 'USER')
     database = config.cfg.get('MYSQL', 'DATABASE')
-    if options.seqtoclose == None:
+    if options.seqtoclose is None:
         set_closed_in_analysis_db(servername, username, database, ana_dict)
     # the next line triggers the transfer to PIC, if the day and telescope is
     # closed in the summary database it will look into the storage database to
@@ -367,11 +369,6 @@ def set_closed_in_summary_db(servername, username, database, ana_dict):
     update_or_insert_and_select_id_db(servername, username, database, table, assignments, conditions)
 
 
-##############################################################################
-#
-# set_closed_with_file
-#
-##############################################################################
 def set_closed_with_file(ana_text):
     tag = gettag()
 
@@ -441,14 +438,14 @@ def synchronize_remote(lockfile):
     remotedirectory = join(cfg.get('REMOTE', 'STATISTICSDIR'), options.tel_id)
     remotebasename = options.date + cfg.get('REMOTE', 'STATISTICSSUFFIX')
     remotepath = join(remotedirectory, remotebasename)
-    output(tag, "Synchronizing {0} {1} by copying lock file to {2}@{3}:{4}". \
-           format(options.tel_id, options.date, user, host, remotepath))
-    commandargs = ['scp']
-    commandargs.append('-P')
-    commandargs.append(cfg.get('REMOTE', 'STATISTICSSSHPORT'))
-    commandargs.append(lockfile)
-    commandargs.append(user + '@' + host + ':' + join(remotedirectory, \
-                                                      remotebasename))
+    output(
+        tag,
+        f"Synchronizing {options.tel_id} {options.date} by copying lock file to {user}@{host}:{remotepath}"
+    )
+    commandargs = [
+        'scp', '-P', cfg.get('REMOTE', 'STATISTICSSSHPORT'),
+        lockfile, user + '@' + host + ':' + join(remotedirectory, remotebasename)
+    ]
     try:
         subprocess.call(commandargs)
     # except OSError as (ValueError, NameError):
