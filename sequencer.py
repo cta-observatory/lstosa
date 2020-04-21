@@ -73,7 +73,6 @@ def single_process(telescope, process_mode):
     options.tel_id = telescope
     options.lstchain_version = 'v' + get_version()
     options.prod_id = options.lstchain_version + '_' + config.cfg.get('LST1', 'VERSION')
-    options.prod_id = config.cfg.get('LST1', 'VERSION')
     options.directory = cliopts.set_default_directory_if_needed()
     options.log_directory = os.path.join(options.directory, 'log')
     os.makedirs(options.log_directory, exist_ok=True)
