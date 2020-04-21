@@ -43,7 +43,7 @@ def historylevel(historyfile, type):
             try:
                 program = words[1]
                 exit_status = int(words[10])
-                print("DEBUG:",program, exit_status)
+                print("DEBUG:", program, exit_status)
             except IndexError as e:
                 error(tag, "Malformed history file {0}, e".format(historyfile), 3)
             except ValueError as e:
@@ -75,7 +75,6 @@ def historylevel(historyfile, type):
                 else:
                     error(tag, 'Programme name not identified {0}'.format(program), 6)
 
-    print(level,exit_status)
     return level, exit_status
 
 
@@ -126,8 +125,7 @@ def createsequencetxt(s, sequence_list):
     from osa.utils.utils import lstdate_to_iso
     from osa.configs.config import cfg
     text_suffix = cfg.get('LSTOSA', 'TEXTSUFFIX')
-    f = join(options.directory, "sequence_{0}{1}".\
-     format(s.jobname, text_suffix))
+    f = join(options.directory, f"sequence_{s.jobname}{text_suffix}")
     start = s.subrun_list[0].timestamp
     ped = ''
     cal = ''
@@ -362,7 +360,6 @@ def createjobtemplate(s):
         tib_counter0 = s.subrun_list[0].tib_counter0
         commandargs.append(tib_counter0)
 
-
     #commandargs.append(str(s.run).zfill(5))
  #   if s.type != 'STEREO':
       #  commandargs.append(options.tel_id)
@@ -372,22 +369,22 @@ def createjobtemplate(s):
     content = "#!/bin/env python\n"
     # SLURM assignments
     content += "\n"
-    content += "#SBATCH -p compute\n"
+    content += "#SBATCH -p compute \n"
     if s.type == 'DATA':
-       content += "#SBATCH --array=0-{0}\n".format(int(n_subruns) - 1)
-    content += "#SBATCH --cpus-per-task=1\n"
-    content += "#SBATCH --mem-per-cpu=25G\n"
+       content += "#SBATCH --array=0-{0} \n".format(int(n_subruns) - 1)
+    content += "#SBATCH --cpus-per-task=1 \n"
+    content += "#SBATCH --mem-per-cpu=25G \n"
     content += "#SBATCH -t 0-24:00\n"
-    content += "#SBATCH -o {0}/slurm.%A_%a.%N.out\n".format(options.log_directory)
-    content += "#SBATCH -e {0}/slurm.%A_%a.%N.err\n".format(options.log_directory)
+    content += f"#SBATCH -o {options.log_directory}/slurm.%A_%a.%N.out \n"
+    content += f"#SBATCH -e {options.log_directory}/slurm.%A_%a.%N.err \n"
     content += "\n"
 
-    content +="import subprocess\n"
-    content +="import os\n"
+    content += "import subprocess \n"
+    content += "import os \n"
     content += "\n\n"
 
-    content +="subruns=os.getenv('SLURM_ARRAY_TASK_ID')\n"
-    content +="job_id=os.getenv('SLURM_JOB_ID')\n"
+    content += "subruns=os.getenv('SLURM_ARRAY_TASK_ID')\n"
+    content += "job_id=os.getenv('SLURM_JOB_ID')\n"
     dat = ''
     #for sub in s.subrun_list:
     #    dat += formatrunsubrun(s.run, sub.subrun) + ' '
@@ -512,7 +509,7 @@ def getqueuejoblist(sequence_list):
     command = config.cfg.get('ENV', 'SBATCHBIN')
     commandargs = [command]
     queue_list = []
-    print("DEBUG",commandargs)
+    print("DEBUG", commandargs)
     try:
         xmloutput = subprocess.check_output(commandargs)
     except subprocess.CalledProcessError as Error:
