@@ -156,8 +156,9 @@ def ask_for_closing():
                 question = 'Close that day? (y/n): '
                 if options.simulate:
                     question += '[SIMULATE ongoing] '
-                #FIXME: figure out where raw_input comes from
-                answer_user = raw_input(question)
+                # FIXME: figure out where raw_input comes from. I set it to answer no
+                # answer_user = raw_input(question)
+                answer_user = 'n'
             except KeyboardInterrupt:
                 warning(tag, "Program quitted by user. No answer")
                 sys.exit(1)
@@ -223,9 +224,8 @@ def post_process_files(seq_list):
         concept_set = ['SUPERSTAR', 'SUPERSTARHISTOGRAM', 'MELIBEA', 'MELIBEAHISTOGRAM']
 
     middle_dir = lstdate_to_dir(options.date)
-    root_files = glob(join(options.directory, \
-                           '*{0}'.format(cfg.get('OSA', 'ROOTSUFFIX'))))
-    root_set = set(root_files)
+    h5_files = glob(join(options.directory, f'*{cfg.get("OSA", "H5SUFFIX")}'))
+    root_set = set(h5_files)
     pattern = None
     for concept in concept_set:
         output(tag, "Processing {0} files, {1} files left".format(concept, len(root_set)))
@@ -242,7 +242,7 @@ def post_process_files(seq_list):
             pattern_found = search(pattern, r_basename)
             verbose(tag, "Was pattern {0} found in {1} ?: {2}" \
                     .format(pattern, r_basename, pattern_found))
-            if options.seqtoclose != None:
+            if options.seqtoclose is not None:
                 seqtoclose_found = search(options.seqtoclose, r_basename)
                 verbose(
                     tag,
