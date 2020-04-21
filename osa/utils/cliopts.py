@@ -62,7 +62,8 @@ def closercliparsing():
     standardhandle.verbose(tag, "the options are {0}".format(opts))
 
     # Setting the default date and directory if needed
-    options.configfile = set_default_configfile_if_needed('closer.py')
+    # options.configfile = set_default_configfile_if_needed('closer.py')
+    options.configfile = set_default_configfile_if_needed('sequencer.py')
     options.date = set_default_date_if_needed()
     options.directory = set_default_directory_if_needed()
 
