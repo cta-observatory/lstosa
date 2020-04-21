@@ -50,6 +50,7 @@ def datasequence(args):
     return rc
 
 
+# FIXME: Parse all different arguments via config file or sequence_list.txt
 @trace
 def r0_to_dl1(
         calibrationfile,
@@ -63,6 +64,7 @@ def r0_to_dl1(
         run_str,
         historyfile
 ):
+
     """Perform low and high-level calibration to raw camera images.
     Apply image cleaning and obtain shower parameters.
 
