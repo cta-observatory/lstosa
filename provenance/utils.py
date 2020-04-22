@@ -2,6 +2,7 @@
 Utility functions for OSA pipeline provenance
 """
 
+import logging
 import re
 import sys
 from pathlib import Path
@@ -63,7 +64,9 @@ def get_log_config():
 
     # default config filename value
     config_file = str(Path("cfg")/"sequencer.cfg")
+    std_logger_file = Path(__file__).resolve().parent / "config" / "logger.yaml"
 
+    # fetch config filename value from args
     in_config_arg = False
     for args in sys.argv:
         if in_config_arg:
@@ -72,13 +75,22 @@ def get_log_config():
         if args.startswith("-c") or args.startswith("--config"):
             in_config_arg = True
 
+    # parse configuration
     log_config = ""
     in_prov_section = False
-    with open(config_file, "r") as f:
-        for line in f.readlines():
-            if in_prov_section:
-                log_config += line
-            if "[PROVENANCE]" in line:
-                in_prov_section = True
+    try:
+        with open(config_file, "r") as f:
+            for line in f.readlines():
+                if in_prov_section:
+                    log_config += line
+                if "[PROVENANCE]" in line:
+                    in_prov_section = True
+    except FileNotFoundError:
+        log = logging.getLogger(__name__)
+        log.warning(f"{config_file} not found, using {std_logger_file} instead.")
+
+    # use default logger.yaml if no prov config info found
+    if log_config == "":
+        log_config = std_logger_file.read_text()
 
     return log_config
