@@ -139,7 +139,7 @@ if __name__ == "__main__":
     if not Path(options.src).exists():
         standardhandle.error(tag, f"file {options.src} does not exist", 2)
 
-    # check options.src prov.log is not empty
+    # check options.src prov.log is empty
     if not Path(options.src).stat().st_size:
         standardhandle.warning(tag, f"file {options.src} is empty")
         exit()
