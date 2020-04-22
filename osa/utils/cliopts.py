@@ -11,7 +11,7 @@ def closer_argparser():
     tag = standardhandle.gettag()
     parser = ArgumentParser()
     parser.add_argument("-c", "--config", action = "store", dest = "configfile", default = None,
-                      help = "use specific config file [default cfg/osa.cfg]")
+                      help = "use specific config file [default cfg/sequencer.cfg]")
     parser.add_argument("-d", "--date", action = "store", type = str, dest = "date",
                       help = "observation ending date YYYY_MM_DD [default today]")
     parser.add_argument("-n", "--usenightsummary", action = "store_true", dest = "nightsum", default = False,
@@ -81,7 +81,7 @@ def pedestalsequencecliparsing(command):
     message = "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <PED_RUN_ID>  <TEL_ID>"
     parser = OptionParser(usage = message)
     parser.add_option("-c", "--config", action = "store", dest = "configfile", default = None,
-                      help = "use specific config file [default cfg/osa.cfg]")
+                      help = "use specific config file [default cfg/sequencer.cfg]")
     parser.add_option("-d", "--date", action = "store", type = "string", dest = "date",
                       help = "observation ending date YYYY_MM_DD [default today]")
     parser.add_option("-o", "--outputdir", action = "store", type = "string", dest = "directory",
@@ -142,7 +142,7 @@ def calibrationsequencecliparsing(command):
     message = "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <pedoutfile> <caloutfile> <CAL_RUN_ID> <PED_RUN_ID>  <TEL_ID>"
     parser = OptionParser(usage = message)
     parser.add_option("-c", "--config", action = "store", dest = "configfile", default = None,
-                      help = "use specific config file [default cfg/osa.cfg]")
+                      help = "use specific config file [default cfg/sequencer.cfg]")
     parser.add_option("-d", "--date", action = "store", type = "string", dest = "date",
                       help = "observation ending date YYYY_MM_DD [default today]")
     parser.add_option("-o", "--outputdir", action = "store", type = "string", dest = "directory",
@@ -201,7 +201,7 @@ def datasequencecliparsing(command):
     message = "usage: %prog  [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <calibrationfile> <pedestalfile> <drivefile> <timecalibration> <RUN> <TEL_ID>"
     parser = OptionParser(usage = message)
     parser.add_option("-c", "--config", action = "store", dest = "configfile", default = None,
-                      help = "use specific config file [default cfg/osa.cfg]")
+                      help = "use specific config file [default cfg/sequencer.cfg]")
     parser.add_option("-d", "--date", action = "store", type = "string", dest = "date",
                       help = "observation ending date YYYY_MM_DD [default today]")
     parser.add_option("-o", "--outputdir", action = "store", type = "string", dest = "directory",
@@ -263,7 +263,7 @@ def stereosequencecliparsing(command):
     message = "usage: %prog  [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <RUN>"
     parser = OptionParser(usage = message)
     parser.add_option("-c", "--config", action = "store", dest = "configfile", default = None,
-                      help = "use specific config file [default cfg/osa.cfg]")
+                      help = "use specific config file [default cfg/sequencer.cfg]")
     parser.add_option("-d", "--date", action = "store", type = "string", dest = "date",
                       help = "observation ending date YYYY_MM_DD [default today]")
     parser.add_option("-o", "--outputdir", action = "store", type = "string", dest = "directory",
@@ -318,7 +318,7 @@ def sequencer_argparser():
     parser = ArgumentParser()
     """ Options which define variables """
     parser.add_argument("-c", "--config", action = "store", dest = "configfile", default = None,
-                        help = "use specific config file [default cfg/osa.cfg]")
+                        help = "use specific config file [default cfg/sequencer.cfg]")
     parser.add_argument("-d", "--date", action = "store", type = str, dest = "date",
                         help = "observation ending date YYYY_MM_DD [default today]")
     parser.add_argument("-m", "--mode", action = "store", type = str, dest = "mode", choices = ['P', 'S', 'T'],
@@ -388,7 +388,7 @@ def monolithcliparsing(command):
     # Options which define variables
     parser = OptionParser(usage = message)
     parser.add_option("-c", "--config", action = "store", dest = "configfile", default = None,
-                      help = "use specific config file [default cfg/osa.cfg]")
+                      help = "use specific config file [default cfg/sequencer.cfg]")
     parser.add_option("-t", "--telescope", action = "store", type = "choice", dest = "tel_id",
                       choices = ['LST1', 'LST2', 'ST'], help = "telescope identifier LST1, LST2 or ST [default all]")
     parser.add_option("-s", "--simulate", action = "store_true", dest = "simulate", default = False,
