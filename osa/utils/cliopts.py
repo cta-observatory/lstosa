@@ -198,7 +198,9 @@ def calibrationsequencecliparsing(command):
 ##############################################################################
 def datasequencecliparsing(command):
     tag = standardhandle.gettag()
-    message = "usage: %prog  [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <calibrationfile> <pedestalfile> <drivefile> <timecalibration> <RUN> <TEL_ID>"
+    message = "usage: %prog  [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] \
+<calibrationfile> <pedestalfile> <drivefile> <timecalibration> <ucts_t0_dragon> <dragon_counter0> \
+<ucts_t0_tib> <tib_counter> <RUN> <TEL_ID>"
     parser = OptionParser(usage = message)
     parser.add_option("-c", "--config", action = "store", dest = "configfile", default = None,
                       help = "use specific config file [default cfg/sequencer.cfg]")
