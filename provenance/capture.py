@@ -25,7 +25,7 @@ from .utils import get_log_config, parse_variables
 #    get_info_version,
 # )
 
-__all__ = ["provenance", "trace", "get_file_hash", "get_activity_id"]
+__all__ = ["trace", "get_file_hash", "get_activity_id"]
 
 _interesting_env_vars = [
     "CONDA_DEFAULT_ENV",
@@ -71,14 +71,14 @@ def setup_logging():
         logging.basicConfig(level="INFO")
 
 
-def provenance(cls):
-    """A function decorator which decorates the methods of a class with trace function."""
-
-    setup_logging()
-    for attr in cls.__dict__:
-        if attr in definition["activities"].keys() and callable(getattr(cls, attr)):
-            setattr(cls, attr, trace(getattr(cls, attr)))
-    return cls
+# def provenance(cls):
+#     """A function decorator which decorates the methods of a class with trace function."""
+#
+#     setup_logging()
+#     for attr in cls.__dict__:
+#         if attr in definition["activities"].keys() and callable(getattr(cls, attr)):
+#             setattr(cls, attr, trace(getattr(cls, attr)))
+#     return cls
 
 
 def trace(func):
