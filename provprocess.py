@@ -133,12 +133,16 @@ if __name__ == "__main__":
     # -c cfg/sequencer.cfg
     # -p prov.log
 
-
     options, tag = cliopts.provprocessparsing()
 
     # check options.src is a file
     if not Path(options.src).exists():
         standardhandle.error(tag, f"file {options.src} does not exist", 2)
+
+    # check options.src is a file
+    if not Path(options.src).stat().st_size:
+        standardhandle.warning(tag, f"file {options.src} is empty")
+        exit()
 
     # check options.out is a folder
     if not Path(options.out).exists():
