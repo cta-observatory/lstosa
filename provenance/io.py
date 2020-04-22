@@ -8,12 +8,12 @@ from pathlib import Path
 import yaml
 from prov.dot import prov_to_dot
 from prov.model import ProvDocument
-
+from .utils import get_log_config
 
 # config
 CONFIG_PATH = Path(__file__).resolve().parent / "config"
-LOGGER_FILE = CONFIG_PATH / "logger.yaml"
-provconfig = yaml.safe_load(LOGGER_FILE.read_text())
+#LOGGER_FILE = CONFIG_PATH / "logger.yaml"
+provconfig = yaml.safe_load(get_log_config())
 PROV_PREFIX = provconfig["PREFIX"]
 DEFAULT_NS = "id"  # "logprov"
 

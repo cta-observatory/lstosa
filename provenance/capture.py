@@ -16,7 +16,7 @@ import psutil
 import yaml
 
 from .io import read_prov
-from .utils import parse_variables
+from .utils import parse_variables, get_log_config
 
 # gammapy specific
 # from gammapy.scripts.info import (
@@ -44,9 +44,9 @@ _interesting_env_vars = [
 
 CONFIG_PATH = Path(__file__).resolve().parent / "config"
 SCHEMA_FILE = CONFIG_PATH / "definition.yaml"
-LOGGER_FILE = CONFIG_PATH / "logger.yaml"
+#LOGGER_FILE = CONFIG_PATH / "logger.yaml"
 definition = yaml.safe_load(SCHEMA_FILE.read_text())
-provconfig = yaml.safe_load(LOGGER_FILE.read_text())
+provconfig = yaml.safe_load(get_log_config())
 logger = logging.getLogger("provLogger")
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 PROV_PREFIX = provconfig["PREFIX"]
@@ -61,11 +61,13 @@ traced_entities = {}
 def setup_logging():
     """Setup logging configuration."""
 
+    log = logging.getLogger(__name__)
+
     try:
         logging.config.dictConfig(provconfig)
     except Exception as ex:
-        print(ex)
-        print("Failed to set up the logger.")
+        log.warning(ex)
+        log.warning("Failed to set up the logger.")
         logging.basicConfig(level="INFO")
 
 

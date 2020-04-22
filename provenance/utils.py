@@ -3,8 +3,10 @@ Utility functions for OSA pipeline provenance
 """
 
 import re
+import sys
+from pathlib import Path
 
-__all__ = ["parse_variables"]
+__all__ = ["parse_variables", "get_log_config"]
 
 
 def parse_variables(class_instance):
@@ -54,3 +56,29 @@ def parse_variables(class_instance):
         class_instance.R0SubrunDataset = f"{rawdir}/{class_instance.ObservationDate}/LST-1.1.Run{class_instance.args[8]}{fits}{fz}"
 
     return class_instance
+
+
+def get_log_config():
+    """Get logging configuration from an OSA config file"""
+
+    # default config filename value
+    config_file = str(Path("cfg")/"sequencer.cfg")
+
+    in_config_arg = False
+    for args in sys.argv:
+        if in_config_arg:
+            config_file = args
+            in_config_arg = False
+        if args.startswith("-c") or args.startswith("--config"):
+            in_config_arg = True
+
+    log_config = ""
+    in_prov_section = False
+    with open(config_file, "r") as f:
+        for line in f.readlines():
+            if in_prov_section:
+                log_config += line
+            if "[PROVENANCE]" in line:
+                in_prov_section = True
+
+    return log_config
