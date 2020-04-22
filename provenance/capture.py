@@ -16,7 +16,7 @@ import psutil
 import yaml
 
 from .io import read_prov
-from .utils import parse_variables, get_log_config
+from .utils import get_log_config, parse_variables
 
 # gammapy specific
 # from gammapy.scripts.info import (
@@ -44,7 +44,7 @@ _interesting_env_vars = [
 
 CONFIG_PATH = Path(__file__).resolve().parent / "config"
 SCHEMA_FILE = CONFIG_PATH / "definition.yaml"
-#LOGGER_FILE = CONFIG_PATH / "logger.yaml"
+# LOGGER_FILE = CONFIG_PATH / "logger.yaml"
 definition = yaml.safe_load(SCHEMA_FILE.read_text())
 provconfig = yaml.safe_load(get_log_config())
 logger = logging.getLogger("provLogger")
