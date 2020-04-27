@@ -23,7 +23,7 @@ def r0_to_dl1(
 
 
 def select_config(tmp_path):
-    
+
     config_file = str(Path("cfg")/"sequencer.cfg")
     in_config_arg = False
     for args in sys.argv:
@@ -74,3 +74,7 @@ def test_trace_r0_to_dl1(tmp_path):
     png_filepath = tmp_path / "prov.png"
     provdoc2png(provdoc, str(png_filepath))
 
+    try:
+        Path("prov.log").unlink()
+    except FileNotFoundError:
+        pass
