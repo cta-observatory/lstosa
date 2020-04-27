@@ -64,3 +64,9 @@ def test_trace_r0_to_dl1(tmp_path):
 
     # track prov
     r0_to_dl1(*args)
+
+    # make json
+    json_filepath = tmp_path / "prov.json"
+    provdoc = provlist2provdoc(read_prov(filename="prov.log"))
+    provdoc.serialize(str(json_filepath), indent=4)
+
