@@ -1,9 +1,9 @@
-from optparse import OptionParser
-from ..capture import trace
 import shutil
 import sys
 from osa.utils import options
 from pathlib import Path, PurePath
+from provenance.capture import trace
+from provenance.io import *
 
 
 @trace
