@@ -25,7 +25,7 @@ from .utils import get_log_config, parse_variables
 #    get_info_version,
 # )
 
-__all__ = ["provenance", "trace", "get_file_hash", "get_activity_id"]
+__all__ = ["trace", "get_file_hash", "get_activity_id"]
 
 _interesting_env_vars = [
     "CONDA_DEFAULT_ENV",
@@ -71,14 +71,14 @@ def setup_logging():
         logging.basicConfig(level="INFO")
 
 
-def provenance(cls):
-    """A function decorator which decorates the methods of a class with trace function."""
-
-    setup_logging()
-    for attr in cls.__dict__:
-        if attr in definition["activities"].keys() and callable(getattr(cls, attr)):
-            setattr(cls, attr, trace(getattr(cls, attr)))
-    return cls
+# def provenance(cls):
+#     """A function decorator which decorates the methods of a class with trace function."""
+#
+#     setup_logging()
+#     for attr in cls.__dict__:
+#         if attr in definition["activities"].keys() and callable(getattr(cls, attr)):
+#             setattr(cls, attr, trace(getattr(cls, attr)))
+#     return cls
 
 
 def trace(func):
@@ -542,55 +542,55 @@ def log_progenitors(entity_id, subitem, class_instance):
             log_prov_info(log_record)
 
 
-def log_file_generation(str_path, entity_name="", used=None, role="", activity_name=""):
-    """Log properties of a generated file."""
-
-    if used is None:
-        used = []
-    if Path(str_path).isfile():
-        method = get_hash_method()
-        item = dict(
-            file_path=str_path,
-            entityName=entity_name,
-        )
-        entity_id = get_entity_id(str_path, item)
-        log_record = {
-            "entity_id": entity_id,
-            "name": entity_name,
-            "location": str_path,
-            "hash": entity_id,
-            "hash_type": method,
-        }
-        log_prov_info(log_record)
-        if activity_name:
-            activity_id = get_activity_id()
-            log_record = {
-                "activity_id": activity_id,
-                "name": activity_name,
-            }
-            log_prov_info(log_record)
-            for used_entity in used:
-                used_id = get_entity_id(used_entity, {})
-                log_record = {
-                    "activity_id": activity_id,
-                    "used_id": used_id,
-                }
-                log_prov_info(log_record)
-            log_record = {
-                "activity_id": activity_id,
-                "generated_id": entity_id,
-            }
-            if role:
-                log_record.update({"generated_role": role})
-            log_prov_info(log_record)
-        else:
-            for used_entity in used:
-                used_id = get_entity_id(used_entity, {})
-                log_record = {
-                    "entity_id": entity_id,
-                    "progenitor_id": used_id,
-                }
-                log_prov_info(log_record)
+# def log_file_generation(str_path, entity_name="", used=None, role="", activity_name=""):
+#     """Log properties of a generated file."""
+#
+#     if used is None:
+#         used = []
+#     if Path(str_path).isfile():
+#         method = get_hash_method()
+#         item = dict(
+#             file_path=str_path,
+#             entityName=entity_name,
+#         )
+#         entity_id = get_entity_id(str_path, item)
+#         log_record = {
+#             "entity_id": entity_id,
+#             "name": entity_name,
+#             "location": str_path,
+#             "hash": entity_id,
+#             "hash_type": method,
+#         }
+#         log_prov_info(log_record)
+#         if activity_name:
+#             activity_id = get_activity_id()
+#             log_record = {
+#                 "activity_id": activity_id,
+#                 "name": activity_name,
+#             }
+#             log_prov_info(log_record)
+#             for used_entity in used:
+#                 used_id = get_entity_id(used_entity, {})
+#                 log_record = {
+#                     "activity_id": activity_id,
+#                     "used_id": used_id,
+#                 }
+#                 log_prov_info(log_record)
+#             log_record = {
+#                 "activity_id": activity_id,
+#                 "generated_id": entity_id,
+#             }
+#             if role:
+#                 log_record.update({"generated_role": role})
+#             log_prov_info(log_record)
+#         else:
+#             for used_entity in used:
+#                 used_id = get_entity_id(used_entity, {})
+#                 log_record = {
+#                     "entity_id": entity_id,
+#                     "progenitor_id": used_id,
+#                 }
+#                 log_prov_info(log_record)
 
 
 # ctapipe inherited code

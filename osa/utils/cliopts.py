@@ -501,7 +501,7 @@ def provprocessparsing():
     parser = OptionParser(usage=message)
     parser.add_option("-p", "--prov", action="store", dest="provfile", default="prov.log",
                       help="provenance file to process [default prov.log]")
-    parser.add_option("-c", "--config", action="store", dest="configfile", default = None,
+    parser.add_option("-c", "--config", action="store", dest="configfile", default="cfg/sequencer.cfg",
                       help="use specific config file [default cfg/sequencer.cfg]")
 
     # Parse the command line
@@ -514,6 +514,7 @@ def provprocessparsing():
     options.run = args[0]
     options.out = args[1]
     options.src = opts.provfile
+    options.configfile = opts.configfile
 
     return options, tag
 

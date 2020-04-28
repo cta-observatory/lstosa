@@ -44,9 +44,9 @@ def parse_variables(class_instance):
         class_instance.SoftwareVersion = re.findall(r"DL1/\d{8}/(v.*)_v", class_instance.args[9])[0]
         class_instance.ProdID = re.findall(r"DL1/\d{8}/v.*_v(.*)/", class_instance.args[9])[0]
         # /fefs/aswg/data/real/calibration/20200218/v00/calibration.Run2006.0000.hdf5
-        class_instance.CalibrationRun = re.findall(r"Run(\d{4}).", class_instance.args[0])[0]
+        class_instance.CalibrationRun = str(re.findall(r"Run(\d{4}).", class_instance.args[0])[0]).zfill(5)
         # /fefs/aswg/data/real/calibration/20200218/v00/drs4_pedestal.Run2005.0000.fits
-        class_instance.PedestalRun = re.findall(r"Run(\d{4}).", class_instance.args[1])[0]
+        class_instance.PedestalRun = str(re.findall(r"Run(\d{4}).", class_instance.args[1])[0]).zfill(5)
         # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST1.1.Run2006.0001.fits.h5
         fits = cfg.get("LSTOSA", "FITSSUFFIX")
         fz = cfg.get("LSTOSA", "COMPRESSEDSUFFIX")
