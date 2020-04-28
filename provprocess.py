@@ -40,6 +40,11 @@ def copy_used_file(src, out, tag_handle):
 def parse_lines_dl1(prov_lines, out, tag_handle):
     """Process r0 to dl1 provenance info to bundle session at run scope."""
 
+    from osa.configs.config import cfg
+
+    pathR0 = cfg.get("LST1", "RAWDIR")
+    pathDL1 = cfg.get("LST1", "ANALYSISDIR")
+
     i = 0
     size = 0
     working_lines = []
@@ -59,11 +64,11 @@ def parse_lines_dl1(prov_lines, out, tag_handle):
         name = line.get("name", "")
 
         # remove subruns info
-        if "data/real/R0/" in filepath or used_role == "Observation subrun":
+        if pathR0 in filepath or used_role == "Observation subrun":
             if filepath:
                 r0filepath_str = filepath
             remove = True
-        if "data/real/DL1/" in filepath or generated_role == "DL1 subrun dataset":
+        if pathDL1 in filepath or generated_role == "DL1 subrun dataset":
             if filepath:
                 dl1filepath_str = filepath
             remove = True
