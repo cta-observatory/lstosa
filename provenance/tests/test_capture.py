@@ -1,30 +1,31 @@
 import shutil
 import sys
-from osa.utils import options
 from pathlib import Path, PurePath
+
+from osa.utils import options
 from provenance.capture import trace
 from provenance.io import *
 
 
 @trace
 def r0_to_dl1(
-        calibrationfile,
-        pedestalfile,
-        time_calibration,
-        drivefile,
-        ucts_t0_dragon,
-        dragon_counter0,
-        ucts_t0_tib,
-        tib_counter0,
-        run_str,
-        historyfile
+    calibrationfile,
+    pedestalfile,
+    time_calibration,
+    drivefile,
+    ucts_t0_dragon,
+    dragon_counter0,
+    ucts_t0_tib,
+    tib_counter0,
+    run_str,
+    historyfile,
 ):
     pass
 
 
 def select_config(tmp_path):
 
-    config_file = str(Path("cfg")/"sequencer.cfg")
+    config_file = str(Path("cfg") / "sequencer.cfg")
     in_config_arg = False
     for args in sys.argv:
         if in_config_arg:
@@ -51,7 +52,7 @@ def make_args_r0_to_dl1():
         "ucts_t0_tib",
         "tib_counter0",
         "02006.0002",
-        "DL1/20200218/v0.4.3_v00/historyfile/sequence_LST1_02006.0001.history"
+        "DL1/20200218/v0.4.3_v00/historyfile/sequence_LST1_02006.0001.history",
     )
     return args
 
