@@ -16,8 +16,7 @@ conda activate osa
 ```
 conda env update -n osa -f environment.yml
 ```
-
-* Install `lstosa` (using `conda-build`):
+* Install `lstosa` (using conda-build):
 ```
 conda develop .
 ```
