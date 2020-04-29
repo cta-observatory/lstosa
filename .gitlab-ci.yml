@@ -1,21 +1,34 @@
-image: python:3.7-alpine
+image: continuumio/anaconda3:latest
 
-test:
+before_script:
+- source /opt/conda/etc/profile.d/conda.sh
+- conda env create -f environment.yml
+- conda activate osa
+- conda install sphinx
+- conda install sphinx_rtd_theme
+- conda develop .
+
+testcode:
   stage: test
   script:
-  - pip install -U sphinx
-  - pip install sphinx_rtd_theme
+  - pytest provenance/
+  only:
+  - branches
+  except:
+  - master
+
+testdocs:
+  stage: test
+  script:
   - sphinx-build -b html ./docs public
   only:
   - branches
   except:
   - master
 
-pages:
+deploydocs:
   stage: deploy
   script:
-  - pip install -U sphinx
-  - pip install sphinx_rtd_theme
   - sphinx-build -b html ./docs public
   artifacts:
     paths:
