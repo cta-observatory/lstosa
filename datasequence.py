@@ -101,17 +101,17 @@ def r0_to_dl1(
 
     commandargs = [
         fullcommand,
-        '-f', datafile,
-        '-o', options.directory,
-        '-pedestal', pedestalfile,
-        '-calib', calibrationfile,
-        '-conf', configfile,
-        '-time_calib', time_calibration,
-        '-pointing', drivefile,
-        '--ucts_t0_dragon', ucts_t0_dragon,
-        '--dragon_counter0', dragon_counter0,
-        '--ucts_t0_tib', ucts_t0_tib,
-        '--tib_counter0', tib_counter0
+        '--input-file', datafile,
+        '--output-dir', options.directory,
+        '--pedestal-file', pedestalfile,
+        '--calibration-file', calibrationfile,
+        '--config', configfile,
+        '--time-calibration-file', time_calibration,
+        '--pointing-file', drivefile,
+        '--ucts-t0-dragon', ucts_t0_dragon,
+        '--dragon-counter0', dragon_counter0,
+        '--ucts-t0-tib', ucts_t0_tib,
+        '--tib-counter0', tib_counter0
     ]
 
     try:
@@ -164,10 +164,10 @@ def dl1_to_dl2(run_str, historyfile):
 
     commandargs = [
         fullcommand,
-        '--datafile', datafile,
-        '--outdir', dl2_directory,
-        '--pathmodels', rf_models_directory,
-        '--config_file', configfile
+        '--input-file', datafile,
+        '--output-dir', dl2_directory,
+        '--path-models', rf_models_directory,
+        '--config', configfile
     ]
 
     try:
