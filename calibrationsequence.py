@@ -71,9 +71,9 @@ def drs4_pedestal(run_ped, pedestal_output_file, historyfile):
     
     max_events = cfg.get('LSTOSA', 'MAX_PED_EVENTS')
 
-    commandargs.append('--input_file=' +  input_file)
+    commandargs.append('--input-file=' +  input_file)
 #    commandargs.append( input_file)
-    commandargs.append('--output_file=' + pedestal_output_file )
+    commandargs.append('--output-file=' + pedestal_output_file )
  #   commandargs.append( pedestal_output_file )
     commandargs.append('--max_events='+ max_events)
 
@@ -138,8 +138,8 @@ def calibrate(calibration_run_id, pedestal_file, calibration_output_file, histor
 #    calibration_base_dir = cfg.get('LSTOSA', 'CALIB_BASE_DIRECTORY')  #def: '/fefs/aswg/data/real'
 #    calculate_time_run = cfg.get('LSTOSA', 'CALCULATE_TIME_RUN')  #def: '1625'
 
-    commandargs.append('--input_file=' + calibration_data_file)
-    commandargs.append('--output_file=' + calibration_output_file)
+    commandargs.append('--input-file=' + calibration_data_file)
+    commandargs.append('--output-file=' + calibration_output_file)
 
     commandargs.append('--pedestal_file=' + pedestal_file)
     commandargs.append('--FlatFieldCalculator.sample_size=' + flat_field_sample_size)
