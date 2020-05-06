@@ -1,4 +1,4 @@
-from osa.utils.standardhandle import verbose, error, stringify, gettag
+from osa.utils.standardhandle import verbose, error, gettag
 from provenance import trace
 
 __all__ = ["datasequence", "r0_to_dl1", 'dl1_to_dl2']
@@ -157,7 +157,7 @@ def dl1_to_dl2(run_str, historyfile):
         cfg.get('LST1', 'ANALYSISDIR'),
         nightdir, options.prod_id,
         cfg.get('LSTOSA', 'R0-DL1PREFIX') +
-        f'LST-1.1.Run{run_str}{cfg.get("LSTOSA", "FITSSUFFIX")}{cfg.get("LSTOSA", "DATA-HDF5SUFFIX")}'
+        f'LST-1.Run{run_str}{cfg.get("LSTOSA", "DATA-HDF5SUFFIX")}'
     )
 
     dl2_directory = join(cfg.get('LST1', 'DL2-DIR'), nightdir, options.prod_id)
