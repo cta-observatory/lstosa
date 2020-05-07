@@ -92,11 +92,10 @@ def r0_to_dl1(
     lstchaincommand = cfg.get('LSTOSA', 'R0-DL1')
     nightdir = lstdate_to_dir(options.date)
     fullcommand = lstchaincommand
-    print("Run_str", run_str)
     datafile = join(
         cfg.get('LST1', 'RAWDIR'),
         nightdir,
-        f'LST-1.1.Run{run_str}{cfg.get("LSTOSA", "FITSSUFFIX")}{cfg.get("LSTOSA", "COMPRESSEDSUFFIX")}'
+        f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "R0SUFFIX")}'
     )
 
     commandargs = [
@@ -156,8 +155,7 @@ def dl1_to_dl2(run_str, historyfile):
     datafile = join(
         cfg.get('LST1', 'ANALYSISDIR'),
         nightdir, options.prod_id,
-        cfg.get('LSTOSA', 'R0-DL1PREFIX') +
-        f'LST-1.Run{run_str}{cfg.get("LSTOSA", "DATA-HDF5SUFFIX")}'
+        f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}'
     )
 
     dl2_directory = join(cfg.get('LST1', 'DL2-DIR'), nightdir, options.prod_id)
