@@ -48,13 +48,17 @@ def parse_variables(class_instance):
         # /fefs/aswg/data/real/calibration/20200218/v00/drs4_pedestal.Run2005.0000.fits
         class_instance.PedestalRun = str(re.findall(r"Run(\d{4}).", class_instance.args[1])[0]).zfill(5)
         # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST1.1.Run2006.0001.fits.h5
+        # As of lstchain v0.5.0: pathname/dl1_LST-1.Run01832.0051.h5
         fits = cfg.get("LSTOSA", "FITSSUFFIX")
         fz = cfg.get("LSTOSA", "COMPRESSEDSUFFIX")
+        h5 = cfg.get("LSTOSA", "H5SUFFIX")
+        r0_prefix = cfg.get("LSTOSA", "R0PREFIX")
+        dl1_prefix = cfg.get("LSTOSA", "DL1PREFIX")
         outdir = re.findall(r"(.*)sequence", class_instance.args[9])[0]
-        class_instance.DL1SubrunDataset = f"{outdir}dl1_LST-1.1.Run{class_instance.args[8]}{fits}.h5"
+        class_instance.DL1SubrunDataset = f"{outdir}{dl1_prefix}.Run{class_instance.args[8]}{h5}"
         # /fefs/aswg/data/real/R0/20200218/LST1.1.Run2006.0001.fits.fz
         rawdir = cfg.get("LST1", "RAWDIR")
-        class_instance.R0SubrunDataset = f"{rawdir}/{class_instance.ObservationDate}/LST-1.1.Run{class_instance.args[8]}{fits}{fz}"
+        class_instance.R0SubrunDataset = f"{rawdir}/{class_instance.ObservationDate}/{r0_prefix}.Run{class_instance.args[8]}{fits}{fz}"
 
     return class_instance
 
