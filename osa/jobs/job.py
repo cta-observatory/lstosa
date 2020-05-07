@@ -207,7 +207,7 @@ def setsequencecalibfilenames(sequence_list):
     tag = gettag()
     from osa.configs.config import cfg
     from osa.utils.utils import lstdate_to_dir
-    scalib_suffix = cfg.get('LSTOSA', 'SCALIBSUFFIX')
+    calib_suffix = cfg.get('LSTOSA', 'CALIBSUFFIX')
     pedestal_suffix = cfg.get('LSTOSA', 'PEDESTALSUFFIX')
     drive_suffix = cfg.get('LSTOSA', 'DRIVESUFFIX')
     for s in sequence_list:
@@ -216,8 +216,7 @@ def setsequencecalibfilenames(sequence_list):
 
             cal_run_string = str(s.run).zfill(4)
             calfile = "calibration.Run{0}.0000{1}".\
-                 format(cal_run_string, scalib_suffix)
-            #pedfile = '666ped.root'
+                 format(cal_run_string, calib_suffix)
             ped_run_string = str(s.previousrun).zfill(4)
             pedfile = "drs4_pedestal.Run{0}.0000{1}".\
                  format(ped_run_string, pedestal_suffix)
@@ -234,7 +233,7 @@ def setsequencecalibfilenames(sequence_list):
             yy,mm,dd = date_in_yymmdd(nightdir)
             if options.mode == 'P':
                 calfile = "calibration.Run{0}.0000{1}".\
-                 format(run_string, scalib_suffix)
+                 format(run_string, calib_suffix)
                 pedfile = "drs4_pedestal.Run{0}.0000{1}".\
                  format(ped_run_string, pedestal_suffix)
                 drivefile = "drive_log_{0}_{1}_{2}{3}".\
