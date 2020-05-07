@@ -74,7 +74,7 @@ def drs4_pedestal(run_ped, pedestal_output_file, historyfile):
         '--max-events=' + max_events
     ]
 
-    print("COMAND for pedestal:", commandargs)
+    print("COMMAND for pedestal:", commandargs)
     commandconcept = 'drs4_pedestal'
     pedestalfile = 'drs4_pedestal'
     try:
