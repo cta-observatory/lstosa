@@ -73,17 +73,17 @@ def superstar(run_str, history_file):
     root_suffix = cfg.get('OSA', 'ROOTSUFFIX')
     input_card = join(cfg.get('OSA', 'CARDDIR'),\
      cfg.get(options.tel_id, 'SUPERSTARCONFIGCARD'))
-    star_dir_M1 = cfg.get('M1', 'STARDIR')
-    star_dir_M2 = cfg.get('M2', 'STARDIR')
+    star_dir_LST1 = cfg.get('LST1', 'STARDIR')
+    star_dir_LST2 = cfg.get('LST2', 'STARDIR')
     superstarhistogramprefix = cfg.get('OSA', 'SUPERSTARHISTOGRAMPREFIX')
 
-    star_ind_M1 = join(star_dir_M1, night_subdir, "*{0}*{1}*{2}".\
-     format('M1', run_str, root_suffix)) 
-    star_ind_M2 = join(star_dir_M2, night_subdir, "*{0}*{1}*{2}".\
+    star_ind_LST1 = join(star_dir_LST1, night_subdir, "*{0}*{1}*{2}".\
+     format('LST1', run_str, root_suffix))
+    star_ind_LST2 = join(star_dir_M2, night_subdir, "*{0}*{1}*{2}".\
      format('M2', run_str, root_suffix))
     output_basename = "{0}{1}{2}".\
      format(superstarhistogramprefix, run_str, root_suffix)
-    rc = superstar_specific(full_mars_command, input_card, run_str, star_ind_M1,\
+    rc = superstar_specific(full_mars_command, input_card, run_str, star_ind_LST1,\
      star_ind_M2, output_basename, history_file)
 
     """ Error handling """
@@ -102,7 +102,7 @@ def superstar(run_str, history_file):
 # superstar_specific 
 #
 ##############################################################################
-def superstar_specific(full_mars_command, input_card, run_str, star_ind_M1,\
+def superstar_specific(full_mars_command, input_card, run_str, star_ind_LST1,\
  star_ind_M2, output_basename, history_file):
     tag = gettag()
     import subprocess
@@ -118,15 +118,15 @@ def superstar_specific(full_mars_command, input_card, run_str, star_ind_M1,\
     commandargs.append('-q')
     commandargs.append('-b')
     commandargs.append('--config=' + input_card)
-    commandargs.append('--ind1=' + star_ind_M1)
+    commandargs.append('--ind1=' + star_ind_LST1)
     commandargs.append('--ind2=' + star_ind_M2)
     commandargs.append('--out=' + options.directory)
     commandargs.append('--outname=' + output_basename)
 
-    M1_star_files = glob(star_ind_M1)
-    if len(M1_star_files) == 0:
-        error(tag, "No M1 star file of the form {0} exists yet".\
-         format(star_ind_M1), 1)
+    LST1_star_files = glob(star_ind_LST1)
+    if len(LST1_star_files) == 0:
+        error(tag, "No LST1 star file of the form {0} exists yet".\
+         format(star_ind_LST1), 1)
     M2_star_files = glob(star_ind_M2)
     if len(M2_star_files) == 0:
         error(tag, "No M2 star file of the form {0} exists yet".\
@@ -165,7 +165,7 @@ def melibea(run_str, history_file):
 #    --ind="InputDIR/*_S_*.root" \
 #    --out="OutputDIR/." \
 #    --rf --rftree=RF.root \
-#    --calc-disp-rf --rfdisptree=M1/DispRF.root \
+#    --calc-disp-rf --rfdisptree=LST1/DispRF.root \
 #    --calc-disp2-rf --rfdisp2tree=M2/DispRF.root \
 #    --calcstereodisp --disp-rf-sstrained \
 #    -erec --etab=Energy_Table.root 
@@ -185,7 +185,7 @@ def melibea(run_str, history_file):
      cfg.get(options.tel_id, 'MELIBEACONFIGCARD'))
     rftree = join(cfg.get('ST', 'RANDOMFORESTMATRIXDIR'),\
      cfg.get('ST', 'RANDOMFORESTMATRIX'))
-    disp1 = join(cfg.get('ST', 'DISPM1MATRIXDIR'),\
+    disp1 = join(cfg.get('ST', 'DISPLST1MATRIXDIR'),\
      cfg.get('ST', 'DISPMATRIX'))
     disp2 = join(cfg.get('ST', 'DISPM2MATRIXDIR'),\
      cfg.get('ST', 'DISPMATRIX'))
@@ -234,7 +234,7 @@ def melibea_specific(full_mars_command, input_card, run_str, ind, out,\
 #    --ind=InputDIR/*_S_*.root \
 #    --out=OutputDIR/. \
 #    --rf --rftree=RF.root \
-#    --calc-disp-rf --rfdisptree=M1/DispRF.root \
+#    --calc-disp-rf --rfdisptree=LST1/DispRF.root \
 #    --calc-disp2-rf --rfdisp2tree=M2/DispRF.root \
 #    --calcstereodisp --disp-rf-sstrained \
 #    -erec --etab=Energy_Table.root

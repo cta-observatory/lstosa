@@ -23,21 +23,23 @@ def arerawfilestransferred():
     tag = gettag()
     answer = None
     if options.tel_id == 'ST':
-        answer_M1 = arerawfilestransferredfortel('M1')
-        answer_M2 = arerawfilestransferredfortel('M2') 
-        answer = answer_M1 * answer_M2
+        answer_LST1 = arerawfilestransferredfortel('LST1')
+        answer_LST2 = arerawfilestransferredfortel('LST2')
+        answer = answer_LST1 * answer_LST2
     else:
         answer = arerawfilestransferredfortel(options.tel_id)
     return answer
+
 
 def get_check_rawdir():
     tag = gettag()
     from os.path import exists, join
     rawdir = getrawdir()
     rawsuffix = config.cfg.get('LSTOSA', 'RAWSUFFIX')
-    verbose(tag, "raw suffix = {0}".format(rawsuffix))
+    verbose(tag, f"raw suffix = {rawsuffix}")
     compressedsuffix = config.cfg.get('LSTOSA', 'COMPRESSEDSUFFIX')
-    verbose(tag, "raw compressed suffix = {0}".format(rawsuffix + compressedsuffix))
+    verbose(tag, f"raw compressed suffix = {rawsuffix + compressedsuffix}")
+    print(rawdir)
 
     if not exists(rawdir):
         # The most sensible thing to do is to quit succesfully after a warning
@@ -64,7 +66,7 @@ def getrawdir():
     from os.path import join
     from osa.configs import config
     rawdir = None
-    if options.tel_id == 'M1' or options.tel_id == 'M2':
+    if options.tel_id == 'LST1' or options.tel_id == 'LST2':
         rawdir = join(config.cfg.get(options.tel_id, 'RAWDIR'), options.date)
     return rawdir
 

@@ -481,7 +481,7 @@ def rawcopycliparsing(command):
         standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
     elif args[0] == 'ST':
         standardhandle.error(tag, "not yet ready for telescope {0}".format(options.options.tel_id), 2)
-    elif args[0] != 'LST1' and args[0] != 'M2':
+    elif args[0] != 'LST1' and args[0] != 'LST2':
         standardhandle.error(tag, "wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
     options.tel_id = args[0]
 

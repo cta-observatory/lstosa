@@ -44,8 +44,8 @@ def closer():
                 # FIXME: ask_for_reason is not defined anywhere
                 # ask_for_reason()
             # Proceed with a reason
-        # elif is_raw_data_available() or use_night_summary():
-        elif use_night_summary():
+        elif is_raw_data_available() or use_night_summary():
+        #elif use_night_summary():
             # Proceed normally
             verbose(tag, f"Checking sequencer_tuple {sequencer_tuple}")
             night_summary_output = readnightsummary()
