@@ -103,8 +103,8 @@ def finished_assignments(sequence_list):
 
     for concept in concept_set:
         pattern = f"{cfg.get('LSTOSA', concept + 'PREFIX')}*"
-        if cfg.get('LSTOSA', concept + 'PATTERN'):
-            pattern += f"{cfg.get('LSTOSA', concept + 'PATTERN')}*"
+        #if cfg.get('LSTOSA', concept + 'PATTERN'):
+        #    pattern += f"{cfg.get('LSTOSA', concept + 'PATTERN')}*"
 
         verbose(tag, f"Trying with {concept} and searching {pattern}")
         file_no[concept] = 0
