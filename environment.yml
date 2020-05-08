@@ -1,4 +1,4 @@
-name: osa-dev
+name: osa
 channels:
   - default
   - cta-observatory
@@ -18,9 +18,8 @@ dependencies:
   - black
   - isort
   - pip:
-      #- git+https://github.com/cta-observatory/cta-lstchain.git
-      - git+git://github.com/cta-observatory/cta-lstchain
-        #- lstchain
+      #- git+git://github.com/cta-observatory/cta-lstchain
+      - lstchain
       - pytest_runner
       - pytest-ordering
       - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.4.1
