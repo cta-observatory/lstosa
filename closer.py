@@ -218,20 +218,20 @@ def post_process_files(seq_list):
 
     concept_set = []
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
-        concept_set = ['SCALIB', 'SSIGNAL', 'SORCERER', 'MERPP', 'STARHISTOGRAM', 'STAR']
+        concept_set = ['PED', 'CALIB', 'TIMECALIB', 'DL1', 'DL2', 'MUONS', 'DATACHECK']
     elif options.tel_id == 'ST':
-        concept_set = ['SUPERSTAR', 'SUPERSTARHISTOGRAM', 'MELIBEA', 'MELIBEAHISTOGRAM']
+        concept_set = []
 
     middle_dir = lstdate_to_dir(options.date)
-    h5_files = glob(join(options.directory, f'*{cfg.get("OSA", "H5SUFFIX")}'))
+    h5_files = glob(join(options.directory, f'*{cfg.get("LSTOSA", "H5SUFFIX")}'))
     root_set = set(h5_files)
     pattern = None
     for concept in concept_set:
         output(tag, "Processing {0} files, {1} files left".format(concept, len(root_set)))
-        if cfg.get('OSA', concept + 'PREFIX'):
-            pattern = cfg.get('OSA', concept + 'PREFIX')
+        if cfg.get('LSTOSA', concept + 'PREFIX'):
+            pattern = cfg.get('LSTOSA', concept + 'PREFIX')
         else:
-            pattern = cfg.get('OSA', concept + 'PATTERN')
+            pattern = cfg.get('LSTOSA', concept + 'PATTERN')
 
         dir = join(cfg.get(options.tel_id, concept + 'DIR'), middle_dir)
         delete_set = set()
@@ -327,7 +327,7 @@ def set_closed_in_analysis_db(servername, username, database, ana_dict):
     table = cfg.get('MYSQL', 'ANALYSISTABLE')
     incidences_file = join(
         options.directory,
-        cfg.get('OSA', 'INCIDENCESPREFIX') + cfg.get('OSA', 'TEXTSUFFIX')
+        cfg.get('LSTOSA', 'INCIDENCESPREFIX') + cfg.get('LSTOSA', 'TEXTSUFFIX')
     )
 
     assignments = dict()
@@ -458,7 +458,7 @@ def setclosedfilename(s):
     tag = gettag()
     import os.path
     from osa.configs.config import cfg
-    closed_suffix = cfg.get('OSA', 'CLOSEDSUFFIX')
+    closed_suffix = cfg.get('LSTOSA', 'CLOSEDSUFFIX')
     basename = "sequence_{0}".format(s.jobname)
     s.closed = os.path.join(options.directory, basename + closed_suffix)
 

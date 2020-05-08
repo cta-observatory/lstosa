@@ -29,7 +29,7 @@ def stereosequence(args):
 
     run_str = args[0]
 
-    history_suffix = cfg.get('OSA', 'HISTORYSUFFIX')
+    history_suffix = cfg.get('LSTOSA', 'HISTORYSUFFIX')
     history_nosuffix = join(options.directory, "sequence_{0}_{1}".\
      format(options.tel_id, run_str))
     history_file = history_nosuffix + history_suffix
@@ -67,15 +67,15 @@ def superstar(run_str, history_file):
     from register import register_run_concept_files
     from utils import magicdate_to_dir
     night_subdir = magicdate_to_dir(options.date)
-    mars_dir = cfg.get('OSA', 'MARSDIR')
-    mars_command = cfg.get('OSA', 'SUPERSTAR')
+    mars_dir = cfg.get('LSTOSA', 'MARSDIR')
+    mars_command = cfg.get('LSTOSA', 'SUPERSTAR')
     full_mars_command = join(mars_dir, mars_command)
-    root_suffix = cfg.get('OSA', 'ROOTSUFFIX')
-    input_card = join(cfg.get('OSA', 'CARDDIR'),\
+    root_suffix = cfg.get('LSTOSA', 'ROOTSUFFIX')
+    input_card = join(cfg.get('LSTOSA', 'CARDDIR'),\
      cfg.get(options.tel_id, 'SUPERSTARCONFIGCARD'))
     star_dir_LST1 = cfg.get('LST1', 'STARDIR')
     star_dir_LST2 = cfg.get('LST2', 'STARDIR')
-    superstarhistogramprefix = cfg.get('OSA', 'SUPERSTARHISTOGRAMPREFIX')
+    superstarhistogramprefix = cfg.get('LSTOSA', 'SUPERSTARHISTOGRAMPREFIX')
 
     star_ind_LST1 = join(star_dir_LST1, night_subdir, "*{0}*{1}*{2}".\
      format('LST1', run_str, root_suffix))
@@ -177,11 +177,11 @@ def melibea(run_str, history_file):
     from register import register_run_concept_files
     from utils import magicdate_to_dir
     night_subdir = magicdate_to_dir(options.date)
-    mars_dir = cfg.get('OSA', 'MARSDIR')
-    mars_command = cfg.get('OSA', 'MELIBEA')
+    mars_dir = cfg.get('LSTOSA', 'MARSDIR')
+    mars_command = cfg.get('LSTOSA', 'MELIBEA')
     full_mars_command = join(mars_dir, mars_command)
-    root_suffix = cfg.get('OSA', 'ROOTSUFFIX')
-    input_card = join(cfg.get('OSA', 'CARDDIR'),\
+    root_suffix = cfg.get('LSTOSA', 'ROOTSUFFIX')
+    input_card = join(cfg.get('LSTOSA', 'CARDDIR'),\
      cfg.get(options.tel_id, 'MELIBEACONFIGCARD'))
     rftree = join(cfg.get('ST', 'RANDOMFORESTMATRIXDIR'),\
      cfg.get('ST', 'RANDOMFORESTMATRIX'))
@@ -192,8 +192,8 @@ def melibea(run_str, history_file):
     energy_table = join(cfg.get('ST', 'ENERGYMATRIXDIR'),\
      cfg.get('ST', 'ENERGYTABLE'))
     analysis_dir = cfg.get('ST', 'ANALYSISDIR')
-    input_pattern = cfg.get('OSA', 'SUPERSTARPATTERN')
-    melibeahistogramprefix = cfg.get('OSA', 'MELIBEAHISTOGRAMPREFIX')
+    input_pattern = cfg.get('LSTOSA', 'SUPERSTARPATTERN')
+    melibeahistogramprefix = cfg.get('LSTOSA', 'MELIBEAHISTOGRAMPREFIX')
 
     ind = join(analysis_dir, night_subdir, "*{0}{1}*{2}".\
      format(run_str, input_pattern, root_suffix)) 
@@ -311,16 +311,16 @@ def odie(run_str, history_file):
     from utils import magicdate_to_number
     night_subdir = magicdate_to_dir(options.date)
     night_number = magicdate_to_number(options.date)
-    mars_dir = cfg.get('OSA', 'MARSDIR')
-    mars_command = cfg.get('OSA', 'ODIE')
+    mars_dir = cfg.get('LSTOSA', 'MARSDIR')
+    mars_command = cfg.get('LSTOSA', 'ODIE')
     full_mars_command = join(mars_dir, mars_command)
-    root_suffix = cfg.get('OSA', 'ROOTSUFFIX')
-    input_card = join(cfg.get('OSA', 'CARDDIR'),\
+    root_suffix = cfg.get('LSTOSA', 'ROOTSUFFIX')
+    input_card = join(cfg.get('LSTOSA', 'CARDDIR'),\
      cfg.get(options.tel_id, 'ODIECONFIGCARD'))
     analysis_dir = cfg.get('ST', 'ANALYSISDIR')
-    input_pattern = cfg.get('OSA', 'MELIBEAPATTERN')
-    odieprefix = cfg.get('OSA', 'ODIEPREFIX')
-    odiepattern = cfg.get('OSA', 'ODIEPATTERN')
+    input_pattern = cfg.get('LSTOSA', 'MELIBEAPATTERN')
+    odieprefix = cfg.get('LSTOSA', 'ODIEPREFIX')
+    odiepattern = cfg.get('LSTOSA', 'ODIEPATTERN')
 
     ind = join(analysis_dir, night_subdir, "*{0}{1}*{2}".\
      format(run_str, input_pattern, root_suffix)) 

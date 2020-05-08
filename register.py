@@ -98,10 +98,10 @@ def register_run_concept_files(run_string, concept):
     inputdir = options.directory
     middledir = magicdate_to_dir(options.date)
     outputdir = join(cfg.get(options.tel_id, concept + 'DIR'), middledir)
-    type = cfg.get('OSA', concept + 'TYPE')
-    prefix = cfg.get('OSA', concept + 'PREFIX')
-    pattern = cfg.get('OSA', concept + 'PATTERN')
-    suffix = cfg.get('OSA', concept + 'SUFFIX')
+    type = cfg.get('LSTOSA', concept + 'TYPE')
+    prefix = cfg.get('LSTOSA', concept + 'PREFIX')
+    pattern = cfg.get('LSTOSA', concept + 'PATTERN')
+    suffix = cfg.get('LSTOSA', concept + 'SUFFIX')
     verbose(tag, "Registering {0} file for {2}*{1}*{3}*{4}"\
      .format(type, run_string, prefix, pattern, suffix ))
     register_files(type, run_string, inputdir, prefix, pattern, suffix, outputdir)

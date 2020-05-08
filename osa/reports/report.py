@@ -44,6 +44,7 @@ def finished_text(ana_dict):
     content = "analysis.finished.timestamp={0}\n".format(ana_dict['END'])
     content += "analysis.finished.night={0}\n".format(ana_dict['NIGHT'])
     content += "analysis.finished.telescope={0}\n".format(ana_dict['TELESCOPE'])
+
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
         content += "analysis.finished.data.size={0} GB\n".format(ana_dict['RAW_GB'])
         content += "analysis.finished.data.files={0}\n".format(ana_dict['FILES_RAW'])
@@ -54,6 +55,7 @@ def finished_text(ana_dict):
         content += "analysis.finished.data.files.dl2={0}\n".format(ana_dict['FILES_DL2'])
         content += "analysis.finished.data.files.muons={0}\n".format(ana_dict['FILES_MUONS'])
         content += "analysis.finished.data.files.datacheck={0}\n".format(ana_dict['FILES_DATACHECK'])
+
     elif options.tel_id == 'ST':
         pass
         # FIXME: add the corresponding content

@@ -71,7 +71,7 @@ def launchsequencer(day):
     import subprocess
     from os.path import join
     import config
-    commandargs = [join(config.cfg.get('OSA', 'PYTHONDIR'), 'sequencer.py')]
+    commandargs = [join(config.cfg.get('LSTOSA', 'PYTHONDIR'), 'sequencer.py')]
     if options.configfile:
         commandargs.append('-c')
         commandargs.append(options.configfile)
