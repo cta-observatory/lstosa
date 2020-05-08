@@ -18,7 +18,10 @@ dependencies:
   - black
   - isort
   - pip:
-      - lstchain
+      # Install development version of ltchain
+      - git+https://github.com/cta-observatory/cta-lstchain.git
+      # Install last released vesion of lstchain
+      # - lstchain
       - pytest_runner
       - pytest-ordering
       - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.4.1
