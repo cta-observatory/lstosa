@@ -261,15 +261,15 @@ def post_process_files(seq_list):
 
     middle_dir = magicdate_to_dir(options.date)
     root_files = glob(join(options.directory,\
-     '*{0}'.format(cfg.get('OSA', 'ROOTSUFFIX'))))
+     '*{0}'.format(cfg.get('LSTOSA', 'ROOTSUFFIX'))))
     root_set = set(root_files)
     pattern = None
     for concept in concept_set:
         output(tag, "Processing {0} files, {1} files left".format(concept, len(root_set)))
-        if cfg.get('OSA', concept + 'PREFIX'):
-            pattern = cfg.get('OSA', concept + 'PREFIX')
+        if cfg.get('LSTOSA', concept + 'PREFIX'):
+            pattern = cfg.get('LSTOSA', concept + 'PREFIX')
         else:
-            pattern = cfg.get('OSA', concept + 'PATTERN')
+            pattern = cfg.get('LSTOSA', concept + 'PATTERN')
 
         dir = join(cfg.get(options.tel_id, concept + 'DIR'), middle_dir)
         delete_set = set()
@@ -357,7 +357,7 @@ def set_closed_in_analysis_db(servername, username, database, ana_dict):
 
     table = cfg.get('MYSQL', 'ANALYSISTABLE')
     incidences_file = join(options.directory,\
-     cfg.get('OSA', 'INCIDENCESPREFIX') + cfg.get('OSA', 'TEXTSUFFIX'))
+     cfg.get('LSTOSA', 'INCIDENCESPREFIX') + cfg.get('LSTOSA', 'TEXTSUFFIX'))
 
     assignments = dict()
     assignments.update(ana_dict)
@@ -508,7 +508,7 @@ def setclosedfilename(s):
     tag = gettag()
     import os.path
     from config import cfg
-    closed_suffix = cfg.get('OSA', 'CLOSEDSUFFIX')
+    closed_suffix = cfg.get('LSTOSA', 'CLOSEDSUFFIX')
     basename = "sequence_{0}".format(s.jobname)
     s.closed = os.path.join(options.directory, basename + closed_suffix )
 ##############################################################################

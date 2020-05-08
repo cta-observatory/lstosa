@@ -120,10 +120,10 @@ class Report():
         rep_path = "/data/_TEL_/OSA/CC/_DATETIME_/"
 
         # Fill telescope
-        if "M1" in basename:
-            TEL = "M1"
-        elif "M2" in basename:
-            TEL = "M2"
+        if "LST1" in basename:
+            TEL = "LST1"
+        elif "LST2" in basename:
+            TEL = "LST2"
         
         rep_path = rep_path.replace("_TEL_",TEL)
 
@@ -182,15 +182,15 @@ class Report():
             #### FIXME. THIS IS A CHAPUZA !!!!: REMOVE n/a when the missing flatfielding issue is addressed
             #known_redHV = [\
             #  'n/a',\
-            #  'HV_M1_flatfielding_4kQ_20131114',\
-            #  'HV_M2_flatfielding_3750Q_20131114']
+            #  'HV_LST1_flatfielding_4kQ_20131114',\
+            #  'HV_LST2_flatfielding_3750Q_20131114']
             
             known_redHV = [\
-              'HV_M1_flatfielding_4kQ_20131114',\
-              'HV_M2_flatfielding_3750Q_20131114',\
-              'HV_M1_flatfielding_reduced_20151112',\
-              'HV_M2_flatfielding_reduced_20151112',\
-              'HV_M1_flatfielding_reduced_20160709']
+              'HV_LST1_flatfielding_4kQ_20131114',\
+              'HV_LST2_flatfielding_3750Q_20131114',\
+              'HV_LST1_flatfielding_reduced_20151112',\
+              'HV_LST2_flatfielding_reduced_20151112',\
+              'HV_LST1_flatfielding_reduced_20160709']
 
             if self.HV_set in known_redHV or '_reduced_' in self.HV_set:
                 self.RedHV = True
@@ -215,10 +215,10 @@ class Report():
         rep_path = "/data/_TEL_/OSA/CC/_DATETIME_/"
 
         # Fill telescope
-        if "M1" in basename:
-            rep_path = rep_path.replace("_TEL_","M1")
-        elif "M2" in basename:
-            rep_path = rep_path.replace("_TEL_","M2")
+        if "LST1" in basename:
+            rep_path = rep_path.replace("_TEL_","LST1")
+        elif "LST2" in basename:
+            rep_path = rep_path.replace("_TEL_","LST2")
 
         # Fill datetime
         rep_path = rep_path.replace("_DATETIME_",\

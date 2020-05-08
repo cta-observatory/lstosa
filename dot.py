@@ -36,7 +36,7 @@ def writeworkflow(sequence_list):
             content += "n{0} -> n{1};\n".format(i.parent_list[0].seq, i.seq)
         else:
             """ Two parents, stereo mode, assign indexes for each range,
-            this means 0 - m-1 (for the st), m - 2m-1 (for M1), 2m - 3m-1 (for M2)"""
+            this means 0 - m-1 (for the st), m - 2m-1 (for LST1), 2m - 3m-1 (for LST2)"""
             m = len(sequence_list)
             index = i.seq
             for j in i.parent_list:

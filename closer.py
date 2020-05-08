@@ -44,8 +44,7 @@ def closer():
                 # FIXME: ask_for_reason is not defined anywhere
                 # ask_for_reason()
             # Proceed with a reason
-        # elif is_raw_data_available() or use_night_summary():
-        elif use_night_summary():
+        elif is_raw_data_available() or use_night_summary():
             # Proceed normally
             verbose(tag, f"Checking sequencer_tuple {sequencer_tuple}")
             night_summary_output = readnightsummary()
@@ -82,9 +81,9 @@ def is_day_closed():
 
 
 def use_night_summary():
+    """Check for the usage of night summary option and file existence.
+    """
     tag = gettag()
-
-    """ Check for the usage of night summary option and file existance. """
 
     from os.path import exists
     from osa.nightsummary.nightsummary import getnightsummaryfile
@@ -102,10 +101,9 @@ def use_night_summary():
 
 
 def is_raw_data_available():
+    """ Get the rawdir and check existence.
+    This means the raw directory could be empty! """
     tag = gettag()
-
-    """ For the moment we are happy to get the rawdir and check existance.
-        This means the raw directory could be empty! """
 
     from os.path import isdir
     from osa.rawcopy.raw import get_check_rawdir
@@ -219,20 +217,20 @@ def post_process_files(seq_list):
 
     concept_set = []
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
-        concept_set = ['SCALIB', 'SSIGNAL', 'SORCERER', 'MERPP', 'STARHISTOGRAM', 'STAR']
+        concept_set = ['PED', 'CALIB', 'TIMECALIB', 'DL1', 'DL2', 'MUONS', 'DATACHECK']
     elif options.tel_id == 'ST':
-        concept_set = ['SUPERSTAR', 'SUPERSTARHISTOGRAM', 'MELIBEA', 'MELIBEAHISTOGRAM']
+        concept_set = []
 
     middle_dir = lstdate_to_dir(options.date)
-    h5_files = glob(join(options.directory, f'*{cfg.get("OSA", "H5SUFFIX")}'))
+    h5_files = glob(join(options.directory, f'*{cfg.get("LSTOSA", "H5SUFFIX")}'))
     root_set = set(h5_files)
     pattern = None
     for concept in concept_set:
         output(tag, "Processing {0} files, {1} files left".format(concept, len(root_set)))
-        if cfg.get('OSA', concept + 'PREFIX'):
-            pattern = cfg.get('OSA', concept + 'PREFIX')
+        if cfg.get('LSTOSA', concept + 'PREFIX'):
+            pattern = cfg.get('LSTOSA', concept + 'PREFIX')
         else:
-            pattern = cfg.get('OSA', concept + 'PATTERN')
+            pattern = cfg.get('LSTOSA', concept + 'PATTERN')
 
         dir = join(cfg.get(options.tel_id, concept + 'DIR'), middle_dir)
         delete_set = set()
@@ -240,8 +238,7 @@ def post_process_files(seq_list):
         for r in root_set:
             r_basename = basename(r)
             pattern_found = search(pattern, r_basename)
-            verbose(tag, "Was pattern {0} found in {1} ?: {2}" \
-                    .format(pattern, r_basename, pattern_found))
+            verbose(tag, f"Was pattern {pattern} found in {r_basename} ?: {pattern_found}")
             if options.seqtoclose is not None:
                 seqtoclose_found = search(options.seqtoclose, r_basename)
                 verbose(
@@ -289,11 +286,6 @@ def post_process_files(seq_list):
         root_set -= delete_set
 
 
-##############################################################################
-#
-# set_closed_in_db
-#
-##############################################################################
 def set_closed_in_db(ana_dict):
     tag = gettag()
 
@@ -312,11 +304,6 @@ def set_closed_in_db(ana_dict):
     set_closed_in_summary_db(servername, username, database, ana_dict)
 
 
-##############################################################################
-#
-#
-#
-##############################################################################
 def set_closed_in_analysis_db(servername, username, database, ana_dict):
     tag = gettag()
 
@@ -329,7 +316,7 @@ def set_closed_in_analysis_db(servername, username, database, ana_dict):
     table = cfg.get('MYSQL', 'ANALYSISTABLE')
     incidences_file = join(
         options.directory,
-        cfg.get('OSA', 'INCIDENCESPREFIX') + cfg.get('OSA', 'TEXTSUFFIX')
+        cfg.get('LSTOSA', 'INCIDENCESPREFIX') + cfg.get('LSTOSA', 'TEXTSUFFIX')
     )
 
     assignments = dict()
@@ -449,16 +436,18 @@ def synchronize_remote(lockfile):
     try:
         subprocess.call(commandargs)
     # except OSError as (ValueError, NameError):
-    except OSError as NameError:
-        warning(tag, "Could not copy securely with command: {0}, {1}". \
-                format(stringify(commandargs), NameError))
+    except OSError:
+        warning(
+            tag,
+            f"Could not copy securely with command: {stringify(commandargs)}, {OSError}"
+        )
 
 
 def setclosedfilename(s):
     tag = gettag()
     import os.path
     from osa.configs.config import cfg
-    closed_suffix = cfg.get('OSA', 'CLOSEDSUFFIX')
+    closed_suffix = cfg.get('LSTOSA', 'CLOSEDSUFFIX')
     basename = "sequence_{0}".format(s.jobname)
     s.closed = os.path.join(options.directory, basename + closed_suffix)
 

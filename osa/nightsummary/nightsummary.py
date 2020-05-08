@@ -58,7 +58,7 @@ def build(rawdir):
     from osa.configs.config import cfg
 #    from mysql import select_db
 # We could try to make a mysql call similar to this:
-#     [analysis@ana7 ~]$ mysql -s -N -uanalysis -hfcana7 -Dmagic_test -e "select DAQ.RUN, DAQ.SUBRUN, 'DATA', DAQ.END, DAQ.SOURCEWOBBLE, -1, -1, -1, -1, -1, 'No_Test', 'No_Moon' FROM DAQ INNER JOIN STORAGE ON STORAGE.FILE_PATH LIKE CONCAT('%',SUBSTRING_INDEX(DAQ.FILE_PATH, '/', -1),'.gz') WHERE STORAGE.NIGHT='2012-12-10' AND STORAGE.TELESCOPE='M1' ORDER BY DAQ.END;" 
+#     [analysis@ana7 ~]$ mysql -s -N -uanalysis -hfcana7 -Dmagic_test -e "select DAQ.RUN, DAQ.SUBRUN, 'DATA', DAQ.END, DAQ.SOURCEWOBBLE, -1, -1, -1, -1, -1, 'No_Test', 'No_Moon' FROM DAQ INNER JOIN STORAGE ON STORAGE.FILE_PATH LIKE CONCAT('%',SUBSTRING_INDEX(DAQ.FILE_PATH, '/', -1),'.gz') WHERE STORAGE.NIGHT='2012-12-10' AND STORAGE.TELESCOPE='LST1' ORDER BY DAQ.END;"
 
     error(tag, "This function is not yet implemented", 2)
 ##############################################################################
@@ -132,7 +132,7 @@ def getnightsummaryfile():
         nightsummaryfile = join(nightsumdir, basename)
         return nightsummaryfile
     # Only the closer needs the night summary file in case of 'ST'.
-    # Since ST has no night summary file, we give him the one from M1 
+    # Since ST has no night summary file, we give him the one from LST1
     elif options.tel_id == 'ST':
         nightsumprefix = config.cfg.get('LSTOSA', 'NIGHTSUMMARYPREFIX')
         nightsumsuffix = config.cfg.get('LSTOSA', 'TEXTSUFFIX')

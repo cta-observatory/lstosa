@@ -22,10 +22,10 @@ def getvetolist(sequence_list):
     from os.path import join
     from config import cfg
     updatevetos(sequence_list)
-    veto_ls = glob(join(options.directory, "*{0}".format(cfg.get('OSA', 'VETOSUFFIX'))))
+    veto_ls = glob(join(options.directory, "*{0}".format(cfg.get('LSTOSA', 'VETOSUFFIX'))))
     veto_list = []
     for i in veto_ls:
-        name = i.rsplit(cfg.get('OSA', 'VETOSUFFIX'))[0].split(join(options.directory, 'sequence_'))[1] # We extract the job name
+        name = i.rsplit(cfg.get('LSTOSA', 'VETOSUFFIX'))[0].split(join(options.directory, 'sequence_'))[1] # We extract the job name
         veto_list.append(name)
         setvetoaction(name, sequence_list)
     return veto_list
@@ -43,7 +43,7 @@ def updatevetos(sequence_list):
     from config import cfg
     for s in sequence_list:
         if (not exists(s.veto) and exists(s.history)):
-            if failedhistory(s.history, int(cfg.get('OSA', 'MAXTRYFAILED'))):
+            if failedhistory(s.history, int(cfg.get('LSTOSA', 'MAXTRYFAILED'))):
                 createveto(s.veto)
                 verbose(tag, "Created veto file {0}".format(s.veto))
 
@@ -91,10 +91,10 @@ def getclosedlist(sequence_list):
     from glob import glob
     from os.path import join
     from config import cfg
-    closed_ls = glob(join(options.directory, '*{0}'.format(cfg.get('OSA', 'CLOSEDSUFFIX'))))
+    closed_ls = glob(join(options.directory, '*{0}'.format(cfg.get('LSTOSA', 'CLOSEDSUFFIX'))))
     closed_list = []
     for i in closed_ls:
-        name = i.rsplit(cfg.get('OSA', 'CLOSEDSUFFIX'))[0].split(join(options.directory, 'sequence_'))[1] # We extract the job name
+        name = i.rsplit(cfg.get('LSTOSA', 'CLOSEDSUFFIX'))[0].split(join(options.directory, 'sequence_'))[1] # We extract the job name
         closed_list.append(name)
         setclosedaction(name, sequence_list)
     return closed_list

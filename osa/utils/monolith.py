@@ -19,7 +19,7 @@ def monolith():
 
     # Building the set of days
     datadays = None
-    if options.tel_id == 'M1' or options.tel_id == 'M2':
+    if options.tel_id == 'LST1' or options.tel_id == 'LST2':
         datadays = utils.getrawdatadays()
     else:
         """ The days in which we have stereo data sequences """
@@ -71,7 +71,7 @@ def launchsequencer(day):
     import subprocess
     from os.path import join
     import config
-    commandargs = [join(config.cfg.get('OSA', 'PYTHONDIR'), 'sequencer.py')]
+    commandargs = [join(config.cfg.get('LSTOSA', 'PYTHONDIR'), 'sequencer.py')]
     if options.configfile:
         commandargs.append('-c')
         commandargs.append(options.configfile)
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     if options.tel_id:
         tel_array.append(options.tel_id)
     else:
-        tel_array = ['M1', 'M2', 'ST']
+        tel_array = ['LST1', 'LST2', 'ST']
     # Run the routine as many times as required in the telescope array
     for tel in tel_array:
         options.tel_id = tel
