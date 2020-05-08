@@ -289,12 +289,14 @@ def guesscorrectinputcard(s):
 
 
 def createjobtemplate(s):
+    """This file contains instruction to be submitted to torque"""
     tag = gettag()
-    #   This file contains instruction to be submitted to torque
+
     import os
     import iofile
     from osa.configs import config
     from osa.utils.utils import lstdate_to_dir
+
     bindir = config.cfg.get('LSTOSA', 'PYTHONDIR')
     calibdir = config.cfg.get('LST1', 'CALIBDIR')
     pedestaldir = config.cfg.get('LST1', 'PEDESTALDIR')
@@ -312,15 +314,13 @@ def createjobtemplate(s):
     elif s.type == 'DAILY':
         command = os.path.join(bindir, 'daily.py')
 
-    python = os.path.join(config.cfg.get('ENV', 'PYTHONBIN'), 'python')
+    # Directly use python interpreter from current working environment
+    # python = os.path.join(config.cfg.get('ENV', 'PYTHONBIN'), 'python')
     sbatchbin = config.cfg.get('ENV','SBATCHBIN')
 
-
-#    pedestalfile = ped
-#    drivefile = drive
     mode = 1
     # Beware we want to change this in the future
-    commandargs = [sbatchbin, python, command]
+    commandargs = [sbatchbin, 'python', command]
     if options.verbose:
         commandargs.append('-v')
     if options.warning:
