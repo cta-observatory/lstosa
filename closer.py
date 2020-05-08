@@ -45,7 +45,6 @@ def closer():
                 # ask_for_reason()
             # Proceed with a reason
         elif is_raw_data_available() or use_night_summary():
-        #elif use_night_summary():
             # Proceed normally
             verbose(tag, f"Checking sequencer_tuple {sequencer_tuple}")
             night_summary_output = readnightsummary()
@@ -82,9 +81,9 @@ def is_day_closed():
 
 
 def use_night_summary():
+    """Check for the usage of night summary option and file existence.
+    """
     tag = gettag()
-
-    """ Check for the usage of night summary option and file existance. """
 
     from os.path import exists
     from osa.nightsummary.nightsummary import getnightsummaryfile
@@ -104,7 +103,7 @@ def use_night_summary():
 def is_raw_data_available():
     tag = gettag()
 
-    """ For the moment we are happy to get the rawdir and check existance.
+    """ For the moment we are happy to get the rawdir and check existence.
         This means the raw directory could be empty! """
 
     from os.path import isdir
@@ -240,8 +239,7 @@ def post_process_files(seq_list):
         for r in root_set:
             r_basename = basename(r)
             pattern_found = search(pattern, r_basename)
-            verbose(tag, "Was pattern {0} found in {1} ?: {2}" \
-                    .format(pattern, r_basename, pattern_found))
+            verbose(tag, f"Was pattern {pattern} found in {r_basename} ?: {pattern_found}")
             if options.seqtoclose is not None:
                 seqtoclose_found = search(options.seqtoclose, r_basename)
                 verbose(
@@ -449,9 +447,11 @@ def synchronize_remote(lockfile):
     try:
         subprocess.call(commandargs)
     # except OSError as (ValueError, NameError):
-    except OSError as NameError:
-        warning(tag, "Could not copy securely with command: {0}, {1}". \
-                format(stringify(commandargs), NameError))
+    except OSError:
+        warning(
+            tag,
+            f"Could not copy securely with command: {stringify(commandargs)}, {OSError}"
+        )
 
 
 def setclosedfilename(s):

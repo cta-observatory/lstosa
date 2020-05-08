@@ -1,61 +1,45 @@
-from osa.utils.standardhandle import output, verbose, warning, error, gettag
-from osa.utils import options, cliopts
+from osa.utils import options
+from osa.utils.standardhandle import output, verbose, gettag
 
 __all__ = ["history", "start"]
-##############################################################################
-#
-# start
-#
-##############################################################################
+
+
 def start(parent_tag):
     tag = gettag()
     from datetime import datetime
     now = datetime.utcnow()
     simple_parent_tag = parent_tag.rsplit('(')[0]
-    header("Starting {0} at {1} UTC for LST, Telescope: {2}, Night: {3}".\
-        format(simple_parent_tag, now.strftime("%Y-%m-%d %H:%M:%S"),\
-        options.tel_id, options.date))
-##############################################################################
-#
-# header
-#
-##############################################################################
+    header(
+        f"Starting {simple_parent_tag} at {now.strftime('%Y-%m-%d %H:%M:%S')} "
+        f"UTC for LST, Telescope: {options.tel_id}, Night: {options.date}"
+    )
+
+
 def header(message):
     tag = gettag()
     framesize = size()
     if len(message) < framesize - 2:
-        prettyframe = int((framesize - 2 - len(message))/2) * '='
+        prettyframe = int((framesize - 2 - len(message)) / 2) * '='
     else:
         prettyframe = ''
     output(tag, "{0} {1} {0}".format(prettyframe, message))
-##############################################################################
-#
-# rule
-#
-##############################################################################
+
+
 def rule():
     tag = gettag()
     prettyframe = size() * '-'
     output(tag, prettyframe)
-##############################################################################
-#
-# size
-#
-##############################################################################
+
+
 def size():
     tag = gettag()
     from osa.configs import config
     framesize = int(config.cfg.get('OUTPUT', 'REPORTWIDTH'))
     return framesize
-##############################################################################
-#
-# finished_text
-#
-##############################################################################
+
+
 def finished_text(ana_dict):
     tag = gettag()
-
-    from osa.configs import config
 
     content = "analysis.finished.timestamp={0}\n".format(ana_dict['END'])
     content += "analysis.finished.night={0}\n".format(ana_dict['NIGHT'])
@@ -71,21 +55,19 @@ def finished_text(ana_dict):
         content += "analysis.finished.data.files.starhistogramed={0}\n".format(ana_dict['FILES_STARHISTOGRAM'])
     elif options.tel_id == 'ST':
         content += "analysis.finished.data.files.superstarred={0}\n".format(ana_dict['FILES_SUPERSTAR'])
-        content += "analysis.finished.data.files.superstarhistogramed={0}\n".format(ana_dict['FILES_SUPERSTARHISTOGRAM'])
+        content += "analysis.finished.data.files.superstarhistogramed={0}\n".format(
+            ana_dict['FILES_SUPERSTARHISTOGRAM'])
         content += "analysis.finished.data.files.melibeaed={0}\n".format(ana_dict['FILES_MELIBEA'])
         content += "analysis.finished.data.files.melibeahistogramed={0}\n".format(ana_dict['FILES_MELIBEAHISTOGRAM'])
-        #content += "analysis.finished.data.files.odieed={0}\n".format(ana_dict['FILES_ODIE'])
+        # content += "analysis.finished.data.files.odieed={0}\n".format(ana_dict['FILES_ODIE'])
 
     if options.reason != None:
         content += "analysis.finished.data.comment={}.\n".format(ana_dict['COMMENTS'])
-            
+
     output(tag, content)
     return content
-##############################################################################
-#
-# finished_assignments
-#
-##############################################################################
+
+
 def finished_assignments(sequence_list):
     tag = gettag()
     from glob import glob
@@ -104,25 +86,24 @@ def finished_assignments(sequence_list):
         if sequence_list != None:
             for s in sequence_list:
                 rawnum += s.subruns
-        data_files = glob(join(rawdir, '*{0}*{1}*'\
-         .format(cfg.get('LSTOSA', 'R0-DL1PATTERN'), cfg.get('LSTOSA', 'RAWSUFFIX'))))
+        data_files = glob(join(rawdir, '*{0}*{1}*' \
+                               .format(cfg.get('LSTOSA', 'R0-DL1PATTERN'), cfg.get('LSTOSA', 'RAWSUFFIX'))))
         disk_space = 0
         for d in data_files:
             disk_space += getsize(d)
-        disk_space_GB_f = float(disk_space)/(1000*1000*1000)
+        disk_space_GB_f = float(disk_space) / (1000 * 1000 * 1000)
         disk_space_GB = int(round(disk_space_GB_f, 0))
     elif options.tel_id == 'ST':
         concept_set = ['DL2']
-    
 
-    ana_files = glob(join(anadir, '*' + cfg.get('LSTOSA', 'ROOTSUFFIX')))
+    ana_files = glob(join(anadir, '*' + cfg.get('LSTOSA', 'R0SUFFIX')))
     calib_file_no = 0
     sorcerer_file_no = 0
     merpped_file_no = 0
     starred_file_no = 0
     ssignal_file_no = 0
     starhistogram_file_no = 0
-    superstar_file_no = 0 
+    superstar_file_no = 0
     superstarhistogram_file_no = 0
     melibea_file_no = 0
     melibeahistogram_file_no = 0
@@ -141,7 +122,7 @@ def finished_assignments(sequence_list):
         for a in ana_set:
             ana_file = basename(a)
             pattern_found = fnmatchcase(ana_file, pattern)
-            #verbose(tag, "Was pattern {0} found in {1}?: {2}".format(pattern, ana_file, pattern_found))
+            # verbose(tag, "Was pattern {0} found in {1}?: {2}".format(pattern, ana_file, pattern_found))
             if pattern_found == True:
                 verbose(tag, "Was pattern {0} found in {1}?: {2}".format(pattern, ana_file, pattern_found))
                 file_no[concept] += 1
@@ -159,14 +140,16 @@ def finished_assignments(sequence_list):
 
     now_string = "{0}".format(datetime.utcnow())
 
-    dictionary = {'NIGHT':options.date, 'TELESCOPE':options.tel_id,\
-     'IS_CLOSED':1, 'SEQUENCES':len(sequence_list), 'COMMENTS':comment,\
-     'FILES_RAW':rawnum, 'RAW_GB':disk_space_GB, 'END':now_string}
+    dictionary = {'NIGHT': options.date, 'TELESCOPE': options.tel_id, \
+                  'IS_CLOSED': 1, 'SEQUENCES': len(sequence_list), 'COMMENTS': comment, \
+                  'FILES_RAW': rawnum, 'RAW_GB': disk_space_GB, 'END': now_string}
 
     for concept in concept_set:
         dictionary['FILES_' + concept] = file_no[concept]
 
     return dictionary
+
+
 ##############################################################################
 #
 # history
@@ -197,6 +180,6 @@ def history(run, program, inputfile, inputcard, rc, historyfile):
     from datetime import datetime
     import iofile
     now = datetime.utcnow()
-    datestring = now.strftime("%a %b %d %X UTC %Y") # Similar but not equal to %c (no timezone)
+    datestring = now.strftime("%a %b %d %X UTC %Y")  # Similar but not equal to %c (no timezone)
     stringtowrite = "{0} {1} {2} {3} {4} {5}\n".format(run, program, datestring, inputfile, inputcard, rc)
     iofile.appendtofile(historyfile, stringtowrite)
