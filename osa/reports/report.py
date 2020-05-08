@@ -47,19 +47,16 @@ def finished_text(ana_dict):
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
         content += "analysis.finished.data.size={0} GB\n".format(ana_dict['RAW_GB'])
         content += "analysis.finished.data.files={0}\n".format(ana_dict['FILES_RAW'])
-        content += "analysis.finished.data.files.scalibed={0}\n".format(ana_dict['FILES_SCALIB'])
-        content += "analysis.finished.data.files.calibrated={0}\n".format(ana_dict['FILES_SORCERER'])
-        content += "analysis.finished.data.files.ssignaled={0}\n".format(ana_dict['FILES_SSIGNAL'])
-        content += "analysis.finished.data.files.merpped={0}\n".format(ana_dict['FILES_MERPP'])
-        content += "analysis.finished.data.files.starred={0}\n".format(ana_dict['FILES_STAR'])
-        content += "analysis.finished.data.files.starhistogramed={0}\n".format(ana_dict['FILES_STARHISTOGRAM'])
+        content += "analysis.finished.data.files.pedestal={0}\n".format(ana_dict['FILES_PED'])
+        content += "analysis.finished.data.files.calib={0}\n".format(ana_dict['FILES_CALIB'])
+        content += "analysis.finished.data.files.time_calib={0}\n".format(ana_dict['FILES_TIMECALIB'])
+        content += "analysis.finished.data.files.dl1={0}\n".format(ana_dict['FILES_DL1'])
+        content += "analysis.finished.data.files.dl2={0}\n".format(ana_dict['FILES_DL2'])
+        content += "analysis.finished.data.files.muons={0}\n".format(ana_dict['FILES_MUONS'])
+        content += "analysis.finished.data.files.datacheck={0}\n".format(ana_dict['FILES_DATACHECK'])
     elif options.tel_id == 'ST':
-        content += "analysis.finished.data.files.superstarred={0}\n".format(ana_dict['FILES_SUPERSTAR'])
-        content += "analysis.finished.data.files.superstarhistogramed={0}\n".format(
-            ana_dict['FILES_SUPERSTARHISTOGRAM'])
-        content += "analysis.finished.data.files.melibeaed={0}\n".format(ana_dict['FILES_MELIBEA'])
-        content += "analysis.finished.data.files.melibeahistogramed={0}\n".format(ana_dict['FILES_MELIBEAHISTOGRAM'])
-        # content += "analysis.finished.data.files.odieed={0}\n".format(ana_dict['FILES_ODIE'])
+        pass
+        # FIXME: add the corresponding content
 
     if options.reason is not None:
         content += "analysis.finished.data.comment={}.\n".format(ana_dict['COMMENTS'])
@@ -147,11 +144,6 @@ def finished_assignments(sequence_list):
     return dictionary
 
 
-##############################################################################
-#
-# history
-#
-##############################################################################
 def history(run, program, inputfile, inputcard, rc, historyfile):
     """Appends a history line to the history file.
 
