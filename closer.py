@@ -101,10 +101,9 @@ def use_night_summary():
 
 
 def is_raw_data_available():
+    """ Get the rawdir and check existence.
+    This means the raw directory could be empty! """
     tag = gettag()
-
-    """ For the moment we are happy to get the rawdir and check existence.
-        This means the raw directory could be empty! """
 
     from os.path import isdir
     from osa.rawcopy.raw import get_check_rawdir
@@ -287,11 +286,6 @@ def post_process_files(seq_list):
         root_set -= delete_set
 
 
-##############################################################################
-#
-# set_closed_in_db
-#
-##############################################################################
 def set_closed_in_db(ana_dict):
     tag = gettag()
 
@@ -310,11 +304,6 @@ def set_closed_in_db(ana_dict):
     set_closed_in_summary_db(servername, username, database, ana_dict)
 
 
-##############################################################################
-#
-#
-#
-##############################################################################
 def set_closed_in_analysis_db(servername, username, database, ana_dict):
     tag = gettag()
 

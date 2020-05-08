@@ -80,7 +80,8 @@ def finished_assignments(sequence_list):
     disk_space_GB = 0
     rawnum = 0
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
-        concept_set = ['CALIB', 'DL1', 'DL2']
+        # FIXME: add all files 'PED', 'CALIB', 'DL1', 'DL2', 'MUONS', 'DATACHECK'
+        concept_set = ['PED', 'CALIB', 'DL1', 'DL2', 'MUONS', 'DATACHECK']
         rawdir = getrawdir()
         if sequence_list is not None:
             for s in sequence_list:
