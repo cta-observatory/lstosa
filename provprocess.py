@@ -8,6 +8,11 @@ from pathlib import Path, PurePath
 from osa.utils import cliopts, standardhandle
 from provenance.capture import get_activity_id, get_file_hash
 from provenance.io import *
+from provenance.utils import get_log_config
+import yaml
+
+provconfig = yaml.safe_load(get_log_config())
+LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 
 
 def copy_used_file(src, out, tag_handle):
@@ -136,17 +141,16 @@ if __name__ == "__main__":
     # 02006
     # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00
     # -c cfg/sequencer.cfg
-    # -p prov.log
 
     options, tag = cliopts.provprocessparsing()
 
-    # check options.src prov.log exists
-    if not Path(options.src).exists():
-        standardhandle.error(tag, f"file {options.src} does not exist", 2)
+    # check LOG_FILENAME exists
+    if not Path(LOG_FILENAME).exists():
+        standardhandle.error(tag, f"file {LOG_FILENAME} does not exist", 2)
 
-    # check options.src prov.log is empty
-    if not Path(options.src).stat().st_size:
-        standardhandle.warning(tag, f"file {options.src} is empty")
+    # check LOG_FILENAME is empty
+    if not Path(LOG_FILENAME).stat().st_size:
+        standardhandle.warning(tag, f"file {LOG_FILENAME} is empty")
         exit()
 
     # check options.out is a folder
@@ -169,7 +173,7 @@ if __name__ == "__main__":
     png_filepath = outpath / f"{base_filename}.png"
 
     # move log file
-    shutil.move(options.src, log_path)
+    shutil.move(LOG_FILENAME, log_path)
 
     # make json
     try:
