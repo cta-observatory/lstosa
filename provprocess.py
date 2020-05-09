@@ -160,9 +160,8 @@ if __name__ == "__main__":
     # 02006
     # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00
     # -c cfg/sequencer.cfg
-
-    # TODO: add type of prov processing to be done as arg - now only r0_to_dl1
-    # TODO: add flag to remove log file, normally after dl1_to_dl2
+    # -q
+    # TODO: add type of prov processing to be done as arg - now only r0_to_dl1 in parse_lines_dl1
 
     options, tag = cliopts.provprocessparsing()
 
@@ -206,9 +205,9 @@ if __name__ == "__main__":
     shutil.move(session_logfilename, log_path)
 
     # remove LOG_FILENAME
-    # TODO: only if flag remove is set
-    remove_log_file = Path(LOG_FILENAME)
-    remove_log_file.unlink()
+    if options.quit:
+        remove_log_file = Path(LOG_FILENAME)
+        remove_log_file.unlink()
 
     # make json
     try:
