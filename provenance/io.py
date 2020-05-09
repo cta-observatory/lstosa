@@ -134,7 +134,8 @@ def provlist2provdoc(provlist):
                 #     ent.add_attributes({'prov:label': rol})
                 ent.wasGeneratedBy(act, attributes={"prov:role": rol})
             for k, v in provdict.items():
-                act.add_attributes({k: str(v)})
+                if k != "session_tag":
+                    act.add_attributes({k: str(v)})
         # entity
         if "entity_id" in provdict:
             ent_id = str(provdict.pop("entity_id"))
@@ -184,7 +185,8 @@ def provlist2provdoc(provlist):
                     records[progen_id] = progen
                 ent.wasDerivedFrom(progen)
             for k, v in provdict.items():
-                ent.add_attributes({k: str(v)})
+                if k != "session_tag":
+                    ent.add_attributes({k: str(v)})
         # agent
     return pdoc
 
