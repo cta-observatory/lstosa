@@ -13,6 +13,7 @@ import yaml
 
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
+PROV_PREFIX = provconfig["PREFIX"]
 
 
 def copy_used_file(src, out, tag_handle):
@@ -40,6 +41,24 @@ def copy_used_file(src, out, tag_handle):
         except Exception as ex:
             standardhandle.warning(tag_handle, f"could not copy {src} file into {str(destpath)}")
             standardhandle.warning(tag_handle, f"{ex}")
+
+
+def parse_lines_log(run_number, tag_handle):
+    """Filter content in log file to produce a run wise session log."""
+    filtered = []
+    with open(LOG_FILENAME, "r") as f:
+        for line in f.readlines():
+            ll = line.split(PROV_PREFIX)
+            if len(ll) < 3:
+                standardhandle.error(tag_handle, f"Error in format of log file {LOG_FILENAME}", 2)
+            prov_str = ll.pop()
+            prov_dict = yaml.safe_load(prov_str)
+            keep = False
+            if int(prov_dict.get("session_tag", 0)) == int(run_number):
+                keep = True
+            if keep:
+                filtered.append(line)
+    return filtered
 
 
 def parse_lines_dl1(prov_lines, out, tag_handle):
@@ -175,8 +194,10 @@ if __name__ == "__main__":
 
     # create session log file
     # parse log file content for a specific run
-    # TODO: copy file for the moment but it has to be created from parsed content
-    shutil.copy(LOG_FILENAME, session_logfilename)
+    parsed_content = parse_lines_log(options.run, tag)
+    with open(session_logfilename, 'w') as f:
+        for line in parsed_content:
+            f.write(line)
 
     # process session log file created
     processed_lines = parse_lines_dl1(read_prov(filename=session_logfilename), str(outpath), tag)
