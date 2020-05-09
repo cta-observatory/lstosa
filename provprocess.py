@@ -142,6 +142,9 @@ if __name__ == "__main__":
     # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00
     # -c cfg/sequencer.cfg
 
+    # TODO: add type of prov processing to be done as arg - now only r0_to_dl1
+    # TODO: add flag to remove log file, normally after dl1_to_dl2
+
     options, tag = cliopts.provprocessparsing()
 
     # check LOG_FILENAME exists
@@ -162,18 +165,29 @@ if __name__ == "__main__":
     if not outpath.exists():
         outpath.mkdir()
 
-    # process provenance file
-    processed_lines = parse_lines_dl1(read_prov(filename=options.src), str(outpath), tag)
-
     # build base_filename with options.run and options.out
     # ObservationDate = re.findall(r"DL1/(\d{8})/", options.out)[0]
     base_filename = f"DL1_{options.run}_prov"
-    log_path = outpath / f"{base_filename}.log"
+    session_logfilename = f"{base_filename}.log"
+    log_path = outpath / session_logfilename
     json_filepath = outpath / f"{base_filename}.json"
     png_filepath = outpath / f"{base_filename}.png"
 
-    # move log file
-    shutil.move(LOG_FILENAME, log_path)
+    # create session log file
+    # parse log file content for a specific run
+    # TODO: copy file for the moment but it has to be created from parsed content
+    shutil.copy(LOG_FILENAME, session_logfilename)
+
+    # process session log file created
+    processed_lines = parse_lines_dl1(read_prov(filename=session_logfilename), str(outpath), tag)
+
+    # move session log file to its log folder
+    shutil.move(session_logfilename, log_path)
+
+    # remove LOG_FILENAME
+    # TODO: only if flag remove is set
+    remove_log_file = Path(LOG_FILENAME)
+    remove_log_file.unlink()
 
     # make json
     try:
