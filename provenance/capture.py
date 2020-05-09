@@ -373,6 +373,7 @@ def log_start_activity(activity, activity_id, session_id, start):
         "startTime": start,
         "in_session": session_id,
         "agent_name": os.getenv("USER", "Anonymous"),
+        "script": sys.argv[0]
     }
     log_prov_info(log_record)
 

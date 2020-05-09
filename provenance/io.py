@@ -60,6 +60,8 @@ def provlist2provdoc(provlist):
             # activity name
             if "name" in provdict:
                 act.add_attributes({"prov:label": provdict.pop("name")})
+            if "script" in provdict:
+                act.add_attributes({"script": provdict.pop("script")})
             # activity start
             if "startTime" in provdict:
                 act.set_time(
