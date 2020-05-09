@@ -334,17 +334,18 @@ def log_session(class_instance, start):
     """Log start of a session."""
 
     # OSA specific
-    # prov session is outside scripting
-    try:
-        lines = read_prov(filename=LOG_FILENAME)
-        session_id = lines[0]["session_id"]
-        sessions.add(session_id)
-    except (FileNotFoundError, IndexError, KeyError):
-        session_id = abs(hash(class_instance))
+    # prov session is outside scripting and is run-wise
+    # we may have different sessions/runs in the same log file
+    session_id = abs(hash(class_instance))
+    lines = read_prov(filename=LOG_FILENAME)
+    for line in lines:
+        if line.get("observation_run", 0) == class_instance.ObservationRun:
+            session_id = lines[0]["session_id"]
+            sessions.add(session_id)
 
     module_name = class_instance.__class__.__module__
     class_name = class_instance.__name__
-    session_name = f"{class_name}"
+    session_name = class_instance.ObservationRun
     if session_id not in sessions:
         sessions.add(session_id)
         system = get_system_provenance()
@@ -354,10 +355,10 @@ def log_session(class_instance, start):
             "startTime": start,
             "system": system,
             # OSA specific
-            "script": sys.argv[0],
+            # "script": sys.argv[0]     # we could have different scripts in a session
             "software_version": class_instance.SoftwareVersion,
             "observation_date": class_instance.ObservationDate,
-            "observation_run": class_instance.ObservationRun,
+            "observation_run": class_instance.ObservationRun,  # a session is run-wise
         }
         log_prov_info(log_record)
     return session_id
