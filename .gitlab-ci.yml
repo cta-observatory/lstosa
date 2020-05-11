@@ -8,7 +8,6 @@ before_script:
 - conda activate osa
 - conda install sphinx
 - conda install sphinx_rtd_theme
-- conda install -c conda-forge gcc
 - conda develop .
 
 testcode:
