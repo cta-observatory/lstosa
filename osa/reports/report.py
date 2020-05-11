@@ -48,9 +48,9 @@ def finished_text(ana_dict):
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
         content += "analysis.finished.data.size={0} GB\n".format(ana_dict['RAW_GB'])
         content += "analysis.finished.data.files={0}\n".format(ana_dict['FILES_RAW'])
-        content += "analysis.finished.data.files.pedestal={0}\n".format(ana_dict['FILES_PED'])
-        content += "analysis.finished.data.files.calib={0}\n".format(ana_dict['FILES_CALIB'])
-        content += "analysis.finished.data.files.time_calib={0}\n".format(ana_dict['FILES_TIMECALIB'])
+        # content += "analysis.finished.data.files.pedestal={0}\n".format(ana_dict['FILES_PED'])
+        # content += "analysis.finished.data.files.calib={0}\n".format(ana_dict['FILES_CALIB'])
+        # content += "analysis.finished.data.files.time_calib={0}\n".format(ana_dict['FILES_TIMECALIB'])
         content += "analysis.finished.data.files.dl1={0}\n".format(ana_dict['FILES_DL1'])
         content += "analysis.finished.data.files.dl2={0}\n".format(ana_dict['FILES_DL2'])
         content += "analysis.finished.data.files.muons={0}\n".format(ana_dict['FILES_MUONS'])
@@ -81,7 +81,7 @@ def finished_assignments(sequence_list):
     rawnum = 0
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
         # FIXME: add all files 'PED', 'CALIB', 'DL1', 'DL2', 'MUONS', 'DATACHECK'
-        concept_set = ['PED', 'CALIB', 'DL1', 'DL2', 'MUONS', 'DATACHECK']
+        concept_set = ['DL1', 'DL2', 'MUONS', 'DATACHECK']
         rawdir = getrawdir()
         if sequence_list is not None:
             for s in sequence_list:

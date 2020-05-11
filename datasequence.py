@@ -158,7 +158,7 @@ def dl1_to_dl2(run_str, historyfile):
         f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}'
     )
 
-    dl2_directory = join(cfg.get('LST1', 'DL2-DIR'), nightdir, options.prod_id)
+    dl2_directory = join(cfg.get('LST1', 'DL2DIR'), nightdir, options.prod_id)
 
     commandargs = [
         fullcommand,
