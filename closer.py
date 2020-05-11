@@ -193,7 +193,8 @@ def post_process(seq_tuple):
     analysis_dict = finished_assignments(seq_list)
     analysis_text = finished_text(analysis_dict)
     post_process_files(seq_list)
-    set_closed_in_db(analysis_dict)
+    # FIXME: interface with db
+    #set_closed_in_db(analysis_dict)
     if options.seqtoclose is None:
         is_closed = set_closed_with_file(analysis_text)
         return is_closed
@@ -217,7 +218,8 @@ def post_process_files(seq_list):
 
     concept_set = []
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
-        concept_set = ['PED', 'CALIB', 'TIMECALIB', 'DL1', 'DL2', 'MUONS', 'DATACHECK']
+        #concept_set = ['PED', 'CALIB', 'TIMECALIB', 'DL1', 'DL2', 'MUONS', 'DATACHECK']
+        concept_set = ['DL1', 'DL2', 'MUONS', 'DATACHECK']
     elif options.tel_id == 'ST':
         concept_set = []
 
@@ -291,7 +293,7 @@ def set_closed_in_db(ana_dict):
 
     """ Prepare the calls for the different tables. """
 
-    import config
+    from osa.configs import config
 
     servername = config.cfg.get('MYSQL', 'SERVER')
     username = config.cfg.get('MYSQL', 'USER')
