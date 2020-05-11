@@ -72,8 +72,8 @@ def test_trace_r0_to_dl1(tmp_path):
     provdoc.serialize(str(json_filepath), indent=4)
 
     # make graph
-    png_filepath = tmp_path / "prov.png"
-    provdoc2png(provdoc, str(png_filepath))
+    png_filepath = tmp_path / "prov.pdf"
+    provdoc2graph(provdoc, str(png_filepath), "pdf")
 
     try:
         Path("prov.log").unlink()

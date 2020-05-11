@@ -18,7 +18,7 @@ provconfig = yaml.safe_load(get_log_config())
 PROV_PREFIX = provconfig["PREFIX"]
 DEFAULT_NS = "id"  # "logprov"
 
-__all__ = ["provlist2provdoc", "provdoc2png", "read_prov"]
+__all__ = ["provlist2provdoc", "provdoc2graph", "read_prov"]
 
 
 def provlist2provdoc(provlist):
@@ -191,7 +191,7 @@ def provlist2provdoc(provlist):
     return pdoc
 
 
-def provdoc2png(provdoc, filename):
+def provdoc2graph(provdoc, filename, fmt):
     """Create a graph of a provenance workflow session."""
 
     dot = prov_to_dot(
@@ -200,7 +200,7 @@ def provdoc2png(provdoc, filename):
         show_element_attributes=True,
         show_relation_attributes=False,
     )
-    content = dot.create(format="pdf")
+    content = dot.create(format=fmt)
     with open(filename, "wb") as f:
         f.write(content)
 

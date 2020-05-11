@@ -189,7 +189,7 @@ if __name__ == "__main__":
     session_logfilename = f"{base_filename}.log"
     log_path = outpath / session_logfilename
     json_filepath = outpath / f"{base_filename}.json"
-    png_filepath = outpath / f"{base_filename}.pdf"
+    graph_filepath = outpath / f"{base_filename}.pdf"
 
     # create session log file
     # parse log file content for a specific run
@@ -218,6 +218,6 @@ if __name__ == "__main__":
 
     # make graph
     try:
-        provdoc2png(provdoc, str(png_filepath))
+        provdoc2graph(provdoc, str(graph_filepath), "pdf")
     except Exception as ex:
         standardhandle.error(tag, f"problem while creating graph: {ex}", 2)
