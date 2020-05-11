@@ -200,7 +200,7 @@ def provdoc2png(provdoc, filename):
         show_element_attributes=True,
         show_relation_attributes=False,
     )
-    content = dot.create(format="png")
+    content = dot.create(format="pdf")
     with open(filename, "wb") as f:
         f.write(content)
 
