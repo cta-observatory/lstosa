@@ -8,6 +8,12 @@ from pathlib import Path, PurePath
 from osa.utils import cliopts, standardhandle
 from provenance.capture import get_activity_id, get_file_hash
 from provenance.io import *
+from provenance.utils import get_log_config
+import yaml
+
+provconfig = yaml.safe_load(get_log_config())
+LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
+PROV_PREFIX = provconfig["PREFIX"]
 
 
 def copy_used_file(src, out, tag_handle):
@@ -35,6 +41,24 @@ def copy_used_file(src, out, tag_handle):
         except Exception as ex:
             standardhandle.warning(tag_handle, f"could not copy {src} file into {str(destpath)}")
             standardhandle.warning(tag_handle, f"{ex}")
+
+
+def parse_lines_log(run_number, tag_handle):
+    """Filter content in log file to produce a run wise session log."""
+    filtered = []
+    with open(LOG_FILENAME, "r") as f:
+        for line in f.readlines():
+            ll = line.split(PROV_PREFIX)
+            if len(ll) < 3:
+                standardhandle.error(tag_handle, f"Error in format of log file {LOG_FILENAME}", 2)
+            prov_str = ll.pop()
+            prov_dict = yaml.safe_load(prov_str)
+            keep = False
+            if int(prov_dict.get("session_tag", 0)) == int(run_number):
+                keep = True
+            if keep:
+                filtered.append(line)
+    return filtered
 
 
 def parse_lines_dl1(prov_lines, out, tag_handle):
@@ -136,17 +160,18 @@ if __name__ == "__main__":
     # 02006
     # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00
     # -c cfg/sequencer.cfg
-    # -p prov.log
+    # -q
+    # TODO: add type of prov processing to be done as arg - now only r0_to_dl1 in parse_lines_dl1
 
     options, tag = cliopts.provprocessparsing()
 
-    # check options.src prov.log exists
-    if not Path(options.src).exists():
-        standardhandle.error(tag, f"file {options.src} does not exist", 2)
+    # check LOG_FILENAME exists
+    if not Path(LOG_FILENAME).exists():
+        standardhandle.error(tag, f"file {LOG_FILENAME} does not exist", 2)
 
-    # check options.src prov.log is empty
-    if not Path(options.src).stat().st_size:
-        standardhandle.warning(tag, f"file {options.src} is empty")
+    # check LOG_FILENAME is empty
+    if not Path(LOG_FILENAME).stat().st_size:
+        standardhandle.warning(tag, f"file {LOG_FILENAME} is empty")
         exit()
 
     # check options.out is a folder
@@ -158,18 +183,31 @@ if __name__ == "__main__":
     if not outpath.exists():
         outpath.mkdir()
 
-    # process provenance file
-    processed_lines = parse_lines_dl1(read_prov(filename=options.src), str(outpath), tag)
-
     # build base_filename with options.run and options.out
     # ObservationDate = re.findall(r"DL1/(\d{8})/", options.out)[0]
     base_filename = f"DL1_{options.run}_prov"
-    log_path = outpath / f"{base_filename}.log"
+    session_logfilename = f"{base_filename}.log"
+    log_path = outpath / session_logfilename
     json_filepath = outpath / f"{base_filename}.json"
     png_filepath = outpath / f"{base_filename}.png"
 
-    # move log file
-    shutil.move(options.src, log_path)
+    # create session log file
+    # parse log file content for a specific run
+    parsed_content = parse_lines_log(options.run, tag)
+    with open(session_logfilename, 'w') as f:
+        for line in parsed_content:
+            f.write(line)
+
+    # process session log file created
+    processed_lines = parse_lines_dl1(read_prov(filename=session_logfilename), str(outpath), tag)
+
+    # move session log file to its log folder
+    shutil.move(session_logfilename, log_path)
+
+    # remove LOG_FILENAME
+    if options.quit:
+        remove_log_file = Path(LOG_FILENAME)
+        remove_log_file.unlink()
 
     # make json
     try:

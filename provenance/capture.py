@@ -56,6 +56,7 @@ SUPPORTED_HASH_BUFFER = ["content", "path"]
 # global variables
 sessions = set()
 traced_entities = {}
+session_name = ""
 
 
 def setup_logging():
@@ -98,7 +99,9 @@ def trace(func):
 
         # OSA specific
         # variables parsing
+        global session_name
         class_instance = parse_variables(class_instance)
+        session_name = class_instance.ObservationRun
 
         # provenance capture before execution
         derivation_records = get_derivation_records(class_instance, activity)
@@ -326,6 +329,7 @@ def get_item_properties(nested, item):
 def log_prov_info(prov_dict):
     """Write a dictionary to the logger."""
 
+    prov_dict["session_tag"] = session_name     # OSA specific session tag
     record_date = datetime.datetime.now().isoformat()
     logger.info(f"{PROV_PREFIX}{record_date}{PROV_PREFIX}{prov_dict}")
 
@@ -334,17 +338,17 @@ def log_session(class_instance, start):
     """Log start of a session."""
 
     # OSA specific
-    # prov session is outside scripting
-    try:
-        lines = read_prov(filename=LOG_FILENAME)
-        session_id = lines[0]["session_id"]
-        sessions.add(session_id)
-    except (FileNotFoundError, IndexError, KeyError):
-        session_id = abs(hash(class_instance))
+    # prov session is outside scripting and is run-wise
+    # we may have different sessions/runs in the same log file
+    session_id = abs(hash(class_instance))
+    lines = read_prov(filename=LOG_FILENAME)
+    for line in lines:
+        if line.get("observation_run", 0) == class_instance.ObservationRun:
+            session_id = lines[0]["session_id"]
+            sessions.add(session_id)
 
     module_name = class_instance.__class__.__module__
     class_name = class_instance.__name__
-    session_name = f"{class_name}"
     if session_id not in sessions:
         sessions.add(session_id)
         system = get_system_provenance()
@@ -354,10 +358,10 @@ def log_session(class_instance, start):
             "startTime": start,
             "system": system,
             # OSA specific
-            "script": sys.argv[0],
+            # "script": sys.argv[0]     # we could have different scripts in a session
             "software_version": class_instance.SoftwareVersion,
             "observation_date": class_instance.ObservationDate,
-            "observation_run": class_instance.ObservationRun,
+            "observation_run": class_instance.ObservationRun,  # a session is run-wise
         }
         log_prov_info(log_record)
     return session_id
@@ -372,6 +376,7 @@ def log_start_activity(activity, activity_id, session_id, start):
         "startTime": start,
         "in_session": session_id,
         "agent_name": os.getenv("USER", "Anonymous"),
+        "script": sys.argv[0]
     }
     log_prov_info(log_record)
 

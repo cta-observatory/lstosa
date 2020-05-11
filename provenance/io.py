@@ -43,7 +43,7 @@ def provlist2provdoc(provlist):
                     "prov:generatedAtTime": provdict.pop("startTime"),
                     # 'configFile': provdict.pop('configFile'),
                     # "system": str(provdict.pop('system')),
-                    "script": provdict.pop("script"),
+                    # "script": provdict.pop("script"),
                     "software_version": provdict.pop("software_version"),
                     "observation_date": provdict.pop("observation_date"),
                     "observation_run": provdict.pop("observation_run"),
@@ -60,6 +60,8 @@ def provlist2provdoc(provlist):
             # activity name
             if "name" in provdict:
                 act.add_attributes({"prov:label": provdict.pop("name")})
+            if "script" in provdict:
+                act.add_attributes({"script": provdict.pop("script")})
             # activity start
             if "startTime" in provdict:
                 act.set_time(
@@ -132,7 +134,8 @@ def provlist2provdoc(provlist):
                 #     ent.add_attributes({'prov:label': rol})
                 ent.wasGeneratedBy(act, attributes={"prov:role": rol})
             for k, v in provdict.items():
-                act.add_attributes({k: str(v)})
+                if k != "session_tag":
+                    act.add_attributes({k: str(v)})
         # entity
         if "entity_id" in provdict:
             ent_id = str(provdict.pop("entity_id"))
@@ -182,7 +185,8 @@ def provlist2provdoc(provlist):
                     records[progen_id] = progen
                 ent.wasDerivedFrom(progen)
             for k, v in provdict.items():
-                ent.add_attributes({k: str(v)})
+                if k != "session_tag":
+                    ent.add_attributes({k: str(v)})
         # agent
     return pdoc
 

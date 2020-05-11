@@ -497,12 +497,11 @@ def rawcopycliparsing(command):
 ##############################################################################
 def provprocessparsing():
     tag = standardhandle.gettag()
-    message = "usage: %prog [-p PROVFILE] [-c CONFIGFILE] <RUN_NUMBER> <DESTINATION_FOLDER>"
+    message = "usage: %prog [-c CONFIGFILE] <RUN_NUMBER> <DESTINATION_FOLDER>"
     parser = OptionParser(usage=message)
-    parser.add_option("-p", "--prov", action="store", dest="provfile", default="prov.log",
-                      help="provenance file to process [default prov.log]")
     parser.add_option("-c", "--config", action="store", dest="configfile", default="cfg/sequencer.cfg",
                       help="use specific config file [default cfg/sequencer.cfg]")
+    parser.add_option("-q", action="store_true", dest="quit", help="use this flag to reset session and remove log file")
 
     # Parse the command line
     (opts, args) = parser.parse_args()
@@ -513,8 +512,8 @@ def provprocessparsing():
     # Set global variables
     options.run = args[0]
     options.out = args[1]
-    options.src = opts.provfile
     options.configfile = opts.configfile
+    options.quit = opts.quit
 
     return options, tag
 
