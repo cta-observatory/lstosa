@@ -19,7 +19,7 @@ dependencies:
   - isort
   - pip:
       - git+git://github.com/cta-observatory/cta-lstchain@v0.5.0
-        #- lstchain
+      #- lstchain
       - pytest_runner
       - pytest-ordering
       - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.4.1
