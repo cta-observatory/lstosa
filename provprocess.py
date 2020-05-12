@@ -4,7 +4,6 @@ Provenance post processing script for OSA pipeline
 
 import shutil
 from pathlib import Path, PurePath
-
 from osa.utils import cliopts, standardhandle
 from provenance.capture import get_activity_id, get_file_hash
 from provenance.io import *
@@ -158,30 +157,19 @@ if __name__ == "__main__":
 
     # provprocess.py
     # 02006
-    # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00
+    # v0.4.3_v00
     # -c cfg/sequencer.cfg
     # -q
-    # TODO: add type of prov processing to be done as arg - now only r0_to_dl1 in parse_lines_dl1
-
     options, tag = cliopts.provprocessparsing()
 
     # check LOG_FILENAME exists
     if not Path(LOG_FILENAME).exists():
         standardhandle.error(tag, f"file {LOG_FILENAME} does not exist", 2)
 
-    # check LOG_FILENAME is empty
+    # check LOG_FILENAME is not empty
     if not Path(LOG_FILENAME).stat().st_size:
         standardhandle.warning(tag, f"file {LOG_FILENAME} is empty")
         exit()
-
-    # check options.out is a folder
-    if not Path(options.out).exists():
-        standardhandle.error(tag, f"path {options.out} does not exist", 2)
-
-    # make folder log/ if does not exist
-    outpath = Path(options.out) / "log"
-    if not outpath.exists():
-        outpath.mkdir()
 
     # build base_filename with options.run and options.out
     # ObservationDate = re.findall(r"DL1/(\d{8})/", options.out)[0]
