@@ -76,17 +76,17 @@ activities:
               description: "Observation subrun used"
               entityName: R0SubrunDataset
               value: R0SubrunDataset
-              # filepath: /fefs/aswg/data/real/R0/20200218/LST1.1Run2006.0001.fits.fz
+              # filepath: /fefs/aswg/data/real/R0/20200218/LST1.1Run02006.0001.fits.fz
             - role: "Pedestal file"
               description: "Pedestal file used"
               entityName: PedestalFile
               value: PedestalFile
-              # filepath: /fefs/aswg/data/real/calibration/20200218/v00/drs4_pedestal.Run2005.0000.fits
+              # filepath: /fefs/aswg/data/real/calibration/20200218/v00/drs4_pedestal.Run02005.0000.fits
             - role: "Coefficients calibration file"
               description: "Coefficients calibration file"
               entityName: CoefficientsCalibrationFile
               value: CoefficientsCalibrationFile
-              # filepath: /fefs/aswg/data/real/calibration/20200218/v00/calibration.Run2006.0000.hdf5
+              # filepath: /fefs/aswg/data/real/calibration/20200218/v00/calibration.Run02006.0000.hdf5
             - role: "Time calibration file"
               description: "Time calibration file"
               entityName: TimeCalibrationFile
@@ -115,7 +115,7 @@ activities:
               description: "DL1 dataset produced from a given observation subrun"
               entityName: DL1SubrunDataset
               value: DL1SubrunDataset
-              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST1.1.Run2006.0001.fits.hdf5
+              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5
 
             # - role: "DL1 Collection"
             #   description: "Set of DL1 files for a given run"
@@ -168,7 +168,7 @@ activities:
               description: "DL2 dataset produced from a given DL1 subrun"
               entityName: DL2SubrunDataset
               value: DL2SubrunDataset
-              # filepath: /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_dl1_LST1.1.Run2006.0001.fits.hdf5
+              # filepath: /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.0001.h5
 
 entities:
     PythonObject:
