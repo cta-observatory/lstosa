@@ -60,13 +60,11 @@ def parse_lines_log(run_number, tag_handle):
     return filtered
 
 
-def parse_lines_dl1(prov_lines, out, tag_handle):
+# TODO: add granularity parameter in parse_lines_run function
+#
+#
+def parse_lines_run(prov_lines, out, tag_handle):
     """Process r0 to dl1 provenance info to bundle session at run scope."""
-
-    from osa.configs.config import cfg
-
-    pathR0 = cfg.get("LST1", "RAWDIR")
-    pathDL1 = cfg.get("LST1", "ANALYSISDIR")
 
     i = 0
     size = 0
@@ -87,7 +85,7 @@ def parse_lines_dl1(prov_lines, out, tag_handle):
         name = line.get("name", "")
 
         # remove subruns info
-        if pathR0 in filepath or used_role == "Observation subrun":
+        if name == "R0SubrunDataset" or used_role == "Observation subrun":
             if filepath:
                 r0filepath_str = filepath
             remove = True
@@ -161,6 +159,12 @@ if __name__ == "__main__":
     # -c cfg/sequencer.cfg
     # -q
     options, tag = cliopts.provprocessparsing()
+
+    from osa.configs.config import cfg
+    pathRO = cfg.get("LST1", "RAWDIR")
+    pathDL1 = cfg.get("LST1", "ANALYSISDIR")
+    pathDL2 = cfg.get("LST1", "DL2DIR")
+    GRANULARITY = {"r0_to_dl1": pathDL1}  # "dl1_to_dl2", "r0_to_dl2
 
     # check LOG_FILENAME exists
     if not Path(LOG_FILENAME).exists():
