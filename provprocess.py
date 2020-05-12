@@ -175,41 +175,64 @@ if __name__ == "__main__":
         standardhandle.warning(tag, f"file {LOG_FILENAME} is empty")
         exit()
 
-    # build base_filename with options.run and options.out
-    # ObservationDate = re.findall(r"DL1/(\d{8})/", options.out)[0]
-    base_filename = f"DL1_{options.run}_prov"
-    session_logfilename = f"{base_filename}.log"
-    log_path = outpath / session_logfilename
-    json_filepath = outpath / f"{base_filename}.json"
-    graph_filepath = outpath / f"{base_filename}.pdf"
+    # build base_filename
+    base_filename = f"{options.run}_prov"
+    session_log_filename = f"{base_filename}.log"
 
-    # create session log file
-    # parse log file content for a specific run
+    # parse LOG_FILENAME content for a specific run
     parsed_content = parse_lines_log(options.run, tag)
-    with open(session_logfilename, 'w') as f:
+
+    # create temporal session log file
+    with open(session_log_filename, 'w') as f:
         for line in parsed_content:
             f.write(line)
 
-    # process session log file created
-    processed_lines = parse_lines_dl1(read_prov(filename=session_logfilename), str(outpath), tag)
+    # create prov products for each granularity
+    for grain, fold in GRANULARITY.items():
 
-    # move session log file to its log folder
-    shutil.move(session_logfilename, log_path)
+        # derive destination folder
+        step_path = Path(fold) / options.datefolder / options.subfolder
+
+        # check destination folder exists
+        if not step_path.exists():
+            standardhandle.error(tag, f"path {step_path} does not exist", 2)
+
+        # make folder log/ if does not exist
+        outpath = step_path / "log"
+        if not outpath.exists():
+            outpath.mkdir()
+
+        # define paths for prov products
+        log_path = outpath / f"{grain}_{base_filename}.log"
+        json_filepath = outpath / f"{grain}_{base_filename}.json"
+        graph_filepath = outpath / f"{grain}_{base_filename}.pdf"
+
+        # TODO: add granularity parameter in parse_lines_run function
+        # process session log file created
+        processed_lines = parse_lines_run(read_prov(filename=session_log_filename), str(outpath), tag)
+
+        # copy session log file to its log folder
+        shutil.copyfile(session_log_filename, log_path)
+
+        # make json
+        try:
+            provdoc = provlist2provdoc(processed_lines)
+            provdoc.serialize(str(json_filepath), indent=4)
+        except Exception as ex:
+            standardhandle.error(tag, f"problem while creating json: {ex}", 2)
+
+        # make graph
+        try:
+            provdoc2graph(provdoc, str(graph_filepath), "pdf")
+        except Exception as ex:
+            standardhandle.error(tag, f"problem while creating graph: {ex}", 2)
+
+    # remove temporal session log file
+    remove_session_log_file = Path(session_log_filename)
+    remove_session_log_file.unlink()
 
     # remove LOG_FILENAME
     if options.quit:
         remove_log_file = Path(LOG_FILENAME)
         remove_log_file.unlink()
 
-    # make json
-    try:
-        provdoc = provlist2provdoc(processed_lines)
-        provdoc.serialize(str(json_filepath), indent=4)
-    except Exception as ex:
-        standardhandle.error(tag, f"problem while creating json: {ex}", 2)
-
-    # make graph
-    try:
-        provdoc2graph(provdoc, str(graph_filepath), "pdf")
-    except Exception as ex:
-        standardhandle.error(tag, f"problem while creating graph: {ex}", 2)
