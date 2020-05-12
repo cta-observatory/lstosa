@@ -123,6 +123,21 @@ activities:
             #   value: DL1Collection
             #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
             #   size: 128
+    dl1_to_dl2:
+        description:
+            "Create DL2 files for an DL1 run and subrun"
+        parameters:
+            - name: ObservationRun
+              description: "Observation run number"
+              value: ObservationRun
+        usage:
+            - role: "Configuration file"
+              description: "Configuration file"
+              entityName: AnalysisConfigFile
+              value: AnalysisConfigFile
+              # filepath: /fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/data/lstchain_standard_config.json
+        generation:
+
 
 entities:
     PythonObject:
