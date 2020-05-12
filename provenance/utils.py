@@ -28,10 +28,25 @@ def parse_variables(class_instance):
     # LST1
 
     from osa.configs.config import cfg
-
     configfile = cfg.get("LSTOSA", "CONFIGFILE")
+    fits = cfg.get("LSTOSA", "FITSSUFFIX")
+    fz = cfg.get("LSTOSA", "COMPRESSEDSUFFIX")
+    h5 = cfg.get("LSTOSA", "H5SUFFIX")
+    r0_prefix = cfg.get("LSTOSA", "R0PREFIX")
+    dl1_prefix = cfg.get("LSTOSA", "DL1PREFIX")
 
     if class_instance.__name__ == "r0_to_dl1":
+        # calibrationfile       [0] /fefs/aswg/data/real/calibration/20200218/v00/calibration.Run2006.0000.hdf5
+        # pedestalfile          [1] /fefs/aswg/data/real/calibration/20200218/v00/drs4_pedestal.Run2005.0000.fits
+        # time_calibration      [2] /fefs/aswg/data/real/calibration/20191124/v00/time_calibration.Run1625.0000.hdf5
+        # drivefile             [3] /fefs/home/lapp/DrivePositioning/drive_log_20_02_18.txt
+        # ucts_t0_dragon
+        # dragon_counter0
+        # ucts_t0_tib
+        # tib_counter0
+        # run_str               [8] 02006.0000
+        # historyfile           [9] /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt
+
         class_instance.AnalysisConfigFile = configfile
         class_instance.CoefficientsCalibrationFile = class_instance.args[0]
         class_instance.PedestalFile = class_instance.args[1]
@@ -39,26 +54,30 @@ def parse_variables(class_instance):
         class_instance.PointingFile = class_instance.args[3]
         class_instance.ObservationRun = class_instance.args[8].split(".")[0]
         class_instance.ObservationSubRun = class_instance.args[8].split(".")[1]
-        # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt
         class_instance.ObservationDate = re.findall(r"DL1/(\d{8})/", class_instance.args[9])[0]
         class_instance.SoftwareVersion = re.findall(r"DL1/\d{8}/(v.*)_v", class_instance.args[9])[0]
         class_instance.ProdID = re.findall(r"DL1/\d{8}/v.*_v(.*)/", class_instance.args[9])[0]
-        # /fefs/aswg/data/real/calibration/20200218/v00/calibration.Run2006.0000.hdf5
         class_instance.CalibrationRun = str(re.findall(r"Run(\d{4}).", class_instance.args[0])[0]).zfill(5)
-        # /fefs/aswg/data/real/calibration/20200218/v00/drs4_pedestal.Run2005.0000.fits
         class_instance.PedestalRun = str(re.findall(r"Run(\d{4}).", class_instance.args[1])[0]).zfill(5)
-        # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST1.1.Run2006.0001.fits.h5
-        # As of lstchain v0.5.0: pathname/dl1_LST-1.Run01832.0051.h5
-        fits = cfg.get("LSTOSA", "FITSSUFFIX")
-        fz = cfg.get("LSTOSA", "COMPRESSEDSUFFIX")
-        h5 = cfg.get("LSTOSA", "H5SUFFIX")
-        r0_prefix = cfg.get("LSTOSA", "R0PREFIX")
-        dl1_prefix = cfg.get("LSTOSA", "DL1PREFIX")
         outdir = re.findall(r"(.*)sequence", class_instance.args[9])[0]
+        # as of lstchain v0.5.0 /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST1.Run2006.0001.fits.h5
         class_instance.DL1SubrunDataset = f"{outdir}{dl1_prefix}.Run{class_instance.args[8]}{h5}"
-        # /fefs/aswg/data/real/R0/20200218/LST1.1.Run2006.0001.fits.fz
         rawdir = cfg.get("LST1", "RAWDIR")
+        # /fefs/aswg/data/real/R0/20200218/LST1.1.Run2006.0001.fits.fz
         class_instance.R0SubrunDataset = f"{rawdir}/{class_instance.ObservationDate}/{r0_prefix}.Run{class_instance.args[8]}{fits}{fz}"
+        class_instance.session_name = class_instance.ObservationRun
+
+    if class_instance.__name__ == "dl1_to_dl2":
+        # run_str       [0] 02006.0000
+        # historyfile   [1] /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt
+
+        class_instance.ObservationRun = class_instance.args[0].split(".")[1]
+        outdir = re.findall(r"(.*)sequence", class_instance.args[1])[0]
+        class_instance.ObservationDate = re.findall(r"DL1/(\d{8})/", class_instance.args[1])[0]
+        class_instance.SoftwareVersion = re.findall(r"DL1/\d{8}/(v.*)_v", class_instance.args[1])[0]
+        # as of lstchain v0.5.0 /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST1.Run2006.0001.fits.h5
+        class_instance.DL1SubrunDataset = f"{outdir}{dl1_prefix}.Run{class_instance.args[0]}{h5}"
+        class_instance.session_name = class_instance.ObservationRun
 
     return class_instance
 
