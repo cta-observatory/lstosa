@@ -101,7 +101,7 @@ def trace(func):
         # variables parsing
         global session_name
         class_instance = parse_variables(class_instance)
-        session_name = class_instance.ObservationRun
+        session_name = f"{activity}:{class_instance.ObservationRun}"
 
         # provenance capture before execution
         derivation_records = get_derivation_records(class_instance, activity)

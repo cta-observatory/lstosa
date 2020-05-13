@@ -53,7 +53,9 @@ def parse_lines_log(run_number, tag_handle):
             prov_str = ll.pop()
             prov_dict = yaml.safe_load(prov_str)
             keep = False
-            if int(prov_dict.get("session_tag", 0)) == int(run_number):
+            session_tag = prov_dict.get("session_tag", "0:0")
+            tag_activity, tag_run = session_tag.split(":")
+            if int(tag_run) == int(run_number):
                 keep = True
             if keep:
                 filtered.append(line)
@@ -89,7 +91,7 @@ def parse_lines_run(prov_lines, out, tag_handle):
             if filepath:
                 r0filepath_str = filepath
             remove = True
-        if pathDL1 in filepath or generated_role == "DL1 subrun dataset":
+        if name == "DL1SubrunDataset" or generated_role == "DL1 subrun dataset":
             if filepath:
                 dl1filepath_str = filepath
             remove = True
@@ -106,7 +108,7 @@ def parse_lines_run(prov_lines, out, tag_handle):
         if activity_id:
             line["activity_id"] = id_activity_run
 
-        # copy used files
+        # copy not subruns used files
         if filepath and not remove:
             copy_used_file(filepath, out, tag_handle)
 
