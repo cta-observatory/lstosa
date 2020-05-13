@@ -16,7 +16,7 @@ PROV_PREFIX = provconfig["PREFIX"]
 
 
 def copy_used_file(src, out, tag_handle):
-    """Copy file used in process"""
+    """Copy file used in process."""
 
     # check src file exists
     if not Path(src).is_file():
@@ -59,7 +59,7 @@ def parse_lines_log(filter_step, run_number, tag_handle):
                 keep = True
             if filter_step != "" and filter_step != tag_activity:
                 keep = False
-            if keep:
+            if keep or not filtered:    # always keep first line / session start
                 filtered.append(line)
     return filtered
 
@@ -113,6 +113,9 @@ def parse_lines_run(prov_lines, out, tag_handle):
         # copy not subruns used files
         if filepath and not remove:
             copy_used_file(filepath, out, tag_handle)
+
+        if session_id:
+            remove = False
 
         # keep endtime
         # append collection run used and generated
