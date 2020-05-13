@@ -74,7 +74,9 @@ def parse_variables(class_instance):
         # run_str       [0] 02006.0000
         # historyfile   [1] /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt
 
+        class_instance.AnalysisConfigFile = configfile
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
+        class_instance.ObservationSubRun = class_instance.args[0].split(".")[1]
         class_instance.ObservationDate = re.findall(r"DL1/(\d{8})/", class_instance.args[1])[0]
         class_instance.SoftwareVersion = re.findall(r"DL1/\d{8}/(v.*)_v", class_instance.args[1])[0]
         class_instance.DL1ProdID = re.findall(r"DL1/\d{8}/v.*_v(.*)/", class_instance.args[1])[0]

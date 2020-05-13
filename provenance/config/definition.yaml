@@ -131,10 +131,18 @@ activities:
             - name: ObservationRun
               description: "Observation run number"
               value: ObservationRun
+            - name: ObservationSubRun
+              description: "Observation subrun number"
+              value: ObservationSubRun
             - name: DL1ProdID
               description: "Production ID"
               value: DL1ProdID
         usage:
+            - role: "DL1 subrun dataset"
+              description: "DL1 dataset produced from a given observation subrun"
+              entityName: DL1SubrunDataset
+              value: DL1SubrunDataset
+              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5
             - role: "Configuration file"
               description: "Configuration file"
               entityName: AnalysisConfigFile
