@@ -57,6 +57,7 @@ SUPPORTED_HASH_BUFFER = ["content", "path"]
 sessions = set()
 traced_entities = {}
 session_name = ""
+session_tag = ""
 
 
 def setup_logging():
@@ -99,9 +100,10 @@ def trace(func):
 
         # OSA specific
         # variables parsing
-        global session_name
+        global session_name, session_tag
         class_instance = parse_variables(class_instance)
-        session_name = f"{activity}:{class_instance.ObservationRun}"
+        session_tag = f"{activity}:{class_instance.ObservationRun}"
+        session_name = f"{class_instance.ObservationRun}"
 
         # provenance capture before execution
         derivation_records = get_derivation_records(class_instance, activity)
@@ -329,7 +331,7 @@ def get_item_properties(nested, item):
 def log_prov_info(prov_dict):
     """Write a dictionary to the logger."""
 
-    prov_dict["session_tag"] = session_name     # OSA specific session tag
+    prov_dict["session_tag"] = session_tag     # OSA specific session tag
     record_date = datetime.datetime.now().isoformat()
     logger.info(f"{PROV_PREFIX}{record_date}{PROV_PREFIX}{prov_dict}")
 
