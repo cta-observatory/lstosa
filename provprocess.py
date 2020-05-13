@@ -42,7 +42,7 @@ def copy_used_file(src, out, tag_handle):
             standardhandle.warning(tag_handle, f"{ex}")
 
 
-def parse_lines_log(run_number, tag_handle):
+def parse_lines_log(filter_step, run_number, tag_handle):
     """Filter content in log file to produce a run wise session log."""
     filtered = []
     with open(LOG_FILENAME, "r") as f:
@@ -57,6 +57,8 @@ def parse_lines_log(run_number, tag_handle):
             tag_activity, tag_run = session_tag.split(":")
             if int(tag_run) == int(run_number):
                 keep = True
+            if filter_step != "" and filter_step != tag_activity:
+                keep = False
             if keep:
                 filtered.append(line)
     return filtered
@@ -159,6 +161,7 @@ if __name__ == "__main__":
     # 02006
     # v0.4.3_v00
     # -c cfg/sequencer.cfg
+    # -f r0_to_dl1
     # -q
     options, tag = cliopts.provprocessparsing()
 
@@ -166,7 +169,9 @@ if __name__ == "__main__":
     pathRO = cfg.get("LST1", "RAWDIR")
     pathDL1 = cfg.get("LST1", "ANALYSISDIR")
     pathDL2 = cfg.get("LST1", "DL2DIR")
-    GRANULARITY = {"r0_to_dl1": pathDL1}  # "dl1_to_dl2", "r0_to_dl2
+    GRANULARITY = {"r0_to_dl1": pathDL1, "dl1_to_dl2": pathDL2}
+    if options.filter:
+        GRANULARITY = {options.filter: GRANULARITY[options.filter]}
 
     # check LOG_FILENAME exists
     if not Path(LOG_FILENAME).exists():
@@ -182,7 +187,7 @@ if __name__ == "__main__":
     session_log_filename = f"{base_filename}.log"
 
     # parse LOG_FILENAME content for a specific run
-    parsed_content = parse_lines_log(options.run, tag)
+    parsed_content = parse_lines_log(options.filter, options.run, tag)
 
     # create temporal session log file
     with open(session_log_filename, 'w') as f:
