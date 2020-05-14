@@ -18,7 +18,7 @@ dependencies:
   - black
   - isort
   - pip:
-      - git+git://github.com/cta-observatory/cta-lstchain@v0.5.0
+      - git+git://github.com/cta-observatory/cta-lstchain@v0.5.1
       #- lstchain
       - pytest_runner
       - pytest-ordering
