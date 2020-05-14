@@ -44,13 +44,13 @@ def copy_used_file(src, out):
 
 
 def parse_lines_log(filter_step, run_number):
-    """Filter content in log file to produce a run wise session log."""
+    """Filter content in log file to produce a run/process wise session log."""
     filtered = []
     with open(LOG_FILENAME, "r") as f:
         for line in f.readlines():
             ll = line.split(PROV_PREFIX)
             if len(ll) < 3:
-                standardhandle.error(tag, f"Error in format of log file {LOG_FILENAME}", 2)
+                standardhandle.error(tag, f"format {PROV_PREFIX} mismatch in log file {LOG_FILENAME}", 2)
             prov_str = ll.pop()
             prov_dict = yaml.safe_load(prov_str)
             keep = False
@@ -60,7 +60,8 @@ def parse_lines_log(filter_step, run_number):
                 keep = True
             if filter_step != "" and filter_step != tag_activity:
                 keep = False
-            if keep or not filtered:    # always keep first line / session start
+            # always keep first line / session start
+            if keep or not filtered:
                 filtered.append(line)
     return filtered
 
@@ -68,7 +69,7 @@ def parse_lines_log(filter_step, run_number):
 # TODO: add used DL1DL2Collection, generated DL2Collection
 #
 def parse_lines_run(filter_step, prov_lines, out):
-    """Process provenance info to bundle session at run-wise and process-wise."""
+    """Process provenance info to reduce session at run/process wise scope."""
 
     i = 0
     size = 0
@@ -93,7 +94,7 @@ def parse_lines_run(filter_step, prov_lines, out):
             if filepath:
                 r0filepath_str = filepath
             remove = True
-        if name == "DL1SubrunDataset" or generated_role == "DL1 subrun dataset":
+        if name == "DL1SubrunDataset" or generated_role == "DL1 subrun dataset" or used_role == "DL1 subrun dataset":
             if filepath:
                 dl1filepath_str = filepath
             remove = True
@@ -103,60 +104,75 @@ def parse_lines_run(filter_step, prov_lines, out):
             remove = True
         if parameters and "ObservationSubRun" in parameters:
             del line["parameters"]["ObservationSubRun"]
-        # group subruns activities into run-wise
+        # group subruns activities into a single run-wise activity
         if name == filter_step:
             size += 1
             if not id_activity_run:
                 id_activity_run = get_activity_id()
         if size > 1:
             remove = True
-        # replace with run-wise id
+        # replace with new run-wise activity_id
         if activity_id:
             line["activity_id"] = id_activity_run
-
-        # filter
+        # filter grain
         session_tag = line.get("session_tag", "0:0")
         tag_activity, tag_run = session_tag.split(":")
         if tag_activity != filter_step:
             remove = True
-        else:
-            # copy not subruns used files
-            if filepath and not remove:
-                copy_used_file(filepath, out)
-
+        # copy not subruns used files
+        if filepath and not remove:
+            copy_used_file(filepath, out)
+        # always keep first line / session start
         if session_id:
             remove = False
 
-        # keep endtime of last activitiy
-        # append collection run used and generated
-        if endTime and i == len(prov_lines):
-            # print(remove)
-            #
-            entity_id = get_file_hash(r0filepath_str, buffer="path")
-            r0filepath_str = r0filepath_str.replace(PurePath(r0filepath_str).name, "")
-            used = {"entity_id": entity_id}
-            used.update({"name": "R0Collection"})
-            used.update({"type": "SetCollection"})
-            used.update({"size": size})
-            used.update({"filepath": r0filepath_str})
-            working_lines.append(used)
-            used = {"activity_id": id_activity_run}
-            used.update({"used_id": entity_id})
-            used.update({"used_role": "R0 Collection"})
-            working_lines.append(used)
-            #
-            entity_id = get_file_hash(dl1filepath_str, buffer="path")
-            dl1filepath_str = dl1filepath_str.replace(PurePath(dl1filepath_str).name, "")
-            generated = {"entity_id": entity_id}
-            generated.update({"name": "DL1Collection"})
-            generated.update({"type": "SetCollection"})
-            generated.update({"size": size})
-            generated.update({"filepath": dl1filepath_str})
-            working_lines.append(generated)
-            generated = {"activity_id": id_activity_run}
-            generated.update({"generated_id": entity_id})
-            generated.update({"generated_role": "DL1 Collection"})
-            working_lines.append(generated)
+        # append collection run used and generated at endtime line of last activitiy
+        if endTime and i == len(prov_lines) and size:
+            if r0filepath_str and filter_step == "r0_to_dl1":
+                entity_id = get_file_hash(r0filepath_str, buffer="path")
+                r0filepath_str = r0filepath_str.replace(PurePath(r0filepath_str).name, "")
+                used = {"entity_id": entity_id}
+                used.update({"name": "R0Collection"})
+                used.update({"type": "SetCollection"})
+                used.update({"size": size})
+                used.update({"filepath": r0filepath_str})
+                working_lines.append(used)
+                used = {"activity_id": id_activity_run}
+                used.update({"used_id": entity_id})
+                used.update({"used_role": "R0 Collection"})
+                working_lines.append(used)
+            if dl1filepath_str:
+                entity_id = get_file_hash(dl1filepath_str, buffer="path")
+                dl1filepath_str = dl1filepath_str.replace(PurePath(dl1filepath_str).name, "")
+                dl1 = {"entity_id": entity_id}
+                dl1.update({"name": "DL1Collection"})
+                dl1.update({"type": "SetCollection"})
+                dl1.update({"size": size})
+                dl1.update({"filepath": dl1filepath_str})
+                working_lines.append(dl1)
+            if dl1filepath_str and filter_step == "r0_to_dl1":
+                generated = {"activity_id": id_activity_run}
+                generated.update({"generated_id": entity_id})
+                generated.update({"generated_role": "DL1 Collection"})
+                working_lines.append(generated)
+            if dl1filepath_str and filter_step == "dl1_to_dl2":
+                used = {"activity_id": id_activity_run}
+                used.update({"used_id": entity_id})
+                used.update({"used_role": "DL1 Collection"})
+                working_lines.append(used)
+            if dl2filepath_str and filter_step == "dl1_to_dl2":
+                entity_id = get_file_hash(dl2filepath_str, buffer="path")
+                dl2filepath_str = dl2filepath_str.replace(PurePath(dl2filepath_str).name, "")
+                used = {"entity_id": entity_id}
+                used.update({"name": "DL2Collection"})
+                used.update({"type": "SetCollection"})
+                used.update({"size": size})
+                used.update({"filepath": dl2filepath_str})
+                working_lines.append(used)
+                used = {"activity_id": id_activity_run}
+                used.update({"generated_id": entity_id})
+                used.update({"generated_role": "DL2 Collection"})
+                working_lines.append(used)
 
         if not remove:
             working_lines.append(line)
@@ -182,7 +198,7 @@ def produce_provenance():
 
         # check destination folder exists
         if not step_path.exists():
-            standardhandle.error(tag, f"path {step_path} does not exist", 2)
+            standardhandle.error(tag, f"Path {step_path} does not exist", 2)
 
         # make folder log/ if does not exist
         outpath = step_path / "log"
