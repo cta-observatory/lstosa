@@ -23,6 +23,14 @@ def r0_to_dl1(
     pass
 
 
+@trace
+def dl1_to_dl2(
+    run_str,
+    historyfile,
+):
+    pass
+
+
 def select_config(tmp_path):
 
     config_file = str(Path("cfg") / "sequencer.cfg")
@@ -52,19 +60,30 @@ def make_args_r0_to_dl1():
         "ucts_t0_tib",
         "tib_counter0",
         "02006.0002",
-        "DL1/20200218/v0.4.3_v00/historyfile/sequence_LST1_02006.0001.history",
+        "/fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt",
     )
     return args
 
 
-def test_trace_r0_to_dl1(tmp_path):
+def make_args_dl1_to_dl2():
+
+    args = (
+        "02006.0002",
+        "/fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt",
+    )
+    return args
+
+
+def test_trace_r0_to_dl2(tmp_path):
 
     # config
     select_config(tmp_path)
-    args = make_args_r0_to_dl1()
+    args_dl1 = make_args_r0_to_dl1()
+    args_dl2 = make_args_dl1_to_dl2()
 
     # track prov
-    r0_to_dl1(*args)
+    r0_to_dl1(*args_dl1)
+    dl1_to_dl2(*args_dl2)
 
     # make json
     json_filepath = tmp_path / "prov.json"
