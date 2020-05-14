@@ -29,6 +29,7 @@ def parse_variables(class_instance):
     # LST1
 
     from osa.configs.config import cfg
+
     configfile = cfg.get("LSTOSA", "CONFIGFILE")
     rawdir = cfg.get("LST1", "RAWDIR")
     fits = cfg.get("LSTOSA", "FITSSUFFIX")
@@ -80,9 +81,9 @@ def parse_variables(class_instance):
         class_instance.ObservationDate = re.findall(r"DL1/(\d{8})/", class_instance.args[1])[0]
         class_instance.SoftwareVersion = re.findall(r"DL1/\d{8}/(v.*)_v", class_instance.args[1])[0]
         class_instance.DL1ProdID = re.findall(r"DL1/\d{8}/v.*_v(.*)/", class_instance.args[1])[0]
-        class_instance.RFModelEnergyFile = str(Path(rf_models_directory)/"reg_energy.sav")
-        class_instance.RFModelDispFile = str(Path(rf_models_directory)/"reg_disp_vector.sav")
-        class_instance.RFModelGammanessFile = str(Path(rf_models_directory)/"cls_gh.sav")
+        class_instance.RFModelEnergyFile = str(Path(rf_models_directory) / "reg_energy.sav")
+        class_instance.RFModelDispFile = str(Path(rf_models_directory) / "reg_disp_vector.sav")
+        class_instance.RFModelGammanessFile = str(Path(rf_models_directory) / "cls_gh.sav")
         outdir_dl1 = re.findall(r"(.*)sequence", class_instance.args[1])[0]
         outdir_dl2 = outdir_dl1.replace("DL1", "DL2")
         # as of lstchain v0.5.0 /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.0001.h5

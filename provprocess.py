@@ -5,11 +5,13 @@ Provenance post processing script for OSA pipeline
 import copy
 import shutil
 from pathlib import Path, PurePath
+
+import yaml
+
 from osa.utils import cliopts, standardhandle
 from provenance.capture import get_activity_id, get_file_hash
 from provenance.io import *
 from provenance.utils import get_log_config
-import yaml
 
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
@@ -94,7 +96,11 @@ def parse_lines_run(filter_step, prov_lines, out):
             if filepath:
                 r0filepath_str = filepath
             remove = True
-        if name == "DL1SubrunDataset" or generated_role == "DL1 subrun dataset" or used_role == "DL1 subrun dataset":
+        if (
+            name == "DL1SubrunDataset"
+            or generated_role == "DL1 subrun dataset"
+            or used_role == "DL1 subrun dataset"
+        ):
             if filepath:
                 dl1filepath_str = filepath
             remove = True
@@ -247,6 +253,7 @@ if __name__ == "__main__":
     options, tag = cliopts.provprocessparsing()
 
     from osa.configs.config import cfg
+
     pathRO = cfg.get("LST1", "RAWDIR")
     pathDL1 = cfg.get("LST1", "ANALYSISDIR")
     pathDL2 = cfg.get("LST1", "DL2DIR")
@@ -271,7 +278,7 @@ if __name__ == "__main__":
     parsed_content = parse_lines_log(options.filter, options.run)
 
     # create temporal session log file
-    with open(session_log_filename, 'w') as f:
+    with open(session_log_filename, "w") as f:
         for line in parsed_content:
             f.write(line)
 
@@ -286,4 +293,3 @@ if __name__ == "__main__":
     if options.quit:
         remove_log_file = Path(LOG_FILENAME)
         remove_log_file.unlink()
-
