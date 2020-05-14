@@ -2,6 +2,7 @@
 Provenance post processing script for OSA pipeline
 """
 
+import copy
 import shutil
 from pathlib import Path, PurePath
 from osa.utils import cliopts, standardhandle
@@ -15,12 +16,12 @@ LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 PROV_PREFIX = provconfig["PREFIX"]
 
 
-def copy_used_file(src, out, tag_handle):
+def copy_used_file(src, out):
     """Copy file used in process."""
 
     # check src file exists
     if not Path(src).is_file():
-        standardhandle.error(tag_handle, f"{src} file cannot be accessed", 2)
+        standardhandle.error(tag, f"{src} file cannot be accessed", 2)
 
     hash_src = get_file_hash(src, buffer="content")
     filename = PurePath(src).name
@@ -38,24 +39,24 @@ def copy_used_file(src, out, tag_handle):
         try:
             shutil.copyfile(src, str(destpath))
         except Exception as ex:
-            standardhandle.warning(tag_handle, f"could not copy {src} file into {str(destpath)}")
-            standardhandle.warning(tag_handle, f"{ex}")
+            standardhandle.warning(tag, f"could not copy {src} file into {str(destpath)}")
+            standardhandle.warning(tag, f"{ex}")
 
 
-def parse_lines_log(filter_step, run_number, tag_handle):
+def parse_lines_log(filter_step, run_number):
     """Filter content in log file to produce a run wise session log."""
     filtered = []
     with open(LOG_FILENAME, "r") as f:
         for line in f.readlines():
             ll = line.split(PROV_PREFIX)
             if len(ll) < 3:
-                standardhandle.error(tag_handle, f"Error in format of log file {LOG_FILENAME}", 2)
+                standardhandle.error(tag, f"Error in format of log file {LOG_FILENAME}", 2)
             prov_str = ll.pop()
             prov_dict = yaml.safe_load(prov_str)
             keep = False
             session_tag = prov_dict.get("session_tag", "0:0")
             tag_activity, tag_run = session_tag.split(":")
-            if int(tag_run) == int(run_number):
+            if tag_run == run_number:
                 keep = True
             if filter_step != "" and filter_step != tag_activity:
                 keep = False
@@ -64,11 +65,10 @@ def parse_lines_log(filter_step, run_number, tag_handle):
     return filtered
 
 
-# TODO: add granularity parameter in parse_lines_run function
+# TODO: add used DL1DL2Collection, generated DL2Collection
 #
-#
-def parse_lines_run(prov_lines, out, tag_handle):
-    """Process r0 to dl1 provenance info to bundle session at run scope."""
+def parse_lines_run(filter_step, prov_lines, out):
+    """Process provenance info to bundle session at run-wise and process-wise."""
 
     i = 0
     size = 0
@@ -97,107 +97,84 @@ def parse_lines_run(prov_lines, out, tag_handle):
             if filepath:
                 dl1filepath_str = filepath
             remove = True
-        if parameters:
+        if name == "DL2SubrunDataset" or generated_role == "DL2 subrun dataset":
+            if filepath:
+                dl2filepath_str = filepath
+            remove = True
+        if parameters and "ObservationSubRun" in parameters:
             del line["parameters"]["ObservationSubRun"]
-        if name == "r0_to_dl1" and not session_id:
+        # group subruns activities into run-wise
+        if name == filter_step:
             size += 1
             if not id_activity_run:
                 id_activity_run = get_activity_id()
         if size > 1:
             remove = True
-
-        # new id
+        # replace with run-wise id
         if activity_id:
             line["activity_id"] = id_activity_run
 
-        # copy not subruns used files
-        if filepath and not remove:
-            copy_used_file(filepath, out, tag_handle)
+        # filter
+        session_tag = line.get("session_tag", "0:0")
+        tag_activity, tag_run = session_tag.split(":")
+        if tag_activity != filter_step:
+            remove = True
+        else:
+            # copy not subruns used files
+            if filepath and not remove:
+                copy_used_file(filepath, out)
 
         if session_id:
             remove = False
 
-        # keep endtime
+        # keep endtime of last activitiy
         # append collection run used and generated
-        if endTime:
-            if i == len(prov_lines):
-                remove = False
-                #
-                entity_id = get_file_hash(r0filepath_str, buffer="path")
-                r0filepath_str = r0filepath_str.replace(PurePath(r0filepath_str).name, "")
-                used = {"entity_id": entity_id}
-                used.update({"name": "R0Collection"})
-                used.update({"type": "SetCollection"})
-                used.update({"size": size})
-                used.update({"filepath": r0filepath_str})
-                working_lines.append(used)
-                used = {"activity_id": id_activity_run}
-                used.update({"used_id": entity_id})
-                used.update({"used_role": "R0 Collection"})
-                working_lines.append(used)
-                #
-                entity_id = get_file_hash(dl1filepath_str, buffer="path")
-                dl1filepath_str = dl1filepath_str.replace(PurePath(dl1filepath_str).name, "")
-                generated = {"entity_id": entity_id}
-                generated.update({"name": "DL1Collection"})
-                generated.update({"type": "SetCollection"})
-                generated.update({"size": size})
-                generated.update({"filepath": dl1filepath_str})
-                working_lines.append(generated)
-                generated = {"activity_id": id_activity_run}
-                generated.update({"generated_id": entity_id})
-                generated.update({"generated_role": "DL1 Collection"})
-                working_lines.append(generated)
-
-            else:
-                remove = True
+        if endTime and i == len(prov_lines):
+            # print(remove)
+            #
+            entity_id = get_file_hash(r0filepath_str, buffer="path")
+            r0filepath_str = r0filepath_str.replace(PurePath(r0filepath_str).name, "")
+            used = {"entity_id": entity_id}
+            used.update({"name": "R0Collection"})
+            used.update({"type": "SetCollection"})
+            used.update({"size": size})
+            used.update({"filepath": r0filepath_str})
+            working_lines.append(used)
+            used = {"activity_id": id_activity_run}
+            used.update({"used_id": entity_id})
+            used.update({"used_role": "R0 Collection"})
+            working_lines.append(used)
+            #
+            entity_id = get_file_hash(dl1filepath_str, buffer="path")
+            dl1filepath_str = dl1filepath_str.replace(PurePath(dl1filepath_str).name, "")
+            generated = {"entity_id": entity_id}
+            generated.update({"name": "DL1Collection"})
+            generated.update({"type": "SetCollection"})
+            generated.update({"size": size})
+            generated.update({"filepath": dl1filepath_str})
+            working_lines.append(generated)
+            generated = {"activity_id": id_activity_run}
+            generated.update({"generated_id": entity_id})
+            generated.update({"generated_role": "DL1 Collection"})
+            working_lines.append(generated)
 
         if not remove:
             working_lines.append(line)
 
+    # remove start session line
+    if len(working_lines) == 1:
+        working_lines = []
+
     return working_lines
 
 
-if __name__ == "__main__":
+def produce_provenance():
+    """Create run-wise provenance products as JSON logs and graphs according to granularity."""
 
-    # provprocess.py
-    # 02006
-    # v0.4.3_v00
-    # -c cfg/sequencer.cfg
-    # -f r0_to_dl1
-    # -q
-    options, tag = cliopts.provprocessparsing()
-
-    from osa.configs.config import cfg
-    pathRO = cfg.get("LST1", "RAWDIR")
-    pathDL1 = cfg.get("LST1", "ANALYSISDIR")
-    pathDL2 = cfg.get("LST1", "DL2DIR")
-    GRANULARITY = {"r0_to_dl1": pathDL1, "dl1_to_dl2": pathDL2}
-    if options.filter:
-        GRANULARITY = {options.filter: GRANULARITY[options.filter]}
-
-    # check LOG_FILENAME exists
-    if not Path(LOG_FILENAME).exists():
-        standardhandle.error(tag, f"file {LOG_FILENAME} does not exist", 2)
-
-    # check LOG_FILENAME is not empty
-    if not Path(LOG_FILENAME).stat().st_size:
-        standardhandle.warning(tag, f"file {LOG_FILENAME} is empty")
-        exit()
-
-    # build base_filename
-    base_filename = f"{options.run}_prov"
-    session_log_filename = f"{base_filename}.log"
-
-    # parse LOG_FILENAME content for a specific run
-    parsed_content = parse_lines_log(options.filter, options.run, tag)
-
-    # create temporal session log file
-    with open(session_log_filename, 'w') as f:
-        for line in parsed_content:
-            f.write(line)
-
-    # create prov products for each granularity
+    # create prov products for each granularity level
+    processed_lines = []
+    r0_to_dl1_processed_lines = []
+    dl1_to_dl2_processed_lines = []
     for grain, fold in GRANULARITY.items():
 
         # derive destination folder
@@ -217,25 +194,73 @@ if __name__ == "__main__":
         json_filepath = outpath / f"{grain}_{base_filename}.json"
         graph_filepath = outpath / f"{grain}_{base_filename}.pdf"
 
-        # TODO: add granularity parameter in parse_lines_run function
-        # process session log file created
-        processed_lines = parse_lines_run(read_prov(filename=session_log_filename), str(outpath), tag)
+        # process temp log file
+        if grain != "r0_to_dl2":
+            processed_lines = parse_lines_run(grain, read_prov(filename=session_log_filename), str(outpath))
+        if grain == "r0_to_dl1":
+            r0_to_dl1_processed_lines = copy.deepcopy(processed_lines)
+        if grain == "dl1_to_dl2":
+            dl1_to_dl2_processed_lines = copy.deepcopy(processed_lines)
+        if grain == "r0_to_dl2":
+            processed_lines = r0_to_dl1_processed_lines + dl1_to_dl2_processed_lines[1:]
 
-        # copy session log file to its log folder
-        shutil.copyfile(session_log_filename, log_path)
+        if processed_lines:
+            # copy session log file to its log folder
+            shutil.copyfile(session_log_filename, log_path)
+            # make json
+            try:
+                provdoc = provlist2provdoc(processed_lines)
+                provdoc.serialize(str(json_filepath), indent=4)
+            except Exception as ex:
+                standardhandle.error(tag, f"problem while creating json: {ex}", 2)
+            # make graph
+            try:
+                provdoc2graph(provdoc, str(graph_filepath), "pdf")
+            except Exception as ex:
+                standardhandle.error(tag, f"problem while creating graph: {ex}", 2)
 
-        # make json
-        try:
-            provdoc = provlist2provdoc(processed_lines)
-            provdoc.serialize(str(json_filepath), indent=4)
-        except Exception as ex:
-            standardhandle.error(tag, f"problem while creating json: {ex}", 2)
 
-        # make graph
-        try:
-            provdoc2graph(provdoc, str(graph_filepath), "pdf")
-        except Exception as ex:
-            standardhandle.error(tag, f"problem while creating graph: {ex}", 2)
+if __name__ == "__main__":
+
+    # provprocess.py
+    # 02006
+    # v0.4.3_v00
+    # -c cfg/sequencer.cfg
+    # -f r0_to_dl1
+    # -q
+    options, tag = cliopts.provprocessparsing()
+
+    from osa.configs.config import cfg
+    pathRO = cfg.get("LST1", "RAWDIR")
+    pathDL1 = cfg.get("LST1", "ANALYSISDIR")
+    pathDL2 = cfg.get("LST1", "DL2DIR")
+    GRANULARITY = {"r0_to_dl1": pathDL1, "dl1_to_dl2": pathDL2, "r0_to_dl2": pathDL2}
+    if options.filter:
+        GRANULARITY = {options.filter: GRANULARITY[options.filter]}
+
+    # check LOG_FILENAME exists
+    if not Path(LOG_FILENAME).exists():
+        standardhandle.error(tag, f"file {LOG_FILENAME} does not exist", 2)
+
+    # check LOG_FILENAME is not empty
+    if not Path(LOG_FILENAME).stat().st_size:
+        standardhandle.warning(tag, f"file {LOG_FILENAME} is empty")
+        exit()
+
+    # build base_filename
+    base_filename = f"{options.run}_prov"
+    session_log_filename = f"{base_filename}.log"
+
+    # parse LOG_FILENAME content for a specific run / process
+    parsed_content = parse_lines_log(options.filter, options.run)
+
+    # create temporal session log file
+    with open(session_log_filename, 'w') as f:
+        for line in parsed_content:
+            f.write(line)
+
+    # create run-wise JSON logs and graphs for each grain
+    produce_provenance()
 
     # remove temporal session log file
     remove_session_log_file = Path(session_log_filename)
