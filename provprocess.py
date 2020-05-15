@@ -77,6 +77,9 @@ def parse_lines_run(filter_step, prov_lines, out):
     i = 0
     size = 0
     working_lines = []
+    r0filepath_str = ""
+    dl1filepath_str = ""
+    dl2filepath_str = ""
     id_activity_run = ""
     for line in prov_lines:
 
