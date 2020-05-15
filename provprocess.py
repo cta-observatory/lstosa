@@ -23,7 +23,7 @@ def copy_used_file(src, out):
 
     # check src file exists
     if not Path(src).is_file():
-        standardhandle.error(tag, f"{src} file cannot be accessed", 2)
+        standardhandle.warning(tag, f"{src} file cannot be accessed")
 
     hash_src = get_file_hash(src, buffer="content")
     filename = PurePath(src).name
