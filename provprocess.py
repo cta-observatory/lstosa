@@ -198,11 +198,11 @@ def produce_provenance():
     """Create run-wise provenance products as JSON logs and graphs according to granularity."""
 
     # create prov products for each granularity level
-    processed_lines = []
     r0_to_dl1_processed_lines = []
     dl1_to_dl2_processed_lines = []
     for grain, fold in GRANULARITY.items():
 
+        processed_lines = []
         # derive destination folder
         step_path = Path(fold) / options.datefolder / options.subfolder
 
@@ -227,7 +227,7 @@ def produce_provenance():
             r0_to_dl1_processed_lines = copy.deepcopy(processed_lines)
         if grain == "dl1_to_dl2":
             dl1_to_dl2_processed_lines = copy.deepcopy(processed_lines)
-        if grain == "r0_to_dl2":
+        if grain == "r0_to_dl2" and r0_to_dl1_processed_lines and dl1_to_dl2_processed_lines:
             processed_lines = r0_to_dl1_processed_lines + dl1_to_dl2_processed_lines[1:]
 
         if processed_lines:
