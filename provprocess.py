@@ -51,8 +51,9 @@ def parse_lines_log(filter_step, run_number):
     with open(LOG_FILENAME, "r") as f:
         for line in f.readlines():
             ll = line.split(PROV_PREFIX)
-            if len(ll) < 3:
-                standardhandle.error(tag, f"format {PROV_PREFIX} mismatch in log file {LOG_FILENAME}", 2)
+            if len(ll) != 3:
+                standardhandle.warning(tag, f"format {PROV_PREFIX} mismatch in log file {LOG_FILENAME}\n{line}")
+                continue
             prov_str = ll.pop()
             prov_dict = yaml.safe_load(prov_str)
             keep = False
