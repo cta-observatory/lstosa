@@ -40,6 +40,7 @@ def copy_used_file(src, out):
     if hash_src != hash_out:
         try:
             shutil.copyfile(src, str(destpath))
+            standardhandle.output(tag, f"copying {destpath}")
         except Exception as ex:
             standardhandle.warning(tag, f"could not copy {src} file into {str(destpath)}")
             standardhandle.warning(tag, f"{ex}")
@@ -233,15 +234,18 @@ def produce_provenance():
         if processed_lines:
             # copy session log file to its log folder
             shutil.copyfile(session_log_filename, log_path)
+            standardhandle.output(tag, f"creating {log_path}")
             # make json
             try:
                 provdoc = provlist2provdoc(processed_lines)
                 provdoc.serialize(str(json_filepath), indent=4)
+                standardhandle.output(tag, f"creating {json_filepath}")
             except Exception as ex:
                 standardhandle.error(tag, f"problem while creating json: {ex}", 2)
             # make graph
             try:
                 provdoc2graph(provdoc, str(graph_filepath), "pdf")
+                standardhandle.output(tag, f"creating {graph_filepath}")
             except Exception as ex:
                 standardhandle.error(tag, f"problem while creating graph: {ex}", 2)
 
