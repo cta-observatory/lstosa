@@ -283,12 +283,13 @@ if __name__ == "__main__":
         for line in parsed_content:
             f.write(line)
 
-    # create run-wise JSON logs and graphs for each grain
-    produce_provenance()
-
-    # remove temporal session log file
-    remove_session_log_file = Path(session_log_filename)
-    remove_session_log_file.unlink()
+    try:
+        # create run-wise JSON logs and graphs for each
+        produce_provenance()
+    finally:
+        # remove temporal session log file
+        remove_session_log_file = Path(session_log_filename)
+        remove_session_log_file.unlink()
 
     # remove LOG_FILENAME
     if options.quit:
