@@ -497,22 +497,28 @@ def rawcopycliparsing(command):
 ##############################################################################
 def provprocessparsing():
     tag = standardhandle.gettag()
-    message = "usage: %prog [-c CONFIGFILE] <RUN_NUMBER> <DESTINATION_FOLDER>"
+    message = "usage: %prog [-c CONFIGFILE] [-f PROCESS] <RUN_NUMBER> <DATEFOLDER> <SUBFOLDER>"
     parser = OptionParser(usage=message)
     parser.add_option("-c", "--config", action="store", dest="configfile", default="cfg/sequencer.cfg",
                       help="use specific config file [default cfg/sequencer.cfg]")
+    parser.add_option("-f", "--filter", action="store", dest="filter", default="",
+                      help="filter by process granularity [r0_to_dl1 or dl1_to_dl2]")
     parser.add_option("-q", action="store_true", dest="quit", help="use this flag to reset session and remove log file")
 
     # Parse the command line
     (opts, args) = parser.parse_args()
     # Checking arguments
-    if len(args) != 2:
+    if len(args) != 3:
         standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
+    if opts.filter != "r0_to_dl1" and opts.filter != "dl1_to_dl2" and opts.filter != "":
+        standardhandle.error(tag, "incorrect value for --filter argument, type -h for help", 2)
 
     # Set global variables
     options.run = args[0]
-    options.out = args[1]
+    options.datefolder = args[1]
+    options.subfolder = args[2]
     options.configfile = opts.configfile
+    options.filter = opts.filter
     options.quit = opts.quit
 
     return options, tag

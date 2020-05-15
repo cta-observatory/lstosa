@@ -18,7 +18,7 @@ provconfig = yaml.safe_load(get_log_config())
 PROV_PREFIX = provconfig["PREFIX"]
 DEFAULT_NS = "id"  # "logprov"
 
-__all__ = ["provlist2provdoc", "provdoc2png", "read_prov"]
+__all__ = ["provlist2provdoc", "provdoc2graph", "read_prov"]
 
 
 def provlist2provdoc(provlist):
@@ -64,14 +64,10 @@ def provlist2provdoc(provlist):
                 act.add_attributes({"script": provdict.pop("script")})
             # activity start
             if "startTime" in provdict:
-                act.set_time(
-                    startTime=datetime.datetime.fromisoformat(provdict.pop("startTime"))
-                )
+                act.set_time(startTime=datetime.datetime.fromisoformat(provdict.pop("startTime")))
             # activity end
             if "endTime" in provdict:
-                act.set_time(
-                    endTime=datetime.datetime.fromisoformat(provdict.pop("endTime"))
-                )
+                act.set_time(endTime=datetime.datetime.fromisoformat(provdict.pop("endTime")))
             # in session?
             # if "in_session" in provdict:
             #     sess_id = DEFAULT_NS + ":" + str(provdict.pop("in_session"])
@@ -191,7 +187,7 @@ def provlist2provdoc(provlist):
     return pdoc
 
 
-def provdoc2png(provdoc, filename):
+def provdoc2graph(provdoc, filename, fmt):
     """Create a graph of a provenance workflow session."""
 
     dot = prov_to_dot(
@@ -200,7 +196,7 @@ def provdoc2png(provdoc, filename):
         show_element_attributes=True,
         show_relation_attributes=False,
     )
-    content = dot.create(format="pdf")
+    content = dot.create(format=fmt)
     with open(filename, "wb") as f:
         f.write(content)
 

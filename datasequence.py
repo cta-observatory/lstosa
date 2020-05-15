@@ -130,6 +130,7 @@ def r0_to_dl1(
         return rc
 
 
+@trace
 def dl1_to_dl2(run_str, historyfile):
     """ Apply already trained RFs models to DL1 files.
     It identifies the primary particle, reconstructs the energy

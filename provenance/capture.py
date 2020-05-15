@@ -57,6 +57,7 @@ SUPPORTED_HASH_BUFFER = ["content", "path"]
 sessions = set()
 traced_entities = {}
 session_name = ""
+session_tag = ""
 
 
 def setup_logging():
@@ -99,9 +100,10 @@ def trace(func):
 
         # OSA specific
         # variables parsing
-        global session_name
+        global session_name, session_tag
         class_instance = parse_variables(class_instance)
-        session_name = class_instance.ObservationRun
+        session_tag = f"{activity}:{class_instance.ObservationRun}"
+        session_name = f"{class_instance.ObservationRun}"
 
         # provenance capture before execution
         derivation_records = get_derivation_records(class_instance, activity)
@@ -247,7 +249,7 @@ def get_nested_value(nested, branch):
     if isinstance(nested, dict):
         val = nested.get(leaf, None)
     elif isinstance(nested, object):
-        if "(" in leaf:                                     # leaf is a function
+        if "(" in leaf:  # leaf is a function
             leaf_elements = leaf.replace(")", "").replace(" ", "").split("(")
             leaf_arg_list = leaf_elements.pop().split(",")
             leaf_func = leaf_elements.pop()
@@ -260,7 +262,7 @@ def get_nested_value(nested, branch):
                 elif arg:
                     leaf_args.append(arg.replace('"', ""))
             val = getattr(nested, leaf_func, lambda *args, **kwargs: None)(*leaf_args, **leaf_kwargs)
-        else:                                               # leaf is an attribute
+        else:  # leaf is an attribute
             val = getattr(nested, leaf, None)
     else:
         raise TypeError
@@ -329,7 +331,7 @@ def get_item_properties(nested, item):
 def log_prov_info(prov_dict):
     """Write a dictionary to the logger."""
 
-    prov_dict["session_tag"] = session_name     # OSA specific session tag
+    prov_dict["session_tag"] = session_tag  # OSA specific session tag
     record_date = datetime.datetime.now().isoformat()
     logger.info(f"{PROV_PREFIX}{record_date}{PROV_PREFIX}{prov_dict}")
 
@@ -376,7 +378,7 @@ def log_start_activity(activity, activity_id, session_id, start):
         "startTime": start,
         "in_session": session_id,
         "agent_name": os.getenv("USER", "Anonymous"),
-        "script": sys.argv[0]
+        "script": sys.argv[0],
     }
     log_prov_info(log_record)
 
