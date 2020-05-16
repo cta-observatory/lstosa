@@ -23,7 +23,7 @@ def copy_used_file(src, out):
 
     # check src file exists
     if not Path(src).is_file():
-        standardhandle.error(tag, f"{src} file cannot be accessed", 2)
+        standardhandle.warning(tag, f"{src} file cannot be accessed")
 
     hash_src = get_file_hash(src, buffer="content")
     filename = PurePath(src).name
@@ -40,6 +40,7 @@ def copy_used_file(src, out):
     if hash_src != hash_out:
         try:
             shutil.copyfile(src, str(destpath))
+            standardhandle.output(tag, f"copying {destpath}")
         except Exception as ex:
             standardhandle.warning(tag, f"could not copy {src} file into {str(destpath)}")
             standardhandle.warning(tag, f"{ex}")
@@ -77,6 +78,9 @@ def parse_lines_run(filter_step, prov_lines, out):
     i = 0
     size = 0
     working_lines = []
+    r0filepath_str = ""
+    dl1filepath_str = ""
+    dl2filepath_str = ""
     id_activity_run = ""
     for line in prov_lines:
 
@@ -195,11 +199,11 @@ def produce_provenance():
     """Create run-wise provenance products as JSON logs and graphs according to granularity."""
 
     # create prov products for each granularity level
-    processed_lines = []
     r0_to_dl1_processed_lines = []
     dl1_to_dl2_processed_lines = []
     for grain, fold in GRANULARITY.items():
 
+        processed_lines = []
         # derive destination folder
         step_path = Path(fold) / options.datefolder / options.subfolder
 
@@ -224,21 +228,24 @@ def produce_provenance():
             r0_to_dl1_processed_lines = copy.deepcopy(processed_lines)
         if grain == "dl1_to_dl2":
             dl1_to_dl2_processed_lines = copy.deepcopy(processed_lines)
-        if grain == "r0_to_dl2":
+        if grain == "r0_to_dl2" and r0_to_dl1_processed_lines and dl1_to_dl2_processed_lines:
             processed_lines = r0_to_dl1_processed_lines + dl1_to_dl2_processed_lines[1:]
 
         if processed_lines:
             # copy session log file to its log folder
             shutil.copyfile(session_log_filename, log_path)
+            standardhandle.output(tag, f"creating {log_path}")
             # make json
             try:
                 provdoc = provlist2provdoc(processed_lines)
                 provdoc.serialize(str(json_filepath), indent=4)
+                standardhandle.output(tag, f"creating {json_filepath}")
             except Exception as ex:
                 standardhandle.error(tag, f"problem while creating json: {ex}", 2)
             # make graph
             try:
                 provdoc2graph(provdoc, str(graph_filepath), "pdf")
+                standardhandle.output(tag, f"creating {graph_filepath}")
             except Exception as ex:
                 standardhandle.error(tag, f"problem while creating graph: {ex}", 2)
 
@@ -283,12 +290,13 @@ if __name__ == "__main__":
         for line in parsed_content:
             f.write(line)
 
-    # create run-wise JSON logs and graphs for each grain
-    produce_provenance()
-
-    # remove temporal session log file
-    remove_session_log_file = Path(session_log_filename)
-    remove_session_log_file.unlink()
+    try:
+        # create run-wise JSON logs and graphs for each
+        produce_provenance()
+    finally:
+        # remove temporal session log file
+        remove_session_log_file = Path(session_log_filename)
+        remove_session_log_file.unlink()
 
     # remove LOG_FILENAME
     if options.quit:
