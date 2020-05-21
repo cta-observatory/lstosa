@@ -95,6 +95,7 @@ def parse_lines_run(filter_step, prov_lines, out):
         generated_role = line.get("generated_role", "")
         parameters = line.get("parameters", "")
         name = line.get("name", "")
+        content_type = line.get("contentType", "")
 
         # remove subruns info
         if name == "R0SubrunDataset" or used_role == "Observation subrun":
@@ -130,8 +131,8 @@ def parse_lines_run(filter_step, prov_lines, out):
         tag_activity, tag_run = session_tag.split(":")
         if tag_activity != filter_step:
             remove = True
-        # copy not subruns used files
-        if filepath and not remove:
+        # copy used files not subruns not RFs
+        if filepath and content_type != "application/x-spss-sav" and not remove:
             copy_used_file(filepath, out)
         # always keep first line / session start
         if session_id:
