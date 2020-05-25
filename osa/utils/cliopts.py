@@ -510,7 +510,7 @@ def provprocessparsing():
     # Checking arguments
     if len(args) != 3:
         standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
-    if opts.filter != "r0_to_dl1" and opts.filter != "dl1_to_dl2" and opts.filter != "":
+    if opts.filter not in ["r0_to_dl1", "dl1_to_dl2", ""]:
         standardhandle.error(tag, "incorrect value for --filter argument, type -h for help", 2)
 
     # Set global variables

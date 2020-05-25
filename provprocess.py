@@ -62,7 +62,7 @@ def parse_lines_log(filter_step, run_number):
             tag_activity, tag_run = session_tag.split(":")
             if tag_run == run_number:
                 keep = True
-            if filter_step != "" and filter_step != tag_activity:
+            if filter_step not in ["", tag_activity]:
                 keep = False
             # always keep first line / session start
             if keep or not filtered:
@@ -70,8 +70,6 @@ def parse_lines_log(filter_step, run_number):
     return filtered
 
 
-# TODO: add used DL1DL2Collection, generated DL2Collection
-#
 def parse_lines_run(filter_step, prov_lines, out):
     """Process provenance info to reduce session at run/process wise scope."""
 

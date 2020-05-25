@@ -188,8 +188,8 @@ def get_file_hash(str_path, buffer=get_hash_buffer(), method=get_hash_method()):
     if full_path.is_file():
         hash_func = getattr(hashlib, method)()
         if buffer == "content":
-            block_size = 65536
             with open(full_path, "rb") as f:
+                block_size = 65536
                 buf = f.read(block_size)
                 while len(buf) > 0:
                     hash_func.update(buf)
@@ -197,10 +197,9 @@ def get_file_hash(str_path, buffer=get_hash_buffer(), method=get_hash_method()):
             file_hash = hash_func.hexdigest()
             logger.debug(f"File entity {str_path} has {method} hash {file_hash}")
             return file_hash
-        elif "path":
+        else:
             hash_func.update(str(full_path).encode())
-            hash_path = hash_func.hexdigest()
-            return hash_path
+            return hash_func.hexdigest()
     else:
         logger.warning(f"File entity {str_path} not found")
         return str_path
@@ -220,7 +219,7 @@ def get_entity_id(value, item):
     if entity_type == "FileCollection":
         filename = value
         index = definition["entities"][entity_name].get("index", "")
-        if Path(value).is_dir() and index:
+        if Path(filename).is_dir() and index:
             filename = Path(value) / index
         return get_file_hash(filename)
     if entity_type == "File":
