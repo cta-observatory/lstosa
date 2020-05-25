@@ -235,10 +235,11 @@ def produce_provenance():
             # copy session log file to its log folder
             shutil.copyfile(session_log_filename, log_path)
             standardhandle.output(tag, f"creating {log_path}")
+            provdoc = provlist2provdoc(processed_lines)
+
             # make json
             try:
-                provdoc = provlist2provdoc(processed_lines)
-                provdoc.serialize(str(json_filepath), indent=4)
+                provdoc2json(provdoc, str(json_filepath))
                 standardhandle.output(tag, f"creating {json_filepath}")
             except Exception as ex:
                 standardhandle.error(tag, f"problem while creating json: {ex}", 2)

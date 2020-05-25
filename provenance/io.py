@@ -18,7 +18,7 @@ provconfig = yaml.safe_load(get_log_config())
 PROV_PREFIX = provconfig["PREFIX"]
 DEFAULT_NS = "id"  # "logprov"
 
-__all__ = ["provlist2provdoc", "provdoc2graph", "read_prov"]
+__all__ = ["provlist2provdoc", "provdoc2graph", "provdoc2json", "read_prov"]
 
 
 def provlist2provdoc(provlist):
@@ -199,6 +199,12 @@ def provdoc2graph(provdoc, filename, fmt):
     content = dot.create(format=fmt)
     with open(filename, "wb") as f:
         f.write(content)
+
+
+def provdoc2json(provdoc, filename):
+    json_stream = provdoc.serialize(indent=4)
+    with open(filename, "w") as f:
+        f.write(json_stream)
 
 
 def read_prov(filename="prov.log", start=None, end=None):
