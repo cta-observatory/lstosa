@@ -59,13 +59,21 @@ def parse_lines_log(filter_step, run_number):
             prov_dict = yaml.safe_load(prov_str)
             keep = False
             session_tag = prov_dict.get("session_tag", "0:0")
+            session_id = prov_dict.get("session_id", False)
             tag_activity, tag_run = session_tag.split(":")
+            # filter by run
             if tag_run == run_number:
                 keep = True
+            # filter by activity
             if filter_step not in ["", tag_activity]:
                 keep = False
-            # always keep first line / session start
-            if keep or not filtered:
+            # always keep first session start
+            if session_id and tag_run == run_number:
+                keep = True
+            # remove parallel sessions
+            if session_id and len(filtered):
+                keep = False
+            if keep:
                 filtered.append(line)
     return filtered
 
