@@ -238,11 +238,12 @@ def produce_provenance():
             processed_lines = r0_to_dl1_processed_lines + dl1_to_dl2_processed_lines[1:]
 
         if processed_lines:
-            # copy session log file to its log folder
-            shutil.copyfile(session_log_filename, log_path)
+            # make filtered session log file
+            with open(log_path, "w") as f:
+                for line in processed_lines:
+                    f.write(f"{line}\n")
             standardhandle.output(tag, f"creating {log_path}")
             provdoc = provlist2provdoc(processed_lines)
-
             # make json
             try:
                 provdoc2json(provdoc, str(json_filepath))
