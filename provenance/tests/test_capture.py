@@ -50,7 +50,7 @@ def select_config(tmp_path):
 
 def make_args_r0_to_dl1():
 
-    args = (
+    return (
         "calibration.Run2006.0000.hdf5",
         "drs4_pedestal.Run2005.0000.fits",
         "time_calibration",
@@ -62,16 +62,14 @@ def make_args_r0_to_dl1():
         "02006.0002",
         "/fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt",
     )
-    return args
 
 
 def make_args_dl1_to_dl2():
 
-    args = (
+    return (
         "02006.0002",
         "/fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt",
     )
-    return args
 
 
 def test_trace_r0_to_dl2(tmp_path):
@@ -88,7 +86,7 @@ def test_trace_r0_to_dl2(tmp_path):
     # make json
     json_filepath = tmp_path / "prov.json"
     provdoc = provlist2provdoc(read_prov(filename="prov.log"))
-    provdoc.serialize(str(json_filepath), indent=4)
+    provdoc2json(provdoc, str(json_filepath))
 
     # make graph
     png_filepath = tmp_path / "prov.pdf"

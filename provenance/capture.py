@@ -183,13 +183,13 @@ def get_hash_buffer():
 def get_file_hash(str_path, buffer=get_hash_buffer(), method=get_hash_method()):
     """Helper function that returns hash of the content of a file."""
 
+    file_hash = ""
     full_path = Path(str_path)
-
-    if full_path.is_file():
-        hash_func = getattr(hashlib, method)()
-        if buffer == "content":
-            block_size = 65536
+    hash_func = getattr(hashlib, method)()
+    if buffer == "content":
+        if full_path.is_file():
             with open(full_path, "rb") as f:
+                block_size = 65536
                 buf = f.read(block_size)
                 while len(buf) > 0:
                     hash_func.update(buf)
@@ -197,16 +197,15 @@ def get_file_hash(str_path, buffer=get_hash_buffer(), method=get_hash_method()):
             file_hash = hash_func.hexdigest()
             logger.debug(f"File entity {str_path} has {method} hash {file_hash}")
             return file_hash
-        elif "path":
-            hash_func.update(str(full_path).encode())
-            hash_path = hash_func.hexdigest()
-            return hash_path
-    else:
-        logger.warning(f"File entity {str_path} not found")
-        return str_path
+        else:
+            logger.warning(f"File entity {str_path} not found")
+            return str_path
+    if not file_hash:
+        hash_func.update(str(full_path).encode())
+        return hash_func.hexdigest()
 
 
-def get_entity_id(value, item):
+def get_entity_id(value, item, buffer="content"):
     """Helper function that makes the id of an entity, depending on its type."""
 
     try:
@@ -217,14 +216,15 @@ def get_entity_id(value, item):
         entity_name = ""
         entity_type = ""
 
-    if entity_type == "FileCollection":
-        filename = value
-        index = definition["entities"][entity_name].get("index", "")
-        if Path(value).is_dir() and index:
-            filename = Path(value) / index
-        return get_file_hash(filename)
+    # gammapy specific
+    # if entity_type == "FileCollection":
+    #     filename = value
+    #     index = definition["entities"][entity_name].get("index", "")
+    #     if Path(filename).is_dir() and index:
+    #         filename = Path(value) / index
+    #     return get_file_hash(filename)
     if entity_type == "File":
-        return get_file_hash(value)
+        return get_file_hash(value, buffer=buffer)
 
     try:
         entity_id = abs(hash(value) + hash(str(value)))
@@ -276,7 +276,7 @@ def get_nested_value(nested, branch):
     return val
 
 
-def get_item_properties(nested, item):
+def get_item_properties(nested, item, buffer="content"):
     """Helper function that returns properties of an entity or member."""
 
     try:
@@ -312,7 +312,7 @@ def get_item_properties(nested, item):
             except AttributeError as ex:
                 logger.warning(f"{ex} for {value}")
     if value and "id" not in properties:
-        properties["id"] = get_entity_id(value, item)
+        properties["id"] = get_entity_id(value, item, buffer=buffer)
         if "File" in entity_type:
             properties["filepath"] = value
             if properties["id"] != value:
@@ -467,7 +467,7 @@ def log_generation(class_instance, activity, activity_id):
 
     generation_list = definition["activities"][activity]["generation"] or []
     for item in generation_list:
-        props = get_item_properties(class_instance, item)
+        props = get_item_properties(class_instance, item, buffer="path")
         if "id" in props:
             entity_id = props.pop("id")
             # record generation
@@ -613,7 +613,6 @@ def get_system_provenance():
         # version=get_info_version(),
         # dependencies=get_info_dependencies(),
         # envvars=get_info_envvar(),
-        # gammapy specific
         executable=sys.executable,
         platform=dict(
             architecture_bits=bits,
