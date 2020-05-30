@@ -81,4 +81,4 @@ target
 .mypy_cache
 
 # Ignore NightSummary directory
-./NightSummary
+NightSummary/
