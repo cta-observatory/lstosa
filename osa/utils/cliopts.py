@@ -218,6 +218,8 @@ def datasequencecliparsing(command):
                       help = "file for standard error")
     parser.add_option("--stdout", action = "store", type = "string", dest = "stdout",
                       help = "file for standard output")
+    parser.add_option("-s", "--simulate", action = "store_true", dest = "simulate", default = False,
+                        help = "do not submit sequences as jobs")
     parser.add_option("--prod_id", action = "store", type = str, dest = "prod_id",
                       help="Set the prod_id variable which defines data directories")
 
@@ -233,6 +235,7 @@ def datasequencecliparsing(command):
     options.verbose = opts.verbose
     options.warning = opts.warning
     options.compressed = opts.compressed
+    options.simulate = opts.simulate
     options.prod_id = opts.prod_id
 
     # The standardhandle has to be declared here, since verbose and warnings are options from the cli
