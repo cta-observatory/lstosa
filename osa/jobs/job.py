@@ -288,7 +288,7 @@ def guesscorrectinputcard(s):
     return(options.configfile)
 
 
-def createjobtemplate(s):
+def createjobtemplate(s, get_content=False):
     """This file contains instruction to be submitted to torque"""
     tag = gettag()
 
@@ -415,6 +415,9 @@ def createjobtemplate(s):
 
     if not options.simulate:
         iofile.writetofile(s.script, content)
+
+    if get_content:
+        return content
 
 
 # def submitjobs(sequence_list, queue_list, veto_list):
