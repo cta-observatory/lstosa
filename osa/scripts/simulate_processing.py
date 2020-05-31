@@ -67,16 +67,14 @@ def run_simulate_processing():
         ]
         # TODO: produce prov if overwrite arg
         # subprocess.run(args_pp)
-        # print(sub_run_list[run_idx + start_subrun_idx].subrun)
-        # print(args_pp)
+        # print(options.provenance)
 
 
 if __name__ == "__main__":
     format = "%(filename)s: %(message)s"
     logging.basicConfig(level=logging.INFO, format=format)
 
-    # TODO: make specific cli parsing
-    cliopts.sequencercliparsing()
+    options, tag = cliopts.simprocparsing()
 
     logging.info(f"Running simulate processing")
     run_simulate_processing()

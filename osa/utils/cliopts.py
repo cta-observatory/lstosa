@@ -529,6 +529,34 @@ def provprocessparsing():
 
 ##############################################################################
 #
+# simprocparsing
+#
+##############################################################################
+def simprocparsing():
+    tag = standardhandle.gettag()
+    message = "usage: %prog [-c CONFIGFILE] [-p] <YYYY_MM_DD> <TEL_ID>\nRun script from OSA root folder."
+    parser = OptionParser(usage=message)
+    parser.add_option("-c", "--config", action="store", dest="configfile", default="cfg/sequencer.cfg",
+                      help="use specific config file [default cfg/sequencer.cfg]")
+    parser.add_option("-p", action="store_true", dest="provenance",
+                      help="produce and overwrite provenance products")
+
+    # Parse the command line
+    (opts, args) = parser.parse_args()
+    # Checking arguments
+    if len(args) != 2:
+        standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
+
+    # Set global variables
+    options.date = args[0]
+    options.tel_id = args[1]
+    options.configfile = opts.configfile
+    options.provenance = opts.provenance
+
+    return options, tag
+
+##############################################################################
+#
 # set_default_date_if_needed
 #
 ##############################################################################
