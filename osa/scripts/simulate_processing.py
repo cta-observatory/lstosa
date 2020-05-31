@@ -4,12 +4,14 @@ Simulate executions of data processing pipeline and produce provenance
 
 import logging
 import subprocess
-from osa.utils import options, cliopts
-from osa.utils.utils import lstdate_to_number
-from osa.jobs.job import createjobtemplate
-from osa.nightsummary.nightsummary import readnightsummary
-from osa.nightsummary import extract
+
 from lstchain.version import get_version
+
+from osa.jobs.job import createjobtemplate
+from osa.nightsummary import extract
+from osa.nightsummary.nightsummary import readnightsummary
+from osa.utils import cliopts, options
+from osa.utils.utils import lstdate_to_number
 
 
 def parse_template(template, idx):
@@ -48,8 +50,8 @@ def run_simulate_processing():
     sub_run_list = extract.extractsubruns(night_content)
     run_list = extract.extractruns(sub_run_list)
     sequence_list = extract.extractsequences(run_list)
-    options.lstchain_version = 'v' + get_version()
-    options.prod_id = options.lstchain_version + '_' + config.cfg.get('LST1', 'VERSION')
+    options.lstchain_version = "v" + get_version()
+    options.prod_id = options.lstchain_version + "_" + config.cfg.get("LST1", "VERSION")
 
     # skip drs4 and calibration
     start_run_idx = 1
@@ -61,8 +63,8 @@ def run_simulate_processing():
         # produce prov if overwrite prov arg
         if options.provenance:
             args_pp = [
-                'python',
-                'provprocess.py',
+                "python",
+                "provprocess.py",
                 s.run_str,
                 options.directory,
                 options.prod_id,
