@@ -58,16 +58,16 @@ def run_simulate_processing():
         for subrun_idx in range(sub_run_list[run_idx + start_subrun_idx].subrun):
             args_ds = parse_template(createjobtemplate(s, get_content=True), subrun_idx)
             subprocess.run(args_ds)
-        args_pp = [
-            'python',
-            'provprocess.py',
-            s.run_str,
-            options.directory,
-            options.prod_id,
-        ]
-        # TODO: produce prov if overwrite arg
-        # subprocess.run(args_pp)
-        # print(options.provenance)
+        # produce prov if overwrite prov arg
+        if options.provenance:
+            args_pp = [
+                'python',
+                'provprocess.py',
+                s.run_str,
+                options.directory,
+                options.prod_id,
+            ]
+            subprocess.run(args_pp)
 
 
 if __name__ == "__main__":
