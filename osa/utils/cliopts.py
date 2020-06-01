@@ -534,17 +534,18 @@ def provprocessparsing():
 ##############################################################################
 def simprocparsing():
     tag = standardhandle.gettag()
-    message = "usage: %prog [-c CONFIGFILE] [-p] [--force] <YYYY_MM_DD> <SUBFOLDER> <TEL_ID>\n" \
+    message = "Usage: %prog [-c CONFIGFILE] [-p] [--force] <YYYY_MM_DD> <vX.X.X_vXX> <TEL_ID>\n" \
+              "Run script from OSA root folder.\n\n" \
+              "Arguments:\n" \
               "<YYYY_MM_DD> date analysis folder name for derived datasets\n" \
-              "<SUBFOLDER>  software version and prod subfolder name\n" \
-              "<TEL_ID>     telescope ID (i.e. LST1, ST,..)\n" \
-              "Run script from OSA root folder."
+              "<vX.X.X_vXX> software version and prod subfolder name\n" \
+              "<TEL_ID>     telescope ID (i.e. LST1, ST,..)\n"
     parser = OptionParser(usage=message)
     parser.add_option("-c", "--config", action="store", dest="configfile", default="cfg/sequencer.cfg",
                       help="use specific config file [default cfg/sequencer.cfg]")
-    parser.add_option("-p", action="store_true", dest="provenance", default="False",
+    parser.add_option("-p", action="store_true", dest="provenance",
                       help="produce provenance files")
-    parser.add_option("--force", action="store_true", dest="force", default="False",
+    parser.add_option("--force", action="store_true", dest="force",
                       help="force overwrite provenance files")
 
     # Parse the command line

@@ -5,6 +5,7 @@ Simulate executions of data processing pipeline and produce provenance
 import logging
 import subprocess
 from pathlib import Path
+
 from osa.jobs.job import createjobtemplate
 from osa.nightsummary import extract
 from osa.nightsummary.nightsummary import readnightsummary
@@ -18,6 +19,7 @@ def do_setup():
     """Set-up folder structure and check flags."""
 
     from osa.configs.config import cfg
+
     pathDL1 = Path(cfg.get("LST1", "ANALYSISDIR")) / options.directory
     pathDL2 = Path(cfg.get("LST1", "DL2DIR")) / options.directory
     pathDL1sub = pathDL1 / options.prod_id
@@ -32,8 +34,8 @@ def do_setup():
         logging.info(f"{pathDL2} does not exist.")
         return
 
-    CONFIG_FLAGS["TearDL1"] = False if pathDL1sub.exists() and not options.provenance else pathDL1sub
-    CONFIG_FLAGS["TearDL2"] = False if pathDL2sub.exists() and not options.provenance else pathDL2sub
+    CONFIG_FLAGS["TearDL1"] = False if pathDL1sub.exists() or options.provenance else pathDL1sub
+    CONFIG_FLAGS["TearDL2"] = False if pathDL2sub.exists() or options.provenance else pathDL2sub
 
     if options.provenance and not options.force:
         if pathDL1sub.exists():
@@ -51,7 +53,7 @@ def do_setup():
 
 
 def tear_down():
-    """Tear down created temporal folder ."""
+    """Tear down created temporal folders."""
     if isinstance(CONFIG_FLAGS["TearDL1"], Path):
         CONFIG_FLAGS["TearDL1"].rmdir()
     if isinstance(CONFIG_FLAGS["TearDL2"], Path):
@@ -109,8 +111,8 @@ def run_simulate_processing():
                 options.directory,
                 options.prod_id,
             ]
-            subprocess.run(args_pp)
             logging.info(f"Processing provenance for run {s.run_str}")
+            subprocess.run(args_pp)
 
 
 if __name__ == "__main__":
