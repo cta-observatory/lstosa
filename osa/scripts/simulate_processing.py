@@ -4,12 +4,51 @@ Simulate executions of data processing pipeline and produce provenance
 
 import logging
 import subprocess
-
+from pathlib import Path
 from osa.jobs.job import createjobtemplate
 from osa.nightsummary import extract
 from osa.nightsummary.nightsummary import readnightsummary
 from osa.utils import cliopts, options
 from osa.utils.utils import lstdate_to_number
+
+CONFIG_FLAGS = {"Go": True, "TearDL1": False, "TearDL2": False}
+
+
+def do_setup():
+    """Set-up folder structure and check flags."""
+
+    from osa.configs.config import cfg
+    pathDL1 = Path(cfg.get("LST1", "ANALYSISDIR")) / options.directory
+    pathDL2 = Path(cfg.get("LST1", "DL2DIR")) / options.directory
+    pathDL1sub = pathDL1 / options.prod_id
+    pathDL2sub = pathDL2 / options.prod_id
+
+    if not pathDL1.exists():
+        CONFIG_FLAGS["Go"] = False
+        logging.info(f"{pathDL1} does not exist.")
+        return
+    if not pathDL2.exists():
+        CONFIG_FLAGS["Go"] = False
+        logging.info(f"{pathDL2} does not exist.")
+        return
+
+    CONFIG_FLAGS["TearDL1"] = False if pathDL1sub.exists() and not options.provenance else pathDL1sub
+    CONFIG_FLAGS["TearDL2"] = False if pathDL2sub.exists() and not options.provenance else pathDL2sub
+
+    if options.provenance and not options.force:
+        if pathDL1sub.exists():
+            CONFIG_FLAGS["Go"] = False
+            logging.info(f"{pathDL1sub} already exist.")
+        if pathDL2sub.exists():
+            CONFIG_FLAGS["Go"] = False
+            logging.info(f"{pathDL2sub} already exist.")
+        if not CONFIG_FLAGS["Go"]:
+            logging.info(f"You must enforce provenance files overwrite with --force flag.")
+            return
+
+    pathDL1sub.mkdir(exist_ok=True)
+    pathDL2sub.mkdir(exist_ok=True)
+
 
 
 def parse_template(template, idx):
@@ -42,7 +81,6 @@ def run_simulate_processing():
     night_content = readnightsummary()
     logging.info(f"Night summary file content\n{night_content}")
 
-    options.directory = lstdate_to_number(options.date)
     sub_run_list = extract.extractsubruns(night_content)
     run_list = extract.extractruns(sub_run_list)
     sequence_list = extract.extractsequences(run_list)
@@ -73,6 +111,10 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format=format)
 
     options, tag = cliopts.simprocparsing()
+    options.directory = lstdate_to_number(options.date)
 
     logging.info(f"Running simulate processing")
-    run_simulate_processing()
+
+    do_setup()
+    if CONFIG_FLAGS["Go"]:
+        run_simulate_processing()
