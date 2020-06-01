@@ -53,6 +53,7 @@ def run_simulate_processing():
     for run_idx, s in enumerate(sequence_list[start_run_idx:]):
         for subrun_idx in range(sub_run_list[run_idx + start_subrun_idx].subrun):
             args_ds = parse_template(createjobtemplate(s, get_content=True), subrun_idx)
+            logging.info(f"Simulating process call for run {s.run_str} subrun {str(subrun_idx).zfill(4)}")
             subprocess.run(args_ds)
         # produce prov if overwrite prov arg
         if options.provenance:
@@ -64,10 +65,11 @@ def run_simulate_processing():
                 options.prod_id,
             ]
             subprocess.run(args_pp)
+            logging.info(f"Processing provenance for run {s.run_str}")
 
 
 if __name__ == "__main__":
-    format = "%(filename)s: %(message)s"
+    format = "%(asctime)s: %(message)s"
     logging.basicConfig(level=logging.INFO, format=format)
 
     options, tag = cliopts.simprocparsing()
