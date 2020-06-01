@@ -66,9 +66,8 @@ def closer():
 
 
 def is_day_closed():
-    tag = gettag()
-
     """ Get the name and Check for the existence of the Closer flag file. """
+    tag = gettag()
 
     from os.path import exists
     from osa.utils.utils import getlockfile
@@ -81,8 +80,7 @@ def is_day_closed():
 
 
 def use_night_summary():
-    """Check for the usage of night summary option and file existence.
-    """
+    """Check for the usage of night summary option and file existence."""
     tag = gettag()
 
     from os.path import exists
@@ -245,7 +243,8 @@ def post_process_files(seq_list):
                 seqtoclose_found = search(options.seqtoclose, r_basename)
                 verbose(
                     tag,
-                    f"Was pattern {options.seqtoclose} found in {r_basename} ?: {seqtoclose_found}")
+                    f"Was pattern {options.seqtoclose} found in {r_basename} ?: {seqtoclose_found}"
+                )
                 if seqtoclose_found is None:
                     pattern_found = None
             if pattern_found is not None:

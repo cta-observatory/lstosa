@@ -1,11 +1,14 @@
 from osa.utils.standardhandle import verbose, warning, error, gettag
 from osa.utils import options
+
+
 def createveto(vetofile):
     tag = gettag()
     try:
         open(vetofile, 'w').close()
     except IOError as e:
         error(tag, "Could not touch veto file {0}, {1}".format(vetofile, e), 2)
+
 
 def isjobvetoed(name, veto_list):
     tag = gettag()
@@ -16,11 +19,12 @@ def isjobvetoed(name, veto_list):
     else:
         return True
 
+
 def getvetolist(sequence_list):
     tag = gettag()
     from glob import glob
     from os.path import join
-    from config import cfg
+    from osa.configs.config import cfg
     updatevetos(sequence_list)
     veto_ls = glob(join(options.directory, "*{0}".format(cfg.get('LSTOSA', 'VETOSUFFIX'))))
     veto_list = []
@@ -30,6 +34,7 @@ def getvetolist(sequence_list):
         setvetoaction(name, sequence_list)
     return veto_list
 
+
 def setvetoaction(name, sequence_list):
     tag = gettag()
     for s in sequence_list:
@@ -37,15 +42,17 @@ def setvetoaction(name, sequence_list):
             s.action = 'Veto'
             verbose(tag, "Attributes of sequence {0} updated".format(s.seq))
 
+
 def updatevetos(sequence_list):
     tag = gettag()
     from os.path import exists
-    from config import cfg
+    from osa.configs.config import cfg
     for s in sequence_list:
         if (not exists(s.veto) and exists(s.history)):
             if failedhistory(s.history, int(cfg.get('LSTOSA', 'MAXTRYFAILED'))):
                 createveto(s.veto)
                 verbose(tag, "Created veto file {0}".format(s.veto))
+
 
 def failedhistory(historyfile, maxnumber):
     tag = gettag()
@@ -79,6 +86,7 @@ def failedhistory(historyfile, maxnumber):
                     return True
     return False
 
+
 def createclosed(closedfile):
     tag = gettag()
     try:
@@ -86,18 +94,21 @@ def createclosed(closedfile):
     except IOError as e:
         error(tag, "Could not touch closed file {0}, {1}".format(closedfile, e), 2)
 
+
 def getclosedlist(sequence_list):
     tag = gettag()
     from glob import glob
     from os.path import join
-    from config import cfg
+    from osa.configs.config import cfg
     closed_ls = glob(join(options.directory, '*{0}'.format(cfg.get('LSTOSA', 'CLOSEDSUFFIX'))))
     closed_list = []
     for i in closed_ls:
-        name = i.rsplit(cfg.get('LSTOSA', 'CLOSEDSUFFIX'))[0].split(join(options.directory, 'sequence_'))[1] # We extract the job name
+        # We extract the job name
+        name = i.rsplit(cfg.get('LSTOSA', 'CLOSEDSUFFIX'))[0].split(join(options.directory, 'sequence_'))[1]
         closed_list.append(name)
         setclosedaction(name, sequence_list)
     return closed_list
+
 
 def setclosedaction(name, sequence_list):
     tag = gettag()
