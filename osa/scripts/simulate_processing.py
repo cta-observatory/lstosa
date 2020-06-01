@@ -5,8 +5,6 @@ Simulate executions of data processing pipeline and produce provenance
 import logging
 import subprocess
 
-from lstchain.version import get_version
-
 from osa.jobs.job import createjobtemplate
 from osa.nightsummary import extract
 from osa.nightsummary.nightsummary import readnightsummary
@@ -40,8 +38,6 @@ def parse_template(template, idx):
 def run_simulate_processing():
     """Build batch templates."""
 
-    from osa.configs import config
-
     options.simulate = True
     night_content = readnightsummary()
     logging.info(f"Night summary file content\n{night_content}")
@@ -50,8 +46,6 @@ def run_simulate_processing():
     sub_run_list = extract.extractsubruns(night_content)
     run_list = extract.extractruns(sub_run_list)
     sequence_list = extract.extractsequences(run_list)
-    options.lstchain_version = "v" + get_version()
-    options.prod_id = options.lstchain_version + "_" + config.cfg.get("LST1", "VERSION")
 
     # skip drs4 and calibration
     start_run_idx = 1
