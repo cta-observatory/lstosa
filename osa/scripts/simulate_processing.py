@@ -13,7 +13,6 @@ from osa.nightsummary.nightsummary import readnightsummary
 from osa.utils import cliopts, options
 from osa.utils.utils import lstdate_to_number
 
-CORES = 5
 CONFIG_FLAGS = {"Go": True, "TearDL1": False, "TearDL2": False}
 
 
@@ -107,7 +106,7 @@ def simulate_processing():
     start_run_idx = 1
     start_subrun_idx = 2
     for run_idx, s in enumerate(sequence_list[start_run_idx:]):
-        with mp.Pool(processes=CORES) as pool:
+        with mp.Pool() as pool:
             args_ds = [
                 parse_template(createjobtemplate(s, get_content=True), subrun_idx)
                 for subrun_idx in range(sub_run_list[run_idx + start_subrun_idx].subrun)
