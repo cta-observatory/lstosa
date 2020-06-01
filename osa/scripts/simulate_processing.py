@@ -50,6 +50,13 @@ def do_setup():
     pathDL2sub.mkdir(exist_ok=True)
 
 
+def tear_down():
+    """Tear down created temporal folder ."""
+    if isinstance(CONFIG_FLAGS["TearDL1"], Path):
+        CONFIG_FLAGS["TearDL1"].rmdir()
+    if isinstance(CONFIG_FLAGS["TearDL2"], Path):
+        CONFIG_FLAGS["TearDL2"].rmdir()
+
 
 def parse_template(template, idx):
     """Parse batch templates."""
@@ -118,3 +125,4 @@ if __name__ == "__main__":
     do_setup()
     if CONFIG_FLAGS["Go"]:
         run_simulate_processing()
+    tear_down()
