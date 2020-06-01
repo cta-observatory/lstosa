@@ -534,7 +534,7 @@ def provprocessparsing():
 ##############################################################################
 def simprocparsing():
     tag = standardhandle.gettag()
-    message = "Usage: %prog [-c CONFIGFILE] [-p] [--force] <YYYY_MM_DD> <vX.X.X_vXX> <TEL_ID>\n" \
+    message = "Usage: %prog [-c CONFIGFILE] [-p] [--force] [--append] <YYYY_MM_DD> <vX.X.X_vXX> <TEL_ID>\n" \
               "Run script from OSA root folder.\n\n" \
               "Arguments:\n" \
               "<YYYY_MM_DD> date analysis folder name for derived datasets\n" \
@@ -547,6 +547,8 @@ def simprocparsing():
                       help="produce provenance files")
     parser.add_option("--force", action="store_true", dest="force",
                       help="force overwrite provenance files")
+    parser.add_option("--append", action="store_true", dest="append",
+                      help="append provenance capture to existing prov.log file")
 
     # Parse the command line
     (opts, args) = parser.parse_args()
@@ -561,6 +563,7 @@ def simprocparsing():
     options.configfile = opts.configfile
     options.provenance = opts.provenance
     options.force = opts.force
+    options.append = opts.append
 
     return options, tag
 

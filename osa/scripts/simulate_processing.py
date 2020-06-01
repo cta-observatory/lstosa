@@ -7,13 +7,18 @@ import multiprocessing as mp
 import subprocess
 from pathlib import Path
 
+import yaml
+
 from osa.jobs.job import createjobtemplate
 from osa.nightsummary import extract
 from osa.nightsummary.nightsummary import readnightsummary
 from osa.utils import cliopts, options
 from osa.utils.utils import lstdate_to_number
+from provenance.utils import get_log_config
 
 CONFIG_FLAGS = {"Go": True, "TearDL1": False, "TearDL2": False}
+provconfig = yaml.safe_load(get_log_config())
+LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 
 
 def do_setup():
@@ -28,11 +33,18 @@ def do_setup():
 
     if not pathDL1.exists():
         CONFIG_FLAGS["Go"] = False
-        logging.info(f"{pathDL1} does not exist.")
+        logging.info(f"Folder {pathDL1} does not exist.")
         return
     if not pathDL2.exists():
         CONFIG_FLAGS["Go"] = False
-        logging.info(f"{pathDL2} does not exist.")
+        logging.info(f"Folder {pathDL2} does not exist.")
+        return
+
+    if Path(LOG_FILENAME).exists() and not options.append:
+        CONFIG_FLAGS["Go"] = False
+        logging.info(f"File {LOG_FILENAME} already exists.")
+        logging.info(f"You must rename/remove {LOG_FILENAME} to produce a clean provenance.")
+        logging.info(f"You can also set --append flag to append captured provenance.")
         return
 
     CONFIG_FLAGS["TearDL1"] = False if pathDL1sub.exists() or options.provenance else pathDL1sub
@@ -41,10 +53,10 @@ def do_setup():
     if options.provenance and not options.force:
         if pathDL1sub.exists():
             CONFIG_FLAGS["Go"] = False
-            logging.info(f"{pathDL1sub} already exist.")
+            logging.info(f"Folder {pathDL1sub} already exist.")
         if pathDL2sub.exists():
             CONFIG_FLAGS["Go"] = False
-            logging.info(f"{pathDL2sub} already exist.")
+            logging.info(f"Folder {pathDL2sub} already exist.")
         if not CONFIG_FLAGS["Go"]:
             logging.info(f"You must enforce provenance files overwrite with --force flag.")
             return
