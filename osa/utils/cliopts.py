@@ -534,24 +534,32 @@ def provprocessparsing():
 ##############################################################################
 def simprocparsing():
     tag = standardhandle.gettag()
-    message = "usage: %prog [-c CONFIGFILE] [-p] <YYYY_MM_DD> <TEL_ID>\nRun script from OSA root folder."
+    message = "usage: %prog [-c CONFIGFILE] [-p] [--force] <YYYY_MM_DD> <SUBFOLDER> <TEL_ID>\n" \
+              "<YYYY_MM_DD> date analysis folder name for derived datasets\n" \
+              "<SUBFOLDER>  software version and prod subfolder name\n" \
+              "<TEL_ID>     telescope ID (i.e. LST1, ST,..)\n" \
+              "Run script from OSA root folder."
     parser = OptionParser(usage=message)
     parser.add_option("-c", "--config", action="store", dest="configfile", default="cfg/sequencer.cfg",
                       help="use specific config file [default cfg/sequencer.cfg]")
-    parser.add_option("-p", action="store_true", dest="provenance",
-                      help="produce and overwrite provenance products")
+    parser.add_option("-p", action="store_true", dest="provenance", default="False",
+                      help="produce provenance files")
+    parser.add_option("--force", action="store_true", dest="force", default="False",
+                      help="force overwrite provenance files")
 
     # Parse the command line
     (opts, args) = parser.parse_args()
     # Checking arguments
-    if len(args) != 2:
+    if len(args) != 3:
         standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
 
     # Set global variables
     options.date = args[0]
-    options.tel_id = args[1]
+    options.prod_id = args[1]
+    options.tel_id = args[2]
     options.configfile = opts.configfile
     options.provenance = opts.provenance
+    options.force = opts.force
 
     return options, tag
 
