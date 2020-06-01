@@ -3,6 +3,7 @@ Simulate executions of data processing pipeline and produce provenance
 """
 
 import logging
+import multiprocessing as mp
 import subprocess
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from osa.nightsummary.nightsummary import readnightsummary
 from osa.utils import cliopts, options
 from osa.utils.utils import lstdate_to_number
 
+CORES = 5
 CONFIG_FLAGS = {"Go": True, "TearDL1": False, "TearDL2": False}
 
 
@@ -83,8 +85,15 @@ def parse_template(template, idx):
     return args
 
 
-def run_simulate_processing():
-    """Build batch templates."""
+def simulate_subrun_processing(args):
+    """Simulate subrun processing."""
+    run_str, subrun_idx = args[17].split(".")
+    logging.info(f"Simulating process call for run {run_str} subrun {subrun_idx}")
+    subprocess.run(args)
+
+
+def simulate_processing():
+    """Simulate daily processing and capture provenance."""
 
     options.simulate = True
     night_content = readnightsummary()
@@ -98,10 +107,13 @@ def run_simulate_processing():
     start_run_idx = 1
     start_subrun_idx = 2
     for run_idx, s in enumerate(sequence_list[start_run_idx:]):
-        for subrun_idx in range(sub_run_list[run_idx + start_subrun_idx].subrun):
-            args_ds = parse_template(createjobtemplate(s, get_content=True), subrun_idx)
-            logging.info(f"Simulating process call for run {s.run_str} subrun {str(subrun_idx).zfill(4)}")
-            subprocess.run(args_ds)
+        with mp.Pool(processes=CORES) as pool:
+            args_ds = [
+                parse_template(createjobtemplate(s, get_content=True), subrun_idx)
+                for subrun_idx in range(sub_run_list[run_idx + start_subrun_idx].subrun)
+            ]
+            pool.map(simulate_subrun_processing, args_ds)
+
         # produce prov if overwrite prov arg
         if options.provenance:
             args_pp = [
@@ -126,5 +138,5 @@ if __name__ == "__main__":
 
     do_setup()
     if CONFIG_FLAGS["Go"]:
-        run_simulate_processing()
+        simulate_processing()
     tear_down()
