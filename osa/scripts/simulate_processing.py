@@ -106,6 +106,7 @@ def simulate_subrun_processing(args):
 def simulate_processing():
     """Simulate daily processing and capture provenance."""
 
+    options.mode = "P"
     options.simulate = True
     night_content = readnightsummary()
     logging.info(f"Night summary file content\n{night_content}")
