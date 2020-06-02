@@ -130,6 +130,8 @@ def simulate_processing():
             args_pp = [
                 "python",
                 "provprocess.py",
+                "-c",
+                options.configfile,
                 s.run_str,
                 options.directory,
                 options.prod_id,
