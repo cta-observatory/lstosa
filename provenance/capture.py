@@ -205,7 +205,7 @@ def get_file_hash(str_path, buffer=get_hash_buffer(), method=get_hash_method()):
         return hash_func.hexdigest()
 
 
-def get_entity_id(value, item, buffer="content"):
+def get_entity_id(value, item):
     """Helper function that makes the id of an entity, depending on its type."""
 
     try:
@@ -224,7 +224,9 @@ def get_entity_id(value, item, buffer="content"):
     #         filename = Path(value) / index
     #     return get_file_hash(filename)
     if entity_type == "File":
-        return get_file_hash(value, buffer=buffer)
+        # osa specific hash path
+        # async calls does not allow for hash content
+        return get_file_hash(value, buffer="path")
 
     try:
         entity_id = abs(hash(value) + hash(str(value)))
@@ -276,7 +278,7 @@ def get_nested_value(nested, branch):
     return val
 
 
-def get_item_properties(nested, item, buffer="content"):
+def get_item_properties(nested, item):
     """Helper function that returns properties of an entity or member."""
 
     try:
@@ -312,7 +314,7 @@ def get_item_properties(nested, item, buffer="content"):
             except AttributeError as ex:
                 logger.warning(f"{ex} for {value}")
     if value and "id" not in properties:
-        properties["id"] = get_entity_id(value, item, buffer=buffer)
+        properties["id"] = get_entity_id(value, item)
         if "File" in entity_type:
             properties["filepath"] = value
             if properties["id"] != value:
@@ -408,7 +410,7 @@ def get_derivation_records(class_instance, activity):
             }
             records.append(log_record)
             traced_entities[var] = (new_id, item)
-            logger.warning(f"Derivation detected by {activity} for {var}. ID: {new_id}")
+            logger.warning(f"Derivation detected in {activity} for {var}. ID: {new_id}")
     return records
 
 
@@ -467,7 +469,7 @@ def log_generation(class_instance, activity, activity_id):
 
     generation_list = definition["activities"][activity]["generation"] or []
     for item in generation_list:
-        props = get_item_properties(class_instance, item, buffer="path")
+        props = get_item_properties(class_instance, item)
         if "id" in props:
             entity_id = props.pop("id")
             # record generation

@@ -218,6 +218,8 @@ def datasequencecliparsing(command):
                       help = "file for standard error")
     parser.add_option("--stdout", action = "store", type = "string", dest = "stdout",
                       help = "file for standard output")
+    parser.add_option("-s", "--simulate", action = "store_true", dest = "simulate", default = False,
+                        help = "do not submit sequences as jobs")
     parser.add_option("--prod_id", action = "store", type = str, dest = "prod_id",
                       help="Set the prod_id variable which defines data directories")
 
@@ -233,6 +235,7 @@ def datasequencecliparsing(command):
     options.verbose = opts.verbose
     options.warning = opts.warning
     options.compressed = opts.compressed
+    options.simulate = opts.simulate
     options.prod_id = opts.prod_id
 
     # The standardhandle has to be declared here, since verbose and warnings are options from the cli
@@ -523,6 +526,46 @@ def provprocessparsing():
 
     return options, tag
 
+
+##############################################################################
+#
+# simprocparsing
+#
+##############################################################################
+def simprocparsing():
+    tag = standardhandle.gettag()
+    message = "Usage: %prog [-c CONFIGFILE] [-p] [--force] [--append] <YYYY_MM_DD> <vX.X.X_vXX> <TEL_ID>\n" \
+              "Run script from OSA root folder.\n\n" \
+              "Arguments:\n" \
+              "<YYYY_MM_DD> date analysis folder name for derived datasets\n" \
+              "<vX.X.X_vXX> software version and prod subfolder name\n" \
+              "<TEL_ID>     telescope ID (i.e. LST1, ST,..)\n"
+    parser = OptionParser(usage=message)
+    parser.add_option("-c", "--config", action="store", dest="configfile", default="cfg/sequencer.cfg",
+                      help="use specific config file [default cfg/sequencer.cfg]")
+    parser.add_option("-p", action="store_true", dest="provenance",
+                      help="produce provenance files")
+    parser.add_option("--force", action="store_true", dest="force",
+                      help="force overwrite provenance files")
+    parser.add_option("--append", action="store_true", dest="append",
+                      help="append provenance capture to existing prov.log file")
+
+    # Parse the command line
+    (opts, args) = parser.parse_args()
+    # Checking arguments
+    if len(args) != 3:
+        standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
+
+    # Set global variables
+    options.date = args[0]
+    options.prod_id = args[1]
+    options.tel_id = args[2]
+    options.configfile = opts.configfile
+    options.provenance = opts.provenance
+    options.force = opts.force
+    options.append = opts.append
+
+    return options, tag
 
 ##############################################################################
 #
