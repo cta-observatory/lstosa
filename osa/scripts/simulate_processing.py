@@ -9,6 +9,7 @@ from pathlib import Path
 
 import yaml
 
+from datamodel import SequenceData
 from osa.jobs.job import createjobtemplate
 from osa.nightsummary import extract
 from osa.nightsummary.nightsummary import readnightsummary
@@ -85,8 +86,6 @@ def parse_template(template, idx):
             line = line.replace(r"{0}.format(str(subruns).zfill(4))", str(idx).zfill(4))
             if "--stdout=" in line or "--stderr" in line or "srun" in line:
                 continue
-            # if "calibrationsequence.py" in line:
-            #     break
             if "--prod_id" in line:
                 args.append("-s")
             args.append(line.strip())
@@ -116,18 +115,22 @@ def simulate_processing():
     sequence_list = extract.extractsequences(run_list)
 
     # skip drs4 and calibration
-    start_run_idx = 1
-    start_subrun_idx = 2
-    for run_idx, s in enumerate(sequence_list[start_run_idx:]):
-        with mp.Pool() as pool:
-            args_ds = [
-                parse_template(createjobtemplate(s, get_content=True), subrun_idx)
-                for subrun_idx in range(sub_run_list[run_idx + start_subrun_idx].subrun)
-            ]
-            pool.map(simulate_subrun_processing, args_ds)
+    for s in sequence_list:
+        processed = False
+        if not isinstance(s, SequenceData):
+            continue
+        for sl in s.subrun_list:
+            if sl.runobj.type != "DATA":
+                continue
+            with mp.Pool() as pool:
+                args_ds = [
+                    parse_template(createjobtemplate(s, get_content=True), subrun_idx)
+                    for subrun_idx in range(sl.subrun)
+                ]
+                processed = pool.map(simulate_subrun_processing, args_ds)
 
         # produce prov if overwrite prov arg
-        if options.provenance:
+        if processed and options.provenance:
             args_pp = [
                 "python",
                 "provprocess.py",
