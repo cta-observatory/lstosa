@@ -43,13 +43,14 @@ def getnightdirectory():
     tag = gettag()
     from os.path import join, exists
     from osa.configs.config import cfg
-    from lstchain.version import get_version
+    #from lstchain.version import get_version
 
     verbose(tag, f"Getting analysis path for tel_id {options.tel_id}")
     nightdir = lstdate_to_dir(options.date)
 
-    options.lstchain_version = 'v' + get_version()
-    options.prod_id = options.lstchain_version + '_' + cfg.get('LST1', 'VERSION')
+    #options.lstchain_version = 'v' + get_version()
+    #options.prod_id = options.lstchain_version + '_' + cfg.get('LST1', 'VERSION')
+    options.prod_id = cfg.get('LST1', 'VERSION')
 
     directory = join(
         cfg.get(options.tel_id, 'ANALYSISDIR'),
