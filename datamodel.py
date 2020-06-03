@@ -35,7 +35,7 @@ class RunObj(Wobble):
         self.run = None
         self.type = None
         self.subrun_list = []
-        self.subruns = 0 
+        self.subruns = None
 
 
 class SubrunObj(RunObj):
