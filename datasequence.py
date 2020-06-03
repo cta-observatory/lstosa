@@ -23,7 +23,8 @@ def datasequence(args):
     historysuffix = cfg.get('LSTOSA', 'HISTORYSUFFIX')
     sequenceprebuild = join(options.directory, f'sequence_{options.tel_id}_{run_str}')
     historyfile = sequenceprebuild + historysuffix
-    level, rc = historylevel(historyfile, 'DATA')
+
+    level, rc = (3, 0) if options.simulate else historylevel(historyfile, 'DATA')
     verbose(tag, f"Going to level {level}")
 
     if level == 3:
@@ -82,6 +83,9 @@ def r0_to_dl1(
     historyfile
     """
 
+    if options.simulate:
+        return 0
+
     import subprocess
     from os.path import join, basename
     from osa.configs.config import cfg
@@ -130,6 +134,7 @@ def r0_to_dl1(
         return rc
 
 
+@trace
 def dl1_to_dl2(run_str, historyfile):
     """ Apply already trained RFs models to DL1 files.
     It identifies the primary particle, reconstructs the energy
@@ -140,6 +145,9 @@ def dl1_to_dl2(run_str, historyfile):
     run_str
     historyfile
     """
+
+    if options.simulate:
+        return 0
 
     import subprocess
     from os.path import join, basename

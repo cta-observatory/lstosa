@@ -57,6 +57,7 @@ SUPPORTED_HASH_BUFFER = ["content", "path"]
 sessions = set()
 traced_entities = {}
 session_name = ""
+session_tag = ""
 
 
 def setup_logging():
@@ -99,9 +100,10 @@ def trace(func):
 
         # OSA specific
         # variables parsing
-        global session_name
+        global session_name, session_tag
         class_instance = parse_variables(class_instance)
-        session_name = class_instance.ObservationRun
+        session_tag = f"{activity}:{class_instance.ObservationRun}"
+        session_name = f"{class_instance.ObservationRun}"
 
         # provenance capture before execution
         derivation_records = get_derivation_records(class_instance, activity)
@@ -181,13 +183,13 @@ def get_hash_buffer():
 def get_file_hash(str_path, buffer=get_hash_buffer(), method=get_hash_method()):
     """Helper function that returns hash of the content of a file."""
 
+    file_hash = ""
     full_path = Path(str_path)
-
-    if full_path.is_file():
-        hash_func = getattr(hashlib, method)()
-        if buffer == "content":
-            block_size = 65536
+    hash_func = getattr(hashlib, method)()
+    if buffer == "content":
+        if full_path.is_file():
             with open(full_path, "rb") as f:
+                block_size = 65536
                 buf = f.read(block_size)
                 while len(buf) > 0:
                     hash_func.update(buf)
@@ -195,13 +197,12 @@ def get_file_hash(str_path, buffer=get_hash_buffer(), method=get_hash_method()):
             file_hash = hash_func.hexdigest()
             logger.debug(f"File entity {str_path} has {method} hash {file_hash}")
             return file_hash
-        elif "path":
-            hash_func.update(str(full_path).encode())
-            hash_path = hash_func.hexdigest()
-            return hash_path
-    else:
-        logger.warning(f"File entity {str_path} not found")
-        return str_path
+        else:
+            logger.warning(f"File entity {str_path} not found")
+            return str_path
+    if not file_hash:
+        hash_func.update(str(full_path).encode())
+        return hash_func.hexdigest()
 
 
 def get_entity_id(value, item):
@@ -215,14 +216,17 @@ def get_entity_id(value, item):
         entity_name = ""
         entity_type = ""
 
-    if entity_type == "FileCollection":
-        filename = value
-        index = definition["entities"][entity_name].get("index", "")
-        if Path(value).is_dir() and index:
-            filename = Path(value) / index
-        return get_file_hash(filename)
+    # gammapy specific
+    # if entity_type == "FileCollection":
+    #     filename = value
+    #     index = definition["entities"][entity_name].get("index", "")
+    #     if Path(filename).is_dir() and index:
+    #         filename = Path(value) / index
+    #     return get_file_hash(filename)
     if entity_type == "File":
-        return get_file_hash(value)
+        # osa specific hash path
+        # async calls does not allow for hash content
+        return get_file_hash(value, buffer="path")
 
     try:
         entity_id = abs(hash(value) + hash(str(value)))
@@ -247,7 +251,7 @@ def get_nested_value(nested, branch):
     if isinstance(nested, dict):
         val = nested.get(leaf, None)
     elif isinstance(nested, object):
-        if "(" in leaf:                                     # leaf is a function
+        if "(" in leaf:  # leaf is a function
             leaf_elements = leaf.replace(")", "").replace(" ", "").split("(")
             leaf_arg_list = leaf_elements.pop().split(",")
             leaf_func = leaf_elements.pop()
@@ -260,7 +264,7 @@ def get_nested_value(nested, branch):
                 elif arg:
                     leaf_args.append(arg.replace('"', ""))
             val = getattr(nested, leaf_func, lambda *args, **kwargs: None)(*leaf_args, **leaf_kwargs)
-        else:                                               # leaf is an attribute
+        else:  # leaf is an attribute
             val = getattr(nested, leaf, None)
     else:
         raise TypeError
@@ -329,7 +333,7 @@ def get_item_properties(nested, item):
 def log_prov_info(prov_dict):
     """Write a dictionary to the logger."""
 
-    prov_dict["session_tag"] = session_name     # OSA specific session tag
+    prov_dict["session_tag"] = session_tag  # OSA specific session tag
     record_date = datetime.datetime.now().isoformat()
     logger.info(f"{PROV_PREFIX}{record_date}{PROV_PREFIX}{prov_dict}")
 
@@ -376,7 +380,7 @@ def log_start_activity(activity, activity_id, session_id, start):
         "startTime": start,
         "in_session": session_id,
         "agent_name": os.getenv("USER", "Anonymous"),
-        "script": sys.argv[0]
+        "script": sys.argv[0],
     }
     log_prov_info(log_record)
 
@@ -406,7 +410,7 @@ def get_derivation_records(class_instance, activity):
             }
             records.append(log_record)
             traced_entities[var] = (new_id, item)
-            logger.warning(f"Derivation detected by {activity} for {var}. ID: {new_id}")
+            logger.warning(f"Derivation detected in {activity} for {var}. ID: {new_id}")
     return records
 
 
@@ -611,7 +615,6 @@ def get_system_provenance():
         # version=get_info_version(),
         # dependencies=get_info_dependencies(),
         # envvars=get_info_envvar(),
-        # gammapy specific
         executable=sys.executable,
         platform=dict(
             architecture_bits=bits,

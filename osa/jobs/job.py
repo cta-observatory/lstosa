@@ -193,28 +193,24 @@ def setsequencecalibfilenames(sequence_list):
     drive_suffix = cfg.get('LSTOSA', 'DRIVESUFFIX')
     for s in sequence_list:
         if len(s.parent_list) == 0:
-            #calfile = '666calib.root'
             cal_run_string = str(s.run).zfill(4)
-            calfile = "calibration.Run{0}.0000{1}".\
-                 format(cal_run_string, calib_suffix)
+            calfile = f"calibration.Run{cal_run_string}.0000{calib_suffix}"
             ped_run_string = str(s.previousrun).zfill(4)
-            pedfile = "drs4_pedestal.Run{0}.0000{1}".\
-                 format(ped_run_string, pedestal_suffix)
-            drivefile = '666drive.txt'
+            pedfile = f"drs4_pedestal.Run{ped_run_string}.0000{pedestal_suffix}"
+            nightdir = lstdate_to_dir(options.date)
+            yy, mm, dd = date_in_yymmdd(nightdir)
+            drivefile = f"drive_log_{yy}_{mm}_{dd}{drive_suffix}"
         else:
             run_string = str(s.parent_list[0].run).zfill(4)
             ped_run_string = str(s.parent_list[0].previousrun).zfill(4)
-            date_string = str(s.subrun_list[0].date).zfill(8)
-            time_string = str(s.subrun_list[0].time).zfill(8)
             nightdir = lstdate_to_dir(options.date)
-            yy,mm,dd = date_in_yymmdd(nightdir)
+            yy, mm, dd = date_in_yymmdd(nightdir)
             if options.mode == 'P':
-                calfile = "calibration.Run{0}.0000{1}".format(run_string, calib_suffix)
-                pedfile = "drs4_pedestal.Run{0}.0000{1}".format(ped_run_string, pedestal_suffix)
-                drivefile = "drive_log_{0}_{1}_{2}{3}".format(yy, mm, dd, drive_suffix)
+                calfile = f"calibration.Run{run_string}.0000{calib_suffix}"
+                pedfile = f"drs4_pedestal.Run{ped_run_string}.0000{pedestal_suffix}"
+                drivefile = f"drive_log_{yy}_{mm}_{dd}{drive_suffix}"
             elif options.mode == 'S' or options.mode == 'T':
-                #FIXME: understand this mode
-                calfile = "ssginal{0}_{1}{2}".format(run_string, s.telescope, ssignal_suffix)
+                error(tag, "Exiting, mode not implemented yet. Try with 'P' mode instead")
         s.calibration = calfile
         s.pedestal = pedfile
         s.drive = drivefile
@@ -260,8 +256,9 @@ def guesscorrectinputcard(s):
     return(options.configfile)
 
 
-def createjobtemplate(s):
-    """This file contains instruction to be submitted to SLURM"""
+def createjobtemplate(s, get_content=False):
+    """This file contains instruction to be submitted to torque"""
+
     tag = gettag()
 
     import os
@@ -371,6 +368,9 @@ def createjobtemplate(s):
 
     if not options.simulate:
         iofile.writetofile(s.script, content)
+
+    if get_content:
+        return content
 
 
 # def submitjobs(sequence_list, queue_list, veto_list):
