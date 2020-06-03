@@ -60,7 +60,7 @@ def make_args_r0_to_dl1():
         "ucts_t0_tib",
         "tib_counter0",
         "02006.0002",
-        "/fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt",
+        "/fefs/aswg/data/real/running_analysis/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt",
     )
 
 
@@ -68,7 +68,7 @@ def make_args_dl1_to_dl2():
 
     return (
         "02006.0002",
-        "/fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt",
+        "/fefs/aswg/data/real/running_analysis/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt",
     )
 
 
