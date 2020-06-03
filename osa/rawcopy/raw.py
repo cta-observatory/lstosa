@@ -11,6 +11,7 @@ def arerawfilestransferredfortel(tel_id):
     dir = join(config.cfg.get(tel_id, 'ENDOFRAWTRANSFERDIR'), nightdir)
     flagfile = join(dir, config.cfg.get('LSTOSA', 'ENDOFACTIVITYPREFIX'))
 
+    # FIXME: How can we check that all files are there?
     if exists(flagfile):
         output(tag, f"Files for {options.date} {tel_id} are completely transferred to raid")
         return True
