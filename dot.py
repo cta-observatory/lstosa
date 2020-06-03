@@ -1,10 +1,7 @@
-from osa.utils.standardhandle import output, warning, verbose, error, gettag
-from osa.utils import options, cliopts
-##############################################################################
-#
-# writeworkflow
-#
-##############################################################################
+from osa.utils import options
+from osa.utils.standardhandle import warning, verbose, error, gettag
+
+
 def writeworkflow(sequence_list):
     tag = gettag()
     from iofile import writetofile
@@ -12,10 +9,11 @@ def writeworkflow(sequence_list):
     from osa.configs.config import cfg
     from osa.utils.utils import lstdate_to_number
     replaced = None
-    dot_basename = "{0}_{1}_{2}{3}".\
-     format(cfg.get('LSTOSA', 'WORKFLOWPREFIX'),\
-     lstdate_to_number(options.date),\
-     options.tel_id, cfg.get('LSTOSA', 'GRAPHSUFFIX'))
+    dot_basename = "{0}_{1}_{2}{3}".format(
+        cfg.get('LSTOSA', 'WORKFLOWPREFIX'),
+        lstdate_to_number(options.date),
+        options.tel_id, cfg.get('LSTOSA', 'GRAPHSUFFIX')
+    )
     dot_path = join(options.directory, dot_basename)
 
     # We could think of using the pydot interface as well, but this is relatively simple anyway
@@ -41,7 +39,8 @@ def writeworkflow(sequence_list):
             index = i.seq
             for j in i.parent_list:
                 index += m
-                content += 'n{0} [label="{1} {2}|{3} [{4}]"\nshape="record"];\n'.format(index, j.telescope, j.seq, j.run, j.subruns)
+                content += 'n{0} [label="{1} {2}|{3} [{4}]"\nshape="record"];\n'.format(index, j.telescope, j.seq,
+                                                                                        j.run, j.subruns)
                 content += "start -> n{0} [style=invis];\n".format(index)
                 content += "n{0} -> n{1};\n".format(index, i.seq)
     # Closing the content
@@ -53,14 +52,10 @@ def writeworkflow(sequence_list):
     if replaced or not exists(svg_path):
         verbose(tag, "Updating workflow file: {0}".format(dot_path))
         convert_dot_into_svg(dot_path, svg_path)
-##############################################################################
-#
-# convert_dot_into_svg
-#
-##############################################################################
+
+
 def convert_dot_into_svg(dotfile, svgfile):
     tag = gettag()
-    # Pretty clear what it does, isn't it?
     import subprocess
     from osa.configs.config import cfg
 
@@ -75,7 +70,7 @@ def convert_dot_into_svg(dotfile, svgfile):
 
     try:
         subprocess.call(commandargs)
-    #except OSError as (ValueError, NameError):
+    # except OSError as (ValueError, NameError):
     except OSError as NameError:
         warning(tag, "svg file could not be created from dot file {0}, {1}".format(dotfile, NameError))
     else:
