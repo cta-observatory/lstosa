@@ -59,7 +59,6 @@ def single_process(telescope, process_mode):
     options.tel_id = telescope
     options.directory = cliopts.set_default_directory_if_needed()
     options.log_directory = os.path.join(options.directory, 'log')
-    output(tag, f"Analysis directory: {options.directory}")
 
     if not options.simulate:
         os.makedirs(options.log_directory, exist_ok=True)
@@ -79,29 +78,21 @@ def single_process(telescope, process_mode):
             is_report_needed = False
 
     # Building the sequences
-    night = readnightsummary()  # night corresponds to f.read()
-    output(tag, f"NightSummary:\n{night}")
-
-    configfile = config.cfg.get('LSTOSA', 'CONFIGFILE')
-    if not options.simulate:
-        copy(configfile, options.log_directory)
-    else:
-        output(tag, "SIMULATE Copying lstchain config file to analysis log directory")
-
+    night = readnightsummary()
     subrun_list = extract.extractsubruns(night)
     run_list = extract.extractruns(subrun_list)
-
     # Modifies run_list by adding the seq and parent info into runs
     sequence_list = extract.extractsequences(run_list)
 
+    # FIXME: Does this makes sense or should be removed?
     # Workflow and Submission
-    if not options.simulate:
-        dot.writeworkflow(sequence_list)
+    # if not options.simulate:
+    #     dot.writeworkflow(sequence_list)
 
     # Adds the scripts
     job.preparejobs(sequence_list)
 
-    #queue_list = job.getqueuejoblist(sequence_list)
+    # queue_list = job.getqueuejoblist(sequence_list)
     veto_list = veto.getvetolist(sequence_list)
     closed_list = veto.getclosedlist(sequence_list)
     updatelstchainstatus(sequence_list)

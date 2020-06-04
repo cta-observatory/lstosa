@@ -154,7 +154,7 @@ def createsequencetxt(s, sequence_list):
     if not options.simulate:
         iofile.writetofile(f, content)
     else:
-        output(tag, f"SIMULATE Creating sequence txt {f}")
+        verbose(tag, f"SIMULATE Creating sequence txt {f}")
 
 
 def formatrunsubrun(run, subrun):
@@ -438,9 +438,9 @@ def submitjobs(sequence_list):
             except OSError as err:
                 error(tag, f"Command '{command}' not found", err)
         else:
-            output(tag, "SIMULATE Launching scripts")
+            verbose(tag, "SIMULATE Launching scripts")
 
-        output(tag, commandargs)
+        verbose(tag, commandargs)
         job_list.append(s.script)
 
     return job_list
