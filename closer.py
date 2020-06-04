@@ -128,7 +128,13 @@ def notify_sequencer_errors():
 
 
 def ask_for_closing():
-    """ A True (Y/y) closes, while False(N/n) answer stops the program. """
+    """Ask to the user whether sequences should be closed or not.
+    A True (Y/y) closes, while False(N/n) answer stops the program.
+
+    Returns
+    -------
+    object
+    """
     tag = gettag()
 
     import sys
@@ -206,7 +212,7 @@ def post_process_files(seq_list):
     concept_set = []
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
         #concept_set = ['PED', 'CALIB', 'TIMECALIB', 'DL1', 'DL2', 'MUONS', 'DATACHECK']
-        concept_set = ['DL1', 'DL2', 'MUONS', 'DATACHECK']
+        concept_set = ['DL1', 'DL2', 'MUON', 'DATACHECK']
     elif options.tel_id == 'ST':
         concept_set = []
 

@@ -47,14 +47,14 @@ def finished_text(ana_dict):
 
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
         content += f"analysis.finished.data.size={ana_dict['RAW_GB']} GB\n"
-        content += f"analysis.finished.data.files={ana_dict['FILES_RAW']}\n"
+        content += f"analysis.finished.data.files.r0={ana_dict['FILES_RAW']}\n"
         # FIXME: Add pedestal and calibration info
         # content += "analysis.finished.data.files.pedestal={0}\n".format(ana_dict['FILES_PED'])
         # content += "analysis.finished.data.files.calib={0}\n".format(ana_dict['FILES_CALIB'])
         # content += "analysis.finished.data.files.time_calib={0}\n".format(ana_dict['FILES_TIMECALIB'])
         content += f"analysis.finished.data.files.dl1={ana_dict['FILES_DL1']}\n"
         content += f"analysis.finished.data.files.dl2={ana_dict['FILES_DL2']}\n"
-        content += f"analysis.finished.data.files.muons={ana_dict['FILES_MUONS']}\n"
+        content += f"analysis.finished.data.files.muons={ana_dict['FILES_MUON']}\n"
         content += f"analysis.finished.data.files.datacheck={ana_dict['FILES_DATACHECK']}\n"
 
     if options.reason is not None:
@@ -78,7 +78,7 @@ def finished_assignments(sequence_list):
     rawnum = 0
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
         # FIXME: add all files 'PED', 'CALIB'?
-        concept_set = ['DL1', 'DL2', 'MUONS', 'DATACHECK']
+        concept_set = ['DL1', 'DL2', 'MUON', 'DATACHECK']
         rawdir = getrawdir()
         if sequence_list is not None:
             for s in sequence_list:
@@ -100,9 +100,6 @@ def finished_assignments(sequence_list):
 
     for concept in concept_set:
         pattern = f"{cfg.get('LSTOSA', concept + 'PREFIX')}*"
-        #if cfg.get('LSTOSA', concept + 'PATTERN'):
-        #    pattern += f"{cfg.get('LSTOSA', concept + 'PATTERN')}*"
-
         verbose(tag, f"Trying with {concept} and searching {pattern}")
         file_no[concept] = 0
         delete_set = set()
