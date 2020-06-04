@@ -17,7 +17,7 @@ from osa.utils import cliopts, options
 from osa.utils.utils import lstdate_to_number
 from provenance.utils import get_log_config
 
-CONFIG_FLAGS = {"Go": True, "TearDL1": False, "TearDL2": False}
+CONFIG_FLAGS = {"Go": True, "TearDL1": False, "TearDL2": False, "TearSubDL1": False, "TearSubDL2": False}
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 
@@ -32,15 +32,6 @@ def do_setup():
     pathDL1sub = pathDL1 / options.prod_id
     pathDL2sub = pathDL2 / options.prod_id
 
-    if not pathDL1.exists():
-        CONFIG_FLAGS["Go"] = False
-        logging.info(f"Folder {pathDL1} does not exist.")
-        return
-    if not pathDL2.exists():
-        CONFIG_FLAGS["Go"] = False
-        logging.info(f"Folder {pathDL2} does not exist.")
-        return
-
     if Path(LOG_FILENAME).exists() and not options.append:
         CONFIG_FLAGS["Go"] = False
         logging.info(f"File {LOG_FILENAME} already exists.")
@@ -48,8 +39,10 @@ def do_setup():
         logging.info(f"You can also set --append flag to append captured provenance.")
         return
 
-    CONFIG_FLAGS["TearDL1"] = False if pathDL1sub.exists() or options.provenance else pathDL1sub
-    CONFIG_FLAGS["TearDL2"] = False if pathDL2sub.exists() or options.provenance else pathDL2sub
+    CONFIG_FLAGS["TearSubDL1"] = False if pathDL1sub.exists() or options.provenance else pathDL1sub
+    CONFIG_FLAGS["TearSubDL2"] = False if pathDL2sub.exists() or options.provenance else pathDL2sub
+    CONFIG_FLAGS["TearDL1"] = False if pathDL1.exists() or options.provenance else pathDL1
+    CONFIG_FLAGS["TearDL2"] = False if pathDL2.exists() or options.provenance else pathDL2
 
     if options.provenance and not options.force:
         if pathDL1sub.exists():
@@ -62,12 +55,16 @@ def do_setup():
             logging.info(f"You must enforce provenance files overwrite with --force flag.")
             return
 
-    pathDL1sub.mkdir(exist_ok=True)
-    pathDL2sub.mkdir(exist_ok=True)
+    pathDL1sub.mkdir(parents=True, exist_ok=True)
+    pathDL2sub.mkdir(parents=True, exist_ok=True)
 
 
 def tear_down():
     """Tear down created temporal folders."""
+    if isinstance(CONFIG_FLAGS["TearSubDL1"], Path):
+        CONFIG_FLAGS["TearSubDL1"].rmdir()
+    if isinstance(CONFIG_FLAGS["TearSubDL2"], Path):
+        CONFIG_FLAGS["TearSubDL2"].rmdir()
     if isinstance(CONFIG_FLAGS["TearDL1"], Path):
         CONFIG_FLAGS["TearDL1"].rmdir()
     if isinstance(CONFIG_FLAGS["TearDL2"], Path):
