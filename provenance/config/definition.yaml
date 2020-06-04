@@ -97,11 +97,16 @@ activities:
               entityName: PointingFile
               value: PointingFile
               # filepath: /fefs/home/lapp/DrivePositioning/drive_log_20_02_18.txt
-            - role: "Configuration file"
-              description: "Configuration file"
+            - role: "Analysis configuration file"
+              description: "LSTChain analysis configuration file"
               entityName: AnalysisConfigFile
               value: AnalysisConfigFile
               # filepath: /fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/data/lstchain_standard_config.json
+            - role: "Processing configuration file"
+              description: "LSTOSA processing configuration file"
+              entityName: ProcessingConfigFile
+              value: ProcessingConfigFile
+              # filepath: /fefs/aswg/lstosa/cfg/sequencer.cfg
 
             # - role: "R0 Collection"
             #   description: "Set of subruns for a given run"
@@ -143,8 +148,8 @@ activities:
               entityName: DL1SubrunDataset
               value: DL1SubrunDataset
               # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5
-            - role: "Configuration file"
-              description: "Configuration file"
+            - role: "Analysis configuration file"
+              description: "LSTChain analysis configuration file"
               entityName: AnalysisConfigFile
               value: AnalysisConfigFile
               # filepath: /fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/data/lstchain_standard_config.json
@@ -163,6 +168,11 @@ activities:
               entityName: RFModelGammanessFile
               value: RFModelGammanessFile
               # filepath: /fefs/aswg/data/models/20190415/south_pointing/20200316_v0.4.5__EG1/cls_gh.sav
+            - role: "Processing configuration file"
+              description: "Processing configuration file"
+              entityName: ProcessingConfigFile
+              value: ProcessingConfigFile
+              # filepath: /fefs/aswg/lstosa/cfg/sequencer.cfg
 
             # - role: "DL1 Collection"
             #   description: "Set of DL1 files for a given run"
@@ -203,9 +213,13 @@ entities:
         type: File
         contentType: application/x-hdf
     AnalysisConfigFile:
-        description: "Analysis configuration file in JSON File on the disk"
+        description: "LSTChain analysis configuration file in JSON format on the disk"
         type: File
         contentType: application/json
+    ProcessingConfigFile:
+        description: "LSTOSA processing configuration file on the disk"
+        type: File
+        contentType: text/plain
     DL1SubrunDataset:
         description: "DL1 subrun file produced in HDF5 format on the disk"
         type: File

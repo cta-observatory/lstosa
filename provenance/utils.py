@@ -29,7 +29,9 @@ def parse_variables(class_instance):
     # LST1
 
     from osa.configs.config import cfg
+    from osa.utils import options
 
+    pythondir = cfg.get("LSTOSA", "PYTHONDIR")
     configfile = cfg.get("LSTOSA", "CONFIGFILE")
     rawdir = cfg.get("LST1", "RAWDIR")
     fits = cfg.get("LSTOSA", "FITSSUFFIX")
@@ -70,6 +72,7 @@ def parse_variables(class_instance):
         # /fefs/aswg/data/real/R0/20200218/LST1.1.Run02006.0001.fits.fz
         class_instance.R0SubrunDataset = f"{rawdir}/{class_instance.ObservationDate}/{r0_prefix}.Run{class_instance.args[8]}{fits}{fz}"
         class_instance.session_name = class_instance.ObservationRun
+        class_instance.ProcessingConfigFile = f"{pythondir}/{options.configfile}"
 
     if class_instance.__name__ == "dl1_to_dl2":
         # run_str       [0] 02006.0000
@@ -91,6 +94,7 @@ def parse_variables(class_instance):
         # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5
         class_instance.DL1SubrunDataset = f"{outdir_dl1}{dl1_prefix}.Run{class_instance.args[0]}{h5}"
         class_instance.session_name = class_instance.ObservationRun
+        class_instance.ProcessingConfigFile = f"{pythondir}/{options.configfile}"
 
     return class_instance
 
