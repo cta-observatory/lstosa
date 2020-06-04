@@ -48,6 +48,8 @@ def getnightdirectory():
     nightdir = lstdate_to_dir(options.date)
 
     if not options.prod_id:
+        import warnings
+        warnings.simplefilter(action='ignore', category=FutureWarning)
         from lstchain.version import get_version
         options.lstchain_version = 'v' + get_version()
         options.prod_id = options.lstchain_version + '_' + cfg.get('LST1', 'VERSION')
