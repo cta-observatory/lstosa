@@ -203,8 +203,8 @@ def reportsequences(seqlist):
             row_list.append(None)
         elif s.type == 'DATA':
             row_list.append(s.dl1status)
-            row_list.append(s.muonstatus)
             row_list.append(s.datacheckstatus)
+            row_list.append(s.muonstatus)
             row_list.append(s.dl2status)
         matrix.append(row_list)
     padding = int(config.cfg.get('OUTPUT', 'PADDING'))
