@@ -153,6 +153,8 @@ def updatelstchainstatus(seq_list):
             s.calibstatus = int(Decimal(getlstchainforsequence(s, 'CALIB') * 100) / s.subruns)
         elif s.type == 'DATA':
             s.dl1status = int(Decimal(getlstchainforsequence(s, 'DL1') * 100) / s.subruns)
+            s.datacheckstatus = int(Decimal(getlstchainforsequence(s, 'DATACHECK') * 100) / s.subruns)
+            s.muonstatus = int(Decimal(getlstchainforsequence(s, 'MUON') * 100) / s.subruns)
             s.dl2status = int(Decimal(getlstchainforsequence(s, 'DL2') * 100) / s.subruns)
 
 
@@ -201,7 +203,7 @@ def reportsequences(seqlist):
             row_list.append(None)
         elif s.type == 'DATA':
             row_list.append(s.dl1status)
-            row_list.append(s.muonsstatus)
+            row_list.append(s.muonstatus)
             row_list.append(s.datacheckstatus)
             row_list.append(s.dl2status)
         matrix.append(row_list)
