@@ -1,5 +1,5 @@
 from . import options
-from .standardhandle import output, warning, verbose, error, gettag, errornonfatal
+from .standardhandle import warning, verbose, error, gettag, errornonfatal
 
 
 def getdate(date, sep):
@@ -186,7 +186,7 @@ def createlock(lockfile, content):
     from os import getpid
     from os.path import isfile, isdir, exists, dirname
     from socket import gethostname
-    from iofile import writetofile
+    from osa.utils.iofile import writetofile
     dir = dirname(lockfile)
     if options.simulate:
         verbose(tag, f"SIMULATE Creation of lock file {lockfile}")
@@ -328,7 +328,7 @@ def is_defined(variable):
 
 def get_night_limit_timestamp():
     tag = gettag()
-    from mysql import select_db
+    from dev.mysql import select_db
     from osa.configs.config import cfg
     night_limit = None
     server = cfg.get('MYSQL', 'server')

@@ -116,7 +116,7 @@ def stereo_process(telescope, s1_list, s2_list):
     tag = gettag()
 
     from osa.nightsummary import extract
-    import dot
+    from dev import dot
     from osa.jobs import job
     from osa.veto import veto
     from osa.reports.report import rule

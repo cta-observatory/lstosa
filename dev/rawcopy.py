@@ -506,7 +506,7 @@ def calculate_md5sum(file):
 ##############################################################################
 def create_md5sum_inverse_dict(file):
     tag = gettag()
-    from dev.iofile import readfromfile
+    from osa.utils.iofile import readfromfile
     content = readfromfile(file)
     md5sum_dict = {}
     if content:
@@ -521,7 +521,7 @@ def create_md5sum_inverse_dict(file):
 ##############################################################################
 def update_md5sums(hash, file, md5sums_file):
     tag = gettag()
-    from dev.iofile import writetofile, appendtofile, sedsi
+    from osa.utils.iofile import writetofile, appendtofile, sedsi
     from os.path import exists
     """ Similar to md5sum file >> md5sums_file with update option """
     string = "{0}  {1}\n".format(hash, file)
@@ -1498,7 +1498,7 @@ def interpool_missing_summary(meta_pool, report_pool, raw_pool, compress_pool):
     from os.path import join
     from config import cfg
     from utils import magicdate_to_iso
-    from dev.iofile import writetofile
+    from osa.utils.iofile import writetofile
 
     output_prefix = cfg.get('OUTPUT', 'orphanprefix')
     output_suffix = cfg.get('OUTPUT', 'textsuffix')

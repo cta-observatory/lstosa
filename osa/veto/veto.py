@@ -1,4 +1,4 @@
-from osa.utils.standardhandle import verbose, warning, error, gettag
+from osa.utils.standardhandle import verbose, error, gettag
 from osa.utils import options
 
 
@@ -56,7 +56,7 @@ def updatevetos(sequence_list):
 
 def failedhistory(historyfile, maxnumber):
     tag = gettag()
-    from iofile import readfromfile
+    from osa.utils.iofile import readfromfile
     programme = []
     card = []
     goal = []
