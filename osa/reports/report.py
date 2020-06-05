@@ -1,7 +1,7 @@
 from osa.utils import options
 from osa.utils.standardhandle import output, verbose, gettag
 
-__all__ = ["history", "start"]
+__all__ = ["history", "start", "rule", "finished_assignments", "finished_text"]
 
 
 def start(parent_tag):
@@ -22,7 +22,7 @@ def header(message):
         prettyframe = int((framesize - 2 - len(message)) / 2) * '='
     else:
         prettyframe = ''
-    output(tag, "{0} {1} {0}".format(prettyframe, message))
+    output(tag, f"{prettyframe} {message} {prettyframe}")
 
 
 def rule():
@@ -41,27 +41,24 @@ def size():
 def finished_text(ana_dict):
     tag = gettag()
 
-    content = "analysis.finished.timestamp={0}\n".format(ana_dict['END'])
-    content += "analysis.finished.night={0}\n".format(ana_dict['NIGHT'])
-    content += "analysis.finished.telescope={0}\n".format(ana_dict['TELESCOPE'])
+    content = f"analysis.finished.timestamp={ana_dict['END']}\n"
+    content += f"analysis.finished.night={ana_dict['NIGHT']}\n"
+    content += f"analysis.finished.telescope={ana_dict['TELESCOPE']}\n"
 
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
-        content += "analysis.finished.data.size={0} GB\n".format(ana_dict['RAW_GB'])
-        content += "analysis.finished.data.files={0}\n".format(ana_dict['FILES_RAW'])
+        content += f"analysis.finished.data.size={ana_dict['RAW_GB']} GB\n"
+        content += f"analysis.finished.data.files.r0={ana_dict['FILES_RAW']}\n"
+        # FIXME: Add pedestal and calibration info
         # content += "analysis.finished.data.files.pedestal={0}\n".format(ana_dict['FILES_PED'])
         # content += "analysis.finished.data.files.calib={0}\n".format(ana_dict['FILES_CALIB'])
         # content += "analysis.finished.data.files.time_calib={0}\n".format(ana_dict['FILES_TIMECALIB'])
-        content += "analysis.finished.data.files.dl1={0}\n".format(ana_dict['FILES_DL1'])
-        content += "analysis.finished.data.files.dl2={0}\n".format(ana_dict['FILES_DL2'])
-        content += "analysis.finished.data.files.muons={0}\n".format(ana_dict['FILES_MUONS'])
-        content += "analysis.finished.data.files.datacheck={0}\n".format(ana_dict['FILES_DATACHECK'])
-
-    elif options.tel_id == 'ST':
-        pass
-        # FIXME: add the corresponding content
+        content += f"analysis.finished.data.files.dl1={ana_dict['FILES_DL1']}\n"
+        content += f"analysis.finished.data.files.dl2={ana_dict['FILES_DL2']}\n"
+        content += f"analysis.finished.data.files.muons={ana_dict['FILES_MUON']}\n"
+        content += f"analysis.finished.data.files.datacheck={ana_dict['FILES_DATACHECK']}\n"
 
     if options.reason is not None:
-        content += "analysis.finished.data.comment={}.\n".format(ana_dict['COMMENTS'])
+        content += f"analysis.finished.data.comment={ana_dict['COMMENTS']}.\n"
 
     output(tag, content)
     return content
@@ -80,8 +77,8 @@ def finished_assignments(sequence_list):
     disk_space_GB = 0
     rawnum = 0
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
-        # FIXME: add all files 'PED', 'CALIB', 'DL1', 'DL2', 'MUONS', 'DATACHECK'
-        concept_set = ['DL1', 'DL2', 'MUONS', 'DATACHECK']
+        # FIXME: add all files 'PED', 'CALIB'?
+        concept_set = ['DL1', 'DL2', 'MUON', 'DATACHECK']
         rawdir = getrawdir()
         if sequence_list is not None:
             for s in sequence_list:
@@ -103,9 +100,6 @@ def finished_assignments(sequence_list):
 
     for concept in concept_set:
         pattern = f"{cfg.get('LSTOSA', concept + 'PREFIX')}*"
-        #if cfg.get('LSTOSA', concept + 'PATTERN'):
-        #    pattern += f"{cfg.get('LSTOSA', concept + 'PATTERN')}*"
-
         verbose(tag, f"Trying with {concept} and searching {pattern}")
         file_no[concept] = 0
         delete_set = set()
@@ -114,7 +108,7 @@ def finished_assignments(sequence_list):
             pattern_found = fnmatchcase(ana_file, pattern)
             # verbose(tag, "Was pattern {0} found in {1}?: {2}".format(pattern, ana_file, pattern_found))
             if pattern_found:
-                verbose(tag, "Was pattern {0} found in {1}?: {2}".format(pattern, ana_file, pattern_found))
+                verbose(tag, f"Was pattern {pattern} found in {ana_file}?: {pattern_found}")
                 file_no[concept] += 1
                 delete_set.add(a)
         ana_set -= delete_set
@@ -128,7 +122,7 @@ def finished_assignments(sequence_list):
         elif options.reason == 'weather':
             comment = "No data taking tonight due to bad weather"
 
-    now_string = "{0}".format(datetime.utcnow())
+    now_string = f"{datetime.utcnow()}"
 
     dictionary = {
         'NIGHT': options.date,
@@ -173,5 +167,5 @@ def history(run, program, inputfile, inputcard, rc, historyfile):
     import iofile
     now = datetime.utcnow()
     datestring = now.strftime("%a %b %d %X UTC %Y")  # Similar but not equal to %c (no timezone)
-    stringtowrite = "{0} {1} {2} {3} {4} {5}\n".format(run, program, datestring, inputfile, inputcard, rc)
+    stringtowrite = f"{run} {program} {datestring} {inputfile} {inputcard} {rc}\n"
     iofile.appendtofile(historyfile, stringtowrite)

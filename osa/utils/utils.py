@@ -48,6 +48,8 @@ def getnightdirectory():
     nightdir = lstdate_to_dir(options.date)
 
     if not options.prod_id:
+        import warnings
+        warnings.simplefilter(action='ignore', category=FutureWarning)
         from lstchain.version import get_version
         options.lstchain_version = 'v' + get_version()
         options.prod_id = options.lstchain_version + '_' + cfg.get('LST1', 'VERSION')
@@ -214,7 +216,7 @@ def getlockfile():
     from os.path import join
     from osa.configs.config import cfg
     basename = cfg.get('LSTOSA', 'ENDOFACTIVITYPREFIX') + cfg.get('LSTOSA', 'TEXTSUFFIX')
-    dir = join(cfg.get(options.tel_id, 'CLOSERDIR'), lstdate_to_dir(options.date))
+    dir = join(cfg.get(options.tel_id, 'CLOSERDIR'), lstdate_to_dir(options.date), options.prod_id)
     lockfile = join(dir, basename)
     verbose(tag, f"Lock file is {lockfile}")
     return lockfile
@@ -362,10 +364,11 @@ def get_md5sum_and_copy(inputf, outputf):
         return None
     else:
         try:
-            with open(inputf, 'rb') as f, open(outputf, 'w') as o:
+            with open(inputf, 'rb') as f, open(outputf, 'wb') as o:
                 block_size = 8192
                 for chunk in iter(lambda: f.read(128 * block_size), b''):
                     md5.update(chunk)
+                    # Got this error: write() argument must be str, not bytes
                     o.write(chunk)
         # except IOError as (ErrorValue, ErrorName):
         except IOError as ErrorValue:

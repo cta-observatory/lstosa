@@ -4,9 +4,8 @@ __all__ = [
     "closer", "is_day_closed", "use_night_summary",
     "is_raw_data_available", "is_sequencer_successful", "notify_sequencer_errors",
     "ask_for_closing", "notify_neither_data_nor_reason_given", "post_process",
-    "post_process_files", "set_closed_in_db", "set_closed_in_analysis_db",
-    "set_closed_in_summary_db", "set_closed_with_file", "is_finished_check",
-    "synchronize_remote", "setclosedfilename"
+    "post_process_files", "set_closed_with_file", "is_finished_check",
+    "setclosedfilename"
 ]
 
 
@@ -17,11 +16,10 @@ def closer():
     from osa.nightsummary.nightsummary import readnightsummary
     from osa.utils.utils import is_defined
 
-    """ Initiating report. """
-
+    # Initiating report
     start(tag)
 
-    """ Starting the algorithm. """
+    # Starting the algorithm
     if is_day_closed():
         # Exit
         error(tag, f"Night {options.date} already closed for {options.tel_id}", 1)
@@ -58,10 +56,8 @@ def closer():
                 notify_sequencer_errors()
                 ask_for_closing()
         else:
-            error(
-                tag,
-                "Never thought about this possibility, please check the code", 9
-            )
+            error(tag, "Never thought about this possibility, please check the code", 9)
+
         post_process(sequencer_tuple)
 
 
@@ -118,27 +114,28 @@ def is_raw_data_available():
 def is_sequencer_successful(seq_tuple):
     tag = gettag()
 
-    """ A strange way to check it.
-        TODO: implement a more reliable non-intrusive than is_finished_check.
-        """
-
+    # TODO: implement a more reliable non - intrusive than is_finished_check.
     answer = seq_tuple[0]
     return answer
 
 
 def notify_sequencer_errors():
+    """ A good notification helps the user on deciding to close it or not. """
     tag = gettag()
 
-    """ A good notification helps the user on deciding to close it or not. """
-
-    output(tag, "Sequencer did not complete or finish unsuccesfully")
+    output(tag, "Sequencer did not complete or finish unsuccessfully")
     pass
 
 
 def ask_for_closing():
-    tag = gettag()
+    """Ask to the user whether sequences should be closed or not.
+    A True (Y/y) closes, while False(N/n) answer stops the program.
 
-    """ A True (Y/y) closes, while False(N/n) answer stops the program. """
+    Returns
+    -------
+    object
+    """
+    tag = gettag()
 
     import sys
     answer = False
@@ -191,8 +188,6 @@ def post_process(seq_tuple):
     analysis_dict = finished_assignments(seq_list)
     analysis_text = finished_text(analysis_dict)
     post_process_files(seq_list)
-    # FIXME: interface with db
-    #set_closed_in_db(analysis_dict)
     if options.seqtoclose is None:
         is_closed = set_closed_with_file(analysis_text)
         return is_closed
@@ -200,15 +195,20 @@ def post_process(seq_tuple):
 
 
 def post_process_files(seq_list):
-    tag = gettag()
+    """Identify the different types of files, try to close the sequences
+    and copy output files to corresponding data directories.
 
-    """ The hard job of executing the last tasks for files. """
+    Parameters
+    ----------
+    seq_list: list of sequences
+    """
+    tag = gettag()
 
     from os.path import join, basename, exists, islink
     from os import unlink
     from filecmp import cmp
     from glob import glob
-    from re import search
+    import re
     from osa.configs.config import cfg
     from osa.veto.veto import createclosed
     from osa.utils.utils import lstdate_to_dir, make_directory
@@ -216,31 +216,30 @@ def post_process_files(seq_list):
 
     concept_set = []
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
-        #concept_set = ['PED', 'CALIB', 'TIMECALIB', 'DL1', 'DL2', 'MUONS', 'DATACHECK']
-        concept_set = ['DL1', 'DL2', 'MUONS', 'DATACHECK']
+        concept_set = ['DL1', 'DL2', 'MUON', 'DATACHECK']
     elif options.tel_id == 'ST':
         concept_set = []
 
-    middle_dir = lstdate_to_dir(options.date)
-    h5_files = glob(join(options.directory, f'*{cfg.get("LSTOSA", "H5SUFFIX")}'))
-    root_set = set(h5_files)
+    nightdir = lstdate_to_dir(options.date)
+    output_files = glob(join(options.directory, '*LST-1.*'))
+    output_files_set = set(output_files)
     pattern = None
     for concept in concept_set:
-        output(tag, "Processing {0} files, {1} files left".format(concept, len(root_set)))
+        output(tag, f"Processing {concept} files, {len(output_files_set)} files left")
         if cfg.get('LSTOSA', concept + 'PREFIX'):
             pattern = cfg.get('LSTOSA', concept + 'PREFIX')
         else:
             pattern = cfg.get('LSTOSA', concept + 'PATTERN')
 
-        dir = join(cfg.get(options.tel_id, concept + 'DIR'), middle_dir)
+        dir = join(cfg.get(options.tel_id, concept + 'DIR'), nightdir, options.prod_id)
         delete_set = set()
-        verbose(tag, "Checking if {0} files need to be moved to {1}".format(concept, dir))
-        for r in root_set:
+        verbose(tag, f"Checking if {concept} files need to be moved to {dir}")
+        for r in output_files_set:
             r_basename = basename(r)
-            pattern_found = search(pattern, r_basename)
+            pattern_found = re.search(f"^{pattern}", r_basename)
             verbose(tag, f"Was pattern {pattern} found in {r_basename} ?: {pattern_found}")
             if options.seqtoclose is not None:
-                seqtoclose_found = search(options.seqtoclose, r_basename)
+                seqtoclose_found = re.search(options.seqtoclose, r_basename)
                 verbose(
                     tag,
                     f"Was pattern {options.seqtoclose} found in {r_basename} ?: {seqtoclose_found}"
@@ -258,7 +257,7 @@ def post_process_files(seq_list):
                             if options.seqtoclose is None:
                                 verbose(tag, f"Deleting {r}")
                                 unlink(r)
-                        elif cmp(r, new_dst):
+                        elif exists(r) and cmp(r, new_dst):
                             # Delete
                             verbose(tag, f"Destination file exists and it is equal to {r}")
                             if options.seqtoclose is None:
@@ -270,97 +269,30 @@ def post_process_files(seq_list):
                                 f"Original file {r} is not a link or is different than destination {new_dst}"
                             )
                     else:
-                        verbose(tag, "Destination file {0} does not exists".format(new_dst))
+                        verbose(tag, f"Destination file {new_dst} does not exists")
                         for s in seq_list:
                             verbose(tag, "Looking for {0}".format(s))
-                            run_str_found = search(s.run_str, r_basename)
+                            run_str_found = re.search(s.run_str, r_basename)
                             if run_str_found is not None:
                                 # Register and delete
-                                verbose(tag, "Registering file {0}".format(run_str_found))
+                                verbose(tag, f"Registering file {run_str_found}")
                                 register_run_concept_files(s.run_str, concept)
                                 if options.seqtoclose is None:
-                                    unlink(r)
+                                    if exists(r):
+                                        unlink(r)
+                                    else:
+                                        verbose(tag, "File does not exists")
+
                                 setclosedfilename(s)
                                 createclosed(s.closed)
                                 break
                 delete_set.add(r)
-        root_set -= delete_set
-
-
-def set_closed_in_db(ana_dict):
-    tag = gettag()
-
-    """ Prepare the calls for the different tables. """
-
-    from osa.configs import config
-
-    servername = config.cfg.get('MYSQL', 'SERVER')
-    username = config.cfg.get('MYSQL', 'USER')
-    database = config.cfg.get('MYSQL', 'DATABASE')
-    if options.seqtoclose is None:
-        set_closed_in_analysis_db(servername, username, database, ana_dict)
-    # the next line triggers the transfer to PIC, if the day and telescope is
-    # closed in the summary database it will look into the storage database to
-    # get the the list of files.
-    set_closed_in_summary_db(servername, username, database, ana_dict)
-
-
-def set_closed_in_analysis_db(servername, username, database, ana_dict):
-    tag = gettag()
-
-    """ Insert the analysis key=value into the database. """
-
-    from os.path import exists, join
-    from osa.configs.config import cfg, read_properties
-    from mysql import insert_ignore_db
-
-    table = cfg.get('MYSQL', 'ANALYSISTABLE')
-    incidences_file = join(
-        options.directory,
-        cfg.get('LSTOSA', 'INCIDENCESPREFIX') + cfg.get('LSTOSA', 'TEXTSUFFIX')
-    )
-
-    assignments = dict()
-    assignments.update(ana_dict)
-
-    if exists(incidences_file):
-        """ Add the incidences file """
-        incidences_cfg = read_properties(incidences_file)
-        assignments['COMMENTS'] = incidences_cfg.get('DUMMY', 'COMMENTS')
-
-    del assignments['RAW_GB']
-    del assignments['FILES_RAW']
-    del assignments['END']
-
-    conditions = {}
-    insert_ignore_db(servername, username, database, table, assignments, conditions)
-
-
-def set_closed_in_summary_db(servername, username, database, ana_dict):
-    tag = gettag()
-
-    """ Insert the analysis key=value into the database. """
-
-    import config
-    from mysql import update_or_insert_and_select_id_db
-    table = config.cfg.get('MYSQL', 'SUMMARYTABLE')
-
-    conditions = {'ACTIVITY': 'OSA'}
-    for i in ['TELESCOPE', 'NIGHT']:
-        conditions[i] = ana_dict[i]
-    verbose(tag, "Analysis dictionary is {0}".format(ana_dict))
-    assignments = {
-        'IS_FINISHED': ana_dict['IS_CLOSED'],
-        'END': ana_dict['END']
-    }
-
-    update_or_insert_and_select_id_db(servername, username, database, table, assignments, conditions)
+        output_files_set -= delete_set
 
 
 def set_closed_with_file(ana_text):
-    tag = gettag()
-
     """ Write the analysis report to the closer file. """
+    tag = gettag()
 
     from osa.utils.utils import getlockfile, createlock
     closer_file = getlockfile()
@@ -368,11 +300,13 @@ def set_closed_with_file(ana_text):
     if not options.simulate:
         is_closed = createlock(closer_file, ana_text)
     else:
-        output(tag, "SIMULATE Creation of lock file {0}".format(closer_file))
+        output(tag, f"SIMULATE Creation of lock file {closer_file}")
 
-    """ The close file will be send to a remote monitor server """
+    # The close file will be send to a remote monitor server
     if is_closed:
-        synchronize_remote(closer_file)
+        # synchronize_remote(closer_file)
+        # FIXME: do we have to sync?
+        pass
 
     return is_closed
 
@@ -382,7 +316,7 @@ def is_finished_check(nightsum):
     from osa.rawcopy.raw import arerawfilestransferred
     from osa.nightsummary.extract import extractsubruns, extractruns, extractsequences
     from osa.jobs.job import arealljobscorrectlyfinished
-    # We ought to implement a method of successful or unsuccesful finishing
+    # We ought to implement a method of successful or unsuccessful finishing
     # and it is done looking at the files
     sequence_list = None
     sequence_success = False
@@ -392,17 +326,14 @@ def is_finished_check(nightsum):
         sequence_list = []
     else:
         # Building the sequences (the same way than the sequencer)
-        # if options.tel_id == "ST":
-        #    nightsum_lines = nightsum.split("\n")
-        #    lines = [ l for l in nightsum_lines if "CALIBRATION" not in l ]
-        #    nightsum = '\n'.join(lines)
         subrun_list = extractsubruns(nightsum)
         run_list = extractruns(subrun_list)
         sequence_list = extractsequences(run_list)
         # Adds the scripts to sequences
         # job.preparejobs(sequence_list, run_list, subrun_list)
+        # FIXME: How can we check that all files are there?
         if arerawfilestransferred():
-            verbose(tag, "Are files transferred? {0}".format(sequence_list))
+            verbose(tag, f"Are files transferred? {sequence_list}")
             if arealljobscorrectlyfinished(sequence_list):
                 sequence_success = True
             else:
@@ -416,32 +347,32 @@ def is_finished_check(nightsum):
     return [sequence_success, sequence_list]
 
 
-def synchronize_remote(lockfile):
-    tag = gettag()
-    from os.path import join
-    import subprocess
-    from osa.configs.config import cfg
-    user = cfg.get('REMOTE', 'STATISTICSUSER')
-    host = cfg.get('REMOTE', 'STATISTICSHOST')
-    remotedirectory = join(cfg.get('REMOTE', 'STATISTICSDIR'), options.tel_id)
-    remotebasename = options.date + cfg.get('REMOTE', 'STATISTICSSUFFIX')
-    remotepath = join(remotedirectory, remotebasename)
-    output(
-        tag,
-        f"Synchronizing {options.tel_id} {options.date} by copying lock file to {user}@{host}:{remotepath}"
-    )
-    commandargs = [
-        'scp', '-P', cfg.get('REMOTE', 'STATISTICSSSHPORT'),
-        lockfile, user + '@' + host + ':' + join(remotedirectory, remotebasename)
-    ]
-    try:
-        subprocess.call(commandargs)
-    # except OSError as (ValueError, NameError):
-    except OSError:
-        warning(
-            tag,
-            f"Could not copy securely with command: {stringify(commandargs)}, {OSError}"
-        )
+# def synchronize_remote(lockfile):
+#     tag = gettag()
+#     from os.path import join
+#     import subprocess
+#     from osa.configs.config import cfg
+#     user = cfg.get('REMOTE', 'STATISTICSUSER')
+#     host = cfg.get('REMOTE', 'STATISTICSHOST')
+#     remotedirectory = join(cfg.get('REMOTE', 'STATISTICSDIR'), options.tel_id)
+#     remotebasename = options.date + cfg.get('REMOTE', 'STATISTICSSUFFIX')
+#     remotepath = join(remotedirectory, remotebasename)
+#     output(
+#         tag,
+#         f"Synchronizing {options.tel_id} {options.date} by copying lock file to {user}@{host}:{remotepath}"
+#     )
+#     commandargs = [
+#         'scp', '-P', cfg.get('REMOTE', 'STATISTICSSSHPORT'),
+#         lockfile, user + '@' + host + ':' + join(remotedirectory, remotebasename)
+#     ]
+#     try:
+#         subprocess.call(commandargs)
+#     # except OSError as (ValueError, NameError):
+#     except OSError:
+#         warning(
+#             tag,
+#             f"Could not copy securely with command: {stringify(commandargs)}, {OSError}"
+#         )
 
 
 def setclosedfilename(s):

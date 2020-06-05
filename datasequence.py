@@ -158,20 +158,19 @@ def dl1_to_dl2(run_str, historyfile):
     configfile = cfg.get('LSTOSA', 'CONFIGFILE')
     rf_models_directory = cfg.get('LSTOSA', 'RF-MODELS-DIR')
     lstchaincommand = cfg.get('LSTOSA', 'DL1-DL2')
-    nightdir = lstdate_to_dir(options.date)
+    # nightdir = lstdate_to_dir(options.date)
     fullcommand = lstchaincommand
     datafile = join(
-        cfg.get('LST1', 'ANALYSISDIR'),
-        nightdir, options.prod_id,
+        options.directory,
         f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}'
     )
 
-    dl2_directory = join(cfg.get('LST1', 'DL2DIR'), nightdir, options.prod_id)
+    # dl2_directory = join(cfg.get('LST1', 'DL2DIR'), nightdir, options.prod_id)
 
     commandargs = [
         fullcommand,
         '--input-file', datafile,
-        '--output-dir', dl2_directory,
+        '--output-dir', options.directory,
         '--path-models', rf_models_directory,
         '--config', configfile
     ]
