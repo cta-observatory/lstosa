@@ -1,7 +1,7 @@
 from osa.utils import options
 from osa.utils.standardhandle import output, verbose, gettag
 
-__all__ = ["history", "start", "rule"]
+__all__ = ["history", "start", "rule", "finished_assignments", "finished_text"]
 
 
 def start(parent_tag):
