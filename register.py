@@ -20,11 +20,10 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
     from filecmp import cmp
     from glob import glob
     import re
+    import shutil
     from socket import gethostname
     from datetime import datetime
-    from osa.utils.utils import get_md5sum_and_copy, lstdate_to_iso
-    # from mysql import select_db, update_or_insert_and_select_id_db
-    from osa.configs.config import cfg
+
 
     file_list = glob(join(inputdir, f"{prefix}*{run_str}*{suffix}"))
     verbose(tag, "File list is {0}".format(file_list))
@@ -44,9 +43,11 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
             verbose(tag, "Destination file {0} exists and it is identical to input".format(outputf))
         else:
             # There is no output file or it is different
-            verbose(tag, "Copying file {0}".format(outputf))
-            md5sum = get_md5sum_and_copy(inputf, outputf)
-            verbose(tag, "Resulting md5sum={0}".format(md5sum))
+            verbose(tag, "Moving file {0}".format(outputf))
+            shutil.move(inputf, outputf)
+            # For the moment we are not interested in calculating the hash md5
+            # md5sum = get_md5sum_and_copy(inputf, outputf)
+            # verbose(tag, "Resulting md5sum={0}".format(md5sum))
             mtime = datetime.fromtimestamp(getmtime(outputf))
             size = getsize(outputf)
 
