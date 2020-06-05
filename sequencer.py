@@ -1,6 +1,6 @@
 import os
 
-from osa.autocloser.closer import is_day_closed
+from closer import is_day_closed
 from osa.jobs import job
 from osa.nightsummary import extract
 from osa.nightsummary.nightsummary import readnightsummary
