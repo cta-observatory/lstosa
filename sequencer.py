@@ -1,7 +1,5 @@
 import os
-from shutil import copy
 
-import dot
 from osa.autocloser.closer import is_day_closed
 from osa.jobs import job
 from osa.nightsummary import extract
@@ -50,8 +48,6 @@ def single_process(telescope, process_mode):
     sequence_list : 
     """
     tag = gettag()
-
-    from osa.configs import config
 
     sequence_list = []
 
