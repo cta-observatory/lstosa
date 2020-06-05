@@ -368,7 +368,8 @@ def get_md5sum_and_copy(inputf, outputf):
                 block_size = 8192
                 for chunk in iter(lambda: f.read(128 * block_size), b''):
                     md5.update(chunk)
-                    o.write(chunk)
+                    # Got this error: write() argument must be str, not bytes
+                    o.write(chunk.decode('utf-8'))
         # except IOError as (ErrorValue, ErrorName):
         except IOError as ErrorValue:
             error(tag, f"{ErrorValue}")
