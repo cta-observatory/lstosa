@@ -2,7 +2,7 @@
 
 from subprocess import call, check_output
 import xml.dom.minidom
-import xmlhandle
+from dev import xmlhandle
 import sys
 
 """ Read the argument """
