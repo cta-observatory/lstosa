@@ -253,7 +253,7 @@ def createjobtemplate(s, get_content=False):
     tag = gettag()
 
     import os
-    from dev import iofile
+    from osa.utils import iofile
     from osa.configs import config
     from osa.utils.utils import lstdate_to_dir
 
