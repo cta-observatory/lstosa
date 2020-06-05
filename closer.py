@@ -195,15 +195,20 @@ def post_process(seq_tuple):
 
 
 def post_process_files(seq_list):
-    tag = gettag()
+    """Identify the different types of files, try to close the sequences
+    and copy output files to corresponding data directories.
 
-    """ The hard job of executing the last tasks for files. """
+    Parameters
+    ----------
+    seq_list: list of sequences
+    """
+    tag = gettag()
 
     from os.path import join, basename, exists, islink
     from os import unlink
     from filecmp import cmp
     from glob import glob
-    from re import search
+    import re
     from osa.configs.config import cfg
     from osa.veto.veto import createclosed
     from osa.utils.utils import lstdate_to_dir, make_directory
@@ -211,31 +216,30 @@ def post_process_files(seq_list):
 
     concept_set = []
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
-        #concept_set = ['PED', 'CALIB', 'TIMECALIB', 'DL1', 'DL2', 'MUONS', 'DATACHECK']
         concept_set = ['DL1', 'DL2', 'MUON', 'DATACHECK']
     elif options.tel_id == 'ST':
         concept_set = []
 
-    middle_dir = lstdate_to_dir(options.date)
-    h5_files = glob(join(options.directory, f'*{cfg.get("LSTOSA", "H5SUFFIX")}'))
-    root_set = set(h5_files)
+    nightdir = lstdate_to_dir(options.date)
+    output_files = glob(join(options.directory, '*LST-1.*'))
+    output_files_set = set(output_files)
     pattern = None
     for concept in concept_set:
-        output(tag, f"Processing {concept} files, {len(root_set)} files left")
+        output(tag, f"Processing {concept} files, {len(output_files_set)} files left")
         if cfg.get('LSTOSA', concept + 'PREFIX'):
             pattern = cfg.get('LSTOSA', concept + 'PREFIX')
         else:
             pattern = cfg.get('LSTOSA', concept + 'PATTERN')
 
-        dir = join(cfg.get(options.tel_id, concept + 'DIR'), middle_dir)
+        dir = join(cfg.get(options.tel_id, concept + 'DIR'), nightdir, options.prod_id)
         delete_set = set()
         verbose(tag, f"Checking if {concept} files need to be moved to {dir}")
-        for r in root_set:
+        for r in output_files_set:
             r_basename = basename(r)
-            pattern_found = search(pattern, r_basename)
+            pattern_found = re.search(f"^{pattern}", r_basename)
             verbose(tag, f"Was pattern {pattern} found in {r_basename} ?: {pattern_found}")
             if options.seqtoclose is not None:
-                seqtoclose_found = search(options.seqtoclose, r_basename)
+                seqtoclose_found = re.search(options.seqtoclose, r_basename)
                 verbose(
                     tag,
                     f"Was pattern {options.seqtoclose} found in {r_basename} ?: {seqtoclose_found}"
@@ -268,7 +272,7 @@ def post_process_files(seq_list):
                         verbose(tag, f"Destination file {new_dst} does not exists")
                         for s in seq_list:
                             verbose(tag, "Looking for {0}".format(s))
-                            run_str_found = search(s.run_str, r_basename)
+                            run_str_found = re.search(s.run_str, r_basename)
                             if run_str_found is not None:
                                 # Register and delete
                                 verbose(tag, f"Registering file {run_str_found}")
@@ -279,13 +283,12 @@ def post_process_files(seq_list):
                                 createclosed(s.closed)
                                 break
                 delete_set.add(r)
-        root_set -= delete_set
+        output_files_set -= delete_set
 
 
 def set_closed_with_file(ana_text):
-    tag = gettag()
-
     """ Write the analysis report to the closer file. """
+    tag = gettag()
 
     from osa.utils.utils import getlockfile, createlock
     closer_file = getlockfile()
@@ -295,9 +298,11 @@ def set_closed_with_file(ana_text):
     else:
         output(tag, f"SIMULATE Creation of lock file {closer_file}")
 
-    # """ The close file will be send to a remote monitor server """
-    # if is_closed:
-    #     synchronize_remote(closer_file)
+    # The close file will be send to a remote monitor server
+    if is_closed:
+        # synchronize_remote(closer_file)
+        # FIXME: do we have to sync?
+        pass
 
     return is_closed
 
@@ -307,7 +312,7 @@ def is_finished_check(nightsum):
     from osa.rawcopy.raw import arerawfilestransferred
     from osa.nightsummary.extract import extractsubruns, extractruns, extractsequences
     from osa.jobs.job import arealljobscorrectlyfinished
-    # We ought to implement a method of successful or unsuccesful finishing
+    # We ought to implement a method of successful or unsuccessful finishing
     # and it is done looking at the files
     sequence_list = None
     sequence_success = False
