@@ -257,7 +257,7 @@ def post_process_files(seq_list):
                             if options.seqtoclose is None:
                                 verbose(tag, f"Deleting {r}")
                                 unlink(r)
-                        elif cmp(r, new_dst):
+                        elif exists(r) and cmp(r, new_dst):
                             # Delete
                             verbose(tag, f"Destination file exists and it is equal to {r}")
                             if options.seqtoclose is None:
