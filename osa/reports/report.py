@@ -1,4 +1,4 @@
-from osa.utils import options
+from osa.utils import options, iofile
 from osa.utils.standardhandle import output, verbose, gettag
 
 __all__ = ["history", "start", "rule", "finished_assignments", "finished_text"]
@@ -164,7 +164,6 @@ def history(run, program, inputfile, inputcard, rc, historyfile):
     """
     tag = gettag()
     from datetime import datetime
-    import iofile
     now = datetime.utcnow()
     datestring = now.strftime("%a %b %d %X UTC %Y")  # Similar but not equal to %c (no timezone)
     stringtowrite = f"{run} {program} {datestring} {inputfile} {inputcard} {rc}\n"

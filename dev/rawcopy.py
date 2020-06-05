@@ -6,9 +6,9 @@
 # Copyright 2012 Alejandro Lorca <alejandro.lorca@fis.ucm.es>
 #
 ##############################################################################
-from standardhandle import output, verbose, warning, error, errornonfatal,\
-    stringify, gettag
-from mail import send_email
+from standardhandle import output, verbose, warning, error, errornonfatal, \
+    gettag
+from dev.mail import send_email
 
 __all__ = ["raw_copy", "is_activity_over", "Pool", "MountPool"]
 
@@ -87,9 +87,7 @@ def is_activity_locked(flag_file):
 
     """ Get the name and check for the existence of the lock file. """
 
-    from os.path import join, exists, isfile
-    from config import cfg
-    from utils import magicdate_to_dir
+    from os.path import exists, isfile
 
     verbose(tag, "Lock file {0}".format(flag_file))
     if exists(flag_file) and isfile(flag_file):
@@ -107,9 +105,6 @@ def should_remove_lock(flag_file):
     """ Get the path to the log file and check if we should remove the lock. """
 
     from os import environ
-    from os.path import join, exists, isfile
-    from config import cfg
-    from utils import magicdate_to_dir
 
     try:
         log_file_path = environ['outfile']
@@ -335,7 +330,6 @@ def is_nighttime_over(offset):
         over and we should exit the activity anyway. """
 
     from datetime import datetime, timedelta
-    from time import mktime
     from utils import get_night_limit_timestamp
     now = datetime.utcnow()
     verbose(tag, "Now is {0}".format(now))
@@ -364,7 +358,6 @@ def mount_or_unmount(action, fsystem, wait_remount):
     import subprocess
     from datetime import datetime
     from time import sleep
-    from config import cfg
     commandargs = [action, fsystem]
     t_start = None 
     try:
@@ -442,8 +435,7 @@ def set_summary_start(activity, start_string):
 
     """ Set into the database the DAQ starting time according to xml meta """
 
-    from mysql import select_db, select_appendix_db,\
-     update_or_insert_and_select_id_db
+    from dev.mysql import select_db, update_or_insert_and_select_id_db
     from config import cfg
     from utils import magicdate_to_iso
     server = cfg.get('MYSQL', 'server')
@@ -514,7 +506,7 @@ def calculate_md5sum(file):
 ##############################################################################
 def create_md5sum_inverse_dict(file):
     tag = gettag()
-    from iofile import readfromfile
+    from osa.utils.iofile import readfromfile
     content = readfromfile(file)
     md5sum_dict = {}
     if content:
@@ -529,7 +521,7 @@ def create_md5sum_inverse_dict(file):
 ##############################################################################
 def update_md5sums(hash, file, md5sums_file):
     tag = gettag()
-    from iofile import writetofile, appendtofile, sedsi
+    from osa.utils.iofile import writetofile, appendtofile, sedsi
     from os.path import exists
     """ Similar to md5sum file >> md5sums_file with update option """
     string = "{0}  {1}\n".format(hash, file)
@@ -555,7 +547,7 @@ def update_summary_db():
     """ Populate the MySQL database with updated info"""
 
     from datetime import datetime
-    from mysql import update_ignore_db
+    from dev.mysql import update_ignore_db
     from utils import magicdate_to_iso
     from config import cfg
     server = cfg.get('MYSQL', 'server')
@@ -580,7 +572,7 @@ def insert_storage_db(daq_id, report_id, tel_id, night, hostname,\
     tag = gettag()
 
     """ Fill the MySQL table """
-    from mysql import insert_ignore_db
+    from dev.mysql import insert_ignore_db
     from config import cfg
     from utils import magicdate_to_iso
     # This is always a disaster, convert into a proper date format
@@ -605,7 +597,7 @@ def insert_copy_db(daq_id, report_id, hostname, original_path, m_time, size,\
 
     """ """
     from config import cfg
-    from mysql import insert_ignore_db
+    from dev.mysql import insert_ignore_db
     # Constructing the mysql column assignments
     server = cfg.get('MYSQL', 'server')
     user = cfg.get('MYSQL', 'user')
@@ -745,9 +737,7 @@ class Pool(object):
         """ This method extract the info about the File objects
             and fill up the list and set of accepted and discarded """
         from glob import glob
-        from os.path import join, exists, basename
-        from re import match
-        from datetime import datetime
+        from os.path import join
         from config import cfg
 
         raw_suffix = cfg.get('COPY', 'rawsuffix')
@@ -824,7 +814,7 @@ class MountPool(Pool):
 
         """ Initialization routine """
         super(MountPool, self).__init__(path)
-        from os.path import exists, isdir, ismount
+        from os.path import ismount
         from datetime import datetime
         self.fsystem = fsystem
         self.wait_remount = wait_remount
@@ -1001,7 +991,7 @@ class MagicFile(File):
     def interact_with_db_generic(self, assignments, conditions):
         tag = gettag()
         from config import cfg
-        from mysql import update_or_insert_and_select_id_db
+        from dev.mysql import update_or_insert_and_select_id_db
         server = cfg.get('MYSQL', 'server')
         user = cfg.get('MYSQL', 'user')
         database = cfg.get('MYSQL', 'database')
@@ -1020,7 +1010,6 @@ class MagicFile(File):
 class MetaFile(MagicFile):
     def __init__(self, w):
         tag = gettag()
-        from os.path import isfile
         from config import cfg
         super(MetaFile, self).__init__(w)
         self.type = cfg.get('COPY', 'metafiletype')
@@ -1148,7 +1137,6 @@ class ReportFile(MagicFile):
 ##############################################################################
     def interact_with_db(self, block):
         tag = gettag()
-        from config import cfg
         from utils import magicdate_to_iso
         from socket import gethostname
         from copy import copy
@@ -1438,7 +1426,6 @@ class FileBlock(object):
 def interpool_match(meta_pool, report_pool, raw_pool, compress_pool):
     tag = gettag()
     """ This function tries to match the objects according to naming """
-    from os.path import basename
     from config import cfg
     meta_suffix = cfg.get('COPY', 'metasuffix')
     report_suffix = cfg.get('COPY', 'reportsuffix')
@@ -1511,7 +1498,7 @@ def interpool_missing_summary(meta_pool, report_pool, raw_pool, compress_pool):
     from os.path import join
     from config import cfg
     from utils import magicdate_to_iso
-    from iofile import writetofile
+    from osa.utils.iofile import writetofile
 
     output_prefix = cfg.get('OUTPUT', 'orphanprefix')
     output_suffix = cfg.get('OUTPUT', 'textsuffix')

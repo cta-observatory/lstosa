@@ -11,7 +11,7 @@
 #   S. Pardo <spardo@gae.ucm.es>, K. Satalecka <satalk@gae.ucm.es>
 #
 ##############################################################################
-from standardhandle import output, verbose, warning, error, stringify, gettag
+from osa.utils.standardhandle import verbose, error, stringify, gettag
 
 __all__ = ["stereosequence"]
 ##############################################################################
@@ -61,10 +61,8 @@ def superstar(run_str, history_file):
 #  superstar -f -b -q --config=superstar.rc --ind1=m1_dir\20*.root --ind2=m2.dir\20*.root --out=./ --log=superstar.log
     """ Wrapper for running superstar with specific config elements """
     import sys
-    from os.path import join, dirname
-    from glob import glob
-    from config import cfg 
-    from register import register_run_concept_files
+    from os.path import join
+    from config import cfg
     from utils import magicdate_to_dir
     night_subdir = magicdate_to_dir(options.date)
     mars_dir = cfg.get('LSTOSA', 'MARSDIR')
@@ -106,11 +104,9 @@ def superstar_specific(full_mars_command, input_card, run_str, star_ind_LST1,\
  star_ind_M2, output_basename, history_file):
     tag = gettag()
     import subprocess
-    from os.path import join, basename, exists
+    from os.path import basename
     from os import remove
     from glob import glob
-    import datetime
-    import iofile
     import report
     from utils import is_empty_root_file
     commandargs = [full_mars_command]
@@ -171,10 +167,8 @@ def melibea(run_str, history_file):
 #    -erec --etab=Energy_Table.root 
     """ Wrapper for running melibea with specific config elements """
     import sys
-    from os.path import join, dirname
-    from glob import glob
-    from config import cfg 
-    from register import register_run_concept_files
+    from os.path import join
+    from config import cfg
     from utils import magicdate_to_dir
     night_subdir = magicdate_to_dir(options.date)
     mars_dir = cfg.get('LSTOSA', 'MARSDIR')
@@ -240,10 +234,8 @@ def melibea_specific(full_mars_command, input_card, run_str, ind, out,\
 #    -erec --etab=Energy_Table.root
 
     import subprocess
-    from os.path import join, basename, exists
+    from os.path import basename
     from glob import glob
-    import datetime
-    import iofile
     import report
     commandargs = [full_mars_command]
     commandargs.append('-f')
@@ -302,11 +294,9 @@ def odie(run_str, history_file):
 #   --ind=path/file(s) Path where to search for the melibea data files (wildcards allowed)
 #   --outname=name     Name of the output container
     """ Wrapper for running odie with specific config elements """
-    import sys
-    from os.path import join, dirname
+    from os.path import join
     from glob import glob
-    from config import cfg 
-    from register import register_run_concept_files
+    from config import cfg
     from utils import magicdate_to_dir
     from utils import magicdate_to_number
     night_subdir = magicdate_to_dir(options.date)
@@ -372,10 +362,8 @@ def odie_specific(full_mars_command, input_card, run_str, ind, out,\
 #   --outname=name     Name of the output container
 
     import subprocess
-    from os.path import join, basename, exists
+    from os.path import basename
     from glob import glob
-    import datetime
-    import iofile
     import report
     energy_band="LE"
     commandargs = [full_mars_command]

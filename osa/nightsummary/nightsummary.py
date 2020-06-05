@@ -1,4 +1,4 @@
-from osa.utils import options
+from osa.utils import options, iofile
 from osa.utils.standardhandle import verbose, error, stringify, gettag
 
 __all__ = ["buildexternal", "build", "readnightsummary", "getnightsummaryfile"]
@@ -65,7 +65,6 @@ def readnightsummary():
     tag = gettag()
     # At the moment we profit from the output of the nightsummary script
     from os.path import exists, isfile
-    import iofile
     from osa.configs import config
     from osa.rawcopy import raw
     nightsumfile = getnightsummaryfile()

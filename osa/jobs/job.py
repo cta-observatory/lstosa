@@ -1,5 +1,5 @@
-from osa.utils import options
-from osa.utils.standardhandle import verbose, warning, error, stringify, output, gettag
+from osa.utils import options, iofile
+from osa.utils.standardhandle import verbose, warning, error, stringify, gettag
 
 
 def arealljobscorrectlyfinished(seqlist):
@@ -21,7 +21,7 @@ def historylevel(historyfile, type):
     the rc of the last executable given a certain history file
     """
     tag = gettag()
-    from iofile import readfromfile
+    from osa.utils.iofile import readfromfile
     from os.path import exists
     from osa.configs.config import cfg
     level = 3
@@ -110,7 +110,6 @@ def setrunfromparent(sequence_list):
 def createsequencetxt(s, sequence_list):
     tag = gettag()
     from os.path import join
-    import iofile
     from osa.configs.config import cfg
     text_suffix = cfg.get('LSTOSA', 'TEXTSUFFIX')
     f = join(options.directory, f"sequence_{s.jobname}{text_suffix}")
@@ -228,7 +227,6 @@ def guesscorrectinputcard(s):
     # FIXME: implement a way of selecting Nov cfg file
     """
 
-    from os.path import join
     from osa.configs import config
 
     bindir = config.cfg.get('LSTOSA', 'PYTHONDIR')
@@ -255,7 +253,7 @@ def createjobtemplate(s, get_content=False):
     tag = gettag()
 
     import os
-    import iofile
+    from osa.utils import iofile
     from osa.configs import config
     from osa.utils.utils import lstdate_to_dir
 
@@ -464,7 +462,7 @@ def getqueuejoblist(sequence_list):
         # verbose(key, "qstat -x gives the folloging output\n{0}".format(xml).rstrip())
         if len(xmloutput) != 0:
             import xml.dom.minidom
-            import xmlhandle
+            from dev import xmlhandle
             document = xml.dom.minidom.parseString(xmloutput)
             queue_list = xmlhandle.xmlhandleData(document)
             setqueuevalues(queue_list, sequence_list)
