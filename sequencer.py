@@ -92,6 +92,7 @@ def single_process(telescope, process_mode):
     veto_list = veto.getvetolist(sequence_list)
     closed_list = veto.getclosedlist(sequence_list)
     updatelstchainstatus(sequence_list)
+    # updatesequencedb(sequence_list)
     # actually, submitjobs does not need the queue_list nor veto_list
     # job_list = job.submitjobs(sequence_list, queue_list, veto_list)
 
@@ -99,11 +100,14 @@ def single_process(telescope, process_mode):
 
     # Report
     if is_report_needed:
+        # insert_if_new_activity_db(sequence_list)
+        # updatesequencedb(sequence_list)
+        # rule()
         reportsequences(sequence_list)
 
-#    # Cleaning
-#    options.directory = None
-#    options.simulate = simulate_save
+    # Cleaning
+    # options.directory = None
+    # options.simulate = simulate_save
 
     return sequence_list
 
@@ -205,6 +209,117 @@ def reportsequences(seqlist):
         matrix.append(row_list)
     padding = int(config.cfg.get('OUTPUT', 'PADDING'))
     prettyoutputmatrix(matrix, padding)
+
+
+# def insert_if_new_activity_db(sequence_list):
+#     tag = gettag()
+#     from osa.configs import config
+#     from datetime import datetime
+#     from mysql import insert_db, select_db
+#
+#     server = config.cfg.get('MYSQL', 'SERVER')
+#     user = config.cfg.get('MYSQL', 'USER')
+#     database = config.cfg.get('MYSQL', 'DATABASE')
+#     table = config.cfg.get('MYSQL', 'SUMMARYTABLE')
+#
+#     if len(sequence_list) != 0:
+#         """ Declare the beginning of OSA activity """
+#         start = datetime.now()
+#         selections = ['ID']
+#         conditions = {
+#             'NIGHT': options.date,
+#             'TELESCOPE': options.tel_id,
+#             'ACTIVITY': 'LSTOSA'
+#         }
+#         matrix = select_db(server, user, database, table, selections, conditions)
+#         id = None
+#         if matrix:
+#             id = matrix[0][0]
+#         if id and int(id) > 0:
+#             """ Activity already started """
+#         else:
+#             """ Insert it into the database """
+#             assignments = conditions
+#             assignments['IS_FINISHED'] = 0
+#             assignments['START'] = start
+#             assignments['END'] = None
+#             conditions = {}
+#             insert_db(server, user, database, table, assignments, conditions)
+#
+#
+# def updatesequencedb(seqlist):
+#     tag = gettag()
+#     from osa.configs import config
+#     from mysql import update_db, insert_db, select_db
+#
+#     server = config.cfg.get('MYSQL', 'SERVER')
+#     user = config.cfg.get('MYSQL', 'USER')
+#     database = config.cfg.get('MYSQL', 'DATABASE')
+#     table = config.cfg.get('MYSQL', 'SEQUENCETABLE')
+#     for s in seqlist:
+#         """ Fine tuning """
+#         hostname = None
+#         id_processor = None
+#         if s.jobhost is not None:
+#             hostname, id_processor = s.jobhost.split('/')
+#         """ Select ID if exists """
+#         selections = ['ID']
+#         conditions = {
+#             'TELESCOPE': s.telescope,
+#             'NIGHT': s.night,
+#             'ID_NIGHTLY': s.seq
+#         }
+#         matrix = select_db(server, user, database, table, selections, conditions)
+#         id = None
+#         if matrix:
+#             id = matrix[0][0]
+#         verbose(tag, f"To this sequence corresponds an entry in the {table} with ID {id}")
+#         assignments = {
+#             'TELESCOPE': s.telescope,
+#             'NIGHT': s.night,
+#             'ID_NIGHTLY': s.seq,
+#             'TYPE': s.type,
+#             'RUN': s.run,
+#             'SUBRUNS': s.subruns,
+#             'SOURCEWOBBLE': s.sourcewobble,
+#             'ACTION': s.action,
+#             'TRIES': s.tries,
+#             'JOBID': s.jobid,
+#             'STATE': s.state,
+#             'HOSTNAME': hostname,
+#             'ID_PROCESSOR': id_processor,
+#             'CPU_TIME': s.cputime,
+#             'WALL_TIME': s.walltime,
+#             'EXIT_STATUS': s.exit,
+#         }
+#
+#         if s.type == 'CALI':
+#             assignments.update({'PROGRESS_SCALIB': s.scalibstatus})
+#         elif s.type == 'DATA':
+#             # FIXME: translate to LST related stuff
+#             assignments.update({
+#                 'PROGRESS_SORCERER': s.sorcererstatus,
+#                 'PROGRESS_SSIGNAL': s.ssignalstatus,
+#                 'PROGRESS_MERPP': s.merppstatus,
+#                 'PROGRESS_STAR': s.starstatus,
+#                 'PROGRESS_STARHISTOGRAM': s.starhistogramstatus,
+#             })
+#         elif s.type == 'STEREO':
+#             assignments.update({
+#                 'PROGRESS_SUPERSTAR': s.superstarstatus,
+#                 'PROGRESS_SUPERSTARHISTOGRAM': s.superstarhistogramstatus,
+#                 'PROGRESS_MELIBEA': s.melibeastatus,
+#                 'PROGRESS_MELIBEAHISTOGRAM': s.melibeahistogramstatus,
+#             })
+#
+#         if s.parent is not None:
+#             assignments['ID_NIGHTLY_PARENTS'] = f'{s.parent},'
+#         if not id:
+#             conditions = {}
+#             insert_db(server, user, database, table, assignments, conditions)
+#         else:
+#             conditions = {'ID': id}
+#             update_db(server, user, database, table, assignments, conditions)
 
 
 def prettyoutputmatrix(m, paddingspace):
