@@ -278,7 +278,11 @@ def post_process_files(seq_list):
                                 verbose(tag, f"Registering file {run_str_found}")
                                 register_run_concept_files(s.run_str, concept)
                                 if options.seqtoclose is None:
-                                    unlink(r)
+                                    if exists(r):
+                                        unlink(r)
+                                    else:
+                                        verbose(tag, "File does not exists")
+
                                 setclosedfilename(s)
                                 createclosed(s.closed)
                                 break
