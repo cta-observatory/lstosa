@@ -216,7 +216,7 @@ def getlockfile():
     from os.path import join
     from osa.configs.config import cfg
     basename = cfg.get('LSTOSA', 'ENDOFACTIVITYPREFIX') + cfg.get('LSTOSA', 'TEXTSUFFIX')
-    dir = join(cfg.get(options.tel_id, 'CLOSERDIR'), lstdate_to_dir(options.date))
+    dir = join(cfg.get(options.tel_id, 'CLOSERDIR'), lstdate_to_dir(options.date), options.prod_id)
     lockfile = join(dir, basename)
     verbose(tag, f"Lock file is {lockfile}")
     return lockfile
