@@ -4,7 +4,7 @@ from osa.utils.standardhandle import warning, verbose, error, gettag
 
 def writeworkflow(sequence_list):
     tag = gettag()
-    from iofile import writetofile
+    from dev.iofile import writetofile
     from os.path import join, exists
     from osa.configs.config import cfg
     from osa.utils.utils import lstdate_to_number

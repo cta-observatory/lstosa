@@ -1,4 +1,4 @@
-from standardhandle import warning, error, gettag
+from osa.utils.standardhandle import warning, error, gettag
 
 def xmlhandleData(dom):
     tag = gettag()
@@ -16,7 +16,7 @@ def xmlhandleJobs(jobs):
 
 def xmlhandleJob(job):
     tag = gettag()
-    from xmlhandle import xmlhandlejobkey
+    from dev.xmlhandle import xmlhandlejobkey
 
     try:    
         name = xmlhandlejobkey(job.getElementsByTagName('Job_Name')[0])
