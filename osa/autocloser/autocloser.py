@@ -1,12 +1,9 @@
 import argparse
+import datetime
 import logging
 import os
-import subprocess
-import datetime
-import glob
-import smtplib
 import re
-from email.mime.text import MIMEText
+import subprocess
 
 __all__ = ["Telescope", "Sequence"]  # These members will appear in the docs
 
@@ -21,11 +18,7 @@ class MyFormatter(logging.Formatter):
         return logging.Formatter.format(self, record)
 
 
-##################################################
-#
 # Settings / Global variables
-#
-##################################################
 def valid_date(s):
     try:
         return datetime.datetime.strptime(s, "%Y_%m_%d")
@@ -58,6 +51,8 @@ def argument_parser():
                         help='Close without writing down incidences.')
     parser.add_argument('-r', '--runwise', action='store_true',
                         help='Close the day run-wise.')
+    parser.add_argument('--config-file', action='store_true',
+                        default='cfg/sequencer.cfg', help='OSA config file.')
     parser.add_argument('-l', '--log', default='', help='Write log to a file.')
     parser.add_argument('tel', nargs='*', default='LST1', choices=['LST1', 'LST2', 'ST'])
     return parser
@@ -155,10 +150,17 @@ if __name__ == "__main__":
 
 
 def analysis_path(tel):
+    from osa.configs.config import cfg
+    from osa.utils import options
+    from osa.utils.utils import lstdate_to_dir, make_directory
+
+    options.tel_id = tel
+    obsdate = '%.4i_%.2i_%.2i' % (year, month, day)
+    # FIXME: properly get sequencer.cfg file
+    nightdir = lstdate_to_dir(obsdate)
     if args.test:
         return './%s' % tel
-    return '/home/dmorcuende/software/lstdata/running_analysis/%.4i%.2i%.2i/v0.4.5.post477+git9c8662a_v00'\
-           % (year, month, day)
+    return nightdir
 
 
 def closedFlag(tel):
@@ -166,26 +168,6 @@ def closedFlag(tel):
         return './%s/NightFinished.txt' % tel
     return '/data/%s/OSA/Closer/%.4i/%.2i/%.2i/NightFinished.txt' \
            % (tel, year, month, day)
-
-
-# def reportsPath(tel):
-#     if args.test:
-#         return './%s' % tel
-#     return '/data/%s/OSA/CC/%.4i_%.2i_%.2i' % (tel, year, month, day)
-
-
-# def recRepMacro():
-#     if args.test:
-#         return '../RecoverReport/CreateReport.sh'
-#     return '/opt/OSA/RecoverReport/CreateReport.sh'
-
-
-# def ccReportFiles(tel):
-#     # For ST the information is taken from the M1 CC*.run file
-#     if args.test:
-#         return './%s/CC*.run' % (tel if tel != 'ST' else 'LST1')
-#     return '/data/%s/Reports/CC/%.4i_%.2i_%.2i/CC*.run' \
-#            % (tel if tel != 'ST' else 'LST1', year, month, day)
 
 
 def exampleSeq(tel):
@@ -204,11 +186,6 @@ def incidencesFileTmp(tel):
     return '%s/AutoCloser_Incidences_tmp.txt' % analysis_path(tel)
 
 
-##################################################
-#
-# Telescope class
-#
-##################################################
 class Telescope(object):
     """
 
@@ -297,8 +274,8 @@ class Telescope(object):
         if args.test:
             self.read_file()
         else:
-            seqArgs = ['python sequencer.py', '-s', '-d', '%.4i_%.2i_%.2i' % (year,
-                                                                    month, day), '%s' % self.telescope]
+            seqArgs = ['python', 'sequencer.py', '-s', '-d', '%.4i_%.2i_%.2i' %
+                       (year, month, day), '%s' % self.telescope]
             log.debug('Executing "%s"' % ' '.join(seqArgs))
             seqr = subprocess.Popen(seqArgs, stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT)
@@ -369,20 +346,13 @@ class Telescope(object):
         return True
 
 
-##################################################
-#
-# Sequence class
-#
-##################################################
-# As for now the keys for the 'dictSequence' are:
-#  (Stereo) Tel Seq Parent Type Run Subruns Source Wobble Action Tries JobID
-#           State Host CPU_time Walltime Exit _S_% _Q_% ODI%
-#  (Mono) Tel Seq Parent Type Run Subruns Source Wobble Action Tries JobID
-#         State Host CPU_time Walltime Exit _Y_% _D_% _I_%
-# When reading the CC*.run file, following keys are added:
-#  hv_settings test_run sumt Moon_filter
-# All the values in the 'dictSequence' are strings
 class Sequence(object):
+    """As for now the keys for the 'dictSequence' are:
+    (LST1) Tel Seq Parent Type Run Subruns Source Wobble Action Tries JobID
+    State Host CPU_time Walltime Exit  DL1% MUON% DATACHECK% DL2%
+
+    All the values in the 'dictSequence' are strings
+    """
 
     def __init__(self, keyLine, sequence):
         self.keyLine = keyLine
@@ -393,7 +363,6 @@ class Sequence(object):
         self.closed = False
 
         self.parse_sequence()
-        # self.readCCrun()
 
     def parse_sequence(self):
         log.debug('Parsing sequence')
@@ -533,12 +502,9 @@ class Sequence(object):
         log.debug('Check for corrected "error 222"')
         if self.dictSequence['Type'] == 'DATA' \
                 and self.dictSequence['Exit'] == '0' \
-                and int(self.dictSequence['_Y_%']) > 0 \
-                and int(self.dictSequence['_Y_%']) < 100 \
-                and int(self.dictSequence['_D_%']) > 0 \
-                and int(self.dictSequence['_D_%']) < 100 \
-                and int(self.dictSequence['_I_%']) > 0 \
-                and int(self.dictSequence['_I_%']) < 100 \
+                and 0 < int(self.dictSequence['_Y_%']) < 100 \
+                and 0 < int(self.dictSequence['_D_%']) < 100 \
+                and 0 < int(self.dictSequence['_I_%']) < 100 \
                 and self.dictSequence['State'] == 'C' \
                 and self.dictSequence['Run'] in run:
             return True
@@ -546,7 +512,6 @@ class Sequence(object):
 
     def is_error3(self):
         """SuperStar file is empty.
-
         This normally happens when there is few data
         """
         log.debug("Check for error 3")
@@ -661,42 +626,37 @@ class Sequence(object):
         return True
 
     # TODO This function is not used until now
-    def readCCrun(self):
-        log.debug('Reading and parsing CC*.run file for %s' %
-                  self.dictSequence['Tel'])
-        if not glob.glob(ccReportFiles(self.dictSequence['Tel'])):
-            log.warning('Could not find any CC*.run file for %s' %
-                        self.dictSequence['Tel'])
-            return False
-        foundCCrun = False
-        for ccRun in glob.glob(ccReportFiles(self.dictSequence['Tel'])):
-            with open(ccRun, 'r') as f:
-                for line in f:
-                    if line.split()[1] == self.dictSequence['Run']:
-                        ccDict = {'hv_settings': line.split()[hv_settings_pos],
-                                  'test_run': line.split()[test_run_pos],
-                                  'sumt': line.split()[sumt_pos],
-                                  'Moon_filter': line.split()[Moon_filter_pos]}
-                        self.dictSequence.update(ccDict)
-                        log.debug(self.dictSequence)
-                        foundCCrun = True
-                        break
-            if foundCCrun:
-                break
+    # def readCCrun(self):
+    #     log.debug('Reading and parsing CC*.run file for %s' %
+    #               self.dictSequence['Tel'])
+    #     if not glob.glob(ccReportFiles(self.dictSequence['Tel'])):
+    #         log.warning('Could not find any CC*.run file for %s' %
+    #                     self.dictSequence['Tel'])
+    #         return False
+    #     foundCCrun = False
+    #     for ccRun in glob.glob(ccReportFiles(self.dictSequence['Tel'])):
+    #         with open(ccRun, 'r') as f:
+    #             for line in f:
+    #                 if line.split()[1] == self.dictSequence['Run']:
+    #                     ccDict = {'hv_settings': line.split()[hv_settings_pos],
+    #                               'test_run': line.split()[test_run_pos],
+    #                               'sumt': line.split()[sumt_pos],
+    #                               'Moon_filter': line.split()[Moon_filter_pos]}
+    #                     self.dictSequence.update(ccDict)
+    #                     log.debug(self.dictSequence)
+    #                     foundCCrun = True
+    #                     break
+    #         if foundCCrun:
+    #             break
+    #
+    #     # if not foundCCrun:
+    #     #     log.warning('Could not find matching report line for run %s' %
+    #     #                 self.dictSequence['Run'])
+    #     #     return False
+    #     return True
 
-        if not foundCCrun:
-            log.warning('Could not find matching report line for run %s' %
-                        self.dictSequence['Run'])
-            return False
-        return True
 
-
-##################################################
-#
-# Incidence class
-#
-##################################################
-# The idea is that one adds the sequences to the incidencesDict.
+# Add the sequences to the incidencesDict.
 class Incidence(object):
 
     def __init__(self, telescope):
@@ -829,92 +789,86 @@ class Incidence(object):
         return
 
 
-##################################################
-#
-# Problem class
-#
-##################################################
 class Problem(object):
 
     def __init__(self, telescope):
         self.telescope = telescope
-        self.recoveredReports = ''
+        # self.recoveredReports = ''
 
-    def recoverReport(self, run):
-        self.recoveredReports = ''
-        log.debug('Recovering report files for %s, sequence %s' %
-                  (self.telescope, run))
+    # def recoverReport(self, run):
+    #     self.recoveredReports = ''
+    #     log.debug('Recovering report files for %s, sequence %s' %
+    #               (self.telescope, run))
+    #
+    #     fileList = [item for item in
+    #                 os.listdir('%s' % analysis_path(self.telescope))
+    #                 if all(i in item for i in ['%s' % run, '_Y_', '.root'])]
+    #     repsList = [item.replace('.rep', '.root').replace('_D_', '_Y_')
+    #                 for item in os.listdir('%s' % reportsPath(self.telescope))
+    #                 if (all(i in item for i in ['%s' % run, '_D_', '.rep']) and
+    #                     os.stat('%s/%s' % (reportsPath(self.telescope),
+    #                                        item)).st_size != 0)]
+    #     missingReps = [item for item in fileList if item not in repsList]
+    #     if not missingReps:
+    #         log.warning('Could not determine which report files are missing! '
+    #                     'Most likely the report was already recovered and you '
+    #                     'have to wait for the sequencer. If this warning '
+    #                     'persists there something seriously wrong!')
+    #         return False
 
-        fileList = [item for item in
-                    os.listdir('%s' % analysis_path(self.telescope))
-                    if all(i in item for i in ['%s' % run, '_Y_', '.root'])]
-        repsList = [item.replace('.rep', '.root').replace('_D_', '_Y_')
-                    for item in os.listdir('%s' % reportsPath(self.telescope))
-                    if (all(i in item for i in ['%s' % run, '_D_', '.rep']) and
-                        os.stat('%s/%s' % (reportsPath(self.telescope),
-                                           item)).st_size != 0)]
-        missingReps = [item for item in fileList if item not in repsList]
-        if not missingReps:
-            log.warning('Could not determine which report files are missing! '
-                        'Most likely the report was already recovered and you '
-                        'have to wait for the sequencer. If this warning '
-                        'persists there something seriously wrong!')
-            return False
-        log.debug('Subruns affected: %s' % missingReps)
+    # recoverFailure = False
+    # subrunList = []
+    # for subrun in missingReps:
+    #     if args.simulate:
+    #         subrunList.append(subrun[20:24])
+    #         continue
+    #     createReportArgs = ['timeout', '1200', 'bash',
+    #                         '%s' % recRepMacro(),
+    #                         '%s/%s' % (analysis_path(self.telescope),
+    #                                    subrun)]
+    #     log.debug('Executing "%s"' % ' '.join(createReportArgs))
+    #     createReport = subprocess.Popen(createReportArgs,
+    #                                     stdout=subprocess.PIPE,
+    #                                     stderr=subprocess.STDOUT)
+    #     stdout, stderr = createReport.communicate()
+    #     if createReport.returncode == 124:
+    #         log.warning('Time out, CreateReport.sh took longer than 20min')
+    #     if createReport.returncode != 0:
+    #         log.warning("Could not create missing report file for %s!\n"
+    #                     "         See below the output of the "
+    #                     "CreateReport.sh script:\n---\n%s---" %
+    #                     (subrun, stdout))
+    #         recoverFailure = True
+    #         continue
+    #     log.debug(stdout)
+    #     subrunList.append(subrun[20:24])
 
-        recoverFailure = False
-        subrunList = []
-        for subrun in missingReps:
-            if args.simulate:
-                subrunList.append(subrun[20:24])
-                continue
-            createReportArgs = ['timeout', '1200', 'bash',
-                                '%s' % recRepMacro(),
-                                '%s/%s' % (analysis_path(self.telescope),
-                                           subrun)]
-            log.debug('Executing "%s"' % ' '.join(createReportArgs))
-            createReport = subprocess.Popen(createReportArgs,
-                                            stdout=subprocess.PIPE,
-                                            stderr=subprocess.STDOUT)
-            stdout, stderr = createReport.communicate()
-            if createReport.returncode == 124:
-                log.warning('Time out, CreateReport.sh took longer than 20min')
-            if createReport.returncode != 0:
-                log.warning("Could not create missing report file for %s!\n"
-                            "         See below the output of the "
-                            "CreateReport.sh script:\n---\n%s---" %
-                            (subrun, stdout))
-                recoverFailure = True
-                continue
-            log.debug(stdout)
-            subrunList.append(subrun[20:24])
+    # if subrunList:
+    #     subrunList.sort()
+    #     self.recoveredReports = '%s(%s)' % (run, ', '.join(i for i in
+    #                                                        subrunList))
+    # if recoverFailure:
+    #     return False
+    # return True
 
-        if subrunList:
-            subrunList.sort()
-            self.recoveredReports = '%s(%s)' % (run, ', '.join(i for i in
-                                                               subrunList))
-        if recoverFailure:
-            return False
-        return True
-
-    def determineErrorWithApe(self, run):
-        log.debug("Running ape to determine error of run %s" % run)
-        starSummaryFile = '%s/star*%s*%s.root' % (analysis_path(self.telescope),
-                                                  run, self.telescope)
-        ape = subprocess.Popen('ape %s' % starSummaryFile, shell=True,
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = ape.communicate()
-        if ape.returncode != 1:
-            log.warning('Return code from ape is %i, should be 1.\n'
-                        'See output:\n' % ape.returncode + stdout)
-            return ''
-        if any([error for error in stdout.split(' ')
-                if error not in ['7', '17', '34', '2', '20'] and not
-            error == '\x1b[0m\n\x1b[0m']):
-            log.warning('Could not interpret "ape", see output:\n' + stdout)
-            return ''
-        log.debug('ape output:\n' + stdout)
-        return stdout
+    # def determineErrorWithApe(self, run):
+    #     log.debug("Running ape to determine error of run %s" % run)
+    #     starSummaryFile = '%s/star*%s*%s.root' % (analysis_path(self.telescope),
+    #                                               run, self.telescope)
+    #     ape = subprocess.Popen('ape %s' % starSummaryFile, shell=True,
+    #                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #     stdout, stderr = ape.communicate()
+    #     if ape.returncode != 1:
+    #         log.warning('Return code from ape is %i, should be 1.\n'
+    #                     'See output:\n' % ape.returncode + stdout)
+    #         return ''
+    #     if any([error for error in stdout.split(' ')
+    #             if error not in ['7', '17', '34', '2', '20'] and not
+    #         error == '\x1b[0m\n\x1b[0m']):
+    #         log.warning('Could not interpret "ape", see output:\n' + stdout)
+    #         return ''
+    #     log.debug('ape output:\n' + stdout)
+    #     return stdout
 
     # def is_too_few_star_events(self, run):
     #     log.debug("Check if too few events in star files")
@@ -937,31 +891,27 @@ class Problem(object):
     #             return False
     #     return True
 
-    def excludeLastSubrun(self):
-        # TO DO!
-        # read sequence_M*_*.txt
-        # read()[:-13] for leaving out the last subrun
-        # .seek(0) in order to return to the beginning of the file
-        # read()[-12:-1] for getting string of excluded subrun
-        return
 
-
-##################################################
-#
-# Functions
-#
-##################################################
-def is_nightTime():
-    if (hour >= 8 and hour <= 18):
+def is_night_time():
+    if 8 <= hour <= 18:
         return False
     log.error('It is dark outside...')
     return True
 
 
 def understand_mono_sequence(tel, seq):
-    # TODO (David) This should be implemented in a more general/consistent way:
-    # These are "issues" the sequencer solved by itself and we only want
-    # to note them down by checking the *.history file!
+    """These are "issues" the sequencer solved by itself and we only want
+    to note them down by checking the *.history file!
+
+    Parameters
+    ----------
+    tel
+    seq
+
+    Returns
+    -------
+
+    """
     if seq.is_error2noint():
         log.info("      Updating incidences: run calibrated w/o "
                  "interleaved ped/cal")
@@ -1124,7 +1074,8 @@ def check_for_output_files(path):
 
 
 if __name__ == '__main__':
-    # if is_nightTime():
+    from osa.utils import options, cliopts
+    # if is_night_time():
     #     exit(1)
 
     # Create Telescope, Sequence, Problem and Incidence objects
@@ -1200,18 +1151,4 @@ if __name__ == '__main__':
         elif not args.simulate:
             check_for_output_files(analysis_path(tel))
 
-    """
-    # There was a problem that some *.root files in ST were not copied!
-    # Trying to fix it like this...
-    # It seems to be fixed now, but i leave the code in case it is needed again
-    if 'ST' in args.tel and telescopes['LST1'].closed and \
-            telescopes['LST2'].closed and not telescopes['ST'].closed:
-        seqSTArgs = ['sequencer', '-d', '%.4i_%.2i_%.2i' % (year, month, day),
-                     '%s' % telescopes['ST'].telescope]
-        log.debug('Executing "%s"' % ' '.join(seqSTArgs))
-        seqrST = subprocess.Popen(seqSTArgs, stdout=subprocess.PIPE,
-                                  stderr=subprocess.STDOUT)
-        stdout, stderr = seqrST.communicate()
-        log.debug(stdout)
-    """
     log.info('Exit')
