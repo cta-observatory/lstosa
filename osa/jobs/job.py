@@ -292,7 +292,7 @@ def createjobtemplate(s, get_content=False):
     # commandargs.append('--stdout=sequence_{0}_'.format(s.jobname) + "{0}.out'" + ".format(str(job_id))")
     commandargs.append('-d')
     commandargs.append(options.date)
-    commandargs.append('--prod_id')
+    commandargs.append('--prod-id')
     commandargs.append(options.prod_id)
 
     if s.type == 'CALI':
