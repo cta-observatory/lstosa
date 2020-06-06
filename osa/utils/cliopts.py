@@ -1,42 +1,41 @@
-from optparse import OptionParser   # from version 2.3 to 2.7
 from argparse import ArgumentParser
-from . import standardhandle
+from optparse import OptionParser  # from version 2.3 to 2.7
+
 from . import options
-##############################################################################
-#
-# closercliparsing
-#
-##############################################################################
+from . import standardhandle
+
+
 def closer_argparser():
     tag = standardhandle.gettag()
     parser = ArgumentParser()
-    parser.add_argument("-c", "--config", action = "store", dest = "configfile", default = None,
-                      help = "use specific config file [default cfg/sequencer.cfg]")
-    parser.add_argument("-d", "--date", action = "store", type = str, dest = "date",
-                      help = "observation ending date YYYY_MM_DD [default today]")
-    parser.add_argument("-n", "--usenightsummary", action = "store_true", dest = "nightsum", default = False,
-                      help = "rely on existing nightsumary file")
-    parser.add_argument("-o", "--outputdir", action = "store", type = str, dest = "directory",
-                      help = "analysis output directory")
-    parser.add_argument("-r", "--reason", action = "store", type = str, dest = "reason",
-                      choices = ['moon', 'weather', 'other'],
-                      help = "reason for closing without data: (moon, weather, other)")
-    parser.add_argument("-s", "--simulate", action = "store_true", dest = "simulate", default = False,
-                      help = "do not run, just show what would happen")
-    parser.add_argument("-y", "--yes", action = "store_true", dest = "noninteractive", default = False,
-                      help = "assume yes to all questions")
-    parser.add_argument("-v", "--verbose", action = "store_true", dest = "verbose", default = False,
-                      help = "make lots of noise for debugging")
-    parser.add_argument("-w", "--warnings", action = "store_true", dest = "warning", default = False,
-                      help = "show useful warnings")
-    parser.add_argument("--stderr", action = "store", type = str, dest = "stderr",
-                      help = "file for standard error")
-    parser.add_argument("--stdout", action = "store", type = str, dest = "stdout",
-                      help = "file for standard output")
-    parser.add_argument("--seq", action = "store", type = str, dest = "seqtoclose",
-                      help="If you only want to close a certain sequence")
+    parser.add_argument("-c", "--config", action="store", dest="configfile", default=None,
+                        help="use specific config file [default cfg/sequencer.cfg]")
+    parser.add_argument("-d", "--date", action="store", type=str, dest="date",
+                        help="observation ending date YYYY_MM_DD [default today]")
+    parser.add_argument("-n", "--usenightsummary", action="store_true", dest="nightsum", default=False,
+                        help="rely on existing nightsumary file")
+    parser.add_argument("-o", "--outputdir", action="store", type=str, dest="directory",
+                        help="analysis output directory")
+    parser.add_argument("-r", "--reason", action="store", type=str, dest="reason",
+                        choices=['moon', 'weather', 'other'],
+                        help="reason for closing without data: (moon, weather, other)")
+    parser.add_argument("-s", "--simulate", action="store_true", dest="simulate", default=False,
+                        help="do not run, just show what would happen")
+    parser.add_argument("-y", "--yes", action="store_true", dest="noninteractive", default=False,
+                        help="assume yes to all questions")
+    parser.add_argument("-v", "--verbose", action="store_true", dest="verbose", default=False,
+                        help="make lots of noise for debugging")
+    parser.add_argument("-w", "--warnings", action="store_true", dest="warning", default=False,
+                        help="show useful warnings")
+    parser.add_argument("--stderr", action="store", type=str, dest="stderr",
+                        help="file for standard error")
+    parser.add_argument("--stdout", action="store", type=str, dest="stdout",
+                        help="file for standard output")
+    parser.add_argument("--seq", action="store", type=str, dest="seqtoclose",
+                        help="If you only want to close a certain sequence")
     parser.add_argument('tel_id', choices=['ST', 'LST1', 'LST2'])
     return parser
+
 
 def closercliparsing():
     tag = standardhandle.gettag()
@@ -71,32 +70,26 @@ def closercliparsing():
     options.nightsum = True
 
 
-##############################################################################
-#
-# pedestalsequencecliparsing
-#
-##############################################################################
 def pedestalsequencecliparsing(command):
     tag = standardhandle.gettag()
     message = "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <PED_RUN_ID>  <TEL_ID>"
-    parser = OptionParser(usage = message)
-    parser.add_option("-c", "--config", action = "store", dest = "configfile", default = None,
-                      help = "use specific config file [default cfg/sequencer.cfg]")
-    parser.add_option("-d", "--date", action = "store", type = "string", dest = "date",
-                      help = "observation ending date YYYY_MM_DD [default today]")
-    parser.add_option("-o", "--outputdir", action = "store", type = "string", dest = "directory",
-                      help = "write files to output directory")
-    parser.add_option("-v", "--verbose", action = "store_true", dest = "verbose", default = False,
-                      help = "make lots of noise for debugging")
-    parser.add_option("-w", "--warnings", action = "store_true", dest = "warning", default = False,
-                      help = "show useful warnings")
-    parser.add_option("-z", "--rawzip", action = "store_true", dest = "compressed", default = False,
-                      help = "Use input as compressed raw.gz files")
-    parser.add_option("--stderr", action = "store", type = "string", dest = "stderr",
-                      help = "file for standard error")
-    parser.add_option("--stdout", action = "store", type = "string", dest = "stdout",
-                      help = "file for standard output")
-
+    parser = OptionParser(usage=message)
+    parser.add_option("-c", "--config", action="store", dest="configfile", default=None,
+                      help="use specific config file [default cfg/sequencer.cfg]")
+    parser.add_option("-d", "--date", action="store", type="string", dest="date",
+                      help="observation ending date YYYY_MM_DD [default today]")
+    parser.add_option("-o", "--outputdir", action="store", type="string", dest="directory",
+                      help="write files to output directory")
+    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
+                      help="make lots of noise for debugging")
+    parser.add_option("-w", "--warnings", action="store_true", dest="warning", default=False,
+                      help="show useful warnings")
+    parser.add_option("-z", "--rawzip", action="store_true", dest="compressed", default=False,
+                      help="Use input as compressed raw.gz files")
+    parser.add_option("--stderr", action="store", type="string", dest="stderr",
+                      help="file for standard error")
+    parser.add_option("--stdout", action="store", type="string", dest="stdout",
+                      help="file for standard output")
 
     # Parse the command line
     (opts, args) = parser.parse_args()
@@ -119,7 +112,7 @@ def pedestalsequencecliparsing(command):
     if len(args) != 2:
         standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
     elif args[1] == 'ST':
-        standardhandle.error(tag, "not yet ready for telescope {0}".format(options.options.tel_id), 2)
+        standardhandle.error(tag, "not yet ready for telescope {0}".format(options.tel_id), 2)
     elif args[1] != 'LST1' and args[1] != 'LST2':
         standardhandle.error(tag, "wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
 
@@ -127,36 +120,33 @@ def pedestalsequencecliparsing(command):
 
     # Setting the default date and directory if needed
     options.configfile = set_default_configfile_if_needed(command)
-    
-    return args
-    
 
-    
-##############################################################################
-#
-# calibrationsequencecliparsing
-#
-##############################################################################
+    return args
+
+
 def calibrationsequencecliparsing(command):
     tag = standardhandle.gettag()
-    message = "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <pedoutfile> <caloutfile> <CAL_RUN_ID> <PED_RUN_ID>  <TEL_ID>"
-    parser = OptionParser(usage = message)
-    parser.add_option("-c", "--config", action = "store", dest = "configfile", default = None,
-                      help = "use specific config file [default cfg/sequencer.cfg]")
-    parser.add_option("-d", "--date", action = "store", type = "string", dest = "date",
-                      help = "observation ending date YYYY_MM_DD [default today]")
-    parser.add_option("-o", "--outputdir", action = "store", type = "string", dest = "directory",
-                      help = "write files to output directory")
-    parser.add_option("-v", "--verbose", action = "store_true", dest = "verbose", default = False,
-                      help = "make lots of noise for debugging")
-    parser.add_option("-w", "--warnings", action = "store_true", dest = "warning", default = False,
-                      help = "show useful warnings")
-    parser.add_option("-z", "--rawzip", action = "store_true", dest = "compressed", default = False,
-                      help = "Use input as compressed raw.gz files")
-    parser.add_option("--stderr", action = "store", type = "string", dest = "stderr",
-                      help = "file for standard error")
-    parser.add_option("--stdout", action = "store", type = "string", dest = "stdout",
-                      help = "file for standard output")
+    message = "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <prod-id> " \
+              "<pedoutfile> <caloutfile> <CAL_RUN_ID> <PED_RUN_ID>  <TEL_ID>"
+    parser = OptionParser(usage=message)
+    parser.add_option("-c", "--config", action="store", dest="configfile", default=None,
+                      help="use specific config file [default cfg/sequencer.cfg]")
+    parser.add_option("-d", "--date", action="store", type="string", dest="date",
+                      help="observation ending date YYYY_MM_DD [default today]")
+    parser.add_option("-o", "--outputdir", action="store", type="string", dest="directory",
+                      help="write files to output directory")
+    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
+                      help="make lots of noise for debugging")
+    parser.add_option("-w", "--warnings", action="store_true", dest="warning", default=False,
+                      help="show useful warnings")
+    parser.add_option("-z", "--rawzip", action="store_true", dest="compressed", default=False,
+                      help="Use input as compressed raw.gz files")
+    parser.add_option("--stderr", action="store", type="string", dest="stderr",
+                      help="file for standard error")
+    parser.add_option("--stdout", action="store", type="string", dest="stdout",
+                      help="file for standard output")
+    parser.add_option("--prod-id", action="store", type=str, dest="prod_id",
+                      help="Set the prod ID variable which defines data directories")
 
     # Parse the command line
     (opts, args) = parser.parse_args()
@@ -170,6 +160,7 @@ def calibrationsequencecliparsing(command):
     options.verbose = opts.verbose
     options.warning = opts.warning
     options.compressed = opts.compressed
+    options.prod_id = opts.prod_id
 
     # The standardhandle has to be declared here, since verbose and warnings are options from the cli
     standardhandle.verbose(tag, "the options are {0}".format(opts))
@@ -179,7 +170,7 @@ def calibrationsequencecliparsing(command):
     if len(args) != 5:
         standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
     elif args[4] == 'ST':
-        standardhandle.error(tag, "not yet ready for telescope {0}".format(options.options.tel_id), 2)
+        standardhandle.error(tag, "not yet ready for telescope {0}".format(options.tel_id), 2)
     elif args[4] != 'LST1' and args[4] != 'LST2':
         standardhandle.error(tag, "wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
 
@@ -191,37 +182,35 @@ def calibrationsequencecliparsing(command):
     options.directory = set_default_directory_if_needed()
 
     return args
-##############################################################################
-#
-# datasequencecliparsing
-#
-##############################################################################
+
+
 def datasequencecliparsing(command):
     tag = standardhandle.gettag()
-    message = "usage: %prog  [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] \
-<calibrationfile> <pedestalfile> <drivefile> <timecalibration> <ucts_t0_dragon> <dragon_counter0> \
-<ucts_t0_tib> <tib_counter> <RUN> <TEL_ID>"
-    parser = OptionParser(usage = message)
-    parser.add_option("-c", "--config", action = "store", dest = "configfile", default = None,
-                      help = "use specific config file [default cfg/sequencer.cfg]")
-    parser.add_option("-d", "--date", action = "store", type = "string", dest = "date",
-                      help = "observation ending date YYYY_MM_DD [default today]")
-    parser.add_option("-o", "--outputdir", action = "store", type = "string", dest = "directory",
-                      help = "analysis output directory")
-    parser.add_option("-v", "--verbose", action = "store_true", dest = "verbose", default = False,
-                      help = "make lots of noise for debugging")
-    parser.add_option("-w", "--warnings", action = "store_true", dest = "warning", default = False,
-                      help = "show useful warnings")
-    parser.add_option("-z", "--rawzip", action = "store_true", dest = "compressed", default = False,
-                      help = "Use input as compressed raw.gz files")
-    parser.add_option("--stderr", action = "store", type = "string", dest = "stderr",
-                      help = "file for standard error")
-    parser.add_option("--stdout", action = "store", type = "string", dest = "stdout",
-                      help = "file for standard output")
-    parser.add_option("-s", "--simulate", action = "store_true", dest = "simulate", default = False,
-                        help = "do not submit sequences as jobs")
-    parser.add_option("--prod_id", action = "store", type = str, dest = "prod_id",
-                      help="Set the prod_id variable which defines data directories")
+    message = "usage: %prog  [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] " \
+              "[-d DATE] [-o OUTPUTDIR] [-z] <prod-id> <calibrationfile> <pedestalfile> " \
+              "<drivefile> <timecalibration> <ucts_t0_dragon> <dragon_counter0> " \
+              "<ucts_t0_tib> <tib_counter> <RUN> <TEL_ID>"
+    parser = OptionParser(usage=message)
+    parser.add_option("-c", "--config", action="store", dest="configfile", default=None,
+                      help="use specific config file [default cfg/sequencer.cfg]")
+    parser.add_option("-d", "--date", action="store", type="string", dest="date",
+                      help="observation ending date YYYY_MM_DD [default today]")
+    parser.add_option("-o", "--outputdir", action="store", type="string", dest="directory",
+                      help="analysis output directory")
+    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
+                      help="make lots of noise for debugging")
+    parser.add_option("-w", "--warnings", action="store_true", dest="warning", default=False,
+                      help="show useful warnings")
+    parser.add_option("-z", "--rawzip", action="store_true", dest="compressed", default=False,
+                      help="Use input as compressed raw.gz files")
+    parser.add_option("--stderr", action="store", type="string", dest="stderr",
+                      help="file for standard error")
+    parser.add_option("--stdout", action="store", type="string", dest="stdout",
+                      help="file for standard output")
+    parser.add_option("-s", "--simulate", action="store_true", dest="simulate", default=False,
+                      help="do not submit sequences as jobs")
+    parser.add_option("--prod-id", action="store", type=str, dest="prod_id",
+                      help="Set the prod ID variable which defines data directories")
 
     # Parse the command line
     (opts, args) = parser.parse_args()
@@ -229,7 +218,7 @@ def datasequencecliparsing(command):
     # Set global variables
     options.configfile = opts.configfile
     options.stderr = opts.stderr
-    options.stdout = opts.stdout    
+    options.stdout = opts.stdout
     options.date = opts.date
     options.directory = opts.directory
     options.verbose = opts.verbose
@@ -247,7 +236,7 @@ def datasequencecliparsing(command):
         standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
     # Mapping the telescope argument to an option parameter (it might become an option in the future)
     elif args[9] == 'ST':
-        standardhandle.error(tag, "not yet ready for telescope {0}".format(options.options.tel_id), 2)
+        standardhandle.error(tag, "not yet ready for telescope {0}".format(options.tel_id), 2)
     elif args[9] != 'LST1' and args[9] != 'LST2':
         standardhandle.error(tag, "wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
     options.tel_id = args[9]
@@ -258,31 +247,28 @@ def datasequencecliparsing(command):
     options.directory = set_default_directory_if_needed()
 
     return args
-##############################################################################
-#
-# stereosequencecliparsing
-#
-##############################################################################
+
+
 def stereosequencecliparsing(command):
     tag = standardhandle.gettag()
     message = "usage: %prog  [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <RUN>"
-    parser = OptionParser(usage = message)
-    parser.add_option("-c", "--config", action = "store", dest = "configfile", default = None,
-                      help = "use specific config file [default cfg/sequencer.cfg]")
-    parser.add_option("-d", "--date", action = "store", type = "string", dest = "date",
-                      help = "observation ending date YYYY_MM_DD [default today]")
-    parser.add_option("-o", "--outputdir", action = "store", type = "string", dest = "directory",
-                          help = "analysis output directory")
-    parser.add_option("-v", "--verbose", action = "store_true", dest = "verbose", default = False,
-                      help = "make lots of noise for debugging")
-    parser.add_option("-w", "--warnings", action = "store_true", dest = "warning", default = False,
-                      help = "show useful warnings")
-    parser.add_option("-z", "--rawzip", action = "store_true", dest = "compressed", default = False,
-                      help = "Use input as compressed raw.gz files")
-    parser.add_option("--stderr", action = "store", type = "string", dest = "stderr",
-                      help = "file for standard error")
-    parser.add_option("--stdout", action = "store", type = "string", dest = "stdout",
-                      help = "file for standard output")
+    parser = OptionParser(usage=message)
+    parser.add_option("-c", "--config", action="store", dest="configfile", default=None,
+                      help="use specific config file [default cfg/sequencer.cfg]")
+    parser.add_option("-d", "--date", action="store", type="string", dest="date",
+                      help="observation ending date YYYY_MM_DD [default today]")
+    parser.add_option("-o", "--outputdir", action="store", type="string", dest="directory",
+                      help="analysis output directory")
+    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
+                      help="make lots of noise for debugging")
+    parser.add_option("-w", "--warnings", action="store_true", dest="warning", default=False,
+                      help="show useful warnings")
+    parser.add_option("-z", "--rawzip", action="store_true", dest="compressed", default=False,
+                      help="Use input as compressed raw.gz files")
+    parser.add_option("--stderr", action="store", type="string", dest="stderr",
+                      help="file for standard error")
+    parser.add_option("--stdout", action="store", type="string", dest="stdout",
+                      help="file for standard output")
 
     # Parse the command line
     (opts, args) = parser.parse_args()
@@ -290,7 +276,7 @@ def stereosequencecliparsing(command):
     # Set global variables
     options.configfile = opts.configfile
     options.stderr = opts.stderr
-    options.stdout = opts.stdout    
+    options.stdout = opts.stdout
     options.date = opts.date
     options.directory = opts.directory
     options.verbose = opts.verbose
@@ -313,39 +299,38 @@ def stereosequencecliparsing(command):
     options.directory = set_default_directory_if_needed()
 
     return args
-##############################################################################
-#
-# sequencercliparsing
-#
-##############################################################################
+
+
 def sequencer_argparser():
     tag = standardhandle.gettag()
     parser = ArgumentParser()
     """ Options which define variables """
-    parser.add_argument("-c", "--config", action = "store", dest = "configfile", default = None,
-                        help = "use specific config file [default cfg/sequencer.cfg]")
-    parser.add_argument("-d", "--date", action = "store", type = str, dest = "date",
-                        help = "observation ending date YYYY_MM_DD [default today]")
-    parser.add_argument("-m", "--mode", action = "store", type = str, dest = "mode", choices = ['P', 'S', 'T'],
-                        help = "mode to run dependant sequences:\n P=parallel [default], S=Sequential, T=temperature-aware")
+    parser.add_argument("-c", "--config", action="store", dest="configfile", default=None,
+                        help="use specific config file [default cfg/sequencer.cfg]")
+    parser.add_argument("-d", "--date", action="store", type=str, dest="date",
+                        help="observation ending date YYYY_MM_DD [default today]")
+    parser.add_argument("-m", "--mode", action="store", type=str, dest="mode", choices=['P', 'S', 'T'],
+                        help="mode to run dependant sequences:\n P=parallel [default],"
+                             "S=Sequential, T=temperature-aware")
     """ Boolean options """
-    parser.add_argument("-n", "--usenightsummary", action = "store_true", dest = "nightsum", default = False,
-                        help = "rely on existing nightsumary file")
-    parser.add_argument("-o", "--outputdir", action = "store", type = str, dest = "directory",
-                        help = "analysis output directory")
-    parser.add_argument("-s", "--simulate", action = "store_true", dest = "simulate", default = False,
-                        help = "do not submit sequences as jobs")
-    parser.add_argument("-v", "--verbose", action = "store_true", dest = "verbose", default = False,
-                        help = "make lots of noise for debugging")
-    parser.add_argument("-w", "--warnings", action = "store_true", dest = "warning", default = False,
-                        help = "show useful warnings")
-    parser.add_argument("-z", "--rawzip", action = "store_true", dest = "compressed", default = False,
-                        help = "Use input as compressed raw.gz files, compulsory if using -n and raw.gz files")
-    parser.add_argument("--stderr", action = "store", type = str, dest = "stderr",
-                        help = "file for standard error")
-    parser.add_argument("--stdout", action = "store", type = str, dest = "stdout",
-                        help = "file for standard output")
-    parser.add_argument('tel_id', choices=['ST', 'LST1', 'LST2', 'all'], help = "telescope identifier LST1, LST2, ST or all.")
+    parser.add_argument("-n", "--usenightsummary", action="store_true", dest="nightsum", default=False,
+                        help="rely on existing nightsumary file")
+    parser.add_argument("-o", "--outputdir", action="store", type=str, dest="directory",
+                        help="analysis output directory")
+    parser.add_argument("-s", "--simulate", action="store_true", dest="simulate", default=False,
+                        help="do not submit sequences as jobs")
+    parser.add_argument("-v", "--verbose", action="store_true", dest="verbose", default=False,
+                        help="make lots of noise for debugging")
+    parser.add_argument("-w", "--warnings", action="store_true", dest="warning", default=False,
+                        help="show useful warnings")
+    parser.add_argument("-z", "--rawzip", action="store_true", dest="compressed", default=False,
+                        help="Use input as compressed raw.gz files, compulsory if using -n and raw.gz files")
+    parser.add_argument("--stderr", action="store", type=str, dest="stderr",
+                        help="file for standard error")
+    parser.add_argument("--stdout", action="store", type=str, dest="stdout",
+                        help="file for standard output")
+    parser.add_argument('tel_id', choices=['ST', 'LST1', 'LST2', 'all'],
+                        help="telescope identifier LST1, LST2, ST or all.")
     return parser
 
 
@@ -381,33 +366,28 @@ def sequencercliparsing():
     options.date = set_default_date_if_needed()
 
 
-##############################################################################
-#
-# monolithcliparsing
-#
-##############################################################################
 def monolithcliparsing(command):
     tag = standardhandle.gettag()
     message = "usage: %prog [-syvw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-t] TEL_ID"
-    parser = OptionParser(usage = message)
+    parser = OptionParser(usage=message)
     # Options which define variables
-    parser = OptionParser(usage = message)
-    parser.add_option("-c", "--config", action = "store", dest = "configfile", default = None,
-                      help = "use specific config file [default cfg/sequencer.cfg]")
-    parser.add_option("-t", "--telescope", action = "store", type = "choice", dest = "tel_id",
-                      choices = ['LST1', 'LST2', 'ST'], help = "telescope identifier LST1, LST2 or ST [default all]")
-    parser.add_option("-s", "--simulate", action = "store_true", dest = "simulate", default = False,
-                      help = "do not run, just show what would happen")
-    parser.add_option("-y", "--yes", action = "store_true", dest = "noninteractive", default = False,
-                      help = "assume yes to all questions")
-    parser.add_option("-v", "--verbose", action = "store_true", dest = "verbose", default = False,
-                      help = "make lots of noise for debugging")
-    parser.add_option("-w", "--warnings", action = "store_true", dest = "warning", default = False,
-                      help = "show useful warnings")
-    parser.add_option("--stderr", action = "store", type = "string", dest = "stderr",
-                      help = "file for standard error")
-    parser.add_option("--stdout", action = "store", type = "string", dest = "stdout",
-                      help = "file for standard output")
+    parser = OptionParser(usage=message)
+    parser.add_option("-c", "--config", action="store", dest="configfile", default=None,
+                      help="use specific config file [default cfg/sequencer.cfg]")
+    parser.add_option("-t", "--telescope", action="store", type="choice", dest="tel_id",
+                      choices=['LST1', 'LST2', 'ST'], help="telescope identifier LST1, LST2 or ST [default all]")
+    parser.add_option("-s", "--simulate", action="store_true", dest="simulate", default=False,
+                      help="do not run, just show what would happen")
+    parser.add_option("-y", "--yes", action="store_true", dest="noninteractive", default=False,
+                      help="assume yes to all questions")
+    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
+                      help="make lots of noise for debugging")
+    parser.add_option("-w", "--warnings", action="store_true", dest="warning", default=False,
+                      help="show useful warnings")
+    parser.add_option("--stderr", action="store", type="string", dest="stderr",
+                      help="file for standard error")
+    parser.add_option("--stdout", action="store", type="string", dest="stdout",
+                      help="file for standard output")
 
     # Parse the command line
     (opts, args) = parser.parse_args()
@@ -415,7 +395,7 @@ def monolithcliparsing(command):
     # Set global variables
     options.configfile = opts.configfile
     options.stderr = opts.stderr
-    options.stdout = opts.stdout    
+    options.stdout = opts.stdout
     options.tel_id = opts.tel_id
     options.simulate = opts.simulate
     options.noninteractive = opts.noninteractive
@@ -430,37 +410,34 @@ def monolithcliparsing(command):
     if len(args) > 1:
         standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
     elif len(args) == 1:
-        if (args[0] != 'LST1' and args[0] != 'LST2' and args[0] != 'ST'):
+        if args[0] != 'LST1' and args[0] != 'LST2' and args[0] != 'ST':
             standardhandle.error(tag, "wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
         options.tel_id = args[0]
 
     options.configfile = set_default_configfile_if_needed(command)
     return args
-##############################################################################
-#
-# rawcopycliparsing
-#
-##############################################################################
+
+
 def rawcopycliparsing(command):
     tag = standardhandle.gettag()
     message = "usage: %prog [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-z] <TEL_ID>"
-    parser = OptionParser(usage = message)
-    parser.add_option("-c", "--config", action = "store", dest = "configfile", default = None,
-                      help = "use specific config file [default rawcopy.cfg]")
-    parser.add_option("-d", "--date", action = "store", type = "string", dest = "date",
-                      help = "observation ending date YYYY_MM_DD [default today]")
-    parser.add_option("--nocheck", action = "store_true", dest = "nocheck", default = False,
-                          help = "Skip checking if the daily activity is set over")
-    parser.add_option("-v", "--verbose", action = "store_true", dest = "verbose", default = False,
-                      help = "make lots of noise for debugging")
-    parser.add_option("-w", "--warnings", action = "store_true", dest = "warning", default = False,
-                      help = "show useful warnings")
-    parser.add_option("-z", "--rawzip", action = "store_true", dest = "compressed", default = False,
-                      help = "compress output into raw.gz files")
-    parser.add_option("--stderr", action = "store", type = "string", dest = "stderr",
-                      help = "file for standard error")
-    parser.add_option("--stdout", action = "store", type = "string", dest = "stdout",
-                      help = "file for standard output")
+    parser = OptionParser(usage=message)
+    parser.add_option("-c", "--config", action="store", dest="configfile", default=None,
+                      help="use specific config file [default rawcopy.cfg]")
+    parser.add_option("-d", "--date", action="store", type="string", dest="date",
+                      help="observation ending date YYYY_MM_DD [default today]")
+    parser.add_option("--nocheck", action="store_true", dest="nocheck", default=False,
+                      help="Skip checking if the daily activity is set over")
+    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
+                      help="make lots of noise for debugging")
+    parser.add_option("-w", "--warnings", action="store_true", dest="warning", default=False,
+                      help="show useful warnings")
+    parser.add_option("-z", "--rawzip", action="store_true", dest="compressed", default=False,
+                      help="compress output into raw.gz files")
+    parser.add_option("--stderr", action="store", type="string", dest="stderr",
+                      help="file for standard error")
+    parser.add_option("--stdout", action="store", type="string", dest="stdout",
+                      help="file for standard output")
 
     # Parse the command line
     (opts, args) = parser.parse_args()
@@ -468,8 +445,8 @@ def rawcopycliparsing(command):
     # Set global variables
     options.configfile = opts.configfile
     options.stderr = opts.stderr
-    options.stdout = opts.stdout    
-    options.date = opts.date 
+    options.stdout = opts.stdout
+    options.date = opts.date
     options.nocheck = opts.nocheck
     options.verbose = opts.verbose
     options.warning = opts.warning
@@ -483,7 +460,7 @@ def rawcopycliparsing(command):
     if len(args) != 1:
         standardhandle.error(tag, "incorrect number of arguments, type -h for help", 2)
     elif args[0] == 'ST':
-        standardhandle.error(tag, "not yet ready for telescope {0}".format(options.options.tel_id), 2)
+        standardhandle.error(tag, "not yet ready for telescope {0}".format(options.tel_id), 2)
     elif args[0] != 'LST1' and args[0] != 'LST2':
         standardhandle.error(tag, "wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
     options.tel_id = args[0]
@@ -493,11 +470,6 @@ def rawcopycliparsing(command):
     return args
 
 
-##############################################################################
-#
-# provprocessparsing
-#
-##############################################################################
 def provprocessparsing():
     tag = standardhandle.gettag()
     message = "usage: %prog [-c CONFIGFILE] [-f PROCESS] <RUN_NUMBER> <DATEFOLDER> <SUBFOLDER>"
@@ -527,11 +499,6 @@ def provprocessparsing():
     return options, tag
 
 
-##############################################################################
-#
-# simprocparsing
-#
-##############################################################################
 def simprocparsing():
     tag = standardhandle.gettag()
     message = "Usage: %prog [-c CONFIGFILE] [-p] [--force] [--append] <YYYY_MM_DD> <vX.X.X_vXX> <TEL_ID>\n" \
@@ -567,11 +534,7 @@ def simprocparsing():
 
     return options, tag
 
-##############################################################################
-#
-# set_default_date_if_needed
-#
-##############################################################################
+
 def set_default_date_if_needed():
     tag = standardhandle.gettag()
     from .utils import is_defined
@@ -581,11 +544,8 @@ def set_default_date_if_needed():
         from .utils import getcurrentdate2
         from osa.configs.config import cfg
         return getcurrentdate2(cfg.get('LST', 'DATESEPARATOR'))
-##############################################################################
-#
-# set_default_directory_if_needed
-#
-##############################################################################
+
+
 def set_default_directory_if_needed():
     tag = standardhandle.gettag()
     from osa.utils.utils import is_defined, getnightdirectory
@@ -593,16 +553,12 @@ def set_default_directory_if_needed():
         return options.directory
     else:
         return getnightdirectory()
-##############################################################################
-#
-# set_default_configfile_if_needed
-#
-##############################################################################
-def set_default_configfile_if_needed(command):
-    tag = standardhandle.gettag()
 
-    """ The default config will be the name of the program, with suffix .cfg
-        and present in the cfg subdir, trivial, isn't it? """ 
+
+def set_default_configfile_if_needed(command):
+    """The default config will be the name of the program, with suffix .cfg
+    and present in the cfg subdir."""
+    tag = standardhandle.gettag()
 
     from os.path import abspath, dirname, basename, join
     standardhandle.verbose(tag, "Command is {0}".format(command))
