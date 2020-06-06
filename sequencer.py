@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 
 from closer import is_day_closed
