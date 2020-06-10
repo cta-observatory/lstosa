@@ -118,9 +118,12 @@ def get_log_config():
     # parse configuration
     log_config = ""
     in_prov_section = False
+    str_path_tests = str(Path(__file__).resolve().parent / "tests" / "prov.log")
     try:
         with open(config_file, "r") as f:
             for line in f.readlines():
+                if "pytest" in sys.modules and in_prov_section:
+                    line = re.sub(r"filename:(.*)$", f"filename: {str_path_tests}", line)
                 if in_prov_section:
                     log_config += line
                 if "[PROVENANCE]" in line:
