@@ -1,5 +1,5 @@
 from osa.utils.standardhandle import verbose, error, gettag
-from provenance import trace
+from osa.provenance import trace
 
 __all__ = ["datasequence", "r0_to_dl1", 'dl1_to_dl2']
 
