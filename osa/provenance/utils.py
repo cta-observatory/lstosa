@@ -103,7 +103,7 @@ def get_log_config():
     """Get logging configuration from an OSA config file"""
 
     # default config filename value
-    config_file = str(Path("cfg") / "sequencer.cfg")
+    config_file = Path(__file__).resolve().parent / ".." / ".." / "cfg" / "sequencer.cfg"
     std_logger_file = Path(__file__).resolve().parent / "config" / "logger.yaml"
 
     # fetch config filename value from args

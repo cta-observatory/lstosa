@@ -9,9 +9,9 @@ from pathlib import Path, PurePath
 import yaml
 
 from osa.utils import cliopts, standardhandle
-from provenance.capture import get_activity_id, get_file_hash
-from provenance.io import *
-from provenance.utils import get_log_config
+from osa.provenance.capture import get_activity_id, get_file_hash
+from osa.provenance.io import *
+from osa.provenance.utils import get_log_config
 
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
