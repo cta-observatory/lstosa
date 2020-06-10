@@ -3,8 +3,8 @@ import sys
 from pathlib import Path, PurePath
 
 from osa.utils import options
-from provenance.capture import trace
-from provenance.io import *
+from osa.provenance.capture import trace
+from osa.provenance.io import *
 
 
 @trace
@@ -33,7 +33,7 @@ def dl1_to_dl2(
 
 def select_config(tmp_path):
 
-    config_file = str(Path("cfg") / "sequencer.cfg")
+    config_file = Path(__file__).resolve().parent / ".." / ".." / ".." / "cfg" / "sequencer.cfg"
     in_config_arg = False
     for args in sys.argv:
         if in_config_arg:

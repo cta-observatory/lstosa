@@ -13,7 +13,7 @@ before_script:
 testcode:
   stage: test
   script:
-  - pytest provenance/
+  - pytest osa/provenance/
   only:
   - branches
   except:
