@@ -1,13 +1,12 @@
 #!/bin/env python
 
-# import getopt
-import sys
+import datetime
+import glob
+import operator
 import os
 import os.path
-import operator
-import glob
-import datetime
-import time
+import sys
+
 
 ################################
 #
@@ -72,7 +71,6 @@ def read_args():
         sys.stderr.flush()
         sys.exit(1)
 
-    import glob
     try:
         assert(os.path.isdir(sys.argv[1]))
         assert(glob.glob(sys.argv[1]+"/2*.raw*")!=[])

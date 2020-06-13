@@ -1,5 +1,11 @@
-from osa.utils.standardhandle import output, verbose, error, errornonfatal, gettag
+import filecmp
+from os import remove, rename
+from os.path import exists, isfile
+
 from osa.utils import options
+from osa.utils.standardhandle import error, gettag, verbose
+
+
 ##############################################################################
 #
 # readfromfile
@@ -7,7 +13,6 @@ from osa.utils import options
 ##############################################################################
 def readfromfile(file):
     tag = gettag()
-    from os.path import exists, isfile
     if exists(file):
         if isfile(file):
             try:
@@ -26,9 +31,6 @@ def readfromfile(file):
 ##############################################################################
 def writetofile(f, content):
     tag = gettag()
-    from os.path import exists
-    from os import remove, rename
-    import subprocess
     ftemp= f + '.tmp'
     try:
         with open(ftemp, 'w') as filehandle:
@@ -37,7 +39,6 @@ def writetofile(f, content):
         error(tag, "{0} {1}".format(e.strerror, e.filename), e.errno)
     
     if exists(f):
-        import filecmp
         if filecmp.cmp(f, ftemp):
             remove(ftemp)
             return False
@@ -64,7 +65,6 @@ def writetofile(f, content):
 ##############################################################################
 def appendtofile(f, content):
     tag = gettag()
-    from os.path import exists, isfile
     if exists(f) and isfile(f):
         if options.simulate:
             verbose(tag, "SIMULATE File {0} would be appended".format(f)) 
@@ -72,7 +72,7 @@ def appendtofile(f, content):
             with open(f, 'a') as filehandle:
                 try:
                     filehandle.write(content)
-                except IOError as NameError:
+                except IOError as e:
                     error(tag, "{0} {1}".\
                      format(e.strerror, e.filename), e.errno)
     else:

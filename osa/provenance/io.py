@@ -9,7 +9,7 @@ import yaml
 from prov.dot import prov_to_dot
 from prov.model import ProvDocument
 
-from .utils import get_log_config
+from osa.provenance.utils import get_log_config
 
 # config
 CONFIG_PATH = Path(__file__).resolve().parent / "config"

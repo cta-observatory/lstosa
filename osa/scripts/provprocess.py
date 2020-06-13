@@ -8,10 +8,11 @@ from pathlib import Path, PurePath
 
 import yaml
 
-from osa.utils import cliopts, standardhandle
+from osa.configs.config import cfg
 from osa.provenance.capture import get_activity_id, get_file_hash
 from osa.provenance.io import *
 from osa.provenance.utils import get_log_config
+from osa.utils import cliopts, standardhandle
 
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
@@ -271,8 +272,6 @@ if __name__ == "__main__":
     # -f r0_to_dl1
     # -q
     options, tag = cliopts.provprocessparsing()
-
-    from osa.configs.config import cfg
 
     pathRO = cfg.get("LST1", "RAWDIR")
     pathDL1 = cfg.get("LST1", "ANALYSISDIR")

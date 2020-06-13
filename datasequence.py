@@ -1,15 +1,19 @@
-from osa.utils.standardhandle import verbose, error, gettag
+import subprocess
+import sys
+from os.path import basename, join
+
+from osa.configs.config import cfg
+from osa.jobs.job import historylevel
 from osa.provenance import trace
+from osa.reports import report
+from osa.utils import cliopts, options
+from osa.utils.standardhandle import error, gettag, verbose
+from osa.utils.utils import lstdate_to_dir
 
 __all__ = ["datasequence", "r0_to_dl1", 'dl1_to_dl2']
 
 
 def datasequence(args):
-    tag = gettag()
-    from os.path import join
-    from osa.jobs.job import historylevel
-    from osa.configs.config import cfg
-
     calibrationfile = args[0]
     pedestalfile = args[1]
     time_calibration = args[2]
@@ -54,16 +58,16 @@ def datasequence(args):
 # FIXME: Parse all different arguments via config file or sequence_list.txt
 @trace
 def r0_to_dl1(
-        calibrationfile,
-        pedestalfile,
-        time_calibration,
-        drivefile,
-        ucts_t0_dragon,
-        dragon_counter0,
-        ucts_t0_tib,
-        tib_counter0,
-        run_str,
-        historyfile
+    calibrationfile,
+    pedestalfile,
+    time_calibration,
+    drivefile,
+    ucts_t0_dragon,
+    dragon_counter0,
+    ucts_t0_tib,
+    tib_counter0,
+    run_str,
+    historyfile,
 ):
 
     """Perform low and high-level calibration to raw camera images.
@@ -86,11 +90,6 @@ def r0_to_dl1(
     if options.simulate:
         return 0
 
-    import subprocess
-    from os.path import join, basename
-    from osa.configs.config import cfg
-    from osa.reports import report
-    from osa.utils.utils import lstdate_to_dir
 
     configfile = cfg.get('LSTOSA', 'CONFIGFILE')
     lstchaincommand = cfg.get('LSTOSA', 'R0-DL1')
@@ -149,12 +148,6 @@ def dl1_to_dl2(run_str, historyfile):
     if options.simulate:
         return 0
 
-    import subprocess
-    from os.path import join, basename
-    from osa.configs.config import cfg
-    from osa.reports import report
-    from osa.utils.utils import lstdate_to_dir
-
     configfile = cfg.get('LSTOSA', 'CONFIGFILE')
     rf_models_directory = cfg.get('LSTOSA', 'RF-MODELS-DIR')
     lstchaincommand = cfg.get('LSTOSA', 'DL1-DL2')
@@ -191,10 +184,8 @@ def dl1_to_dl2(run_str, historyfile):
         return rc
 
 
-if __name__ == '__main__':
-    tag = gettag
-    import sys
-    from osa.utils import options, cliopts
+if __name__ == "__main__":
+    tag = gettag()
     # Set the options through cli parsing
     args = cliopts.datasequencecliparsing(sys.argv[0])
     # Run the routine

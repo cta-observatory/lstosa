@@ -1,5 +1,11 @@
-from osa.utils import options, iofile
-from osa.utils.standardhandle import verbose, error, stringify, gettag
+import subprocess
+from os.path import exists, isfile, join
+
+from osa.configs import config
+from osa.rawcopy import raw
+from osa.utils import iofile, options
+from osa.utils.standardhandle import error, gettag, stringify, verbose
+from osa.utils.utils import build_lstbasename
 
 __all__ = ["buildexternal", "build", "readnightsummary", "getnightsummaryfile"]
 
@@ -22,8 +28,6 @@ def buildexternal(command, rawdir):
         The output of the create nightsummary script.
     """
     tag = gettag()
-    import subprocess
-    from osa.rawcopy import raw
     commandargs = [command]
     if not raw.arerawfilestransferred():
         # ask for an incomplete night summary
@@ -64,9 +68,6 @@ def readnightsummary():
     """
     tag = gettag()
     # At the moment we profit from the output of the nightsummary script
-    from os.path import exists, isfile
-    from osa.configs import config
-    from osa.rawcopy import raw
     nightsumfile = getnightsummaryfile()
     stdout = None
     options.nightsum = True
@@ -103,9 +104,6 @@ def getnightsummaryfile():
         File name of the nightsummary txt file
     """
     tag = gettag()
-    from os.path import join
-    from osa.configs import config
-    from osa.utils.utils import build_lstbasename
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
         nightsumprefix = config.cfg.get('LSTOSA', 'NIGHTSUMMARYPREFIX')
         nightsumsuffix = config.cfg.get('LSTOSA', 'TEXTSUFFIX')

@@ -7,6 +7,9 @@ import re
 import sys
 from pathlib import Path
 
+from osa.configs.config import cfg
+from osa.utils import options
+
 __all__ = ["parse_variables", "get_log_config"]
 
 
@@ -27,9 +30,6 @@ def parse_variables(class_instance):
     # tib_counter0
     # 02006.0000
     # LST1
-
-    from osa.configs.config import cfg
-    from osa.utils import options
 
     pythondir = cfg.get("LSTOSA", "PYTHONDIR")
     configfile = cfg.get("LSTOSA", "CONFIGFILE")

@@ -5,6 +5,9 @@ import os
 import re
 import subprocess
 
+from osa.utils.utils import lstdate_to_dir
+from osa.utils import options, cliopts
+
 __all__ = ["Telescope", "Sequence"]  # These members will appear in the docs
 
 
@@ -150,10 +153,6 @@ if __name__ == "__main__":
 
 
 def analysis_path(tel):
-    from osa.configs.config import cfg
-    from osa.utils import options
-    from osa.utils.utils import lstdate_to_dir, make_directory
-
     options.tel_id = tel
     obsdate = '%.4i_%.2i_%.2i' % (year, month, day)
     # FIXME: properly get sequencer.cfg file
@@ -1074,7 +1073,6 @@ def check_for_output_files(path):
 
 
 if __name__ == '__main__':
-    from osa.utils import options, cliopts
     # if is_night_time():
     #     exit(1)
 

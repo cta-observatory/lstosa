@@ -1,5 +1,12 @@
-from osa.utils import options, iofile
-from osa.utils.standardhandle import verbose, warning, error, stringify, gettag
+import datetime
+import subprocess
+from os.path import exists, join
+
+from osa.configs.config import cfg
+from osa.utils import iofile, options
+from osa.utils.iofile import readfromfile
+from osa.utils.standardhandle import error, gettag, stringify, verbose, warning
+from osa.utils.utils import lstdate_to_dir
 
 
 def arealljobscorrectlyfinished(seqlist):
@@ -21,9 +28,6 @@ def historylevel(historyfile, type):
     the rc of the last executable given a certain history file
     """
     tag = gettag()
-    from osa.utils.iofile import readfromfile
-    from os.path import exists
-    from osa.configs.config import cfg
     level = 3
     exit_status = 0
     if type == 'PEDESTAL':
@@ -109,8 +113,6 @@ def setrunfromparent(sequence_list):
 
 def createsequencetxt(s, sequence_list):
     tag = gettag()
-    from os.path import join
-    from osa.configs.config import cfg
     text_suffix = cfg.get('LSTOSA', 'TEXTSUFFIX')
     f = join(options.directory, f"sequence_{s.jobname}{text_suffix}")
     start = s.subrun_list[0].timestamp
@@ -169,23 +171,19 @@ def formatrunsubrun(run, subrun):
 
 def setsequencefilenames(s):
     tag = gettag()
-    import os.path
-    from osa.configs.config import cfg
     script_suffix = cfg.get('LSTOSA', 'SCRIPTSUFFIX')
     history_suffix = cfg.get('LSTOSA', 'HISTORYSUFFIX')
     veto_suffix = cfg.get('LSTOSA', 'VETOSUFFIX')
     basename = "sequence_{0}".format(s.jobname)
 
-    s.script = os.path.join(options.directory, basename + script_suffix)
-    s.veto = os.path.join(options.directory, basename + veto_suffix)
-    s.history = os.path.join(options.directory, basename + history_suffix)
+    s.script = join(options.directory, basename + script_suffix)
+    s.veto = join(options.directory, basename + veto_suffix)
+    s.history = join(options.directory, basename + history_suffix)
     # Calibfiles cannot be set here, since they require the runfromparent
 
 
 def setsequencecalibfilenames(sequence_list):
     tag = gettag()
-    from osa.configs.config import cfg
-    from osa.utils.utils import lstdate_to_dir
     calib_suffix = cfg.get('LSTOSA', 'CALIBSUFFIX')
     pedestal_suffix = cfg.get('LSTOSA', 'PEDESTALSUFFIX')
     drive_suffix = cfg.get('LSTOSA', 'DRIVESUFFIX')
@@ -227,9 +225,7 @@ def guesscorrectinputcard(s):
     # FIXME: implement a way of selecting Nov cfg file
     """
 
-    from osa.configs import config
-
-    bindir = config.cfg.get('LSTOSA', 'PYTHONDIR')
+    bindir = cfg.get('LSTOSA', 'PYTHONDIR')
 
     # try:
     #     # assert(s.kind_obs)
@@ -251,30 +247,24 @@ def createjobtemplate(s, get_content=False):
     """This file contains instruction to be submitted to SLURM"""
 
     tag = gettag()
-
-    import os
-    from osa.utils import iofile
-    from osa.configs import config
-    from osa.utils.utils import lstdate_to_dir
-
-    bindir = config.cfg.get('LSTOSA', 'PYTHONDIR')
-    calibdir = config.cfg.get('LST1', 'CALIBDIR')
-    pedestaldir = config.cfg.get('LST1', 'PEDESTALDIR')
-    drivedir = config.cfg.get('LST1', 'DRIVEDIR')
+    bindir = cfg.get('LSTOSA', 'PYTHONDIR')
+    calibdir = cfg.get('LST1', 'CALIBDIR')
+    pedestaldir = cfg.get('LST1', 'PEDESTALDIR')
+    drivedir = cfg.get('LST1', 'DRIVEDIR')
     nightdir = lstdate_to_dir(options.date)
-    version = config.cfg.get('LST1', 'VERSION')
+    version = cfg.get('LST1', 'VERSION')
 
     command = None
     if s.type == 'CALI':
-        command = os.path.join(bindir, 'calibrationsequence.py')
+        command = join(bindir, 'calibrationsequence.py')
     elif s.type == 'DATA':
-        command = os.path.join(bindir, 'datasequence.py')
+        command = join(bindir, 'datasequence.py')
     elif s.type == 'STEREO':
-        command = os.path.join(bindir, 'stereosequence.py')
+        command = join(bindir, 'stereosequence.py')
 
     # Directly use python interpreter from current working environment
-    # python = os.path.join(config.cfg.get('ENV', 'PYTHONBIN'), 'python')
-    srunbin = config.cfg.get('ENV', 'SRUNBIN')
+    # python = join(config.cfg.get('ENV', 'PYTHONBIN'), 'python')
+    srunbin = cfg.get('ENV', 'SRUNBIN')
 
     mode = 1
     # Beware we want to change this in the future
@@ -296,16 +286,16 @@ def createjobtemplate(s, get_content=False):
     commandargs.append(options.prod_id)
 
     if s.type == 'CALI':
-        commandargs.append(os.path.join(pedestaldir, nightdir, version, s.pedestal))
-        commandargs.append(os.path.join(calibdir, nightdir, version, s.calibration))
+        commandargs.append(join(pedestaldir, nightdir, version, s.pedestal))
+        commandargs.append(join(calibdir, nightdir, version, s.calibration))
         ped_run = str(s.previousrun).zfill(5)
         commandargs.append(ped_run)
 
     if s.type == 'DATA':
-        commandargs.append(os.path.join(calibdir, nightdir, version, s.calibration))
-        commandargs.append(os.path.join(pedestaldir, nightdir, version, s.pedestal))
-        commandargs.append(os.path.join(calibdir, nightdir, version, 'time_' + s.calibration))
-        commandargs.append(os.path.join(drivedir, s.drive))
+        commandargs.append(join(calibdir, nightdir, version, s.calibration))
+        commandargs.append(join(pedestaldir, nightdir, version, s.pedestal))
+        commandargs.append(join(calibdir, nightdir, version, 'time_' + s.calibration))
+        commandargs.append(join(drivedir, s.drive))
         pedfile = s.pedestal
         ucts_t0_dragon = s.subrun_list[0].ucts_t0_dragon
         commandargs.append(ucts_t0_dragon)
@@ -365,10 +355,8 @@ def createjobtemplate(s, get_content=False):
 # def submitjobs(sequence_list, queue_list, veto_list):
 def submitjobs(sequence_list):
     tag = gettag()
-    import subprocess
-    from osa.configs import config
     job_list = []
-    command = config.cfg.get('ENV', 'SBATCHBIN')
+    command = cfg.get('ENV', 'SBATCHBIN')
     for s in sequence_list:
         commandargs = [command, s.script]
         #        """ Introduce the job dependencies """
@@ -447,9 +435,7 @@ def submitjobs(sequence_list):
 def getqueuejoblist(sequence_list):
     tag = gettag()
     # We have to work out the method to get if the sequence has been submitted or not
-    import subprocess
-    from osa.configs import config
-    command = config.cfg.get('ENV', 'SQUEUEBIN')
+    command = cfg.get('ENV', 'SQUEUEBIN')
     commandargs = [command]
     queue_list = []
     try:
@@ -509,7 +495,6 @@ def sumtime(a, b):
     http://docs.python.org/library/datetime.html?highlight=datetime#datetime.timedelta"""
     tag = gettag()
 
-    import datetime
     a_hh, a_mm, a_ss = a.split(':')
     b_hh, b_mm, b_ss = b.split(':')
 

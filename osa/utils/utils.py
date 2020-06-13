@@ -1,10 +1,22 @@
+import hashlib
+import os
+import re
+import sys
+from datetime import datetime, timedelta
+from fnmatch import fnmatch
+from os import getpid, makedirs, readlink, symlink, walk
+from os.path import basename, dirname, exists, isdir, isfile, islink, join, split
+from socket import gethostname
+
+from osa.configs.config import cfg
+from osa.utils.iofile import writetofile
+
 from . import options
-from .standardhandle import warning, verbose, error, gettag, errornonfatal
+from .standardhandle import error, errornonfatal, gettag, verbose, warning
 
 
 def getdate(date, sep):
     tag = gettag()
-    from osa.configs.config import cfg
     if not options.date:
         stringdate = date.replace(cfg.get('LST', 'DATESEPARATOR'), sep)
     else:
@@ -15,9 +27,6 @@ def getdate(date, sep):
 
 def getcurrentdate2(sep):
     tag = gettag()
-    from datetime import datetime, timedelta
-    from osa.configs.config import cfg
-    import sys
     limitnight = int(cfg.get('LST', 'NIGHTOFFSET'))
     now = datetime.utcnow()
     if (now.hour >= limitnight >= 0) or (now.hour < limitnight + 24 and limitnight < 0):
@@ -41,9 +50,6 @@ def getcurrentdate2(sep):
 
 def getnightdirectory():
     tag = gettag()
-    from os.path import join, exists
-    from osa.configs.config import cfg
-
     verbose(tag, f"Getting analysis path for tel_id {options.tel_id}")
     nightdir = lstdate_to_dir(options.date)
 
@@ -72,8 +78,6 @@ def getnightdirectory():
 
 def make_directory(dir):
     tag = gettag()
-    from os import makedirs
-    from os.path import exists, isdir
     if exists(dir):
         if not isdir(dir):
             # Ups!! a file instead of a dir?
@@ -108,8 +112,6 @@ def sorted_nicely(l):
 
     """
     tag = gettag()
-    """ """
-    import re
     convert = lambda text: int(text) if text.isdigit() else text
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     return sorted(l, key=alphanum_key)
@@ -117,10 +119,6 @@ def sorted_nicely(l):
 
 def getrawdatadays():
     tag = gettag()
-    import os
-    from os.path import isdir, join
-    from fnmatch import fnmatch
-    from osa.configs.config import cfg
     daqdir = cfg.get(options.tel_id, 'RAWDIR')
     validset = []
     try:
@@ -139,10 +137,6 @@ def getrawdatadays():
 
 def getstereodatadays():
     tag = gettag()
-
-    from os.path import isdir, join, dirname, basename
-    from os import walk
-    from osa.configs.config import cfg
     stereodir = cfg.get(options.tel_id, 'ANALYSISDIR')
     validset = set()
     for root, dirs, files in walk(stereodir):
@@ -166,8 +160,6 @@ def getstereodatadays():
 
 def getfinisheddays():
     tag = gettag()
-    from os import walk
-    from osa.configs.config import cfg
     parent_lockdir = cfg.get(options.tel_id, 'CLOSERDIR')
     basename = cfg.get('LSTOSA', 'ENDOFACTIVITYPREFIX') + cfg.get('LSTOSA', 'TEXTSUFFIX')
     validlist = []
@@ -183,10 +175,6 @@ def getfinisheddays():
 
 def createlock(lockfile, content):
     tag = gettag()
-    from os import getpid
-    from os.path import isfile, isdir, exists, dirname
-    from socket import gethostname
-    from osa.utils.iofile import writetofile
     dir = dirname(lockfile)
     if options.simulate:
         verbose(tag, f"SIMULATE Creation of lock file {lockfile}")
@@ -213,8 +201,6 @@ def createlock(lockfile, content):
 
 def getlockfile():
     tag = gettag()
-    from os.path import join
-    from osa.configs.config import cfg
     basename = cfg.get('LSTOSA', 'ENDOFACTIVITYPREFIX') + cfg.get('LSTOSA', 'TEXTSUFFIX')
     dir = join(cfg.get(options.tel_id, 'CLOSERDIR'), lstdate_to_dir(options.date), options.prod_id)
     lockfile = join(dir, basename)
@@ -235,7 +221,6 @@ def lstdate_to_number(night):
 
     """
     tag = gettag()
-    from osa.configs.config import cfg
     sepbar = ''
     numberdate = night.replace(cfg.get('LST', 'DATESEPARATOR'), sepbar)
     return numberdate
@@ -254,7 +239,6 @@ def lstdate_to_iso(night):
     Date in iso format YYYY-MM-DD
     """
     tag = gettag()
-    from osa.configs.config import cfg
     sepbar = '-'
     isodate = night.replace(cfg.get('LST', 'DATESEPARATOR'), sepbar)
     return isodate
@@ -272,7 +256,6 @@ def lstdate_to_dir(night):
 
     """
     tag = gettag()
-    from osa.configs.config import cfg
     nightdir = night.split(cfg.get('LST', 'DATESEPARATOR'))
     if len(nightdir) != 3:
         error(tag, f"Error: night directory structure could not be created from {nightdir}\n", 1)
@@ -293,8 +276,6 @@ def dir_to_lstdate(dir):
 
     """
     tag = gettag()
-    from os.path import split
-    from osa.configs.config import cfg
     sep = cfg.get('LST', 'DATESEPARATOR')
     dircopy = dir
     nightdir = ['YYYY', 'MM', 'DD']
@@ -327,9 +308,8 @@ def is_defined(variable):
 
 
 def get_night_limit_timestamp():
-    tag = gettag()
     from dev.mysql import select_db
-    from osa.configs.config import cfg
+    tag = gettag()
     night_limit = None
     server = cfg.get('MYSQL', 'server')
     user = cfg.get('MYSQL', 'user')
@@ -349,11 +329,6 @@ def get_night_limit_timestamp():
 
 def get_md5sum_and_copy(inputf, outputf):
     tag = gettag()
-
-    from os.path import dirname, islink
-    from os import readlink, symlink
-    import hashlib
-
     md5 = hashlib.md5()
     outputdir = dirname(outputf)
     make_directory(outputdir)
