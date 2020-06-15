@@ -1,5 +1,15 @@
+import re
+import shutil
+from datetime import datetime
+from filecmp import cmp
+from glob import glob
+from os.path import basename, exists, getmtime, getsize, join
+from socket import gethostname
+
+from osa.configs.config import cfg
 from osa.utils import options
-from osa.utils.standardhandle import verbose, gettag
+from osa.utils.standardhandle import gettag, verbose
+from osa.utils.utils import lstdate_to_dir
 
 
 def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
@@ -16,14 +26,6 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
     type : type of run for DB purposes
     """
     tag = gettag()
-    from os.path import join, basename, exists, getmtime, getsize
-    from filecmp import cmp
-    from glob import glob
-    import re
-    import shutil
-    from socket import gethostname
-    from datetime import datetime
-
 
     file_list = glob(join(inputdir, f"{prefix}*{run_str}*{suffix}"))
     verbose(tag, "File list is {0}".format(file_list))
@@ -101,9 +103,6 @@ def register_run_concept_files(run_string, concept):
     concept
     """
     tag = gettag()
-    from os.path import join
-    from osa.configs.config import cfg
-    from osa.utils.utils import lstdate_to_dir
     inputdir = options.directory
     nightdir = lstdate_to_dir(options.date)
     outputdir = join(cfg.get(options.tel_id, concept + 'DIR'), nightdir, options.prod_id)

@@ -1,12 +1,19 @@
-from osa.utils import options, iofile
-from osa.utils.standardhandle import output, verbose, gettag
+from datetime import datetime
+from fnmatch import fnmatchcase
+from glob import glob
+from os.path import basename, getsize, join
+
+from osa.configs import config
+from osa.configs.config import cfg
+from osa.rawcopy.raw import getrawdir
+from osa.utils import iofile, options
+from osa.utils.standardhandle import gettag, output, verbose
 
 __all__ = ["history", "start", "rule", "finished_assignments", "finished_text"]
 
 
 def start(parent_tag):
     tag = gettag()
-    from datetime import datetime
     now = datetime.utcnow()
     simple_parent_tag = parent_tag.rsplit('(')[0]
     header(
@@ -33,14 +40,12 @@ def rule():
 
 def size():
     tag = gettag()
-    from osa.configs import config
     framesize = int(config.cfg.get('OUTPUT', 'REPORTWIDTH'))
     return framesize
 
 
 def finished_text(ana_dict):
     tag = gettag()
-
     content = f"analysis.finished.timestamp={ana_dict['END']}\n"
     content += f"analysis.finished.night={ana_dict['NIGHT']}\n"
     content += f"analysis.finished.telescope={ana_dict['TELESCOPE']}\n"
@@ -66,12 +71,6 @@ def finished_text(ana_dict):
 
 def finished_assignments(sequence_list):
     tag = gettag()
-    from glob import glob
-    from os.path import join, getsize, basename
-    from datetime import datetime
-    from fnmatch import fnmatchcase
-    from osa.configs.config import cfg
-    from osa.rawcopy.raw import getrawdir
     concept_set = []
     anadir = options.directory
     disk_space_GB = 0
@@ -163,7 +162,6 @@ def history(run, program, inputfile, inputcard, rc, historyfile):
         The history file that keeps track of the analysis steps.
     """
     tag = gettag()
-    from datetime import datetime
     now = datetime.utcnow()
     datestring = now.strftime("%a %b %d %X UTC %Y")  # Similar but not equal to %c (no timezone)
     stringtowrite = f"{run} {program} {datestring} {inputfile} {inputcard} {rc}\n"

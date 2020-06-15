@@ -10,12 +10,13 @@ from pathlib import Path
 import yaml
 
 from datamodel import SequenceData
+from osa.configs.config import cfg
 from osa.jobs.job import createjobtemplate
 from osa.nightsummary import extract
 from osa.nightsummary.nightsummary import readnightsummary
+from osa.provenance.utils import get_log_config
 from osa.utils import cliopts, options
 from osa.utils.utils import lstdate_to_number
-from provenance.utils import get_log_config
 
 CONFIG_FLAGS = {"Go": True, "TearDL1": False, "TearDL2": False, "TearSubDL1": False, "TearSubDL2": False}
 provconfig = yaml.safe_load(get_log_config())
@@ -24,8 +25,6 @@ LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 
 def do_setup():
     """Set-up folder structure and check flags."""
-
-    from osa.configs.config import cfg
 
     pathDL1 = Path(cfg.get("LST1", "ANALYSISDIR")) / options.directory
     pathDL2 = Path(cfg.get("LST1", "DL2DIR")) / options.directory

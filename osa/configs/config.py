@@ -1,5 +1,10 @@
-from osa.utils.standardhandle import error, verbose, gettag, warning
+import tempfile
+from os import unlink
+
 from osa.utils import options
+from osa.utils.standardhandle import error, gettag, verbose, warning
+
+
 ##############################################################################
 #
 # readconf
@@ -7,8 +12,6 @@ from osa.utils import options
 ##############################################################################
 def readconf(file):
     tag = gettag()
-    from os.path import exists
-
     conf = None
 
     try:
@@ -37,8 +40,6 @@ def read_properties(file):
     tag = gettag()
 
     """ To be used when config file has no header, creating a DUMMY header""" 
-    import tempfile
-    from os import unlink
     fname = None
     with tempfile.NamedTemporaryFile(delete=False) as tf:
         tf.write('[DUMMY]\n')

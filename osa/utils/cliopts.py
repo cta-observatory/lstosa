@@ -1,7 +1,13 @@
-from optparse import OptionParser   # from version 2.3 to 2.7
 from argparse import ArgumentParser
-from . import standardhandle
-from . import options
+from optparse import OptionParser  # from version 2.3 to 2.7
+from os.path import abspath, basename, dirname, join
+
+from osa.configs.config import cfg
+
+from . import options, standardhandle
+from .utils import getcurrentdate2, getnightdirectory, is_defined
+
+
 ##############################################################################
 #
 # closercliparsing
@@ -96,7 +102,6 @@ def pedestalsequencecliparsing(command):
                       help = "file for standard error")
     parser.add_option("--stdout", action = "store", type = "string", dest = "stdout",
                       help = "file for standard output")
-
 
     # Parse the command line
     (opts, args) = parser.parse_args()
@@ -574,12 +579,9 @@ def simprocparsing():
 ##############################################################################
 def set_default_date_if_needed():
     tag = standardhandle.gettag()
-    from .utils import is_defined
     if is_defined(options.date):
         return options.date
     else:
-        from .utils import getcurrentdate2
-        from osa.configs.config import cfg
         return getcurrentdate2(cfg.get('LST', 'DATESEPARATOR'))
 ##############################################################################
 #
@@ -588,7 +590,6 @@ def set_default_date_if_needed():
 ##############################################################################
 def set_default_directory_if_needed():
     tag = standardhandle.gettag()
-    from osa.utils.utils import is_defined, getnightdirectory
     if is_defined(options.directory):
         return options.directory
     else:
@@ -604,7 +605,6 @@ def set_default_configfile_if_needed(command):
     """ The default config will be the name of the program, with suffix .cfg
         and present in the cfg subdir, trivial, isn't it? """ 
 
-    from os.path import abspath, dirname, basename, join
     standardhandle.verbose(tag, "Command is {0}".format(command))
     if not options.configfile:
         command_dirname = dirname(abspath(command))

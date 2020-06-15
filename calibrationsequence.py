@@ -1,5 +1,14 @@
 #!/usr/bin/env python2.7
-from osa.utils.standardhandle import verbose, error, stringify, gettag
+import subprocess
+import sys
+from os.path import join
+
+from osa.configs.config import cfg
+from osa.jobs.job import historylevel
+from osa.reports.report import history
+from osa.utils import cliopts, options
+from osa.utils.standardhandle import error, gettag, stringify, verbose
+from osa.utils.utils import lstdate_to_dir
 
 __all__ = ["calibrationsequence"]
 
@@ -8,9 +17,6 @@ def calibrationsequence(args):
     tag = gettag()
     # This is the python interface to run sorcerer with the -c option for calibration
     # args: <RUN>    
-    from os.path import join
-    from osa.utils import options
-    from osa.jobs.job import historylevel
 
     pedestal_output_file = args[0]
     calibration_output_file = args[1]
@@ -23,7 +29,7 @@ def calibrationsequence(args):
     print("historyfile:", historyfile, run_ped)
     print("PEDESTAL directory:",options.directory, options.tel_id)
     print("level & rc:", level, rc)
-#    exit()
+#   sys.exit()
     if level == 2:
         rc = drs4_pedestal(run_ped, pedestal_output_file, historyfile)
         level -=1
@@ -44,12 +50,6 @@ def calibrationsequence(args):
 ##############################################################################
 def drs4_pedestal(run_ped, pedestal_output_file, historyfile):
     tag = gettag()
-    from sys import exit
-    from os.path import join
-    import subprocess
-    from osa.configs.config import cfg
-    from osa.reports.report import history
-    from osa.utils.utils import lstdate_to_dir
 
     sequencetextfile = join(options.directory, 'sequence_' + options.tel_id + '_' + run_ped + '.txt')
     bindir = cfg.get('LSTOSA', 'LSTCHAINDIR')
@@ -92,7 +92,7 @@ def drs4_pedestal(run_ped, pedestal_output_file, historyfile):
     """ Error handling, for now no nonfatal errors are implemented for CALIBRATION """
   
     if rc != 0:
-        exit(rc)
+        sys.exit(rc)
     return rc
 
 
@@ -103,12 +103,6 @@ def drs4_pedestal(run_ped, pedestal_output_file, historyfile):
 ##############################################################################
 def calibrate(calibration_run_id, pedestal_file, calibration_output_file, historyfile):
     tag = gettag()
-    from sys import exit
-    from os.path import join
-    import subprocess
-    from osa.configs.config import cfg
-    from osa.reports.report import history
-    from osa.utils.utils import lstdate_to_dir
 
     #sequencetextfile = join(options.directory, 'sequence_' + options.tel_id + '_' + run + '.txt')
     bindir = cfg.get('LSTOSA', 'LSTCHAINDIR')
@@ -168,7 +162,7 @@ def calibrate(calibration_run_id, pedestal_file, calibration_output_file, histor
 
     """ Error handling, for now no nonfatal errors are implemented for CALIBRATION """
     if rc != 0:
-        exit(rc)
+        sys.exit(rc)
     return rc
 
 
@@ -179,8 +173,6 @@ def calibrate(calibration_run_id, pedestal_file, calibration_output_file, histor
 ##############################################################################
 if __name__ == '__main__':
     tag = gettag()
-    import sys
-    from osa.utils import options, cliopts
     # Set the options through cli parsing
     args = cliopts.calibrationsequencecliparsing(sys.argv[0])
     # Run the routine

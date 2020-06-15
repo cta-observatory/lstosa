@@ -1,11 +1,17 @@
 import os
+from decimal import Decimal
+from glob import glob
+from os.path import join
 
 from closer import is_day_closed
+from dev import dot
+from osa.configs import config
 from osa.jobs import job
 from osa.nightsummary import extract
 from osa.nightsummary.nightsummary import readnightsummary
-from osa.reports.report import start
-from osa.utils.standardhandle import output, verbose, gettag
+from osa.reports.report import rule, start
+from osa.utils import cliopts, options
+from osa.utils.standardhandle import gettag, output, verbose
 from osa.veto import veto
 
 __all__ = ["sequencer", "single_process"]
@@ -115,12 +121,6 @@ def single_process(telescope, process_mode):
 def stereo_process(telescope, s1_list, s2_list):
     tag = gettag()
 
-    from osa.nightsummary import extract
-    from dev import dot
-    from osa.jobs import job
-    from osa.veto import veto
-    from osa.reports.report import rule
-
     options.tel_id = telescope
     options.directory = cliopts.set_default_directory_if_needed()
 
@@ -147,7 +147,6 @@ def stereo_process(telescope, s1_list, s2_list):
 
 def updatelstchainstatus(seq_list):
     tag = gettag()
-    from decimal import Decimal
     for s in seq_list:
         if s.type == 'CALI':
             s.calibstatus = int(Decimal(getlstchainforsequence(s, 'CALIB') * 100) / s.subruns)
@@ -160,9 +159,6 @@ def updatelstchainstatus(seq_list):
 
 def getlstchainforsequence(s, program):
     tag = gettag()
-    from os.path import join
-    from glob import glob
-    from osa.configs import config
 
     prefix = config.cfg.get('LSTOSA', program + 'PREFIX')
     suffix = config.cfg.get('LSTOSA', program + 'SUFFIX')
@@ -175,7 +171,6 @@ def getlstchainforsequence(s, program):
 
 def reportsequences(seqlist):
     tag = gettag()
-    from osa.configs import config
     matrix = []
     header = [
         'Tel', 'Seq', 'Parent', 'Type', 'Run', 'Subruns',
@@ -352,7 +347,6 @@ def prettyoutputmatrix(m, paddingspace):
 
 if __name__ == '__main__':
     """ Sequencer called as a script does the full job """
-    from osa.utils import options, cliopts
     tag = gettag()
     # Set the options through parsing of the command line interface
     cliopts.sequencercliparsing()

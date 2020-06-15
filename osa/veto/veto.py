@@ -1,5 +1,10 @@
-from osa.utils.standardhandle import verbose, error, gettag
+from glob import glob
+from os.path import exists, join
+
+from osa.configs.config import cfg
 from osa.utils import options
+from osa.utils.iofile import readfromfile
+from osa.utils.standardhandle import error, gettag, verbose
 
 
 def createveto(vetofile):
@@ -22,9 +27,6 @@ def isjobvetoed(name, veto_list):
 
 def getvetolist(sequence_list):
     tag = gettag()
-    from glob import glob
-    from os.path import join
-    from osa.configs.config import cfg
     updatevetos(sequence_list)
     veto_ls = glob(join(options.directory, "*{0}".format(cfg.get('LSTOSA', 'VETOSUFFIX'))))
     veto_list = []
@@ -45,8 +47,6 @@ def setvetoaction(name, sequence_list):
 
 def updatevetos(sequence_list):
     tag = gettag()
-    from os.path import exists
-    from osa.configs.config import cfg
     for s in sequence_list:
         if (not exists(s.veto) and exists(s.history)):
             if failedhistory(s.history, int(cfg.get('LSTOSA', 'MAXTRYFAILED'))):
@@ -56,7 +56,6 @@ def updatevetos(sequence_list):
 
 def failedhistory(historyfile, maxnumber):
     tag = gettag()
-    from osa.utils.iofile import readfromfile
     programme = []
     card = []
     goal = []
@@ -97,9 +96,6 @@ def createclosed(closedfile):
 
 def getclosedlist(sequence_list):
     tag = gettag()
-    from glob import glob
-    from os.path import join
-    from osa.configs.config import cfg
     closed_ls = glob(join(options.directory, '*{0}'.format(cfg.get('LSTOSA', 'CLOSEDSUFFIX'))))
     closed_list = []
     for i in closed_ls:

@@ -1,12 +1,14 @@
+from glob import glob
+from os.path import exists, join
+
 from osa.configs import config
-from osa.utils import options
-from osa.utils.standardhandle import verbose, warning, error, output, gettag
+from osa.utils import options, utils
+from osa.utils.standardhandle import error, gettag, output, verbose, warning
+from osa.utils.utils import lstdate_to_dir
 
 
 def arerawfilestransferredfortel(tel_id):
     tag = gettag()
-    from os.path import join, exists
-    from osa.utils.utils import lstdate_to_dir
     nightdir = lstdate_to_dir(options.date)
     dir = join(config.cfg.get(tel_id, 'ENDOFRAWTRANSFERDIR'), nightdir)
     flagfile = join(dir, config.cfg.get('LSTOSA', 'ENDOFACTIVITYPREFIX'))
@@ -35,7 +37,6 @@ def arerawfilestransferred():
 
 def get_check_rawdir():
     tag = gettag()
-    from os.path import exists, join
     rawdir = getrawdir()
     rawsuffix = config.cfg.get('LSTOSA', 'RAWSUFFIX')
     verbose(tag, f"raw suffix = {rawsuffix}")
@@ -50,7 +51,6 @@ def get_check_rawdir():
         error(tag, f"Raw directory {rawdir} does not exist", 2)
     else:
         # Check that it contains at least one raw or compressed-raw file and set compression flag
-        from glob import glob
         list = glob(join(rawdir, '*' + rawsuffix))
         listz = glob(join(rawdir, '*' + rawsuffix + compressedsuffix))
         if (len(list) + len(listz)) == 0:
@@ -66,9 +66,6 @@ def get_check_rawdir():
 
 def getrawdir():
     tag = gettag()
-    from os.path import join
-    from osa.configs import config
-    from osa.utils import utils
     rawdir = None
     nightdir = utils.lstdate_to_dir(options.date)
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
@@ -78,7 +75,6 @@ def getrawdir():
 
 def getreportdir():
     tag = gettag()
-    from os.path import exists, join
     reportdir = join(config.cfg.get(options.tel_id, 'REPORTDIR'), options.date)
     reportsuffix = config.cfg.get('LSTOSA', 'REPORTSUFFIX')
     if not exists(reportdir):
@@ -88,7 +84,6 @@ def getreportdir():
         error(tag, f"Report directory {reportdir} does not exist", 2)
     else:
         # Check that it contains at least one raw or compressed-raw file and set compression flag
-        from glob import glob
         list = glob(join(reportdir, '*' + reportsuffix))
       
         if len(list) == 0:

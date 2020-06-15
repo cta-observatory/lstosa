@@ -1,4 +1,22 @@
-from osa.utils.standardhandle import output, verbose, warning, error, stringify, gettag
+import os.path
+import re
+import sys
+from filecmp import cmp
+from glob import glob
+from os import unlink
+from os.path import basename, exists, isdir, islink, join
+
+from osa.configs.config import cfg
+from osa.jobs.job import arealljobscorrectlyfinished
+from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
+from osa.nightsummary.nightsummary import getnightsummaryfile, readnightsummary
+from osa.rawcopy.raw import arerawfilestransferred, get_check_rawdir
+from osa.reports.report import finished_assignments, finished_text, start
+from osa.utils import cliopts, options
+from osa.utils.standardhandle import error, gettag, output, verbose, warning
+from osa.utils.utils import createlock, getlockfile, is_defined, lstdate_to_dir, make_directory
+from osa.veto.veto import createclosed
+from register import register_run_concept_files
 
 __all__ = [
     "closer", "is_day_closed", "use_night_summary",
@@ -11,10 +29,6 @@ __all__ = [
 
 def closer():
     tag = gettag()
-    from osa.utils import options
-    from osa.reports.report import start
-    from osa.nightsummary.nightsummary import readnightsummary
-    from osa.utils.utils import is_defined
 
     # Initiating report
     start(tag)
@@ -65,8 +79,6 @@ def is_day_closed():
     """ Get the name and Check for the existence of the Closer flag file. """
     tag = gettag()
 
-    from os.path import exists
-    from osa.utils.utils import getlockfile
 
     answer = False
     flag_file = getlockfile()
@@ -78,9 +90,6 @@ def is_day_closed():
 def use_night_summary():
     """Check for the usage of night summary option and file existence."""
     tag = gettag()
-
-    from os.path import exists
-    from osa.nightsummary.nightsummary import getnightsummaryfile
 
     answer = False
     if options.nightsum:
@@ -99,8 +108,6 @@ def is_raw_data_available():
     This means the raw directory could be empty! """
     tag = gettag()
 
-    from os.path import isdir
-    from osa.rawcopy.raw import get_check_rawdir
     answer = False
     if options.tel_id != 'ST':
         raw_dir = get_check_rawdir()
@@ -137,7 +144,6 @@ def ask_for_closing():
     """
     tag = gettag()
 
-    import sys
     answer = False
     if options.noninteractive:
         """ In not-interactive mode, we assume the answer is yes. """
@@ -183,7 +189,6 @@ def post_process(seq_tuple):
 
     """ Set of last instructions. """
 
-    from osa.reports.report import finished_assignments, finished_text
     seq_list = seq_tuple[1]
     analysis_dict = finished_assignments(seq_list)
     analysis_text = finished_text(analysis_dict)
@@ -203,17 +208,6 @@ def post_process_files(seq_list):
     seq_list: list of sequences
     """
     tag = gettag()
-
-    from os.path import join, basename, exists, islink
-    from os import unlink
-    from filecmp import cmp
-    from glob import glob
-    import re
-    from osa.configs.config import cfg
-    from osa.veto.veto import createclosed
-    from osa.utils.utils import lstdate_to_dir, make_directory
-    from register import register_run_concept_files
-
     concept_set = []
     if options.tel_id == 'LST1' or options.tel_id == 'LST2':
         concept_set = ['DL1', 'DL2', 'MUON', 'DATACHECK']
@@ -294,7 +288,6 @@ def set_closed_with_file(ana_text):
     """ Write the analysis report to the closer file. """
     tag = gettag()
 
-    from osa.utils.utils import getlockfile, createlock
     closer_file = getlockfile()
     is_closed = False
     if not options.simulate:
@@ -313,9 +306,6 @@ def set_closed_with_file(ana_text):
 
 def is_finished_check(nightsum):
     tag = gettag()
-    from osa.rawcopy.raw import arerawfilestransferred
-    from osa.nightsummary.extract import extractsubruns, extractruns, extractsequences
-    from osa.jobs.job import arealljobscorrectlyfinished
     # We ought to implement a method of successful or unsuccessful finishing
     # and it is done looking at the files
     sequence_list = None
@@ -377,8 +367,6 @@ def is_finished_check(nightsum):
 
 def setclosedfilename(s):
     tag = gettag()
-    import os.path
-    from osa.configs.config import cfg
     closed_suffix = cfg.get('LSTOSA', 'CLOSEDSUFFIX')
     basename = "sequence_{0}".format(s.jobname)
     s.closed = os.path.join(options.directory, basename + closed_suffix)
@@ -386,8 +374,6 @@ def setclosedfilename(s):
 
 if __name__ == '__main__':
     tag = gettag()
-    import sys
-    from osa.utils import options, cliopts
     # Set the options through cli parsing
     cliopts.closercliparsing()
     # Run the routine

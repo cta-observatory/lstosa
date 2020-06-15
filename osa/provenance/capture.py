@@ -15,8 +15,8 @@ from pathlib import Path
 import psutil
 import yaml
 
-from .io import read_prov
-from .utils import get_log_config, parse_variables
+from osa.provenance.io import read_prov
+from osa.provenance.utils import get_log_config, parse_variables
 
 # gammapy specific
 # from gammapy.scripts.info import (

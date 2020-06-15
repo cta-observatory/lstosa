@@ -1,5 +1,11 @@
+from datetime import datetime
+
+from datamodel import RunObj, SequenceCalibration, SequenceData, SequenceStereo, SubrunObj
+from osa.jobs import job
+from osa.jobs.job import setsequencefilenames
 from osa.utils import options
-from osa.utils.standardhandle import verbose, warning, error, gettag
+from osa.utils.standardhandle import error, gettag, verbose, warning
+from osa.utils.utils import lstdate_to_iso
 
 __all__ = [
     "extractsubruns", "extractruns", "extractsequences",
@@ -15,9 +21,6 @@ __all__ = [
 ##############################################################################
 def extractsubruns(nightsummary):
     tag = gettag()
-    from datetime import datetime
-    from datamodel import SubrunObj, RunObj
-    from osa.utils.utils import lstdate_to_iso
     subrun_list = []
     run_to_obj = {}
     if nightsummary:
@@ -254,8 +257,6 @@ def extractsequences(run_list):
 ##############################################################################
 def extractsequencesstereo(s1_list, s2_list):
     tag = gettag()
-    from datamodel import SequenceStereo
-    from osa.jobs.job import setsequencefilenames
     ss_list = []
     for s1 in s1_list:
         ss = None
@@ -279,8 +280,6 @@ def extractsequencesstereo(s1_list, s2_list):
 ##############################################################################
 def generateworkflow(run_list, store, require):
     tag = gettag()
-    from datamodel import SequenceCalibration, SequenceData
-    from ..jobs import job
     # we have a store set with correct data sequences to give seq numbers and parent dependencies
     sequence_list = []
     verbose(tag, f"The storage contains {len(store)} data sequences")

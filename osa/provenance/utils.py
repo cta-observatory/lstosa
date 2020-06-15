@@ -7,6 +7,9 @@ import re
 import sys
 from pathlib import Path
 
+from osa.configs.config import cfg
+from osa.utils import options
+
 __all__ = ["parse_variables", "get_log_config"]
 
 
@@ -27,9 +30,6 @@ def parse_variables(class_instance):
     # tib_counter0
     # 02006.0000
     # LST1
-
-    from osa.configs.config import cfg
-    from osa.utils import options
 
     pythondir = cfg.get("LSTOSA", "PYTHONDIR")
     configfile = cfg.get("LSTOSA", "CONFIGFILE")
@@ -103,7 +103,7 @@ def get_log_config():
     """Get logging configuration from an OSA config file"""
 
     # default config filename value
-    config_file = str(Path("cfg") / "sequencer.cfg")
+    config_file = Path(__file__).resolve().parent / ".." / ".." / "cfg" / "sequencer.cfg"
     std_logger_file = Path(__file__).resolve().parent / "config" / "logger.yaml"
 
     # fetch config filename value from args
@@ -118,9 +118,12 @@ def get_log_config():
     # parse configuration
     log_config = ""
     in_prov_section = False
+    str_path_tests = str(Path(__file__).resolve().parent / "tests" / "prov.log")
     try:
         with open(config_file, "r") as f:
             for line in f.readlines():
+                if "pytest" in sys.modules and in_prov_section:
+                    line = re.sub(r"filename:(.*)$", f"filename: {str_path_tests}", line)
                 if in_prov_section:
                     log_config += line
                 if "[PROVENANCE]" in line:
