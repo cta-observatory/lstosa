@@ -415,13 +415,11 @@ def provprocessparsing():
 
     # set global variables
     options.run = args[0]
-    options.datefolder = args[1]
-    options.subfolder = args[2]
+    options.date = args[1]
+    options.prod_id = args[2]
     options.configfile = opts.configfile
     options.filter = opts.filter
     options.quit = opts.quit
-
-    return options, tag
 
 
 def simprocparsing():
@@ -455,8 +453,6 @@ def simprocparsing():
     options.provenance = opts.provenance
     options.force = opts.force
     options.append = opts.append
-
-    return options, tag
 
 
 def set_default_date_if_needed():

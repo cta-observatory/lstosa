@@ -1,7 +1,6 @@
 """
 Simulate executions of data processing pipeline and produce provenance
 """
-
 import logging
 import multiprocessing as mp
 import subprocess
@@ -17,6 +16,7 @@ from osa.nightsummary.nightsummary import readnightsummary
 from osa.provenance.utils import get_log_config
 from osa.utils import cliopts, options
 from osa.utils.utils import lstdate_to_number
+from osa.utils.standardhandle import gettag
 
 CONFIG_FLAGS = {"Go": True, "TearDL1": False, "TearDL2": False, "TearSubDL1": False, "TearSubDL2": False}
 provconfig = yaml.safe_load(get_log_config())
@@ -141,10 +141,11 @@ def simulate_processing():
 
 
 if __name__ == "__main__":
+    tag = gettag()
     format = "%(asctime)s: %(message)s"
     logging.basicConfig(level=logging.INFO, format=format)
 
-    options, tag = cliopts.simprocparsing()
+    cliopts.simprocparsing()
     options.directory = lstdate_to_number(options.date)
 
     logging.info(f"Running simulate processing")

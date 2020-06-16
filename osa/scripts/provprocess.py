@@ -1,7 +1,6 @@
 """
 Provenance post processing script for OSA pipeline
 """
-
 import copy
 import shutil
 from pathlib import Path, PurePath
@@ -12,7 +11,8 @@ from osa.configs.config import cfg
 from osa.provenance.capture import get_activity_id, get_file_hash
 from osa.provenance.io import *
 from osa.provenance.utils import get_log_config
-from osa.utils import cliopts, standardhandle
+from osa.utils import cliopts, options, standardhandle
+from osa.utils.standardhandle import gettag
 
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
@@ -217,7 +217,7 @@ def produce_provenance():
 
         processed_lines = []
         # derive destination folder
-        step_path = Path(fold) / options.datefolder / options.subfolder
+        step_path = Path(fold) / options.date / options.prod_id
 
         # check destination folder exists
         if not step_path.exists():
@@ -271,7 +271,8 @@ if __name__ == "__main__":
     # -c cfg/sequencer.cfg
     # -f r0_to_dl1
     # -q
-    options, tag = cliopts.provprocessparsing()
+    tag = gettag()
+    cliopts.provprocessparsing()
 
     pathRO = cfg.get("LST1", "RAWDIR")
     pathDL1 = cfg.get("LST1", "ANALYSISDIR")
