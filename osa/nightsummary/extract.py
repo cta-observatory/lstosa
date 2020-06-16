@@ -1,8 +1,7 @@
 from datetime import datetime
 
 from datamodel import RunObj, SequenceCalibration, SequenceData, SequenceStereo, SubrunObj
-from osa.jobs import job
-from osa.jobs.job import setsequencefilenames
+from osa.jobs.job import setsequencefilenames, setsequencecalibfilenames
 from osa.utils import options
 from osa.utils.standardhandle import error, gettag, verbose, warning
 from osa.utils.utils import lstdate_to_iso
@@ -286,7 +285,7 @@ def generateworkflow(run_list, store, require):
 
                 s.previousrun = previousrun
                 s.jobname = f"{r.telescope}_{str(r.run).zfill(5)}"
-                job.setsequencefilenames(s)
+                setsequencefilenames(s)
                 if s not in sequence_list:
                     sequence_list.append(s)
         elif r.type == "CALI":
@@ -301,14 +300,14 @@ def generateworkflow(run_list, store, require):
                     s.parent = None
                     s.previousrun = previousrun
                     s.jobname = f"{r.telescope}_{str(r.run).zfill(5)}"
-                    job.setsequencefilenames(s)
+                    setsequencefilenames(s)
                     verbose(tag, f"Sequence {s.seq} assigned to run {r.run} whose parent is" f" {s.parent} with run {s.previousrun}")
                     if s not in sequence_list:
                         sequence_list.append(s)
                     break
 
     # insert the calibration file names
-    job.setsequencecalibfilenames(sequence_list)
+    setsequencecalibfilenames(sequence_list)
     verbose(tag, "Workflow completed")
     return sequence_list
 

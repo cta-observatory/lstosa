@@ -5,7 +5,8 @@ from os.path import join
 from osa.configs.config import cfg
 from osa.jobs.job import historylevel
 from osa.reports.report import history
-from osa.utils import cliopts, options
+from osa.utils import options
+from osa.utils.cliopts import calibrationsequencecliparsing
 from osa.utils.standardhandle import error, gettag, stringify, verbose
 from osa.utils.utils import lstdate_to_dir
 
@@ -145,7 +146,7 @@ if __name__ == "__main__":
 
     tag = gettag()
     # set the options through cli parsing
-    args = cliopts.calibrationsequencecliparsing(sys.argv[0])
+    args = calibrationsequencecliparsing(sys.argv[0])
     # run the routine
     rc = calibrationsequence(args)
     sys.exit(rc)

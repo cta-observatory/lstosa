@@ -5,8 +5,8 @@ import os
 import re
 import subprocess
 
-from osa.utils.utils import lstdate_to_dir
 from osa.utils import options
+from osa.utils.utils import lstdate_to_dir
 
 __all__ = ["Telescope", "Sequence"]  # these members will appear in the docs
 

@@ -5,8 +5,9 @@ from os.path import basename, join
 from osa.configs.config import cfg
 from osa.jobs.job import historylevel
 from osa.provenance import trace
-from osa.reports import report
-from osa.utils import cliopts, options
+from osa.reports.report import history 
+from osa.utils import options
+from osa.utils.cliopts import datasequencecliparsing
 from osa.utils.standardhandle import error, gettag, verbose
 from osa.utils.utils import lstdate_to_dir
 
@@ -119,7 +120,7 @@ def r0_to_dl1(
     except OSError as ValueError:
         error(tag, f"Command {'stringify(commandargs)'} failed, {ValueError}", ValueError)
     else:
-        report.history(run_str, basename(fullcommand), basename(calibrationfile), basename(pedestalfile), rc, historyfile)
+        history(run_str, basename(fullcommand), basename(calibrationfile), basename(pedestalfile), rc, historyfile)
         return rc
 
 
@@ -163,7 +164,7 @@ def dl1_to_dl2(run_str, historyfile):
     except OSError as ValueError:
         error(tag, f"Command {'stringify(commandargs)'} failed, {ValueError}", ValueError)
     else:
-        report.history(run_str, basename(fullcommand), basename(datafile), basename(configfile), rc, historyfile)
+        history(run_str, basename(fullcommand), basename(datafile), basename(configfile), rc, historyfile)
         return rc
 
 
@@ -171,7 +172,7 @@ if __name__ == "__main__":
 
     tag = gettag()
     # set the options through cli parsing
-    args = cliopts.datasequencecliparsing(sys.argv[0])
+    args = datasequencecliparsing(sys.argv[0])
     # run the routine
     rc = datasequence(args)
     sys.exit(rc)

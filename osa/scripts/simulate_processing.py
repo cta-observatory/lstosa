@@ -11,10 +11,11 @@ import yaml
 from datamodel import SequenceData
 from osa.configs.config import cfg
 from osa.jobs.job import createjobtemplate
-from osa.nightsummary import extract
+from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import readnightsummary
 from osa.provenance.utils import get_log_config
-from osa.utils import cliopts, options
+from osa.utils import options
+from osa.utils.cliopts import simprocparsing
 from osa.utils.utils import lstdate_to_number
 from osa.utils.standardhandle import gettag
 
@@ -106,9 +107,9 @@ def simulate_processing():
     night_content = readnightsummary()
     logging.info(f"Night summary file content\n{night_content}")
 
-    sub_run_list = extract.extractsubruns(night_content)
-    run_list = extract.extractruns(sub_run_list)
-    sequence_list = extract.extractsequences(run_list)
+    sub_run_list = extractsubruns(night_content)
+    run_list = extractruns(sub_run_list)
+    sequence_list = extractsequences(run_list)
 
     # skip drs4 and calibration
     for s in sequence_list:
@@ -145,7 +146,7 @@ if __name__ == "__main__":
     format = "%(asctime)s: %(message)s"
     logging.basicConfig(level=logging.INFO, format=format)
 
-    cliopts.simprocparsing()
+    simprocparsing()
     options.directory = lstdate_to_number(options.date)
 
     logging.info(f"Running simulate processing")

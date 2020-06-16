@@ -6,7 +6,8 @@ from os.path import basename, getsize, join
 from osa.configs import config
 from osa.configs.config import cfg
 from osa.rawcopy.raw import getrawdir
-from osa.utils import iofile, options
+from osa.utils import options
+from osa.utils.iofile import appendtofile
 from osa.utils.standardhandle import gettag, output, verbose
 
 __all__ = ["history", "start", "rule", "finished_assignments", "finished_text"]
@@ -160,4 +161,4 @@ def history(run, program, inputfile, inputcard, rc, historyfile):
     now = datetime.utcnow()
     datestring = now.strftime("%a %b %d %X UTC %Y")  # Similar but not equal to %c (no timezone)
     stringtowrite = f"{run} {program} {datestring} {inputfile} {inputcard} {rc}\n"
-    iofile.appendtofile(historyfile, stringtowrite)
+    appendtofile(historyfile, stringtowrite)

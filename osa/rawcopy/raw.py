@@ -1,8 +1,8 @@
 from glob import glob
 from os.path import exists, join
 
-from osa.configs import config
-from osa.utils import options, utils
+from osa.configs.config import cfg
+from osa.utils import options
 from osa.utils.standardhandle import error, gettag, output, verbose, warning
 from osa.utils.utils import lstdate_to_dir
 
@@ -10,8 +10,8 @@ from osa.utils.utils import lstdate_to_dir
 def arerawfilestransferredfortel(tel_id):
     tag = gettag()
     nightdir = lstdate_to_dir(options.date)
-    dir = join(config.cfg.get(tel_id, "ENDOFRAWTRANSFERDIR"), nightdir)
-    flagfile = join(dir, config.cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX"))
+    dir = join(cfg.get(tel_id, "ENDOFRAWTRANSFERDIR"), nightdir)
+    flagfile = join(dir, cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX"))
 
     # FIXME: How can we check that all files are there?
     if exists(flagfile):
@@ -36,9 +36,9 @@ def arerawfilestransferred():
 def get_check_rawdir():
     tag = gettag()
     rawdir = getrawdir()
-    rawsuffix = config.cfg.get("LSTOSA", "RAWSUFFIX")
+    rawsuffix = cfg.get("LSTOSA", "RAWSUFFIX")
     verbose(tag, f"raw suffix = {rawsuffix}")
-    compressedsuffix = config.cfg.get("LSTOSA", "COMPRESSEDSUFFIX")
+    compressedsuffix = cfg.get("LSTOSA", "COMPRESSEDSUFFIX")
     verbose(tag, f"raw compressed suffix = {rawsuffix + compressedsuffix}")
     verbose(tag, f"Trying raw directory: {rawdir}")
 
@@ -64,16 +64,16 @@ def get_check_rawdir():
 
 def getrawdir():
     rawdir = None
-    nightdir = utils.lstdate_to_dir(options.date)
+    nightdir = lstdate_to_dir(options.date)
     if options.tel_id == "LST1" or options.tel_id == "LST2":
-        rawdir = join(config.cfg.get(options.tel_id, "RAWDIR"), nightdir)
+        rawdir = join(cfg.get(options.tel_id, "RAWDIR"), nightdir)
     return rawdir
 
 
 def getreportdir():
     tag = gettag()
-    reportdir = join(config.cfg.get(options.tel_id, "REPORTDIR"), options.date)
-    reportsuffix = config.cfg.get("LSTOSA", "REPORTSUFFIX")
+    reportdir = join(cfg.get(options.tel_id, "REPORTDIR"), options.date)
+    reportsuffix = cfg.get("LSTOSA", "REPORTSUFFIX")
     if not exists(reportdir):
         # the most sensible thing to do is to quit succesfully after a warning
         # warning (tag, f"rawdir set to . because {rawdir} does not exists!")

@@ -2,8 +2,9 @@ import subprocess
 from os.path import exists, isfile, join
 
 from osa.configs import config
-from osa.rawcopy import raw
-from osa.utils import iofile, options
+from osa.rawcopy.raw import arerawfilestransferred, get_check_rawdir
+from osa.utils import options
+from osa.utils.iofile import readfromfile, writetofile
 from osa.utils.standardhandle import error, gettag, stringify, verbose
 from osa.utils.utils import build_lstbasename
 
@@ -29,7 +30,7 @@ def buildexternal(command, rawdir):
     """
     tag = gettag()
     commandargs = [command]
-    if not raw.arerawfilestransferred():
+    if not arerawfilestransferred():
         # ask for an incomplete night summary
         commandargs.append("-i")
     commandargs.append(rawdir)
@@ -71,17 +72,17 @@ def readnightsummary():
     options.nightsum = True
     # when executing the closer, 'options.nightsum' is always True
     if not options.nightsum:
-        rawdir = raw.get_check_rawdir()
+        rawdir = get_check_rawdir()
         command = config.cfg.get("LSTOSA", "NIGHTSUMMARYSCRIPT")
         verbose(tag, "executing command " + command + " " + rawdir)
         stdout = buildexternal(command, rawdir)
         if not options.simulate:
-            iofile.writetofile(nightsumfile, stdout)
+            writetofile(nightsumfile, stdout)
     else:
         if nightsumfile:
             if exists(nightsumfile) and isfile(nightsumfile):
                 try:
-                    stdout = iofile.readfromfile(nightsumfile)
+                    stdout = readfromfile(nightsumfile)
                 except IOError as NameError:
                     error(tag, f"Problems with file {nightsumfile}, {NameError}", 2)
             else:

@@ -12,7 +12,8 @@ from osa.nightsummary.extract import extractruns, extractsequences, extractsubru
 from osa.nightsummary.nightsummary import getnightsummaryfile, readnightsummary
 from osa.rawcopy.raw import arerawfilestransferred, get_check_rawdir
 from osa.reports.report import finished_assignments, finished_text, start
-from osa.utils import cliopts, options
+from osa.utils import options
+from osa.utils.cliopts import closercliparsing
 from osa.utils.standardhandle import error, gettag, output, verbose, warning
 from osa.utils.utils import createlock, getlockfile, is_defined, lstdate_to_dir, make_directory
 from osa.veto.veto import createclosed
@@ -358,6 +359,6 @@ if __name__ == "__main__":
 
     tag = gettag()
     # set the options through cli parsing
-    cliopts.closercliparsing()
+    closercliparsing()
     # run the routine
     closer()

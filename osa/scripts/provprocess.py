@@ -11,8 +11,9 @@ from osa.configs.config import cfg
 from osa.provenance.capture import get_activity_id, get_file_hash
 from osa.provenance.io import *
 from osa.provenance.utils import get_log_config
-from osa.utils import cliopts, options, standardhandle
-from osa.utils.standardhandle import gettag
+from osa.utils import options
+from osa.utils.cliopts import provprocessparsing
+from osa.utils.standardhandle import error, gettag, output, warning
 
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
@@ -24,7 +25,7 @@ def copy_used_file(src, out):
 
     # check src file exists
     if not Path(src).is_file():
-        standardhandle.warning(tag, f"{src} file cannot be accessed")
+        warning(tag, f"{src} file cannot be accessed")
 
     hash_src = get_file_hash(src, buffer="content")
     filename = PurePath(src).name
@@ -41,10 +42,10 @@ def copy_used_file(src, out):
     if hash_src != hash_out:
         try:
             shutil.copyfile(src, str(destpath))
-            standardhandle.output(tag, f"copying {destpath}")
+            output(tag, f"copying {destpath}")
         except Exception as ex:
-            standardhandle.warning(tag, f"could not copy {src} file into {str(destpath)}")
-            standardhandle.warning(tag, f"{ex}")
+            warning(tag, f"could not copy {src} file into {str(destpath)}")
+            warning(tag, f"{ex}")
 
 
 def parse_lines_log(filter_step, run_number):
@@ -54,7 +55,7 @@ def parse_lines_log(filter_step, run_number):
         for line in f.readlines():
             ll = line.split(PROV_PREFIX)
             if len(ll) != 3:
-                standardhandle.warning(tag, f"format {PROV_PREFIX} mismatch in log file {LOG_FILENAME}\n{line}")
+                warning(tag, f"format {PROV_PREFIX} mismatch in log file {LOG_FILENAME}\n{line}")
                 continue
             prov_str = ll.pop()
             prov_dict = yaml.safe_load(prov_str)
@@ -221,7 +222,7 @@ def produce_provenance():
 
         # check destination folder exists
         if not step_path.exists():
-            standardhandle.error(tag, f"Path {step_path} does not exist", 2)
+            error(tag, f"Path {step_path} does not exist", 2)
 
         # make folder log/ if does not exist
         outpath = step_path / "log"
@@ -247,20 +248,20 @@ def produce_provenance():
             with open(log_path, "w") as f:
                 for line in processed_lines:
                     f.write(f"{line}\n")
-            standardhandle.output(tag, f"creating {log_path}")
+            output(tag, f"creating {log_path}")
             provdoc = provlist2provdoc(processed_lines)
             # make json
             try:
                 provdoc2json(provdoc, str(json_filepath))
-                standardhandle.output(tag, f"creating {json_filepath}")
+                output(tag, f"creating {json_filepath}")
             except Exception as ex:
-                standardhandle.error(tag, f"problem while creating json: {ex}", 2)
+                error(tag, f"problem while creating json: {ex}", 2)
             # make graph
             try:
                 provdoc2graph(provdoc, str(graph_filepath), "pdf")
-                standardhandle.output(tag, f"creating {graph_filepath}")
+                output(tag, f"creating {graph_filepath}")
             except Exception as ex:
-                standardhandle.error(tag, f"problem while creating graph: {ex}", 2)
+                error(tag, f"problem while creating graph: {ex}", 2)
 
 
 if __name__ == "__main__":
@@ -272,7 +273,7 @@ if __name__ == "__main__":
     # -f r0_to_dl1
     # -q
     tag = gettag()
-    cliopts.provprocessparsing()
+    provprocessparsing()
 
     pathRO = cfg.get("LST1", "RAWDIR")
     pathDL1 = cfg.get("LST1", "ANALYSISDIR")
@@ -283,11 +284,11 @@ if __name__ == "__main__":
 
     # check LOG_FILENAME exists
     if not Path(LOG_FILENAME).exists():
-        standardhandle.error(tag, f"file {LOG_FILENAME} does not exist", 2)
+        error(tag, f"file {LOG_FILENAME} does not exist", 2)
 
     # check LOG_FILENAME is not empty
     if not Path(LOG_FILENAME).stat().st_size:
-        standardhandle.warning(tag, f"file {LOG_FILENAME} is empty")
+        warning(tag, f"file {LOG_FILENAME} is empty")
         exit()
 
     # build base_filename

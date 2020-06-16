@@ -3,8 +3,8 @@ import subprocess
 from os.path import exists, join
 
 from osa.configs.config import cfg
-from osa.utils import iofile, options
-from osa.utils.iofile import readfromfile
+from osa.utils import options
+from osa.utils.iofile import readfromfile, writetofile
 from osa.utils.standardhandle import error, gettag, stringify, verbose, warning
 from osa.utils.utils import lstdate_to_dir
 
@@ -153,7 +153,7 @@ def createsequencetxt(s, sequence_list):
     #    content += "tib_counter0: {0}\n".format(tib_counter0)
 
     if not options.simulate:
-        iofile.writetofile(f, content)
+        writetofile(f, content)
     else:
         verbose(tag, f"SIMULATE Creating sequence txt {f}")
 
@@ -340,7 +340,7 @@ def createjobtemplate(s, get_content=False):
     content += "    ])"
 
     if not options.simulate:
-        iofile.writetofile(s.script, content)
+        writetofile(s.script, content)
 
     if get_content:
         return content

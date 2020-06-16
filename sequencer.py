@@ -3,16 +3,17 @@ from decimal import Decimal
 from glob import glob
 from os.path import join
 
-from closer import is_day_closed
-from dev import dot
-from osa.configs import config
-from osa.jobs import job
-from osa.nightsummary import extract
+from .closer import is_day_closed
+from dev.dot import writeworkflow
+from osa.configs.config import cfg
+from osa.jobs.job import getqueuejoblist, preparedailyjobs, preparejobs, preparestereojobs, submitjobs
+from osa.nightsummary.extract import extractruns, extractsequences, extractsequencesstereo, extractsubruns
 from osa.nightsummary.nightsummary import readnightsummary
 from osa.reports.report import rule, start
-from osa.utils import cliopts, options
+from osa.utils import options
+from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_needed
 from osa.utils.standardhandle import gettag, output, verbose
-from osa.veto import veto
+from osa.veto.veto import getvetolist, getclosedlist
 
 __all__ = ["sequencer", "single_process"]
 
@@ -56,7 +57,7 @@ def single_process(telescope, process_mode):
     # define global variables and create night directory
     sequence_list = []
     options.tel_id = telescope
-    options.directory = cliopts.set_default_directory_if_needed()
+    options.directory = set_default_directory_if_needed()
     options.log_directory = os.path.join(options.directory, "log")
 
     if not options.simulate:
@@ -78,28 +79,28 @@ def single_process(telescope, process_mode):
 
     # building the sequences
     night = readnightsummary()
-    subrun_list = extract.extractsubruns(night)
-    run_list = extract.extractruns(subrun_list)
+    subrun_list = extractsubruns(night)
+    run_list = extractruns(subrun_list)
     # modifies run_list by adding the seq and parent info into runs
-    sequence_list = extract.extractsequences(run_list)
+    sequence_list = extractsequences(run_list)
 
     # FIXME: Does this makes sense or should be removed?
     # workflow and submission
     # if not options.simulate:
-    #     dot.writeworkflow(sequence_list)
+    #     writeworkflow(sequence_list)
 
     # adds the scripts
-    job.preparejobs(sequence_list)
+    preparejobs(sequence_list)
 
-    # queue_list = job.getqueuejoblist(sequence_list)
-    veto_list = veto.getvetolist(sequence_list)
-    closed_list = veto.getclosedlist(sequence_list)
+    # queue_list = getqueuejoblist(sequence_list)
+    veto_list = getvetolist(sequence_list)
+    closed_list = getclosedlist(sequence_list)
     updatelstchainstatus(sequence_list)
     # updatesequencedb(sequence_list)
     # actually, submitjobs does not need the queue_list nor veto_list
-    # job_list = job.submitjobs(sequence_list, queue_list, veto_list)
+    # job_list = submitjobs(sequence_list, queue_list, veto_list)
 
-    job_list = job.submitjobs(sequence_list)
+    job_list = submitjobs(sequence_list)
 
     # report
     if is_report_needed:
@@ -117,21 +118,21 @@ def single_process(telescope, process_mode):
 def stereo_process(telescope, s1_list, s2_list):
 
     options.tel_id = telescope
-    options.directory = cliopts.set_default_directory_if_needed()
+    options.directory = set_default_directory_if_needed()
 
     # building the sequences
-    sequence_list = extract.extractsequencesstereo(s1_list, s2_list)
+    sequence_list = extractsequencesstereo(s1_list, s2_list)
     # workflow and Submission
-    dot.writeworkflow(sequence_list)
+    writeworkflow(sequence_list)
     # adds the scripts
-    job.preparestereojobs(sequence_list)
-    # job.preparedailyjobs(dailysrc_list)
-    queue_list = job.getqueuejoblist(sequence_list)
-    veto_list = veto.getvetolist(sequence_list)
-    closed_list = veto.getclosedlist(sequence_list)
+    preparestereojobs(sequence_list)
+    # preparedailyjobs(dailysrc_list)
+    queue_list = getqueuejoblist(sequence_list)
+    veto_list = getvetolist(sequence_list)
+    closed_list = getclosedlist(sequence_list)
     updatelstchainstatus(sequence_list)
     # actually, submitjobs does not need the queue_list nor veto_list
-    job_list = job.submitjobs(sequence_list)
+    job_list = submitjobs(sequence_list)
     # finalizing report
     rule()
     reportsequences(sequence_list)
@@ -154,8 +155,8 @@ def updatelstchainstatus(seq_list):
 
 def getlstchainforsequence(s, program):
 
-    prefix = config.cfg.get("LSTOSA", program + "PREFIX")
-    suffix = config.cfg.get("LSTOSA", program + "SUFFIX")
+    prefix = cfg.get("LSTOSA", program + "PREFIX")
+    suffix = cfg.get("LSTOSA", program + "SUFFIX")
     files = glob(join(options.directory, f"{prefix}*{s.run}*{suffix}"))
     numberoffiles = len(files)
     verbose(tag, f"Found {numberoffiles} {program} files for sequence name {s.jobname}")
@@ -221,7 +222,7 @@ def reportsequences(seqlist):
             row_list.append(s.muonstatus)
             row_list.append(s.dl2status)
         matrix.append(row_list)
-    padding = int(config.cfg.get("OUTPUT", "PADDING"))
+    padding = int(cfg.get("OUTPUT", "PADDING"))
     prettyoutputmatrix(matrix, padding)
 
 
@@ -231,10 +232,10 @@ def reportsequences(seqlist):
 #     from datetime import datetime
 #     from mysql import insert_db, select_db
 #
-#     server = config.cfg.get('MYSQL', 'SERVER')
-#     user = config.cfg.get('MYSQL', 'USER')
-#     database = config.cfg.get('MYSQL', 'DATABASE')
-#     table = config.cfg.get('MYSQL', 'SUMMARYTABLE')
+#     server = cfg.get('MYSQL', 'SERVER')
+#     user = cfg.get('MYSQL', 'USER')
+#     database = cfg.get('MYSQL', 'DATABASE')
+#     table = cfg.get('MYSQL', 'SUMMARYTABLE')
 #
 #     if len(sequence_list) != 0:
 #         """ Declare the beginning of OSA activity """
@@ -266,10 +267,10 @@ def reportsequences(seqlist):
 #     from osa.configs import config
 #     from mysql import update_db, insert_db, select_db
 #
-#     server = config.cfg.get('MYSQL', 'SERVER')
-#     user = config.cfg.get('MYSQL', 'USER')
-#     database = config.cfg.get('MYSQL', 'DATABASE')
-#     table = config.cfg.get('MYSQL', 'SEQUENCETABLE')
+#     server = cfg.get('MYSQL', 'SERVER')
+#     user = cfg.get('MYSQL', 'USER')
+#     database = cfg.get('MYSQL', 'DATABASE')
+#     table = cfg.get('MYSQL', 'SEQUENCETABLE')
 #     for s in seqlist:
 #         """ Fine tuning """
 #         hostname = None
@@ -369,6 +370,6 @@ if __name__ == "__main__":
 
     tag = gettag()
     # set the options through parsing of the command line interface
-    cliopts.sequencercliparsing()
+    sequencercliparsing()
     # run the routine
     sequencer()
