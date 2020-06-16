@@ -21,22 +21,21 @@ def sequencer():
     """Runs the sequencer
     This is the main script to be called in crontab
     """
-    tag = gettag()
 
     process_mode = None
-    single_array = ['LST1', 'LST2']
+    single_array = ["LST1", "LST2"]
     start(tag)
     if options.tel_id in single_array:
-        process_mode = 'single'
+        process_mode = "single"
         single_process(options.tel_id, process_mode)
     else:
-        if options.tel_id == 'all':
-            process_mode = 'complete'
-        elif options.tel_id == 'ST':
-            process_mode = 'stereo'
-        sequence_lst1 = single_process('LST1', process_mode)
-        sequence_lst2 = single_process('LST2', process_mode)
-        sequence_st = stereo_process('ST', sequence_lst1, sequence_lst2)
+        if options.tel_id == "all":
+            process_mode = "complete"
+        elif options.tel_id == "ST":
+            process_mode = "stereo"
+        sequence_lst1 = single_process("LST1", process_mode)
+        sequence_lst2 = single_process("LST2", process_mode)
+        sequence_st = stereo_process("ST", sequence_lst1, sequence_lst2)
 
 
 def single_process(telescope, process_mode):
@@ -53,14 +52,12 @@ def single_process(telescope, process_mode):
     -------
     sequence_list : 
     """
-    tag = gettag()
 
+    # define global variables and create night directory
     sequence_list = []
-
-    # Define global variables and create night directory
     options.tel_id = telescope
     options.directory = cliopts.set_default_directory_if_needed()
-    options.log_directory = os.path.join(options.directory, 'log')
+    options.log_directory = os.path.join(options.directory, "log")
 
     if not options.simulate:
         os.makedirs(options.log_directory, exist_ok=True)
@@ -68,30 +65,30 @@ def single_process(telescope, process_mode):
     simulate_save = options.simulate
     is_report_needed = True
 
-    if process_mode == 'single':
+    if process_mode == "single":
         if is_day_closed():
             output(tag, f"Day {options.date} for {options.tel_id} already closed")
             return sequence_list
     else:
-        if process_mode == 'stereo':
-            # Only simulation for single array required
+        if process_mode == "stereo":
+            # only simulation for single array required
             options.nightsum = True
             options.simulate = True
             is_report_needed = False
 
-    # Building the sequences
+    # building the sequences
     night = readnightsummary()
     subrun_list = extract.extractsubruns(night)
     run_list = extract.extractruns(subrun_list)
-    # Modifies run_list by adding the seq and parent info into runs
+    # modifies run_list by adding the seq and parent info into runs
     sequence_list = extract.extractsequences(run_list)
 
     # FIXME: Does this makes sense or should be removed?
-    # Workflow and Submission
+    # workflow and submission
     # if not options.simulate:
     #     dot.writeworkflow(sequence_list)
 
-    # Adds the scripts
+    # adds the scripts
     job.preparejobs(sequence_list)
 
     # queue_list = job.getqueuejoblist(sequence_list)
@@ -104,31 +101,29 @@ def single_process(telescope, process_mode):
 
     job_list = job.submitjobs(sequence_list)
 
-    # Report
+    # report
     if is_report_needed:
         # insert_if_new_activity_db(sequence_list)
         # updatesequencedb(sequence_list)
         # rule()
         reportsequences(sequence_list)
 
-    # Cleaning
+    # cleaning
     # options.directory = None
     # options.simulate = simulate_save
-
     return sequence_list
 
 
 def stereo_process(telescope, s1_list, s2_list):
-    tag = gettag()
 
     options.tel_id = telescope
     options.directory = cliopts.set_default_directory_if_needed()
 
-    # Building the sequences
+    # building the sequences
     sequence_list = extract.extractsequencesstereo(s1_list, s2_list)
-    # Workflow and Submission
+    # workflow and Submission
     dot.writeworkflow(sequence_list)
-    # Adds the scripts
+    # adds the scripts
     job.preparestereojobs(sequence_list)
     # job.preparedailyjobs(dailysrc_list)
     queue_list = job.getqueuejoblist(sequence_list)
@@ -137,72 +132,96 @@ def stereo_process(telescope, s1_list, s2_list):
     updatelstchainstatus(sequence_list)
     # actually, submitjobs does not need the queue_list nor veto_list
     job_list = job.submitjobs(sequence_list)
-    # Finalizing report
+    # finalizing report
     rule()
     reportsequences(sequence_list)
-    # Cleaning
+    # cleaning
     options.directory = None
     return sequence_list
 
 
 def updatelstchainstatus(seq_list):
-    tag = gettag()
+
     for s in seq_list:
-        if s.type == 'CALI':
-            s.calibstatus = int(Decimal(getlstchainforsequence(s, 'CALIB') * 100) / s.subruns)
-        elif s.type == 'DATA':
-            s.dl1status = int(Decimal(getlstchainforsequence(s, 'DL1') * 100) / s.subruns)
-            s.datacheckstatus = int(Decimal(getlstchainforsequence(s, 'DATACHECK') * 100) / s.subruns)
-            s.muonstatus = int(Decimal(getlstchainforsequence(s, 'MUON') * 100) / s.subruns)
-            s.dl2status = int(Decimal(getlstchainforsequence(s, 'DL2') * 100) / s.subruns)
+        if s.type == "CALI":
+            s.calibstatus = int(Decimal(getlstchainforsequence(s, "CALIB") * 100) / s.subruns)
+        elif s.type == "DATA":
+            s.dl1status = int(Decimal(getlstchainforsequence(s, "DL1") * 100) / s.subruns)
+            s.datacheckstatus = int(Decimal(getlstchainforsequence(s, "DATACHECK") * 100) / s.subruns)
+            s.muonstatus = int(Decimal(getlstchainforsequence(s, "MUON") * 100) / s.subruns)
+            s.dl2status = int(Decimal(getlstchainforsequence(s, "DL2") * 100) / s.subruns)
 
 
 def getlstchainforsequence(s, program):
-    tag = gettag()
 
-    prefix = config.cfg.get('LSTOSA', program + 'PREFIX')
-    suffix = config.cfg.get('LSTOSA', program + 'SUFFIX')
+    prefix = config.cfg.get("LSTOSA", program + "PREFIX")
+    suffix = config.cfg.get("LSTOSA", program + "SUFFIX")
     files = glob(join(options.directory, f"{prefix}*{s.run}*{suffix}"))
     numberoffiles = len(files)
     verbose(tag, f"Found {numberoffiles} {program} files for sequence name {s.jobname}")
-
     return numberoffiles
 
 
 def reportsequences(seqlist):
-    tag = gettag()
+
     matrix = []
     header = [
-        'Tel', 'Seq', 'Parent', 'Type', 'Run', 'Subruns',
-        'Source', 'Wobble', 'Action', 'Tries', 'JobID',
-        'State', 'Host', 'CPU_time', 'Walltime', 'Exit'
+        "Tel",
+        "Seq",
+        "Parent",
+        "Type",
+        "Run",
+        "Subruns",
+        "Source",
+        "Wobble",
+        "Action",
+        "Tries",
+        "JobID",
+        "State",
+        "Host",
+        "CPU_time",
+        "Walltime",
+        "Exit",
     ]
-    if options.tel_id == 'LST1' or options.tel_id == 'LST2':
-        header.append('DL1 %')
-        header.append('DATACHECK %')
-        header.append('MUONS %')
-        header.append('DL2 %')
+    if options.tel_id == "LST1" or options.tel_id == "LST2":
+        header.append("DL1 %")
+        header.append("DATACHECK %")
+        header.append("MUONS %")
+        header.append("DL2 %")
 
     matrix.append(header)
     for s in seqlist:
         row_list = [
-            s.telescope, s.seq, s.parent, s.type, s.run, s.subruns,
-            s.source, s.wobble, s.action, s.tries, s.jobid, s.state,
-            s.jobhost, s.cputime, s.walltime, s.exit
+            s.telescope,
+            s.seq,
+            s.parent,
+            s.type,
+            s.run,
+            s.subruns,
+            s.source,
+            s.wobble,
+            s.action,
+            s.tries,
+            s.jobid,
+            s.state,
+            s.jobhost,
+            s.cputime,
+            s.walltime,
+            s.exit,
         ]
-        if s.type == 'CALI':
-            # Repeat None for every data level
+        if s.type == "CALI":
+            # repeat None for every data level
             row_list.append(None)
             row_list.append(None)
             row_list.append(None)
             row_list.append(None)
-        elif s.type == 'DATA':
+        elif s.type == "DATA":
             row_list.append(s.dl1status)
             row_list.append(s.datacheckstatus)
             row_list.append(s.muonstatus)
             row_list.append(s.dl2status)
         matrix.append(row_list)
-    padding = int(config.cfg.get('OUTPUT', 'PADDING'))
+    padding = int(config.cfg.get("OUTPUT", "PADDING"))
     prettyoutputmatrix(matrix, padding)
 
 
@@ -318,7 +337,7 @@ def reportsequences(seqlist):
 
 
 def prettyoutputmatrix(m, paddingspace):
-    tag = gettag()
+
     maxfieldlength = []
     for i in range(len(m)):
         row = m[i]
@@ -331,24 +350,25 @@ def prettyoutputmatrix(m, paddingspace):
                 # Insert or update the first length
                 maxfieldlength[j] = len(str(col))
     for row in m:
-        stringrow = ''
+        stringrow = ""
         for j in range(len(row)):
             col = row[j]
-            lpadding = (maxfieldlength[j] - len(str(col))) * ' '
-            rpadding = paddingspace * ' '
+            lpadding = (maxfieldlength[j] - len(str(col))) * " "
+            rpadding = paddingspace * " "
             if isinstance(col, int):
-                # We got an integer, right aligned
+                # we got an integer, right aligned
                 stringrow += f"{lpadding}{col}{rpadding}"
             else:
-                # Should be a string, left aligned
+                # should be a string, left aligned
                 stringrow += f"{col}{lpadding}{rpadding}"
         output(tag, stringrow)
 
 
-if __name__ == '__main__':
-    """ Sequencer called as a script does the full job """
+if __name__ == "__main__":
+    """Sequencer called as a script does the full job."""
+
     tag = gettag()
-    # Set the options through parsing of the command line interface
+    # set the options through parsing of the command line interface
     cliopts.sequencercliparsing()
-    # Run the routine
+    # run the routine
     sequencer()
