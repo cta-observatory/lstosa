@@ -17,7 +17,7 @@ class Telescope(Night):
 
 class Source(Telescope):
     def __init__(self):
-        super(Source, self).__init__()    
+        super(Source, self).__init__()
         self.source = None
 
 
@@ -40,7 +40,7 @@ class RunObj(Wobble):
 
 class SubrunObj(RunObj):
     def __init__(self):
-        self.runobj = None 
+        self.runobj = None
         self.subrun_str = None
         self.subrun = None
         self.kind = None
@@ -84,7 +84,7 @@ class Sequence(RunObj):
 class SequenceCalibration(Sequence):
     def __init__(self, r):
         super(SequenceCalibration, self).__init__()
-        super(SequenceCalibration, self).associate(r)        
+        super(SequenceCalibration, self).associate(r)
         self.calibstatus = None
 
 
@@ -105,22 +105,20 @@ class SequenceData(Sequence):
 class SequenceStereo(Sequence):
     def __init__(self, v, w):
         super(SequenceStereo, self).__init__()
-        attr_list = [
-            'run', 'subrun_list', 'subruns',
-            'wobble', 'sourcewobble', 'source', 'night'
-        ]
+        attr_list = ["run", "subrun_list", "subruns", "wobble", "sourcewobble", "source", "night"]
         for a in attr_list:
-            """ This copies the unique attrs of both sequences """
+            # this copies the unique attrs of both sequences
             self.__dict__.update({a: self.set_unique(v.__dict__[a], w.__dict__[a])})
-        self.type = 'STEREO'
-        self.telescope = 'ST'
+        self.type = "STEREO"
+        self.telescope = "ST"
         self.subruns = v.subruns + w.subruns
         self.parent_list = [v, w]
-        self.parent = "{0},{1}".format(v.seq, w.seq)
-        self.parentjobid = "{0}:{1}".format(v.jobid, w.jobid)
+        self.parent = f"{v.seq},{w.seq}"
+        self.parentjobid = f"{v.jobid}:{w.jobid}"
         self.superstarstatus = None
 
-    def set_unique(self, v_attr, w_attr):
+    @staticmethod
+    def set_unique(v_attr, w_attr):
         if v_attr == w_attr:
             return v_attr
         else:
