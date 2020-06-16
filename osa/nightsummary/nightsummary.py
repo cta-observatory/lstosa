@@ -31,7 +31,7 @@ def buildexternal(command, rawdir):
     commandargs = [command]
     if not raw.arerawfilestransferred():
         # ask for an incomplete night summary
-        commandargs.append('-i')
+        commandargs.append("-i")
     commandargs.append(rawdir)
     try:
         stdout = subprocess.check_output(commandargs, universal_newlines=True)
@@ -49,9 +49,7 @@ def build(rawdir):
     We use first the database approach and the directory listing as
     a failover.
     """
-
     tag = gettag()
-
     error(tag, "This function is not yet implemented", 2)
 
 
@@ -67,15 +65,15 @@ def readnightsummary():
         The content of the nightsummary txt file.
     """
     tag = gettag()
-    # At the moment we profit from the output of the nightsummary script
+    # at the moment we profit from the output of the nightsummary script
     nightsumfile = getnightsummaryfile()
     stdout = None
     options.nightsum = True
-    # When executing the closer, 'options.nightsum' is always True
+    # when executing the closer, 'options.nightsum' is always True
     if not options.nightsum:
         rawdir = raw.get_check_rawdir()
-        command = config.cfg.get('LSTOSA', 'NIGHTSUMMARYSCRIPT')
-        verbose(tag, "executing command " + command + ' ' + rawdir)
+        command = config.cfg.get("LSTOSA", "NIGHTSUMMARYSCRIPT")
+        verbose(tag, "executing command " + command + " " + rawdir)
         stdout = buildexternal(command, rawdir)
         if not options.simulate:
             iofile.writetofile(nightsumfile, stdout)
@@ -103,19 +101,18 @@ def getnightsummaryfile():
     nightsummaryfile : str
         File name of the nightsummary txt file
     """
-    tag = gettag()
-    if options.tel_id == 'LST1' or options.tel_id == 'LST2':
-        nightsumprefix = config.cfg.get('LSTOSA', 'NIGHTSUMMARYPREFIX')
-        nightsumsuffix = config.cfg.get('LSTOSA', 'TEXTSUFFIX')
-        nightsumdir = config.cfg.get('LSTOSA', 'NIGHTSUMDIR')
+    if options.tel_id == "LST1" or options.tel_id == "LST2":
+        nightsumprefix = config.cfg.get("LSTOSA", "NIGHTSUMMARYPREFIX")
+        nightsumsuffix = config.cfg.get("LSTOSA", "TEXTSUFFIX")
+        nightsumdir = config.cfg.get("LSTOSA", "NIGHTSUMDIR")
         basename = build_lstbasename(nightsumprefix, nightsumsuffix)
         nightsummaryfile = join(nightsumdir, basename)
         return nightsummaryfile
-    # Only the closer needs the night summary file in case of 'ST'.
-    # Since ST has no night summary file, we give him the one from LST1
-    elif options.tel_id == 'ST':
-        nightsumprefix = config.cfg.get('LSTOSA', 'NIGHTSUMMARYPREFIX')
-        nightsumsuffix = config.cfg.get('LSTOSA', 'TEXTSUFFIX')
+    # only the closer needs the night summary file in case of 'ST'.
+    # since ST has no night summary file, we give him the one from LST1
+    elif options.tel_id == "ST":
+        nightsumprefix = config.cfg.get("LSTOSA", "NIGHTSUMMARYPREFIX")
+        nightsumsuffix = config.cfg.get("LSTOSA", "TEXTSUFFIX")
         basename = build_lstbasename(nightsumprefix, nightsumsuffix)
         nightsummaryfile = join(options.directory, basename)
         return nightsummaryfile.replace("ST", "LST1")
