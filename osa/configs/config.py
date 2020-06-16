@@ -1,58 +1,34 @@
 import tempfile
+from configparser import SafeConfigParser
 from os import unlink
 
 from osa.utils import options
-from osa.utils.standardhandle import error, gettag, verbose, warning
+from osa.utils.standardhandle import error, gettag, verbose
 
 
-##############################################################################
-#
-# readconf
-#
-##############################################################################
 def readconf(file):
+
     tag = gettag()
-    conf = None
-
-    try:
-        # Python 2.7
-        import ConfigParser
-    except ImportError as Error:
-        warning(tag, "Increasing to python 3 ConfigParser")
-        import configparser
-        conf = configparser.SafeConfigParser(allow_no_value=True)
-    else:
-        conf = ConfigParser.SafeConfigParser(allow_no_value=True)
-
+    conf = SafeConfigParser(allow_no_value=True)
     try:
         conf.read(file)
-    except ConfigParser.Error as NameError:
-        error(tag, NameError, 3)
-
+    except SafeConfigParser.Error as err:
+        error(tag, err, 3)
     verbose(tag, "sections of the config file are {0}".format(conf.sections()))
     return conf
-##############################################################################
-#
-# read_properties
-#
-##############################################################################
-def read_properties(file):
-    tag = gettag()
 
-    """ To be used when config file has no header, creating a DUMMY header""" 
-    fname = None
+
+def read_properties(file):
+    """ To be used when config file has no header, creating a DUMMY header"""
+
     with tempfile.NamedTemporaryFile(delete=False) as tf:
-        tf.write('[DUMMY]\n')
-        fname = tf.name
+        tf.write("[DUMMY]\n")
         with open(file) as f:
             tf.write(f.read())
         tf.seek(0)
         conf = readconf(tf.name)
     unlink(tf.name)
     return conf
-##############################################################################
-#
-# cfg
-#
-##############################################################################
+
+
 cfg = readconf(options.configfile)
