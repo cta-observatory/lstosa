@@ -330,10 +330,10 @@ def createjobtemplate(s, get_content=False):
     content += "subprocess.call([\n"
     for i in commandargs:
         content += f"    '{i}',\n"
-    # content += f"    '--stderr=sequence_{s.jobname}_{str(s.job_id)}.err',\n"
-    # content += f"    '--stdout=sequence_{s.jobname}_{str(s.job_id)}.out',\n"
+    content += f"    '--stderr=sequence_{0}_".format(s.jobname) + "{0}.err'" + '.format(str(job_id))' + ',\n'
+    content += "    '--stdout=sequence_{0}_".format(s.jobname) + "{0}.out'" + '.format(str(job_id))' + ',\n'
     if s.type == "DATA":
-        content += f"    '{str(s.run).zfill(5)}.{str(s.subruns).zfill(4)}',\n"
+        content += "    '{0}".format(str(s.run).zfill(5)) + ".{0}'" + '.format(str(subruns).zfill(4))' + ',\n'
     else:
         content += f"    '{str(s.run).zfill(5)}',\n"
     content += f"    '{options.tel_id}'\n"
