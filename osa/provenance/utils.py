@@ -1,7 +1,6 @@
 """
 Utility functions for OSA pipeline provenance
 """
-
 import logging
 import re
 import sys

@@ -1,7 +1,6 @@
 """
 Provenance i/o conversion functions
 """
-
 import datetime
 from pathlib import Path
 

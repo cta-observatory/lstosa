@@ -4,13 +4,13 @@
 # This is the recommended way to share variables according to
 # http://docs.python.org/faq/programming.html#how-do-i-share-global-variables-across-modules
 #
-configfile = 'cfg/sequencer.cfg'
+configfile = "cfg/sequencer.cfg"
 stdout = None
 stderr = None
 date = None
 mode = None
 tel_id = None
-nightsum = 'True'
+nightsum = True
 reason = None
 directory = None
 log_directory = None
@@ -22,3 +22,8 @@ nocheck = None
 compressed = None
 lstchain_version = None
 prod_id = None
+append = None
+provenance = True
+force = None
+filter = None
+quit = None

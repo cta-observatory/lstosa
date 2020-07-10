@@ -1,10 +1,7 @@
-import re
 import shutil
-from datetime import datetime
 from filecmp import cmp
 from glob import glob
-from os.path import basename, exists, getmtime, getsize, join
-from socket import gethostname
+from os.path import basename, exists, join
 
 from osa.configs.config import cfg
 from osa.utils import options
@@ -13,8 +10,7 @@ from osa.utils.utils import lstdate_to_dir
 
 
 def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
-    """Copy files into final data directory destination and register them
-    into the DB (to be implemented)
+    """Copy files into final data directory destination and register them into the DB (to be implemented).
 
     Parameters
     ----------
@@ -25,33 +21,33 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
     prefix: prefix of the data file
     type : type of run for DB purposes
     """
-    tag = gettag()
 
+    tag = gettag()
     file_list = glob(join(inputdir, f"{prefix}*{run_str}*{suffix}"))
-    verbose(tag, "File list is {0}".format(file_list))
-    hostname = gethostname()
-    # The default subrun index for most of the files
-    run = int(run_str.lstrip('0'))
-    subrun = 1
+    verbose(tag, f"File list is {file_list}")
+    # hostname = gethostname()
+    # the default subrun index for most of the files
+    # run = int(run_str.lstrip("0"))
+    # subrun = 1
     for inputf in file_list:
-        # Next is the way of searching 3 digits after a dot in filenames
-        subrunsearch = re.search('(?<=\.)\d\d\d_', basename(inputf))
-        if subrunsearch:
-            # And strip the zeroes after getting the first 3 character
-            subrun = subrunsearch.group(0)[0:3].lstrip('0')
+        # next is the way of searching 3 digits after a dot in filenames
+        # subrunsearch = re.search("(?<=\.)\d\d\d_", basename(inputf))
+        # if subrunsearch:
+            # and strip the zeroes after getting the first 3 character
+            # subrun = subrunsearch.group(0)[0:3].lstrip("0")
         outputf = join(outputdir, basename(inputf))
         if exists(outputf) and cmp(inputf, outputf):
-            # Do nothing than acknowledging
-            verbose(tag, "Destination file {0} exists and it is identical to input".format(outputf))
+            # do nothing than acknowledging
+            verbose(tag, f"Destination file {outputf} exists and it is identical to input")
         else:
-            # There is no output file or it is different
-            verbose(tag, "Moving file {0}".format(outputf))
+            # there is no output file or it is different
+            verbose(tag, f"Moving file {outputf}")
             shutil.move(inputf, outputf)
-            # For the moment we are not interested in calculating the hash md5
+            # for the moment we are not interested in calculating the hash md5
             # md5sum = get_md5sum_and_copy(inputf, outputf)
             # verbose(tag, "Resulting md5sum={0}".format(md5sum))
-            mtime = datetime.fromtimestamp(getmtime(outputf))
-            size = getsize(outputf)
+            # mtime = datetime.fromtimestamp(getmtime(outputf))
+            # size = getsize(outputf)
 
             # # DB config parameters
             # s = cfg.get('MYSQL', 'SERVER')
@@ -102,12 +98,13 @@ def register_run_concept_files(run_string, concept):
     run_string
     concept
     """
+
     tag = gettag()
     inputdir = options.directory
     nightdir = lstdate_to_dir(options.date)
-    outputdir = join(cfg.get(options.tel_id, concept + 'DIR'), nightdir, options.prod_id)
-    type = cfg.get('LSTOSA', concept + 'TYPE')
-    prefix = cfg.get('LSTOSA', concept + 'PREFIX')
-    suffix = cfg.get('LSTOSA', concept + 'SUFFIX')
+    outputdir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id)
+    type = cfg.get("LSTOSA", concept + "TYPE")
+    prefix = cfg.get("LSTOSA", concept + "PREFIX")
+    suffix = cfg.get("LSTOSA", concept + "SUFFIX")
     verbose(tag, f"Registering {type} file for {prefix}*{run_string}*{suffix}")
     register_files(type, run_string, inputdir, prefix, suffix, outputdir)
