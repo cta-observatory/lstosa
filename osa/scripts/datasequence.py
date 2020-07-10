@@ -102,11 +102,13 @@ def r0_to_dl1(
     datafile = join(
         cfg.get("LST1", "RAWDIR"), nightdir, f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "R0SUFFIX")}'
     )
+    nightdir = lstdate_to_dir(options.date)
+    dl1_directory = join(cfg.get('LST1', 'DL1DIR'), nightdir, cfg.get("LSTOSA", "DL1-PROD-ID"))
 
     commandargs = [
         fullcommand,
         "--input-file=" + datafile,
-        "--output-dir=" + options.directory,
+        "--output-dir=" + dl1_directory,
         "--pedestal-file=" + pedestalfile,
         "--calibration-file=" + calibrationfile,
         "--config=" + configfile,
@@ -126,7 +128,10 @@ def r0_to_dl1(
     except OSError as ValueError:
         error(tag, f"Command {'stringify(commandargs)'} failed, {ValueError}", ValueError)
     else:
-        history(run_str, basename(fullcommand), basename(calibrationfile), basename(pedestalfile), rc, historyfile)
+        history(
+            run_str, cfg.get('LST1', 'DL1-PROD-ID'), basename(fullcommand),
+            basename(calibrationfile), basename(pedestalfile), rc, historyfile
+        )
         return rc
 
 
@@ -151,13 +156,13 @@ def dl1_to_dl2(run_str, historyfile):
     fullcommand = lstchaincommand
     datafile = join(options.directory, f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}')
 
-    # nightdir = lstdate_to_dir(options.date)
-    # dl2_directory = join(cfg.get('LST1', 'DL2DIR'), nightdir, options.prod_id)
+    nightdir = lstdate_to_dir(options.date)
+    dl2_directory = join(cfg.get('LST1', 'DL2DIR'), nightdir, cfg.get("LST1", "DL2-PROD-ID"))
 
     commandargs = [
         fullcommand,
         "--input-file=" + datafile,
-        "--output-dir=" + options.directory,
+        "--output-dir=" + dl2_directory,
         "--path-models=" + rf_models_directory,
         "--config=" + configfile,
     ]
@@ -170,7 +175,10 @@ def dl1_to_dl2(run_str, historyfile):
     except OSError as ValueError:
         error(tag, f"Command {'stringify(commandargs)'} failed, {ValueError}", ValueError)
     else:
-        history(run_str, basename(fullcommand), basename(datafile), basename(configfile), rc, historyfile)
+        history(
+            run_str, cfg.get('LST1', 'DL2-PROD-ID'), basename(fullcommand),
+            basename(datafile), basename(configfile), rc, historyfile
+        )
         return rc
 
 
