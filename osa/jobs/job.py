@@ -38,9 +38,10 @@ def historylevel(historyfile, type):
         for line in readfromfile(historyfile).splitlines():
             words = line.split()
             try:
-                program = words[1]
-                exit_status = int(words[10])
-                print("DEBUG:", program, exit_status)
+                prod_id = words[1]
+                program = words[2]
+                exit_status = int(words[-1])
+                verbose(tag, f"{program}, finished with error {exit_status}")
             except IndexError as err:
                 error(tag, f"Malformed history file {historyfile}, {err}", 3)
             except ValueError as err:
@@ -54,7 +55,7 @@ def historylevel(historyfile, type):
                         level = 3
                 elif program == cfg.get("LSTOSA", "DL1-DL2"):
                     nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "DL1-DL2").split(",")]
-                    if exit_status in nonfatalrcs:
+                    if (exit_status in nonfatalrcs) and (prod_id == cfg.get("LST1", "DL2-PROD-ID")):
                         level = 0
                     else:
                         level = 2
