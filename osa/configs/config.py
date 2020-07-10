@@ -1,12 +1,22 @@
 import tempfile
+import sys
 from configparser import SafeConfigParser
 from os import unlink
+from pathlib import Path
 
 from osa.utils import options
 from osa.utils.standardhandle import error, gettag, verbose
 
 
-def readconf(file):
+def readconf():
+
+    for idx, arg in enumerate(sys.argv):
+        if arg == "-c" or arg == "--config":
+            options.configfile = sys.argv[idx+1]
+    file = options.configfile
+
+    if not Path(file).exists():
+        raise FileNotFoundError("Configuration file not found.")
 
     tag = gettag()
     conf = SafeConfigParser(allow_no_value=True)
@@ -31,4 +41,4 @@ def read_properties(file):
     return conf
 
 
-cfg = readconf(options.configfile)
+cfg = readconf()
