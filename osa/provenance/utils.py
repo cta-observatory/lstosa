@@ -107,11 +107,11 @@ def get_log_config():
 
     # fetch config filename value from args
     in_config_arg = False
-    for args in sys.argv:
+    for arg in sys.argv:
         if in_config_arg:
-            config_file = args
+            config_file = arg
             in_config_arg = False
-        if args.startswith("-c") or args.startswith("--config"):
+        if arg == "-c" or arg == "--config":
             in_config_arg = True
 
     # parse configuration

@@ -1,5 +1,5 @@
-import tempfile
 import sys
+import tempfile
 from configparser import SafeConfigParser
 from os import unlink
 from pathlib import Path
