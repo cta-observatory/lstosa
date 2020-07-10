@@ -1,90 +1,73 @@
-from osa.utils.standardhandle import output, verbose, error, errornonfatal, gettag
+import filecmp
+from os import remove, rename
+from os.path import exists, isfile
+
 from osa.utils import options
-##############################################################################
-#
-# readfromfile
-#
-##############################################################################
+from osa.utils.standardhandle import error, gettag, verbose
+
+
 def readfromfile(file):
     tag = gettag()
-    from os.path import exists, isfile
     if exists(file):
         if isfile(file):
             try:
-                with open(file, 'r') as f:
+                with open(file, "r") as f:
                     return f.read()
             except (IOError, OSError) as e:
-                error(tag, "{0} {1}".format(e.strerror, e.filename), e.errno)
+                error(tag, f"{e.strerror} {e.filename}", e.errno)
         else:
-           error(tag, "{0} is not a file".format(file), 1)
+            error(tag, f"{file} is not a file", 1)
     else:
-        error(tag, "File does not exists {0}".format(file), 1)
-##############################################################################
-#
-# writetofile
-#
-##############################################################################
+        error(tag, f"File does not exists {file}", 1)
+
+
 def writetofile(f, content):
     tag = gettag()
-    from os.path import exists
-    from os import remove, rename
-    import subprocess
-    ftemp= f + '.tmp'
+    ftemp = f + ".tmp"
     try:
-        with open(ftemp, 'w') as filehandle:
-            filehandle.write("{0}".format(content))
+        with open(ftemp, "w") as filehandle:
+            filehandle.write(f"{content}")
     except (IOError, OSError) as e:
-        error(tag, "{0} {1}".format(e.strerror, e.filename), e.errno)
-    
+        error(tag, f"{e.strerror} {e.filename}", e.errno)
+
     if exists(f):
-        import filecmp
         if filecmp.cmp(f, ftemp):
             remove(ftemp)
             return False
         else:
             if options.simulate:
                 remove(ftemp)
-                verbose(tag, "SIMULATE File {0} would replace {1}. Deleting {0}".format(ftemp, f))
+                verbose(tag, f"SIMULATE File {ftemp} would replace {f}. Deleting {ftemp}")
             else:
                 try:
                     rename(ftemp, f)
                 except (IOError, OSError) as e:
-                    error(tag, "{0} {1}".\
-                     format(e.strerror, e.filename), e.errno)
+                    error(tag, f"{e.strerror} {e.filename}", e.errno)
     else:
         if options.simulate:
-            verbose(tag, "SIMULATE File {0} would be written as {1}. Deleting {0}".format(ftemp, f))
+            verbose(tag, f"SIMULATE File {ftemp} would be written as {f}. Deleting {ftemp}")
         else:
             rename(ftemp, f)
     return True
-##############################################################################
-#
-# appendtofile
-#
-##############################################################################
+
+
 def appendtofile(f, content):
     tag = gettag()
-    from os.path import exists, isfile
     if exists(f) and isfile(f):
         if options.simulate:
-            verbose(tag, "SIMULATE File {0} would be appended".format(f)) 
+            verbose(tag, f"SIMULATE File {f} would be appended")
         else:
-            with open(f, 'a') as filehandle:
+            with open(f, "a") as filehandle:
                 try:
                     filehandle.write(content)
-                except IOError as NameError:
-                    error(tag, "{0} {1}".\
-                     format(e.strerror, e.filename), e.errno)
+                except IOError as e:
+                    error(tag, f"{e.strerror} {e.filename}", e.errno)
     else:
         writetofile(f, content)
     return True
-##############################################################################
-#
-# sedsi (an equivalent to sed s///g -i)
-#
-##############################################################################
+
+
 def sedsi(pattern, replace, file):
-    tag = gettag()
     old_content = readfromfile(file)
     new_content = old_content.replace(pattern, replace)
     writetofile(file, new_content)

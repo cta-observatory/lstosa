@@ -1,5 +1,12 @@
-from osa.utils import options, iofile
-from osa.utils.standardhandle import verbose, warning, error, stringify, gettag
+import datetime
+import subprocess
+from os.path import exists, join
+
+from osa.configs.config import cfg
+from osa.utils import options
+from osa.utils.iofile import readfromfile, writetofile
+from osa.utils.standardhandle import error, gettag, stringify, verbose, warning
+from osa.utils.utils import lstdate_to_dir
 
 
 def arealljobscorrectlyfinished(seqlist):
@@ -21,14 +28,11 @@ def historylevel(historyfile, type):
     the rc of the last executable given a certain history file
     """
     tag = gettag()
-    from osa.utils.iofile import readfromfile
-    from os.path import exists
-    from osa.configs.config import cfg
     level = 3
     exit_status = 0
-    if type == 'PEDESTAL':
+    if type == "PEDESTAL":
         level -= 2
-    if type == 'CALIBRATION':
+    if type == "CALIBRATION":
         level -= 1
     if exists(historyfile):
         for line in readfromfile(historyfile).splitlines():
@@ -38,35 +42,35 @@ def historylevel(historyfile, type):
                 exit_status = int(words[10])
                 print("DEBUG:", program, exit_status)
             except IndexError as err:
-                error(tag, f'Malformed history file {historyfile}, {err}', 3)
+                error(tag, f"Malformed history file {historyfile}, {err}", 3)
             except ValueError as err:
                 error(tag, f"Malformed history file {historyfile}, {err}", 3)
             else:
-                if program == cfg.get('LSTOSA', 'R0-DL1'):
-                    nonfatalrcs = [int(k) for k in cfg.get('NONFATALRCS', 'R0-DL1').split(",")]
+                if program == cfg.get("LSTOSA", "R0-DL1"):
+                    nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
                     if exit_status in nonfatalrcs:
                         level = 2
                     else:
                         level = 3
-                elif program == cfg.get('LSTOSA', 'DL1-DL2'):
-                    nonfatalrcs = [int(k) for k in cfg.get('NONFATALRCS', 'DL1-DL2').split(",")]
+                elif program == cfg.get("LSTOSA", "DL1-DL2"):
+                    nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "DL1-DL2").split(",")]
                     if exit_status in nonfatalrcs:
                         level = 0
                     else:
                         level = 2
-                elif program == 'calibration':
+                elif program == "calibration":
                     if exit_status == 0:
                         level = 0
                     else:
                         level = 1
-                elif program == 'drs4_pedestal':
+                elif program == "drs4_pedestal":
                     if exit_status == 0:
                         level = 1
                     else:
                         level = 0
 
                 else:
-                    error(tag, 'Programme name not identified {0}'.format(program), 6)
+                    error(tag, f"Programme name not identified {program}", 6)
 
     return level, exit_status
 
@@ -74,7 +78,7 @@ def historylevel(historyfile, type):
 def preparejobs(sequence_list):
     tag = gettag()
     for s in sequence_list:
-        verbose(tag, "Creating sequence.txt and sequence.py for sequence {0}".format(s.seq))
+        verbose(tag, f"Creating sequence.txt and sequence.py for sequence {s.seq}")
         createsequencetxt(s, sequence_list)
         createjobtemplate(s)
 
@@ -82,26 +86,26 @@ def preparejobs(sequence_list):
 def preparestereojobs(sequence_list):
     tag = gettag()
     for s in sequence_list:
-        verbose(tag, "Creating sequence.py for sequence {0}".format(s.seq))
+        verbose(tag, f"Creating sequence.py for sequence {s.seq}")
         createjobtemplate(s)
 
 
 def preparedailyjobs(sequence_list):
     tag = gettag()
     for s in sequence_list:
-        verbose(tag, "Creating sequence.sh for source {0}".format(s.name))
+        verbose(tag, f"Creating sequence.sh for source {s.name}")
         createjobtemplate(s)
 
 
 def setrunfromparent(sequence_list):
     tag = gettag()
-    # This is a dictionary, seq -> parent's run number
+    # this is a dictionary, seq -> parent's run number
     dictionary = {}
     for s1 in sequence_list:
         if s1.parent is not None:
             for s2 in sequence_list:
                 if s2.seq == s1.parent:
-                    verbose(tag, "Assigning runfromparent({0}) = {1}".format(s1.parent, s2.run))
+                    verbose(tag, f"Assigning runfromparent({s1.parent}) = {s2.run}")
                     dictionary[s1.parent] = s2.run
                     break
     return dictionary
@@ -109,86 +113,78 @@ def setrunfromparent(sequence_list):
 
 def createsequencetxt(s, sequence_list):
     tag = gettag()
-    from os.path import join
-    from osa.configs.config import cfg
-    text_suffix = cfg.get('LSTOSA', 'TEXTSUFFIX')
+    text_suffix = cfg.get("LSTOSA", "TEXTSUFFIX")
     f = join(options.directory, f"sequence_{s.jobname}{text_suffix}")
     start = s.subrun_list[0].timestamp
-    ped = ''
-    cal = ''
-    dat = ''
-    #   These fields are written on sequenceXX.py
+    ped = ""
+    cal = ""
+    dat = ""
+    #    these fields are written on sequenceXX.py
     #    ucts_t0_dragon = s.subrun_list[0].ucts_t0_dragon
     #    dragon_counter0 = s.subrun_list[0].dragon_counter0
     #    ucts_t0_tib = s.subrun_list[0].ucts_t0_tib
     #    tib_counter0 = s.subrun_list[0].tib_counter0
-    if s.type == 'CALI':
+    if s.type == "CALI":
         ped = formatrunsubrun(s.previousrun, 1)
         cal = formatrunsubrun(s.run, 1)
-    elif s.type == 'DATA':
+    elif s.type == "DATA":
         ped = formatrunsubrun(s.parent_list[0].previousrun, 1)
         cal = formatrunsubrun(s.parent_list[0].run, 1)
         for sub in s.subrun_list:
-            dat += formatrunsubrun(s.run, sub.subrun) + ' '
+            dat += formatrunsubrun(s.run, sub.subrun) + " "
 
     content = "# Sequence number (identifier)\n"
-    content += "Sequence: {0}\n".format(s.run)
+    content += f"Sequence: {s.run}\n"
     content += "# Date of sunrise of the observation night\n"
-    content += "Night: {0}\n".format(s.night)
+    content += f"Night: {s.night}\n"
     content += "# Start time of the sequence (first data run)\n"
-    content += "Start: {0}\n".format(start)  # TODO: get the right date and time
+    content += f"Start: {start}\n"  # TODO: get the right date and time
     content += "# Source name of all runs of sequence\n"
-    content += "Source: {0}\n".format(s.sourcewobble)
-    content += "Telescope: {0}\n".format(options.tel_id.lstrip('M'))
+    content += f"Source: {s.sourcewobble}\n"
+    content += f"Telescope: {options.tel_id.lstrip('M1')}\n"
     content += "\n"
-    content += "PedRuns: {0}\n".format(ped)
-    content += "CalRuns: {0}\n".format(cal)
-    content += "DatRuns: {0}\n".format(dat)
-    #   These fields are written on sequenceXX.py
+    content += f"PedRuns: {ped}\n"
+    content += f"CalRuns: {cal}\n"
+    content += f"DatRuns: {dat}\n"
+    #    these fields are written on sequenceXX.py
     #    content += "ucts_t0_dragon: {0}\n".format(ucts_t0_dragon)
     #    content += "dragon_counter0: {0}\n".format(dragon_counter0)
     #    content += "ucts_t0_tib: {0}\n".format(ucts_t0_tib)
     #    content += "tib_counter0: {0}\n".format(tib_counter0)
 
     if not options.simulate:
-        iofile.writetofile(f, content)
+        writetofile(f, content)
     else:
         verbose(tag, f"SIMULATE Creating sequence txt {f}")
 
 
 def formatrunsubrun(run, subrun):
-    tag = gettag()
     # it needs 7 digits for the runs
     # it needs 3 digits (insert leading 0s needed)
     if not run:
-        run = 7 * '0'
+        run = 7 * "0"
     s = str(subrun).zfill(3)
-    string = "{0}.{1}".format(run, s)
+    string = f"{run}.{s}"
     return string
 
 
 def setsequencefilenames(s):
-    tag = gettag()
-    import os.path
-    from osa.configs.config import cfg
-    script_suffix = cfg.get('LSTOSA', 'SCRIPTSUFFIX')
-    history_suffix = cfg.get('LSTOSA', 'HISTORYSUFFIX')
-    veto_suffix = cfg.get('LSTOSA', 'VETOSUFFIX')
-    basename = "sequence_{0}".format(s.jobname)
+    script_suffix = cfg.get("LSTOSA", "SCRIPTSUFFIX")
+    history_suffix = cfg.get("LSTOSA", "HISTORYSUFFIX")
+    veto_suffix = cfg.get("LSTOSA", "VETOSUFFIX")
+    basename = f"sequence_{s.jobname}"
 
-    s.script = os.path.join(options.directory, basename + script_suffix)
-    s.veto = os.path.join(options.directory, basename + veto_suffix)
-    s.history = os.path.join(options.directory, basename + history_suffix)
-    # Calibfiles cannot be set here, since they require the runfromparent
+    s.script = join(options.directory, basename + script_suffix)
+    s.veto = join(options.directory, basename + veto_suffix)
+    s.history = join(options.directory, basename + history_suffix)
+    # calibfiles cannot be set here, since they require the runfromparent
 
 
 def setsequencecalibfilenames(sequence_list):
     tag = gettag()
-    from osa.configs.config import cfg
-    from osa.utils.utils import lstdate_to_dir
-    calib_suffix = cfg.get('LSTOSA', 'CALIBSUFFIX')
-    pedestal_suffix = cfg.get('LSTOSA', 'PEDESTALSUFFIX')
-    drive_suffix = cfg.get('LSTOSA', 'DRIVESUFFIX')
+    calib_suffix = cfg.get("LSTOSA", "CALIBSUFFIX")
+    pedestal_suffix = cfg.get("LSTOSA", "PEDESTALSUFFIX")
+    drive_suffix = cfg.get("LSTOSA", "DRIVESUFFIX")
     for s in sequence_list:
         if len(s.parent_list) == 0:
             cal_run_string = str(s.run).zfill(4)
@@ -204,12 +200,12 @@ def setsequencecalibfilenames(sequence_list):
             ped_run_string = str(s.parent_list[0].previousrun).zfill(4)
             nightdir = lstdate_to_dir(options.date)
             yy, mm, dd = date_in_yymmdd(nightdir)
-            if options.mode == 'P':
+            if options.mode == "P":
                 calfile = f"calibration.Run{run_string}.0000{calib_suffix}"
                 timecalfile = f"time_calibration.Run{run_string}.0000{calib_suffix}"
                 pedfile = f"drs4_pedestal.Run{ped_run_string}.0000{pedestal_suffix}"
                 drivefile = f"drive_log_{yy}_{mm}_{dd}{drive_suffix}"
-            elif options.mode == 'S' or options.mode == 'T':
+            elif options.mode == "S" or options.mode == "T":
                 error(tag, "Exiting, mode not implemented yet. Try with 'P' mode instead", 6)
         s.calibration = calfile
         s.time_calibration = timecalfile
@@ -222,14 +218,11 @@ def guesscorrectinputcard(s):
      datasequencer
      calibrationsequence
      stereosequence
-
-    If it fails, return the default one
-    # FIXME: implement a way of selecting Nov cfg file
     """
+    # if it fails, return the default one
+    # FIXME: implement a way of selecting Nov cfg file
 
-    from osa.configs import config
-
-    bindir = config.cfg.get('LSTOSA', 'PYTHONDIR')
+    # bindir = cfg.get("LSTOSA", "PYTHONDIR")
 
     # try:
     #     # assert(s.kind_obs)
@@ -250,63 +243,55 @@ def guesscorrectinputcard(s):
 def createjobtemplate(s, get_content=False):
     """This file contains instruction to be submitted to SLURM"""
 
-    tag = gettag()
-
-    import os
-    from osa.utils import iofile
-    from osa.configs import config
-    from osa.utils.utils import lstdate_to_dir
-
-    bindir = config.cfg.get('LSTOSA', 'PYTHONDIR')
-    calibdir = config.cfg.get('LST1', 'CALIBDIR')
-    pedestaldir = config.cfg.get('LST1', 'PEDESTALDIR')
-    drivedir = config.cfg.get('LST1', 'DRIVEDIR')
+    bindir = cfg.get("LSTOSA", "PYTHONDIR")
+    calibdir = cfg.get("LST1", "CALIBDIR")
+    pedestaldir = cfg.get("LST1", "PEDESTALDIR")
+    drivedir = cfg.get("LST1", "DRIVEDIR")
     nightdir = lstdate_to_dir(options.date)
-    version = config.cfg.get('LST1', 'VERSION')
+    version = cfg.get("LST1", "VERSION")
 
     command = None
-    if s.type == 'CALI':
-        command = os.path.join(bindir, 'calibrationsequence.py')
-    elif s.type == 'DATA':
-        command = os.path.join(bindir, 'datasequence.py')
-    elif s.type == 'STEREO':
-        command = os.path.join(bindir, 'stereosequence.py')
+    if s.type == "CALI":
+        command = join(bindir, "calibrationsequence.py")
+    elif s.type == "DATA":
+        command = join(bindir, "datasequence.py")
+    elif s.type == "STEREO":
+        command = join(bindir, "stereosequence.py")
 
-    # Directly use python interpreter from current working environment
-    # python = os.path.join(config.cfg.get('ENV', 'PYTHONBIN'), 'python')
-    srunbin = config.cfg.get('ENV', 'SRUNBIN')
+    # directly use python interpreter from current working environment
+    # python = join(config.cfg.get('ENV', 'PYTHONBIN'), 'python')
+    srunbin = cfg.get("ENV", "SRUNBIN")
 
-    mode = 1
-    # Beware we want to change this in the future
-    commandargs = [srunbin, 'python', command]
+    # beware we want to change this in the future
+    commandargs = [srunbin, "python", command]
     if options.verbose:
-        commandargs.append('-v')
+        commandargs.append("-v")
     if options.warning:
-        commandargs.append('-w')
+        commandargs.append("-w")
     if options.configfile:
-        commandargs.append('-c')
+        commandargs.append("-c")
         commandargs.append(guesscorrectinputcard(s))
     if options.compressed:
-        commandargs.append('-z')
+        commandargs.append("-z")
     # commandargs.append('--stderr=sequence_{0}_'.format(s.jobname) + "{0}.err'" + ".format(str(job_id))")
     # commandargs.append('--stdout=sequence_{0}_'.format(s.jobname) + "{0}.out'" + ".format(str(job_id))")
-    commandargs.append('-d')
+    commandargs.append("-d")
     commandargs.append(options.date)
-    commandargs.append('--prod-id')
+    commandargs.append("--prod_id")
     commandargs.append(options.prod_id)
 
-    if s.type == 'CALI':
-        commandargs.append(os.path.join(pedestaldir, nightdir, version, s.pedestal))
-        commandargs.append(os.path.join(calibdir, nightdir, version, s.calibration))
+    if s.type == "CALI":
+        commandargs.append(join(pedestaldir, nightdir, version, s.pedestal))
+        commandargs.append(join(calibdir, nightdir, version, s.calibration))
         ped_run = str(s.previousrun).zfill(5)
         commandargs.append(ped_run)
 
-    if s.type == 'DATA':
-        commandargs.append(os.path.join(calibdir, nightdir, version, s.calibration))
-        commandargs.append(os.path.join(pedestaldir, nightdir, version, s.pedestal))
-        commandargs.append(os.path.join(calibdir, nightdir, version, 'time_' + s.calibration))
-        commandargs.append(os.path.join(drivedir, s.drive))
-        pedfile = s.pedestal
+    if s.type == "DATA":
+        commandargs.append(join(calibdir, nightdir, version, s.calibration))
+        commandargs.append(join(pedestaldir, nightdir, version, s.pedestal))
+        commandargs.append(join(calibdir, nightdir, version, "time_" + s.calibration))
+        commandargs.append(join(drivedir, s.drive))
+        # pedfile = s.pedestal
         ucts_t0_dragon = s.subrun_list[0].ucts_t0_dragon
         commandargs.append(ucts_t0_dragon)
         dragon_counter0 = s.subrun_list[0].dragon_counter0
@@ -326,8 +311,8 @@ def createjobtemplate(s, get_content=False):
     # SLURM assignments
     content += "\n"
     content += "#SBATCH -p compute \n"
-    if s.type == 'DATA':
-        content += "#SBATCH --array=0-{0} \n".format(int(n_subruns) - 1)
+    if s.type == "DATA":
+        content += f"#SBATCH --array=0-{int(n_subruns) - 1} \n"
     content += "#SBATCH --cpus-per-task=1 \n"
     content += "#SBATCH --mem-per-cpu=25G \n"
     content += "#SBATCH -t 0-24:00\n"
@@ -341,22 +326,21 @@ def createjobtemplate(s, get_content=False):
 
     content += "subruns=os.getenv('SLURM_ARRAY_TASK_ID')\n"
     content += "job_id=os.getenv('SLURM_JOB_ID')\n"
-    dat = ''
 
     content += "subprocess.call([\n"
     for i in commandargs:
-        content += "    '{0}',\n".format(i)
-    content += "    '--stderr=sequence_{0}_".format(s.jobname) + "{0}.err'" + '.format(str(job_id))' + ',\n'
+        content += f"    '{i}',\n"
+    content += f"    '--stderr=sequence_{0}_".format(s.jobname) + "{0}.err'" + '.format(str(job_id))' + ',\n'
     content += "    '--stdout=sequence_{0}_".format(s.jobname) + "{0}.out'" + '.format(str(job_id))' + ',\n'
-    if s.type == 'DATA':
+    if s.type == "DATA":
         content += "    '{0}".format(str(s.run).zfill(5)) + ".{0}'" + '.format(str(subruns).zfill(4))' + ',\n'
     else:
-        content += "    '{0}'".format(str(s.run).zfill(5)) + ',\n'
-    content += "    '{0}'".format(options.tel_id) + '\n'
+        content += f"    '{str(s.run).zfill(5)}',\n"
+    content += f"    '{options.tel_id}'\n"
     content += "    ])"
 
     if not options.simulate:
-        iofile.writetofile(s.script, content)
+        writetofile(s.script, content)
 
     if get_content:
         return content
@@ -365,10 +349,8 @@ def createjobtemplate(s, get_content=False):
 # def submitjobs(sequence_list, queue_list, veto_list):
 def submitjobs(sequence_list):
     tag = gettag()
-    import subprocess
-    from osa.configs import config
     job_list = []
-    command = config.cfg.get('ENV', 'SBATCHBIN')
+    command = cfg.get("ENV", "SBATCHBIN")
     for s in sequence_list:
         commandargs = [command, s.script]
         #        """ Introduce the job dependencies """
@@ -429,8 +411,8 @@ def submitjobs(sequence_list):
         #        verbose(tag, "{0} {1}".format(s.action, stringify(commandargs)))
         if not options.simulate:
             try:
-                verbose(tag, f"Launching scripts {str(s.script)} ")
-                stdout = subprocess.check_output(commandargs)
+                verbose(tag, f"Launching script {s.script}")
+                subprocess.check_output(commandargs)
             except subprocess.CalledProcessError as Error:
                 error(tag, Error, 2)
             except OSError as err:
@@ -446,23 +428,22 @@ def submitjobs(sequence_list):
 
 def getqueuejoblist(sequence_list):
     tag = gettag()
-    # We have to work out the method to get if the sequence has been submitted or not
-    import subprocess
-    from osa.configs import config
-    command = config.cfg.get('ENV', 'SQUEUEBIN')
+    # we have to work out the method to get if the sequence has been submitted or not
+    command = cfg.get("ENV", "SQUEUEBIN")
     commandargs = [command]
     queue_list = []
     try:
         xmloutput = subprocess.check_output(commandargs)
     except subprocess.CalledProcessError as Error:
-        error(tag, 'Command "{0}" failed, {1}'.format(stringify(commandargs), Error), 2)
+        error(tag, f"Command '{stringify(commandargs)}' failed, {Error}", 2)
     except OSError as ValueError:
-        error(tag, 'Command "{0}" failed, {1}'.format(stringify(commandargs), NameError), ValueError)
+        error(tag, f"Command '{stringify(commandargs)}' failed, {ValueError}", ValueError)
     else:
         # verbose(key, "qstat -x gives the folloging output\n{0}".format(xml).rstrip())
         if len(xmloutput) != 0:
             import xml.dom.minidom
             from dev import xmlhandle
+
             document = xml.dom.minidom.parseString(xmloutput)
             queue_list = xmlhandle.xmlhandleData(document)
             setqueuevalues(queue_list, sequence_list)
@@ -475,56 +456,54 @@ def setqueuevalues(queue_list, sequence_list):
     for s in sequence_list:
         s.tries = 0
         for q in queue_list:
-            if s.jobname == q['name']:
-                s.action = 'Check'
-                s.jobid = q['jobid']
-                s.state = q['state']
-                if s.state == 'C' or s.state == 'R':
-                    s.jobhost = q['jobhost']
+            if s.jobname == q["name"]:
+                s.action = "Check"
+                s.jobid = q["jobid"]
+                s.state = q["state"]
+                if s.state == "C" or s.state == "R":
+                    s.jobhost = q["jobhost"]
                     if s.tries == 0:
-                        s.cputime = q['cputime']
-                        s.walltime = q['walltime']
+                        s.cputime = q["cputime"]
+                        s.walltime = q["walltime"]
                     else:
                         try:
-                            s.cputime = sumtime(s.cputime, q['cputime'])
+                            s.cputime = sumtime(s.cputime, q["cputime"])
                         except AttributeError as ErrorName:
-                            warning(tag, "{0}".format(ErrorName))
+                            warning(tag, ErrorName)
                         try:
-                            s.walltime = sumtime(s.cputime, q['walltime'])
+                            s.walltime = sumtime(s.cputime, q["walltime"])
                         except AttributeError as ErrorName:
-                            warning(tag, "{0}".format(ErrorName))
-                    if s.state == 'C':
-                        s.exit = q['exit']
+                            warning(tag, ErrorName)
+                    if s.state == "C":
+                        s.exit = q["exit"]
                 s.tries += 1
                 verbose(
                     tag,
                     f"Attributes of sequence {s.seq}, {s.action},"
                     f"{s.jobid}, {s.state}, {s.jobhost},"
-                    f"{s.cputime}, {s.exit} updated"
+                    f"{s.cputime}, {s.exit} updated",
                 )
 
 
 def sumtime(a, b):
     """Beware of the strange format of timedelta:
     http://docs.python.org/library/datetime.html?highlight=datetime#datetime.timedelta"""
-    tag = gettag()
 
-    import datetime
-    a_hh, a_mm, a_ss = a.split(':')
-    b_hh, b_mm, b_ss = b.split(':')
+    a_hh, a_mm, a_ss = a.split(":")
+    b_hh, b_mm, b_ss = b.split(":")
 
-    # Strange error: invalid literal for int() with base 10: '1 day, 0'
-    if ' day, ' in a_hh:
-        a_hh = int(a_hh.split(' day, ')[0]) * 24 + int(a_hh.split(' day, ')[1])
-    elif ' days, ' in a_hh:
-        a_hh = int(a_hh.split(' days, ')[0]) * 24 + int(a_hh.split(' days, ')[1])
+    # strange error: invalid literal for int() with base 10: '1 day, 0'
+    if " day, " in a_hh:
+        a_hh = int(a_hh.split(" day, ")[0]) * 24 + int(a_hh.split(" day, ")[1])
+    elif " days, " in a_hh:
+        a_hh = int(a_hh.split(" days, ")[0]) * 24 + int(a_hh.split(" days, ")[1])
 
     ta = datetime.timedelta(0, int(a_ss), 0, 0, int(a_mm), int(a_hh), 0)
     tb = datetime.timedelta(0, int(b_ss), 0, 0, int(b_mm), int(b_hh), 0)
     tc = ta + tb
     c = str(tc)
     if len(c) == 7:
-        c = '0' + c
+        c = "0" + c
     return c
 
 
@@ -540,10 +519,10 @@ def date_in_yymmdd(datestring):
     # date = datestring.split('-')
     # da = [ch for ch in date[0]]
     date = list(datestring)
-    yy = ''.join(date[2:4])
-    mm = ''.join(date[4:6])
-    dd = ''.join(date[6:8])
-    # Change the day
+    yy = "".join(date[2:4])
+    mm = "".join(date[4:6])
+    dd = "".join(date[6:8])
+    # change the day
     # time = timestring.split(':')
     # if (int(time[0]) >= 17 and int(time[0]) <= 23):
     #   dd = str(int(date[2]))

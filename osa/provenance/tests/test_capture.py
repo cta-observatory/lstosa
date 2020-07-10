@@ -3,8 +3,8 @@ import sys
 from pathlib import Path, PurePath
 
 from osa.utils import options
-from provenance.capture import trace
-from provenance.io import *
+from osa.provenance.capture import trace
+from osa.provenance.io import *
 
 
 @trace
@@ -33,7 +33,7 @@ def dl1_to_dl2(
 
 def select_config(tmp_path):
 
-    config_file = str(Path("cfg") / "sequencer.cfg")
+    config_file = Path(__file__).resolve().parent / ".." / ".." / ".." / "cfg" / "sequencer.cfg"
     in_config_arg = False
     for args in sys.argv:
         if in_config_arg:
@@ -76,6 +76,8 @@ def test_trace_r0_to_dl2(tmp_path):
 
     # config
     select_config(tmp_path)
+    path_logfile = Path(__file__).resolve().parent
+
     args_dl1 = make_args_r0_to_dl1()
     args_dl2 = make_args_dl1_to_dl2()
 
@@ -85,7 +87,7 @@ def test_trace_r0_to_dl2(tmp_path):
 
     # make json
     json_filepath = tmp_path / "prov.json"
-    provdoc = provlist2provdoc(read_prov(filename="prov.log"))
+    provdoc = provlist2provdoc(read_prov(filename=path_logfile / "prov.log"))
     provdoc2json(provdoc, str(json_filepath))
 
     # make graph
@@ -93,6 +95,6 @@ def test_trace_r0_to_dl2(tmp_path):
     provdoc2graph(provdoc, str(png_filepath), "pdf")
 
     try:
-        Path("prov.log").unlink()
+        Path(path_logfile / "prov.log").unlink()
     except FileNotFoundError:
         pass
