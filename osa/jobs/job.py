@@ -42,9 +42,9 @@ def historylevel(historyfile, type):
         for line in readfromfile(historyfile).splitlines():
             words = line.split()
             try:
-                prod_id = words[1]
-                program = words[2]
-                exit_status = int(words[-1])
+                program = words[1]
+                exit_status = int(words[10])
+                prod_id = words[-1]
                 verbose(tag, f"{program}, finished with error {exit_status}")
             except IndexError as err:
                 error(tag, f"Malformed history file {historyfile}, {err}", 3)
