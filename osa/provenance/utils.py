@@ -59,9 +59,9 @@ def parse_variables(class_instance):
         class_instance.PointingFile = class_instance.args[3]
         class_instance.ObservationRun = class_instance.args[8].split(".")[0]
         class_instance.ObservationSubRun = class_instance.args[8].split(".")[1]
-        class_instance.ObservationDate = re.findall(r"running_analysis/(\d{8})/", class_instance.args[9])[0]
-        class_instance.SoftwareVersion = re.findall(r"running_analysis/\d{8}/(v.*)_v", class_instance.args[9])[0]
-        class_instance.ProdID = re.findall(r"running_analysis/\d{8}/v.*_v(.*)/", class_instance.args[9])[0]
+        class_instance.ObservationDate = re.findall(r"DL1/(\d{8})/", class_instance.args[9])[0]
+        class_instance.SoftwareVersion = re.findall(r"DL1/\d{8}/(v.*)_v", class_instance.args[9])[0]
+        class_instance.ProdID = re.findall(r"DL1/\d{8}/v.*_v(.*)/", class_instance.args[9])[0]
         class_instance.CalibrationRun = str(re.findall(r"Run(\d{4}).", class_instance.args[0])[0]).zfill(5)
         class_instance.PedestalRun = str(re.findall(r"Run(\d{4}).", class_instance.args[1])[0]).zfill(5)
         # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5
@@ -80,9 +80,9 @@ def parse_variables(class_instance):
         class_instance.AnalysisConfigFile = configfile
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
         class_instance.ObservationSubRun = class_instance.args[0].split(".")[1]
-        class_instance.ObservationDate = re.findall(r"running_analysis/(\d{8})/", class_instance.args[1])[0]
-        class_instance.SoftwareVersion = re.findall(r"running_analysis/\d{8}/(v.*)_v", class_instance.args[1])[0]
-        class_instance.DL1ProdID = re.findall(r"running_analysis/\d{8}/v.*_v(.*)/", class_instance.args[1])[0]
+        class_instance.ObservationDate = re.findall(r"DL1/(\d{8})/", class_instance.args[1])[0]
+        class_instance.SoftwareVersion = re.findall(r"DL1/\d{8}/(v.*)_v", class_instance.args[1])[0]
+        class_instance.DL1ProdID = re.findall(r"DL1/\d{8}/v.*_v(.*)/", class_instance.args[1])[0]
         class_instance.RFModelEnergyFile = str(Path(rf_models_directory) / "reg_energy.sav")
         class_instance.RFModelDispFile = str(Path(rf_models_directory) / "reg_disp_vector.sav")
         class_instance.RFModelGammanessFile = str(Path(rf_models_directory) / "cls_gh.sav")
