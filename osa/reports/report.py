@@ -162,5 +162,5 @@ def history(run, prod_id, program, inputfile, inputcard, rc, historyfile):
     """
     now = datetime.utcnow()
     datestring = now.strftime("%a %b %d %X UTC %Y")  # Similar but not equal to %c (no timezone)
-    stringtowrite = f"{run} {prod_id} {program} {datestring} {inputfile} {inputcard} {rc}\n"
+    stringtowrite = f"{run} {program} {datestring} {inputfile} {inputcard} {rc} {prod_id}\n"
     appendtofile(historyfile, stringtowrite)
