@@ -59,8 +59,9 @@ def getnightdirectory():
         warnings.simplefilter(action="ignore", category=FutureWarning)
         from lstchain.version import get_version
 
-        options.lstchain_version = "v" + get_version()
-        options.prod_id = options.lstchain_version + "_" + cfg.get("LST1", "VERSION")
+        #options.lstchain_version = "v" + get_version()
+        #options.prod_id = options.lstchain_version + "_" + cfg.get("LST1", "VERSION")
+        options.prod_id = cfg.get("LST1", "DL1-PROD-ID")
 
     directory = join(cfg.get(options.tel_id, "ANALYSISDIR"), nightdir, options.prod_id)
 
