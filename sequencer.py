@@ -20,7 +20,10 @@ __all__ = ["sequencer", "single_process"]
 
 def sequencer():
     """Runs the sequencer
-    This is the main script to be called in crontab
+    This is the main script to be called in crontab by LSTOSA
+    For every run in the NightSummary.txt file it preparares 
+    a SLURM job array which sends a datasequence.py 
+    for every subrun in the run
     """
 
     process_mode = None

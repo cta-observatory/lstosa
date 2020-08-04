@@ -1,3 +1,6 @@
+""" End-of-Night script and functions. Check that everthing has been processed
+    Collect results, merge them if needed
+"""
 import os.path
 import re
 import sys

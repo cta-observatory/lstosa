@@ -1,3 +1,7 @@
+"""
+ Script that is called from the batch system to process a run 
+"""
+
 import subprocess
 import sys
 from os.path import basename, join
@@ -15,6 +19,8 @@ __all__ = ["datasequence", "r0_to_dl1", "dl1_to_dl2"]
 
 
 def datasequence(args):
+    """ Performs all the steps to process a whole run
+    """
 
     calibrationfile = args[0]
     pedestalfile = args[1]
