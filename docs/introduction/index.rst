@@ -1,7 +1,7 @@
 .. _introduction:
 
 Introduction
- ************
+************
 
 LSTOSA is born out of experience gained on *On-Site Analysis* (OSA) of the MAGIC
 data pipeline. Due to the large size of the daily recorded data, transferring the raw data 
