@@ -1,2 +1,4 @@
+.. _documents: 
+
 Documents
 *********

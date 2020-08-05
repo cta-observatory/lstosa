@@ -1,8 +1,10 @@
+.. _components:
+
 Components
 **********
 
-LSTOSA consists of the lstchain, a set of python scripts, cron jobs and SLURM as
-resource manager. It runs on the LST IT server at La Palma
+LSTOSA is a set of python scripts and cron jobs based on lstchain and using SLURM as
+resource manager. It it thought to run on the LST IT container at La Palma
 using the lstanalyzer account.
 
 .. _lstchain:
@@ -10,15 +12,31 @@ using the lstanalyzer account.
 lstchain
 ====
 
-TBC
+lstchain is the analysis chain developed for the commissioning of the LST1 prototype.
+It is open software that can be accesed at https://github.com/cta-observatory/cta-lstchain
 
-.. _nightsummary:
+.. _slurm:
 
-NightSummary
-============
+SLURM
+==========
 
-The *NightSummary* files are currently not produced by LSTOSA, but they are 
-generated independently by Isidro's Data-check software.
+SLURM is the resource manager used at the LST IT container. Most LSTOSA scripts, specially those devoted to 
+analyze data (heavy duty ones) run through SLURM. Its capabilities are used to send "chained"
+jobs, that are executed only a previous job finished. This is used for calibration sequences, whose
+end triggers analysis sequences.
+ 
+* the code in  ``job.py`` interacts with the resource manager
+
+
+.. _Cron Jobs:
+
+Cron Jobs
+=========
+
+A set of cron jobs automatize LSTOSA execution. 
+
+1. Production of  *NightSummary* file, launched each moning at 7 UTC. They are currently not produced by LSTOSA, but they are 
+generated independently by the Data-check software beign developed by I. Aguado.
 
 .. _sequencer:
 
@@ -29,23 +47,9 @@ Sequencer
 * uses :ref:`nightsummary.py` and :ref:`extract.py` to read the NightSummary
   txt file and extract the sequences.
 
-.. _slurm:
-
-SLURM
-==========
-
-TBC
-
-Torque is the resource manager used at the LST IT container. Most LSTOSA scripts, specially those devoted to 
-analyze data (heavy duty ones) run through SLURM. Its capabilities are used to send "chained"
-jobs, that are executed only a previous job finished. This is used for calibration sequences, whose
-end triggers analysis sequences.
- 
-* the ``job.py`` interacts with the resource manager
-
 
 Closer
-==========
+======
 
 TBC
 
