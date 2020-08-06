@@ -43,7 +43,12 @@ generated independently by the Data-check software beign developed by I. Aguado.
 Sequencer
 =========
 
-* consists of datasequence, calibrationsequence ...
+  **sequencer.py** is the main script controlling LSTOSA execution. It takes as input a configuration and a NightSummary.txt files.
+ The first one contains all the needed parameters, some of which can be overriden by command line options. The NightSummary file
+ contains the list of runs to process, qualified as DRS4, Calibration or Data. Each of them is called a sequence. Sequencer builds
+ a job for each run, depending on its type the job will contain a call to DRS4sequence.py , calibrationsequence.py or datasequence.py.
+ Each jobs is an array job which processes all the subsruns contained in the run in parallel.
+
 * uses :ref:`nightsummary.py` and :ref:`extract.py` to read the NightSummary
   txt file and extract the sequences.
 
