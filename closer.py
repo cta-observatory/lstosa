@@ -39,8 +39,7 @@ __all__ = [
 
 
 def closer():
-    ''' An empty docstring for closer'''
-
+    
     # initiating report
     start(tag)
 
