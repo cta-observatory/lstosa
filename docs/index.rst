@@ -36,7 +36,6 @@ Contents:
     :maxdepth: 1
 
     lstosapython/index
-    closer/index
     deletion/index
     utilities/index
 

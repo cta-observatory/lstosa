@@ -1,6 +1,6 @@
-""" End-of-Night script and functions. Check that everthing has been processed
+''' End-of-Night script and functions. Check that everthing has been processed
     Collect results, merge them if needed
-"""
+'''
 import os.path
 import re
 import sys
@@ -8,7 +8,6 @@ from filecmp import cmp
 from glob import glob
 from os import unlink
 from os.path import basename, exists, isdir, islink, join
-
 from osa.configs.config import cfg
 from osa.jobs.job import arealljobscorrectlyfinished
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
@@ -40,6 +39,7 @@ __all__ = [
 
 
 def closer():
+    ''' An empty docstring for closer'''
 
     # initiating report
     start(tag)
