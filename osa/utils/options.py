@@ -4,7 +4,7 @@
 # This is the recommended way to share variables according to
 # http://docs.python.org/faq/programming.html#how-do-i-share-global-variables-across-modules
 #
-configfile = "cfg/sequencer.cfg"
+configfile = "../cfg/sequencer.cfg"
 stdout = None
 stderr = None
 date = None

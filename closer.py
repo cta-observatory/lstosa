@@ -8,15 +8,15 @@ from filecmp import cmp
 from glob import glob
 from os import unlink
 from os.path import basename, exists, isdir, islink, join
+from osa.utils import options
 from osa.configs.config import cfg
+from osa.utils.cliopts import closercliparsing
+from osa.utils.standardhandle import error, gettag, output, verbose, warning
 from osa.jobs.job import arealljobscorrectlyfinished
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import getnightsummaryfile, readnightsummary
 from osa.rawcopy.raw import arerawfilestransferred, get_check_rawdir
 from osa.reports.report import finished_assignments, finished_text, start
-from osa.utils import options
-from osa.utils.cliopts import closercliparsing
-from osa.utils.standardhandle import error, gettag, output, verbose, warning
 from osa.utils.utils import createlock, getlockfile, is_defined, lstdate_to_dir, make_directory
 from osa.veto.veto import createclosed
 from register import register_run_concept_files
@@ -39,7 +39,8 @@ __all__ = [
 
 
 def closer():
-    
+    ''' En empty docstring to test sphinx work '''
+
     # initiating report
     start(tag)
 
