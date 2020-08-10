@@ -3,7 +3,7 @@ from decimal import Decimal
 from glob import glob
 from os.path import join
 
-from .closer import is_day_closed
+from closer import is_day_closed
 from dev.dot import writeworkflow
 from osa.configs.config import cfg
 from osa.jobs.job import getqueuejoblist, preparedailyjobs, preparejobs, preparestereojobs, submitjobs
