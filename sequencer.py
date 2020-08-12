@@ -5,7 +5,7 @@ from decimal import Decimal
 from glob import glob
 from os.path import join
 
-from .closer import is_day_closed
+from closer import is_day_closed
 from dev.dot import writeworkflow
 from osa.configs.config import cfg
 from osa.jobs.job import getqueuejoblist, preparedailyjobs, preparejobs, preparestereojobs, submitjobs
@@ -22,7 +22,10 @@ __all__ = ["sequencer", "single_process"]
 
 def sequencer():
     """Runs the sequencer
-    This is the main script to be called in crontab
+    This is the main script to be called in crontab by LSTOSA
+    For every run in the NightSummary.txt file it preparares 
+    a SLURM job array which sends a datasequence.py 
+    for every subrun in the run
     """
 
     process_mode = None
