@@ -3,11 +3,11 @@ lstosa
 
 .. toctree::
    :maxdepth: 4
-#
-#   calibrationsequence
+ 
+   calibrationsequence
    closer
-#   datamodel
-#   datasequence
-#   osa
-#   register
-#   sequencer
+   datamodel
+   datasequence
+   osa
+   register
+   sequencer
