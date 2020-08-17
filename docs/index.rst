@@ -35,8 +35,7 @@ Contents:
     :caption: LSTOSA Code
     :maxdepth: 1
 
-    lstosapython/index
-    closer/index
+    modules/modules.rst
     deletion/index
     utilities/index
 

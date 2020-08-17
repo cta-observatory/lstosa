@@ -9,6 +9,7 @@ from pathlib import Path
 from osa.configs.config import cfg
 from osa.utils import options
 
+
 __all__ = ["parse_variables", "get_log_config"]
 
 

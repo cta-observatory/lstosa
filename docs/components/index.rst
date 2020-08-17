@@ -10,7 +10,7 @@ using the lstanalyzer account.
 .. _lstchain:
 
 lstchain
-====
+========
 
 lstchain is the analysis chain developed for the commissioning of the LST1 prototype.
 It is open software that can be accesed at https://github.com/cta-observatory/cta-lstchain
@@ -18,7 +18,7 @@ It is open software that can be accesed at https://github.com/cta-observatory/ct
 .. _slurm:
 
 SLURM
-==========
+=====
 
 SLURM is the resource manager used at the LST IT container. Most LSTOSA scripts, specially those devoted to 
 analyze data (heavy duty ones) run through SLURM. Its capabilities are used to send "chained"
