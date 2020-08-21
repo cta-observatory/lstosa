@@ -270,7 +270,7 @@ def createjobtemplate(s, get_content=False):
         commandargs.append("-w")
     if options.configfile:
         commandargs.append("-c")
-        commandargs.append(guesscorrectinputcard(s))
+        commandargs.append(join(bindir,guesscorrectinputcard(s)))
     if options.compressed:
         commandargs.append("-z")
     # commandargs.append('--stderr=sequence_{0}_'.format(s.jobname) + "{0}.err'" + ".format(str(job_id))")
@@ -316,8 +316,9 @@ def createjobtemplate(s, get_content=False):
     content += "#SBATCH --cpus-per-task=1 \n"
     content += "#SBATCH --mem-per-cpu=15G \n"
     content += "#SBATCH -t 0-24:00\n"
-    content += f"#SBATCH -o {options.log_directory}/slurm.%A_%a.%N.out \n"
-    content += f"#SBATCH -e {options.log_directory}/slurm.%A_%a.%N.err \n"
+    content += f"#SBATCH -D {options.directory} \n"
+    content += f"#SBATCH -o log/slurm.{str(s.run).zfill(5)}_%a_%A.out \n"
+    content += f"#SBATCH -e log/slurm.{str(s.run).zfill(5)}_%a_%A.err \n"
     content += "\n"
 
     content += "import subprocess \n"
@@ -330,8 +331,8 @@ def createjobtemplate(s, get_content=False):
     content += "subprocess.call([\n"
     for i in commandargs:
         content += f"    '{i}',\n"
-    content += f"    '--stderr=sequence_{0}_".format(s.jobname) + "{0}.err'" + '.format(str(job_id))' + ',\n'
-    content += "    '--stdout=sequence_{0}_".format(s.jobname) + "{0}.out'" + '.format(str(job_id))' + ',\n'
+    content += f"    '--stderr=log/sequence_{s.jobname}" + "_{0}_{1}.err'" + '.format(str(subruns).zfill(4), str(str(job_id)))' + ',\n'
+    content += f"    '--stdout=log/sequence_{s.jobname}" + "_{0}_{1}.out'" + '.format(str(subruns).zfill(4), str(str(job_id)))' + ',\n'
     if s.type == "DATA":
         content += "    '{0}".format(str(s.run).zfill(5)) + ".{0}'" + '.format(str(subruns).zfill(4))' + ',\n'
     else:
