@@ -20,7 +20,7 @@ LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 PROV_PREFIX = provconfig["PREFIX"]
 
 
-def copy_used_file(src, out):
+def copy_used_file(src, outdir):
     """Copy file used in process."""
 
     # check src file exists
@@ -29,14 +29,14 @@ def copy_used_file(src, out):
 
     hash_src = get_file_hash(src, buffer="content")
     filename = PurePath(src).name
-    destpath = Path(out) / filename
+    destpath = Path(outdir) / filename
     hash_out = ""
 
     # get hash and new name
     if destpath.exists():
         hash_out = get_file_hash(str(destpath), buffer="content")
         filename = filename + "_"
-        destpath = Path(out) / filename
+        destpath = Path(outdir) / filename
 
     # try copy file
     if hash_src != hash_out:
@@ -276,7 +276,7 @@ if __name__ == "__main__":
     provprocessparsing()
 
     pathRO = cfg.get("LST1", "RAWDIR")
-    pathDL1 = cfg.get("LST1", "ANALYSISDIR")
+    pathDL1 = cfg.get("LST1", "DL1DIR")
     pathDL2 = cfg.get("LST1", "DL2DIR")
     GRANULARITY = {"r0_to_dl1": pathDL1, "dl1_to_dl2": pathDL2, "r0_to_dl2": pathDL2}
     if options.filter:
