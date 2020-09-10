@@ -84,7 +84,7 @@ def parse_variables(class_instance):
         class_instance.ObservationSubRun = class_instance.args[0].split(".")[1]
         class_instance.ObservationDate = re.findall(r"running_analysis/(\d{8})/", class_instance.args[1])[0]
         class_instance.SoftwareVersion = re.findall(r"running_analysis/\d{8}/(v.*)_v", class_instance.args[1])[0]
-        class_instance.DL1ProdID = re.findall(r"DL1/\d{8}/v.*_v(.*)/", class_instance.args[1])[0]
+        class_instance.DL1ProdID = re.findall(r"running_analysis/\d{8}/v.*_v(.*)/", class_instance.args[1])[0]
         class_instance.RFModelEnergyFile = str(Path(rf_models_directory) / "reg_energy.sav")
         class_instance.RFModelDispFile = str(Path(rf_models_directory) / "reg_disp_vector.sav")
         class_instance.RFModelGammanessFile = str(Path(rf_models_directory) / "cls_gh.sav")
