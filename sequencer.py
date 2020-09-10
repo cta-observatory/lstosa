@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 from decimal import Decimal
 from glob import glob

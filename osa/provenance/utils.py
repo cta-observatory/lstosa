@@ -34,6 +34,7 @@ def parse_variables(class_instance):
     pythondir = cfg.get("LSTOSA", "PYTHONDIR")
     configfile = cfg.get("LSTOSA", "CONFIGFILE")
     rawdir = cfg.get("LST1", "RAWDIR")
+    dl1dir = cfg.get("LST1", "DL1DIR")
     fits = cfg.get("LSTOSA", "FITSSUFFIX")
     fz = cfg.get("LSTOSA", "COMPRESSEDSUFFIX")
     h5 = cfg.get("LSTOSA", "H5SUFFIX")
@@ -43,16 +44,16 @@ def parse_variables(class_instance):
     rf_models_directory = cfg.get("LSTOSA", "RF-MODELS-DIR")
 
     if class_instance.__name__ == "r0_to_dl1":
-        # calibrationfile       [0] /fefs/aswg/data/real/calibration/20200218/v00/calibration.Run02006.0000.hdf5
-        # pedestalfile          [1] /fefs/aswg/data/real/calibration/20200218/v00/drs4_pedestal.Run02005.0000.fits
-        # time_calibration      [2] /fefs/aswg/data/real/calibration/20191124/v00/time_calibration.Run01625.0000.hdf5
-        # drivefile             [3] /fefs/home/lapp/DrivePositioning/drive_log_20_02_18.txt
+        # calibrationfile   [0] /fefs/aswg/data/real/calibration/20200218/v00/calibration.Run02006.0000.hdf5
+        # pedestalfile      [1] /fefs/aswg/data/real/calibration/20200218/v00/drs4_pedestal.Run02005.0000.fits
+        # time_calibration  [2] /fefs/aswg/data/real/calibration/20191124/v00/time_calibration.Run01625.0000.hdf5
+        # drivefile         [3] /fefs/home/lapp/DrivePositioning/drive_log_20_02_18.txt
         # ucts_t0_dragon
         # dragon_counter0
         # ucts_t0_tib
         # tib_counter0
-        # run_str               [8] 02006.0000
-        # historyfile           [9] /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/sequence_LST1_02006.0000.history
+        # run_str           [8] 02006.0000
+        # historyfile       [9] /fefs/aswg/data/real/running_analysis/20200218/v0.4.3_v00/sequence_LST1_02006.0000.history
 
         class_instance.AnalysisConfigFile = configfile
         class_instance.CoefficientsCalibrationFile = class_instance.args[0]
@@ -66,7 +67,7 @@ def parse_variables(class_instance):
         class_instance.ProdID = re.findall(r"running_analysis/\d{8}/v.*_v(.*)/", class_instance.args[9])[0]
         class_instance.CalibrationRun = str(re.findall(r"Run(\d{4}).", class_instance.args[0])[0]).zfill(5)
         class_instance.PedestalRun = str(re.findall(r"Run(\d{4}).", class_instance.args[1])[0]).zfill(5)
-        outdir_dl1 = re.findall(r"(.*)sequence", class_instance.args[9])[0]
+        outdir_dl1 = dl1dir
         # as of lstchain v0.5.0 /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5
         class_instance.DL1SubrunDataset = f"{outdir_dl1}{dl1_prefix}.Run{class_instance.args[8]}{h5}"
         # /fefs/aswg/data/real/R0/20200218/LST1.1.Run02006.0001.fits.fz
@@ -87,7 +88,7 @@ def parse_variables(class_instance):
         class_instance.RFModelEnergyFile = str(Path(rf_models_directory) / "reg_energy.sav")
         class_instance.RFModelDispFile = str(Path(rf_models_directory) / "reg_disp_vector.sav")
         class_instance.RFModelGammanessFile = str(Path(rf_models_directory) / "cls_gh.sav")
-        outdir_dl1 = re.findall(r"(.*)sequence", class_instance.args[1])[0]
+        outdir_dl1 = dl1dir
         outdir_dl2 = outdir_dl1.replace("DL1", "DL2")
         # as of lstchain v0.5.0 /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.0001.h5
         class_instance.DL2SubrunDataset = f"{outdir_dl2}{dl2_prefix}.Run{class_instance.args[0]}{h5}"
