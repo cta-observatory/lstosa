@@ -67,7 +67,8 @@ def parse_variables(class_instance):
         class_instance.ProdID = re.findall(r"running_analysis/\d{8}/v.*_v(.*)/", class_instance.args[9])[0]
         class_instance.CalibrationRun = str(re.findall(r"Run(\d{4}).", class_instance.args[0])[0]).zfill(5)
         class_instance.PedestalRun = str(re.findall(r"Run(\d{4}).", class_instance.args[1])[0]).zfill(5)
-        outdir_dl1 = dl1dir
+        running_analysis_dir = re.findall(r"(.*)sequence", class_instance.args[9])[0]
+        outdir_dl1 = running_analysis_dir.replace("running_analysis", "DL1")
         # as of lstchain v0.5.0 /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5
         class_instance.DL1SubrunDataset = f"{outdir_dl1}{dl1_prefix}.Run{class_instance.args[8]}{h5}"
         # /fefs/aswg/data/real/R0/20200218/LST1.1.Run02006.0001.fits.fz
@@ -77,7 +78,7 @@ def parse_variables(class_instance):
 
     if class_instance.__name__ == "dl1_to_dl2":
         # run_str       [0] 02006.0000
-        # historyfile   [1] /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt
+        # historyfile   [1] /fefs/aswg/data/real/running_analysis/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt
 
         class_instance.AnalysisConfigFile = configfile
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
@@ -88,7 +89,8 @@ def parse_variables(class_instance):
         class_instance.RFModelEnergyFile = str(Path(rf_models_directory) / "reg_energy.sav")
         class_instance.RFModelDispFile = str(Path(rf_models_directory) / "reg_disp_vector.sav")
         class_instance.RFModelGammanessFile = str(Path(rf_models_directory) / "cls_gh.sav")
-        outdir_dl1 = dl1dir
+        running_analysis_dir = re.findall(r"(.*)sequence", class_instance.args[1])[0]
+        outdir_dl1 = running_analysis_dir.replace("running_analysis", "DL1")
         outdir_dl2 = outdir_dl1.replace("DL1", "DL2")
         # as of lstchain v0.5.0 /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.0001.h5
         class_instance.DL2SubrunDataset = f"{outdir_dl2}{dl2_prefix}.Run{class_instance.args[0]}{h5}"
