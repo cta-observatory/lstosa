@@ -8,7 +8,7 @@ from pathlib import Path
 
 import yaml
 
-from datamodel import SequenceData
+from osa.configs.datamodel import SequenceData
 from osa.configs.config import cfg
 from osa.jobs.job import createjobtemplate
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
