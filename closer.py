@@ -19,7 +19,7 @@ from osa.rawcopy.raw import arerawfilestransferred, get_check_rawdir
 from osa.reports.report import finished_assignments, finished_text, start
 from osa.utils.utils import createlock, getlockfile, is_defined, lstdate_to_dir, make_directory
 from osa.veto.veto import createclosed
-from register import register_run_concept_files
+from osa.autocloser.register import register_run_concept_files
 
 __all__ = [
     "closer",
