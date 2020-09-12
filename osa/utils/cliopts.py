@@ -477,11 +477,15 @@ def set_default_configfile_if_needed(command):
     # and present in the cfg subdir, trivial, isn't it?
 
     verbose(tag, f"Command is {command}")
+    command_dirname = dirname(abspath(command))
+    command_basename = basename(command)
+
     if not options.configfile:
-        command_dirname = dirname(abspath(command))
-        command_basename = basename(command)
         config_basename = command_basename.replace(".py", ".cfg")
         options.configfile = join(command_dirname, "cfg", config_basename)
+    else:
+        # relative to absolute path conversion
+        options.configfile = join(command_dirname, options.configfile)
 
     verbose(tag, f"Setting default config file to {options.configfile}")
     return options.configfile
