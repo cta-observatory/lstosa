@@ -486,7 +486,6 @@ def set_default_configfile_if_needed(command):
     else:
         # relative to absolute path conversion
         options.configfile = join(command_dirname, options.configfile)
-        print(options.configfile)
 
     verbose(tag, f"Setting default config file to {options.configfile}")
     return options.configfile
