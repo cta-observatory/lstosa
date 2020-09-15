@@ -59,7 +59,7 @@ def analysis_path(tel):
     obsdate = f"{year:04}_{month:02}_{day:02}"
     # FIXME: properly get sequencer.cfg file
     nightdir = lstdate_to_dir(obsdate)
-    running_analysis_dir = os.path.join(cfg.get("LST1", "RAWDIR"), nightdir)
+    running_analysis_dir = os.path.join(cfg.get("LST1", "ANALYSISDIR"), nightdir)
     if args.test:
         return f"./{tel}"
     return running_analysis_dir
