@@ -430,7 +430,7 @@ def submitjobs(sequence_list):
 def getqueuejoblist(sequence_list):
     tag = gettag()
     # we have to work out the method to get if the sequence has been submitted or not
-    command = cfg.get("ENV", "SQUEUEBIN")
+    command = cfg.get("ENV", "SACCTBIN")
     commandargs = [command]
     queue_list = []
     try:

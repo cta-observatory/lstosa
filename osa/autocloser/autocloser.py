@@ -7,8 +7,9 @@ import subprocess
 
 from osa.utils import options
 from osa.utils.utils import lstdate_to_dir
+from osa.configs.config import cfg
 
-__all__ = ["Telescope", "Sequence"]  # these members will appear in the docs
+__all__ = ["Telescope", "Sequence"]
 
 log = logging.getLogger("autocloser_logger")
 log.setLevel(logging.DEBUG)
@@ -33,18 +34,21 @@ def valid_date(s):
 
 
 def argument_parser():
-    parser = argparse.ArgumentParser(description="This script is an automatic error handler and closer for OSA.")
+    parser = argparse.ArgumentParser(description="This script is an automatic error handler and closer for LSTOSA.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Turn on verbose mode")
-    parser.add_argument("-t", "--test", action="store_true", help="Test mode with example sequences, only works locally")
-    parser.add_argument("-s", "--simulate", action="store_true", help="Create nothing, only simulate closer (safe mode)")
-    parser.add_argument("-c", "--ignoreCronlock", action="store_true", help='Ignore "cron.lock"')
+    parser.add_argument("-t", "--test", action="store_true",
+                        help="Test mode with example sequences, only works locally")
+    parser.add_argument("-s", "--simulate", action="store_true",
+                        help="Create nothing, only simulate closer (safe mode)")
+    parser.add_argument("--ignorecronlock", action="store_true", help='Ignore "cron.lock"')
     parser.add_argument("-i", "--onlyIncidences", action="store_true", help="Writing down only incidences, not closing")
     parser.add_argument("-d", "--date", help="Date - format YYYY_MM_DD", type=valid_date)
     parser.add_argument("-f", "--force", action="store_true", help="Force the autocloser to close the day")
     parser.add_argument("-e", "--equal", action="store_true", help="Skip check for equal amount of sequences")
     parser.add_argument("-w", "--woIncidences", action="store_true", help="Close without writing down incidences.")
     parser.add_argument("-r", "--runwise", action="store_true", help="Close the day run-wise.")
-    parser.add_argument("--config-file", action="store_true", default="cfg/sequencer.cfg", help="OSA config file.")
+    parser.add_argument("-c", "--config-file", dest="osa_config_file", default="cfg/sequencer.cfg",
+                        help="OSA config file.")
     parser.add_argument("-l", "--log", default="", help="Write log to a file.")
     parser.add_argument("tel", nargs="*", default="LST1", choices=["LST1", "LST2", "ST"])
     return parser
@@ -52,18 +56,19 @@ def argument_parser():
 
 def analysis_path(tel):
     options.tel_id = tel
-    obsdate = f"{year:.4i}_{month:.2i}_{day:.2i}"
+    obsdate = f"{year:04}_{month:02}_{day:02}"
     # FIXME: properly get sequencer.cfg file
     nightdir = lstdate_to_dir(obsdate)
+    running_analysis_dir = os.path.join(cfg.get("LST1", "RAWDIR"), nightdir)
     if args.test:
         return f"./{tel}"
-    return nightdir
+    return running_analysis_dir
 
 
 def closedFlag(tel):
     if args.test:
         return f"./{tel}/NightFinished.txt"
-    return f"/data/{tel}/OSA/Closer{year:.4i}/{month:.2i}/{day:.2i}/NightFinished.txt"
+    return f"/data/{tel}/OSA/Closer{year:04}/{month:02}/{day:02}/NightFinished.txt"
 
 
 def exampleSeq(tel):
@@ -113,7 +118,7 @@ class Telescope(object):
         if not os.path.exists(analysis_path(self.telescope)):
             log.warning(f"'Analysis' folder does not exist for {self.telescope}! Ignoring {self.telescope}")
             return
-        if not self.lockAutomaticSequencer() and not args.ignoreCronlock:
+        if not self.lockAutomaticSequencer() and not args.ignorecronlock:
             log.warning(f"{self.telescope} already locked! Ignoring {self.telescope}")
             return
         if not self.simulate_sequencer():
@@ -164,9 +169,15 @@ class Telescope(object):
         if args.test:
             self.read_file()
         else:
-            seqArgs = ["python", "sequencer.py", "-s", "-d", f"{year:.4i}_{month:.2i}_{day:.2i}", self.telescope]
+            seqArgs = [
+                "python", "sequencer.py",
+                "-s",
+                "-c", f"{args.osa_config_file}",
+                "-d", f"{year:04}_{month:02}_{day:02}",
+                self.telescope
+            ]
             log.debug(f"Executing {' '.join(seqArgs)}")
-            seqr = subprocess.Popen(seqArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            seqr = subprocess.Popen(seqArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
             self.stdout, self.stderr = seqr.communicate()
             log.info(self.stdout)
             if seqr.returncode != 0:
@@ -208,9 +219,9 @@ class Telescope(object):
     def close(self):
         log.info("Closing...")
         if args.simulate:
-            closerArgs = ["closer", "-s", "-v", "-y", "-d", f"{year:.4i}_{month:.2i}_{day:.2i}", self.telescope]
+            closerArgs = ["closer", "-s", "-v", "-y", "-d", f"{year:04}_{month:02}_{day:02}", self.telescope]
         else:
-            closerArgs = ["closer", "-v", "-y", "-d", f"{year:.4i}_{month:.2i}_{day:.2i}", self.telescope]
+            closerArgs = ["closer", "-v", "-y", "-d", f"{year:04}_{month:02}_{day:02}", self.telescope]
 
         if args.test:
             self.closed = True
@@ -272,11 +283,11 @@ class Sequence(object):
 
     def is_100(self):
         if (
-            self.dictSequence["Tel"] != "ST"
-            and self.dictSequence["DL1 %"] == "100"
-            and self.dictSequence["DATACHECK %"] == "100"
-            and self.dictSequence["MUON %"] == "100"
-            and self.dictSequence["DL2 %"] == "100"
+                self.dictSequence["Tel"] != "ST"
+                and self.dictSequence["DL1 %"] == "100"
+                and self.dictSequence["DATACHECK %"] == "100"
+                and self.dictSequence["MUONS %"] == "100"
+                and self.dictSequence["DL2 %"] == "100"
         ):
             return True
         if self.dictSequence["Tel"] == "ST" and self.dictSequence["DL3 %"] == "100":
@@ -286,44 +297,44 @@ class Sequence(object):
     def is_flawless(self):
         log.debug("Check if flawless")
         if (
-            self.dictSequence["Type"] == "DATA"
-            and self.dictSequence["Exit"] == "0"
-            and self.is_100()
-            and self.dictSequence["State"] == "C"
-            and int(self.dictSequence["Subruns"]) > 0
+                self.dictSequence["Type"] == "DATA"
+                and self.dictSequence["Exit"] == "0"
+                and self.is_100()
+                and self.dictSequence["State"] == "C"
+                and int(self.dictSequence["Subruns"]) > 0
         ):
             return True
         if (
-            self.dictSequence["Type"] == "CALIBRATION"
-            and self.dictSequence["Exit"] == "0"
-            and self.dictSequence["_Y_%"] == "None"
-            and self.dictSequence["_D_%"] == "None"
-            and self.dictSequence["_I_%"] == "None"
-            and self.dictSequence["State"] == "C"
-            and int(self.dictSequence["Subruns"]) == 1
+                self.dictSequence["Type"] == "CALI"
+                and self.dictSequence["Exit"] == "0"
+                and self.dictSequence["DL1 %"] == "None"
+                and self.dictSequence["DATACHECK %"] == "None"
+                and self.dictSequence["MUONS %"] == "None"
+                and self.dictSequence["DL2 %"] == "None"
+                and self.dictSequence["State"] == "C"
+                #and int(self.dictSequence["Subruns"]) == 1
         ):
             return True
-        if (
-            self.dictSequence["Type"] == "STEREO"
-            and self.dictSequence["Exit"] == "0"
-            and self.is_100()
-            and self.dictSequence["State"] == "C"
-            and int(self.dictSequence["Subruns"]) > 0
-        ):
-            return True
+        # if (
+        #         self.dictSequence["Type"] == "STEREO"
+        #         and self.dictSequence["Exit"] == "0"
+        #         and self.is_100()
+        #         and self.dictSequence["State"] == "C"
+        #         and int(self.dictSequence["Subruns"]) > 0
+        # ):
+        #    return True
         return False
 
-    # this error was "fixed" in the sequencer, it should not occur anymore!
     def is_error2(self):
         log.debug("Check for 'short runs'")
         if (
-            self.dictSequence["Type"] == "DATA"
-            and (self.dictSequence["Exit"] == "2" or self.dictSequence["Exit"] == "222")
-            and self.dictSequence["_Y_%"] == "100"
-            and self.dictSequence["_D_%"] == "0"
-            and self.dictSequence["_I_%"] == "0"
-            and self.dictSequence["State"] == "C"
-            and int(self.dictSequence["Subruns"]) < min_subruns_per_run
+                self.dictSequence["Type"] == "DATA"
+                and (self.dictSequence["Exit"] == "2" or self.dictSequence["Exit"] == "222")
+                and self.dictSequence["_Y_%"] == "100"
+                and self.dictSequence["_D_%"] == "0"
+                and self.dictSequence["_I_%"] == "0"
+                and self.dictSequence["State"] == "C"
+                and int(self.dictSequence["Subruns"]) < min_subruns_per_run
         ):
             return True
         return False
@@ -356,75 +367,29 @@ class Sequence(object):
     def is_error7or17or34(self):
         log.debug("Check for 'error 7/17/34'")
         if (
-            self.dictSequence["Type"] == "DATA"
-            and self.is_100()
-            and (
+                self.dictSequence["Type"] == "DATA"
+                and self.is_100()
+                and (
                 self.dictSequence["Exit"] == "7"
                 or self.dictSequence["Exit"] == "17"
                 or self.dictSequence["Exit"] == "34"
                 or self.dictSequence["Exit"] == "6"
-            )
-            and self.dictSequence["State"] == "C"
-            and int(self.dictSequence["Subruns"]) > 0
+        )
+                and self.dictSequence["State"] == "C"
+                and int(self.dictSequence["Subruns"]) > 0
         ):
             return True
         return False
 
-    # not yet implemented
-    def is_error222(self):
-        log.debug("Check for 'error 222'")
-        if (
-            self.dictSequence["Type"] == "DATA"
-            and self.dictSequence["Exit"] == "222"
-            and self.dictSequence["State"] == "C"
-            and self.dictSequence["_Y_%"] == "100"
-            and self.dictSequence["_D_%"] == "0"
-            and self.dictSequence["_I_%"] == "0"
-        ):
-            return True
-        return False
-
-    # not yet implemented
-    def is_afterError222(self, run):
-        log.debug("Check for corrected 'error 222'")
-        if (
-            self.dictSequence["Type"] == "DATA"
-            and self.dictSequence["Exit"] == "0"
-            and 0 < int(self.dictSequence["_Y_%"]) < 100
-            and 0 < int(self.dictSequence["_D_%"]) < 100
-            and 0 < int(self.dictSequence["_I_%"]) < 100
-            and self.dictSequence["State"] == "C"
-            and self.dictSequence["Run"] in run
-        ):
-            return True
-        return False
-
-    def is_error3(self):
-        """SuperStar file is empty.
-        This normally happens when there is few data
-        """
-        log.debug("Check for error 3")
-        if (
-            self.dictSequence["Type"] == "STEREO"
-            and self.dictSequence["Exit"] == "3"
-            and self.dictSequence["_S_%"] == "0"
-            and self.dictSequence["_Q_%"] == "0"
-            and self.dictSequence["State"] == "C"
-            and int(self.dictSequence["Subruns"]) < min_subruns_per_run
-        ):
-            return True
-        return False
-
-    # stereo error 1
     def is_rc1_for_ST(self):
         log.debug("Check for rc 1 in ST")
         if (
-            self.dictSequence["Type"] == "STEREO"
-            and self.dictSequence["Exit"] == "1"
-            and self.dictSequence["_S_%"] == "0"
-            and self.dictSequence["_Q_%"] == "0"
-            and self.dictSequence["State"] == "C"
-            and self.dictSequence["Action"] == "Simulate"
+                self.dictSequence["Type"] == "STEREO"
+                and self.dictSequence["Exit"] == "1"
+                and self.dictSequence["_S_%"] == "0"
+                and self.dictSequence["_Q_%"] == "0"
+                and self.dictSequence["State"] == "C"
+                and self.dictSequence["Action"] == "Simulate"
         ):
             return True
         return False
@@ -434,16 +399,14 @@ class Sequence(object):
         if self.dictSequence["Tel"] == "ST":
             return False
         if (
-            self.dictSequence["Type"] == "DATA"
-            and self.dictSequence["_Y_%"] == "100"
-            and int(self.dictSequence["_D_%"]) < 100
-            and self.dictSequence["_I_%"] == "0"
-            and self.dictSequence["State"] == "C"
-            and self.dictSequence["Action"] == "Veto"
-            and int(self.dictSequence["Subruns"]) > 0
-            and (
-                self.dictSequence["Exit"] == "255" or self.dictSequence["Exit"] == "25" or self.dictSequence["Exit"] == "254"
-            )
+                self.dictSequence["Type"] == "DATA"
+                and self.dictSequence["_Y_%"] == "100"
+                and int(self.dictSequence["_D_%"]) < 100
+                and self.dictSequence["_I_%"] == "0"
+                and self.dictSequence["State"] == "C"
+                and self.dictSequence["Action"] == "Veto"
+                and int(self.dictSequence["Subruns"]) > 0
+                and (self.dictSequence["Exit"] == "255" or self.dictSequence["Exit"] == "25" or self.dictSequence["Exit"] == "254")
         ):
             return True
         return False
@@ -497,7 +460,7 @@ class Sequence(object):
                 "-v",
                 "-y",
                 "-d",
-                f"{year:.4i}_{month:.2i}_{day:.2i}",
+                f"{year:04}_{month:02}_{day:02}",
                 f"--seq={self.dictSequence['Run']}",
                 self.dictSequence["Tel"],
             ]
@@ -507,7 +470,7 @@ class Sequence(object):
                 "-v",
                 "-y",
                 "-d",
-                f"{year:.4i}_{month:.2i}_{day:.2i}",
+                f"{year:04}_{month:02}_{day:02}",
                 f"--seq={self.dictSequence['Run']}",
                 self.dictSequence["Tel"],
             ]
@@ -525,36 +488,6 @@ class Sequence(object):
         self.closed = True
         return True
 
-    # TODO This function is not used until now
-    # def readCCrun(self):
-    #     log.debug('Reading and parsing CC*.run file for %s' %
-    #               self.dictSequence['Tel'])
-    #     if not glob.glob(ccReportFiles(self.dictSequence['Tel'])):
-    #         log.warning('Could not find any CC*.run file for %s' %
-    #                     self.dictSequence['Tel'])
-    #         return False
-    #     foundCCrun = False
-    #     for ccRun in glob.glob(ccReportFiles(self.dictSequence['Tel'])):
-    #         with open(ccRun, 'r') as f:
-    #             for line in f:
-    #                 if line.split()[1] == self.dictSequence['Run']:
-    #                     ccDict = {'hv_settings': line.split()[hv_settings_pos],
-    #                               'test_run': line.split()[test_run_pos],
-    #                               'sumt': line.split()[sumt_pos],
-    #                               'Moon_filter': line.split()[Moon_filter_pos]}
-    #                     self.dictSequence.update(ccDict)
-    #                     log.debug(self.dictSequence)
-    #                     foundCCrun = True
-    #                     break
-    #         if foundCCrun:
-    #             break
-    #
-    #     # if not foundCCrun:
-    #     #     log.warning('Could not find matching report line for run %s' %
-    #     #                 self.dictSequence['Run'])
-    #     #     return False
-    #     return True
-
 
 # add the sequences to the incidencesDict
 class Incidence(object):
@@ -564,8 +497,8 @@ class Incidence(object):
         self.incidencesMono = {
             "error2": "Short runs(# of subruns) excluded from OSA",
             "error2noint": "Runs(# of subruns) for which sorcerer "
-            "returned error 2 "
-            "(too few interleaved Ped/Cal events)",
+                           "returned error 2 "
+                           "(too few interleaved Ped/Cal events)",
             "error7": "Runs for which star returned error 7 (No starguider information available)",
             "error17": "Runs for which star returned error 17 (Too many mirrors in bad state)",
             "error34": "Runs for which star returned error 34 (Not appropriate image cleaning)",
@@ -584,7 +517,7 @@ class Incidence(object):
         self.write_header()
 
     def write_header(self):
-        self.header = f"NIGHT={year:.4i}-{month:.2i}-{day:.2i}\nTELESCOPE={self.telescope}\nCOMMENTS="
+        self.header = f"NIGHT={year:04}-{month:02}-{day:02}\nTELESCOPE={self.telescope}\nCOMMENTS="
         return
 
     def write_error(self, text, runs):
@@ -1001,7 +934,7 @@ if __name__ == "__main__":
     if args.test:
         log.debug("Test mode.")
 
-    if args.ignoreCronlock:
+    if args.ignorecronlock:
         log.debug("Ignoring cron.lock")
 
     if args.onlyIncidences:
@@ -1028,13 +961,10 @@ if __name__ == "__main__":
         day = datetime.datetime.now().day
         hour = datetime.datetime.now().hour
 
-    message = f"\n========== Starting {os.path.basename(__file__)}"
-    message += f" at {datetime.datetime.now()} for night {year:.4i}_{month:.2i}_{day:.2i}"
-    message += f" for {' '.join(args.tel)} ===========\n"
+    message = f"\n========== Starting {os.path.basename(__file__)}" \
+              f" at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}" \
+              f" for night {year:04}_{month:02}_{day:02} for {' '.join(args.tel)} ===========\n"
     log.info(message)
-    #
-    # END OF FIRST BLOCK
-    #
 
     # if is_night_time():
     #     exit(1)
@@ -1051,11 +981,11 @@ if __name__ == "__main__":
         if not telescopes[tel].incidence.check_previous_incidences(tel):
             log.debug("No previous incidences found")
 
-        if len(telescopes[tel].incidence.incidencesDict["error23"]) > max_broken_report_lines_per_telescope:
-            log.warning("Too many broken report lines! Something is wrong!")
-            # interrupt unless closing is forced
-            if not args.force:
-                continue
+        # if len(telescopes[tel].incidence.incidencesDict["error23"]) > max_broken_report_lines_per_telescope:
+        #     log.warning("Too many broken report lines! Something is wrong!")
+        #     # interrupt unless closing is forced
+        #     if not args.force:
+        #         continue
 
         # loop over sequences
         for seq in telescopes[tel]:
