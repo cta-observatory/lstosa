@@ -431,7 +431,10 @@ def getqueuejoblist(sequence_list):
     tag = gettag()
     # we have to work out the method to get if the sequence has been submitted or not
     command = cfg.get("ENV", "SACCTBIN")
-    commandargs = [command]
+    commandargs = [
+        command,
+        "--format=user%15,jobid%15,jobname%25,cputime,maxrss,nnodes,ncpus,nodelist,state,exitcode"
+    ]
     queue_list = []
     try:
         xmloutput = subprocess.check_output(commandargs)

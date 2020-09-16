@@ -200,7 +200,7 @@ class Telescope(object):
         for line in self.seqLines:
             if data and line:
                 self.data_lines.append(line)
-            elif "Tel  Seq" in line:  # this is the key line
+            elif "Tel   Seq" in line:
                 data = True
                 header = False
                 self.keyLine = line
@@ -239,7 +239,7 @@ class Telescope(object):
 class Sequence(object):
     """As for now the keys for the 'dictSequence' are:
     (LST1) Tel Seq Parent Type Run Subruns Source Wobble Action Tries JobID
-    State Host CPU_time Walltime Exit  DL1% MUON% DATACHECK% DL2%
+    State Host CPU_time Walltime Exit  DL1% MUONS% DATACHECK% DL2%
 
     All the values in the 'dictSequence' are strings
     """
@@ -283,10 +283,10 @@ class Sequence(object):
     def is_100(self):
         if (
                 self.dictSequence["Tel"] != "ST"
-                and self.dictSequence["DL1 %"] == "100"
-                and self.dictSequence["DATACHECK %"] == "100"
-                and self.dictSequence["MUONS %"] == "100"
-                and self.dictSequence["DL2 %"] == "100"
+                and self.dictSequence["DL1%"] == "100"
+                and self.dictSequence["DATACHECK%"] == "100"
+                and self.dictSequence["MUONS%"] == "100"
+                and self.dictSequence["DL2%"] == "100"
         ):
             return True
         if self.dictSequence["Tel"] == "ST" and self.dictSequence["DL3 %"] == "100":
@@ -306,10 +306,10 @@ class Sequence(object):
         if (
                 self.dictSequence["Type"] == "CALI"
                 and self.dictSequence["Exit"] == "0"
-                and self.dictSequence["DL1 %"] == "None"
-                and self.dictSequence["DATACHECK %"] == "None"
-                and self.dictSequence["MUONS %"] == "None"
-                and self.dictSequence["DL2 %"] == "None"
+                and self.dictSequence["DL1%"] == "None"
+                and self.dictSequence["DATACHECK%"] == "None"
+                and self.dictSequence["MUONS%"] == "None"
+                and self.dictSequence["DL2%"] == "None"
                 and self.dictSequence["State"] == "C"
                 #and int(self.dictSequence["Subruns"]) == 1
         ):
@@ -363,22 +363,6 @@ class Sequence(object):
                     continue
         return subruns
 
-    def is_error7or17or34(self):
-        log.debug("Check for 'error 7/17/34'")
-        if (
-                self.dictSequence["Type"] == "DATA"
-                and self.is_100()
-                and (
-                self.dictSequence["Exit"] == "7"
-                or self.dictSequence["Exit"] == "17"
-                or self.dictSequence["Exit"] == "34"
-                or self.dictSequence["Exit"] == "6"
-        )
-                and self.dictSequence["State"] == "C"
-                and int(self.dictSequence["Subruns"]) > 0
-        ):
-            return True
-        return False
 
     def is_rc1_for_ST(self):
         log.debug("Check for rc 1 in ST")
