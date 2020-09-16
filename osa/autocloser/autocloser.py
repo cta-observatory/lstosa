@@ -8,6 +8,7 @@ import subprocess
 from osa.utils import options
 from osa.utils.utils import lstdate_to_dir
 from osa.configs.config import cfg
+from osa.utils.cliopts import set_default_directory_if_needed
 
 __all__ = ["Telescope", "Sequence"]
 
@@ -56,10 +57,8 @@ def argument_parser():
 
 def analysis_path(tel):
     options.tel_id = tel
-    obsdate = f"{year:04}_{month:02}_{day:02}"
-    # FIXME: properly get sequencer.cfg file
-    nightdir = lstdate_to_dir(obsdate)
-    running_analysis_dir = os.path.join(cfg.get("LST1", "ANALYSISDIR"), nightdir)
+    options.date = f"{year:04}_{month:02}_{day:02}"
+    running_analysis_dir = set_default_directory_if_needed()
     if args.test:
         return f"./{tel}"
     return running_analysis_dir
