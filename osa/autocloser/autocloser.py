@@ -289,7 +289,7 @@ class Sequence(object):
                 and self.dictSequence["DL2%"] == "100"
         ):
             return True
-        if self.dictSequence["Tel"] == "ST" and self.dictSequence["DL3 %"] == "100":
+        if self.dictSequence["Tel"] == "ST" and self.dictSequence["DL3%"] == "100":
             return True
         return False
 

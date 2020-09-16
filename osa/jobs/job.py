@@ -430,21 +430,22 @@ def submitjobs(sequence_list):
 
 def getqueuejoblist(sequence_list):
     tag = gettag()
-    # we have to work out the method to get if the sequence has been submitted or not
     command = cfg.get("ENV", "SACCTBIN")
-    commandargs = [
-        command,
-        "--format=user%15,jobid%15,jobname%25,cputime,maxrss,nnodes,ncpus,nodelist,state,exitcode"
-    ]
+    user = cfg.get("ENV", "SQUEUEBIN")
+    sacct_format = "--format=jobid%7,jobname%25,cputime,elapsed,maxrss,state,exitcode"
+    commandargs = [command, "-u", user, sacct_format]
     queue_list = []
     try:
-        slurm_output = subprocess.check_output(commandargs)
+        sacct_output = subprocess.check_output(commandargs, universal_newlines=True)
     except subprocess.CalledProcessError as Error:
         error(tag, f"Command '{stringify(commandargs)}' failed, {Error}", 2)
     except OSError as ValueError:
         error(tag, f"Command '{stringify(commandargs)}' failed, {ValueError}", ValueError)
     else:
-        queue_list = slurm_output.splitlines("\n")
+        queue_header = sacct_output.splitlines()[0].split()
+        queue_lines = sacct_output.replace("+","").splitlines()[2:]
+        queue_sequences = [line.split() for line in queue_lines]
+        queue_list = [dict(zip(queue_header, sequence)) for sequence in queue_sequences]
         # With PBS Torque a xml table can be fetched
         # # verbose(key, "qstat -x gives the folloging output\n{0}".format(xml).rstrip())
         # if len(xmloutput) != 0:
@@ -463,25 +464,25 @@ def setqueuevalues(queue_list, sequence_list):
     for s in sequence_list:
         s.tries = 0
         for q in queue_list:
-            if s.jobname == q["name"]:
+            if s.jobname == q["JobName"]:
                 s.action = "Check"
-                s.jobid = q["jobid"]
-                s.state = q["state"]
-                if s.state == "C" or s.state == "R":
+                s.jobid = q["JobID"]
+                s.state = q["State"]
+                if s.state == "COMPLETED" or s.state == "RUNNING":
                     s.jobhost = q["jobhost"]
                     if s.tries == 0:
-                        s.cputime = q["cputime"]
-                        s.walltime = q["walltime"]
+                        s.cputime = q["CPUTime"]
+                        s.walltime = q["Elapsed"]
                     else:
                         try:
-                            s.cputime = sumtime(s.cputime, q["cputime"])
+                            s.cputime = sumtime(s.cputime, q["CPUTime"])
                         except AttributeError as ErrorName:
                             warning(tag, ErrorName)
                         try:
-                            s.walltime = sumtime(s.cputime, q["walltime"])
+                            s.walltime = sumtime(s.cputime, q["Elapsed"])
                         except AttributeError as ErrorName:
                             warning(tag, ErrorName)
-                    if s.state == "C":
+                    if s.state == "COMPLETED":
                         s.exit = q["exit"]
                 s.tries += 1
                 verbose(
