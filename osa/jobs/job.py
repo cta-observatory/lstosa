@@ -270,7 +270,7 @@ def createjobtemplate(s, get_content=False):
         commandargs.append("-w")
     if options.configfile:
         commandargs.append("-c")
-        commandargs.append(join(bindir,guesscorrectinputcard(s)))
+        commandargs.append(join(bindir, guesscorrectinputcard(s)))
     if options.compressed:
         commandargs.append("-z")
     # commandargs.append('--stderr=sequence_{0}_'.format(s.jobname) + "{0}.err'" + ".format(str(job_id))")
@@ -310,7 +310,8 @@ def createjobtemplate(s, get_content=False):
     content = "#!/bin/env python\n"
     # SLURM assignments
     content += "\n"
-    content += "#SBATCH -p compute \n"
+    content += "#SBATCH -A dpps \n"
+    content += "#SBATCH -p short \n"
     if s.type == "DATA":
         content += f"#SBATCH --array=0-{int(n_subruns) - 1} \n"
     content += "#SBATCH --cpus-per-task=1 \n"
@@ -437,20 +438,22 @@ def getqueuejoblist(sequence_list):
     ]
     queue_list = []
     try:
-        xmloutput = subprocess.check_output(commandargs)
+        slurm_output = subprocess.check_output(commandargs)
     except subprocess.CalledProcessError as Error:
         error(tag, f"Command '{stringify(commandargs)}' failed, {Error}", 2)
     except OSError as ValueError:
         error(tag, f"Command '{stringify(commandargs)}' failed, {ValueError}", ValueError)
     else:
-        # verbose(key, "qstat -x gives the folloging output\n{0}".format(xml).rstrip())
-        if len(xmloutput) != 0:
-            import xml.dom.minidom
-            from dev import xmlhandle
-
-            document = xml.dom.minidom.parseString(xmloutput)
-            queue_list = xmlhandle.xmlhandleData(document)
-            setqueuevalues(queue_list, sequence_list)
+        queue_list = slurm_output.splitlines("\n")
+        # With PBS Torque a xml table can be fetched
+        # # verbose(key, "qstat -x gives the folloging output\n{0}".format(xml).rstrip())
+        # if len(xmloutput) != 0:
+        #     import xml.dom.minidom
+        #     from dev import xmlhandle
+        #
+        #     document = xml.dom.minidom.parseString(xmloutput)
+        #     queue_list = xmlhandle.xmlhandleData(document)
+        setqueuevalues(queue_list, sequence_list)
 
     return queue_list
 
