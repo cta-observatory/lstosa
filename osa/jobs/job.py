@@ -431,7 +431,7 @@ def submitjobs(sequence_list):
 def getqueuejoblist(sequence_list):
     tag = gettag()
     command = cfg.get("ENV", "SACCTBIN")
-    user = cfg.get("ENV", "SQUEUEBIN")
+    user = cfg.get("ENV", "USER")
     sacct_format = "--format=jobid%7,jobname%25,cputime,elapsed,maxrss,state,exitcode"
     commandargs = [command, "-u", user, sacct_format]
     queue_list = []
