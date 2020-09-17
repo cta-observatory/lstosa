@@ -376,43 +376,6 @@ class Sequence(object):
             return True
         return False
 
-    def is_missingReport(self):
-        log.debug("Check for missing reports")
-        if self.dictSequence["Tel"] == "ST":
-            return False
-        if (
-                self.dictSequence["Type"] == "DATA"
-                and self.dictSequence["_Y_%"] == "100"
-                and int(self.dictSequence["_D_%"]) < 100
-                and self.dictSequence["_I_%"] == "0"
-                and self.dictSequence["State"] == "C"
-                and self.dictSequence["Action"] == "Veto"
-                and int(self.dictSequence["Subruns"]) > 0
-                and (self.dictSequence["Exit"] == "255" or self.dictSequence["Exit"] == "25" or self.dictSequence["Exit"] == "254")
-        ):
-            return True
-        return False
-
-    # this check is obsolete since now we have the has_all_subruns check
-    def has_equal_nr_of_subruns(self, teldict):
-        log.debug("Check for equal nr of subruns")
-        if self.dictSequence["Tel"] == "ST":
-            log.debug("Cannot check for equal nr of subruns for ST")
-            return True
-        if "LST1" not in teldict or "LST2" not in teldict:
-            log.debug("Cannot check for equal nr of subruns in mono case")
-            return True
-        otherTel = "LST1" if self.dictSequence["Tel"] == "LST2" else "LST2"
-        if teldict[otherTel].closed:
-            log.debug("The other telescope seems to be closed")
-            return True
-        otherSubruns = 0
-        for s in teldict[otherTel]:
-            if s.dictSequence["Run"] == self.dictSequence["Run"]:
-                otherSubruns = int(s.dictSequence["Subruns"])
-        if abs(int(self.dictSequence["Subruns"]) - otherSubruns) > max_diff_subruns:
-            return False
-        return True
 
     def has_all_subruns(self):
         import glob
@@ -421,7 +384,7 @@ class Sequence(object):
         if self.dictSequence["Tel"] == "ST":
             log.debug("Cannot check for missing subruns in the middle for ST")
             return True
-        if self.dictSequence["Type"] == "CALIBRATION":
+        if self.dictSequence["Type"] == "CALI":
             log.debug("Cannot check for missing subruns in the middle for CALIBRATION")
             return True
         search_str = f"{analysis_path(self.dictSequence['Tel'])}/20*_{int(self.dictSequence['Run']):08d}.*_Y_*.root"
@@ -719,16 +682,6 @@ def understand_mono_sequence(tel, seq):
         log.info("Updating incidences: run calibrated w/o interleaved ped/cal")
         tel.incidence.add_incidence("error2noint", f"{seq.dictSequence['Run']}({seq.dictSequence['Subruns']})")
 
-    if seq.is_error23():
-        subruns_with_error23 = seq.is_error23()
-        if len(subruns_with_error23) > max_broken_report_lines_per_sequence:
-            log.warning("Too many broken report lines for this sequence!")
-            seq.understood = True
-            return True
-        for subrun in subruns_with_error23:
-            run_with_subrun_str = f"{seq.dictSequence['Run']}.{subrun}"
-            if tel.incidence.add_incidence("error23", run_with_subrun_str):
-                log.info(f"Updating incidences: merpp error 23 for {run_with_subrun_str}")
 
     # maybe this check is obsolete since we introduced error2noint
     if seq.is_error2():
@@ -866,23 +819,6 @@ def check_for_output_files(path):
 # the if is basically necessary when building the docs
 if __name__ == "__main__":
 
-    #########################################################
-    # this stuff should probably go into a separate cfg file!
-
-    # positions of the values in the CC*.run file
-    # at the moment we do not use the CC*.run file in the AutoCloser
-    hv_settings_pos = 20
-    test_run_pos = 38
-    sumt_pos = 53
-    Moon_filter_pos = 62
-
-    # difference in subruns for one sequence that LST1 and LST2 are allowed to have
-    # this check is obsolete since now we have the has_all_subruns check
-    max_diff_subruns = 8  # 5
-    # how many broken report lines should be tolerated?
-    max_broken_report_lines_per_sequence = 2
-    max_broken_report_lines_per_telescope = 8
-    # how many subruns for a run is the minimum for the run not to be discarded
     # when problems occur?
     min_subruns_per_run = 5
     #########################################################
