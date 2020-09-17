@@ -474,7 +474,7 @@ def setqueuevalues(queue_list, sequence_list):
                         except AttributeError as ErrorName:
                             warning(tag, ErrorName)
                     if s.state == "COMPLETED":
-                        s.exit = q["exit"]
+                        s.exit = q["ExitCode"]
                 s.tries += 1
                 verbose(
                     tag,
