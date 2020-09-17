@@ -297,7 +297,7 @@ class Sequence(object):
         log.debug("Check if flawless")
         if (
                 self.dictSequence["Type"] == "DATA"
-                and self.dictSequence["Exit"] == "0"
+                and self.dictSequence["Exit"] == "0:0"
                 and self.is_100()
                 and self.dictSequence["State"] == "COMPLETED"
                 and int(self.dictSequence["Subruns"]) > 0
@@ -305,7 +305,7 @@ class Sequence(object):
             return True
         if (
                 self.dictSequence["Type"] == "CALI"
-                and self.dictSequence["Exit"] == "0"
+                and self.dictSequence["Exit"] == "0:0"
                 and self.dictSequence["DL1%"] == "None"
                 and self.dictSequence["DATACHECK%"] == "None"
                 and self.dictSequence["MUONS%"] == "None"
