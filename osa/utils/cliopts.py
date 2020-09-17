@@ -257,19 +257,33 @@ def stereosequencecliparsing(command):
 def sequencer_argparser():
     parser = ArgumentParser()
     # options which define variables
-    parser.add_argument("-c", "--config", action="store", dest="configfile", default=None, help="use specific config file [default cfg/sequencer.cfg]")
-    parser.add_argument("-d", "--date", action="store", type=str, dest="date", help="observation ending date YYYY_MM_DD [default today]")
-    parser.add_argument("-m", "--mode", action="store", type=str, dest="mode", choices=["P", "S", "T"], help="mode to run dependant sequences:\n P=parallel [default], S=Sequential, T=temperature-aware")
+    parser.add_argument("-c", "--config", action="store", dest="configfile", default=None,
+                        help="use specific config file [default cfg/sequencer.cfg]")
+    parser.add_argument("-d", "--date", action="store", type=str, dest="date",
+                        help="observation ending date YYYY_MM_DD [default today]")
+    parser.add_argument("-m", "--mode", action="store", type=str, dest="mode", choices=["P", "S", "T"],
+                        help="mode to run dependant sequences:\n P=parallel [default], S=Sequential, T=temperature-aware")
     # boolean options
-    parser.add_argument("-n", "--usenightsummary", action="store_true", dest="nightsum", default=False, help="rely on existing nightsumary file")
-    parser.add_argument("-o", "--outputdir", action="store", type=str, dest="directory", help="analysis output directory")
-    parser.add_argument("-s", "--simulate", action="store_true", dest="simulate", default=False, help="do not submit sequences as jobs")
-    parser.add_argument("-v", "--verbose", action="store_true", dest="verbose", default=False, help="make lots of noise for debugging")
-    parser.add_argument("-w", "--warnings", action="store_true", dest="warning", default=False, help="show useful warnings")
-    parser.add_argument("-z", "--rawzip", action="store_true", dest="compressed", default=False, help="Use input as compressed raw.gz files, compulsory if using -n and raw.gz files")
-    parser.add_argument("--stderr", action="store", type=str, dest="stderr", help="file for standard error")
-    parser.add_argument("--stdout", action="store", type=str, dest="stdout", help="file for standard output")
-    parser.add_argument("tel_id", choices=["ST", "LST1", "LST2", "all"], help="telescope identifier LST1, LST2, ST or all.")
+    parser.add_argument("-n", "--usenightsummary", action="store_true", dest="nightsum", default=False,
+                        help="rely on existing nightsumary file")
+    parser.add_argument("-o", "--outputdir", action="store", type=str, dest="directory",
+                        help="analysis output directory")
+    parser.add_argument("-s", "--simulate", action="store_true", dest="simulate", default=False,
+                        help="do not submit sequences as jobs")
+    parser.add_argument("-t", "--test", action="store_true", dest="test", default=False,
+                        help="test LSTOSA locally outside the CTA-N IT container")
+    parser.add_argument("-v", "--verbose", action="store_true", dest="verbose", default=False,
+                        help="make lots of noise for debugging")
+    parser.add_argument("-w", "--warnings", action="store_true", dest="warning", default=False,
+                        help="show useful warnings")
+    parser.add_argument("-z", "--rawzip", action="store_true", dest="compressed", default=False,
+                        help="Use input as compressed raw.gz files, compulsory if using -n and raw.gz files")
+    parser.add_argument("--stderr", action="store", type=str, dest="stderr",
+                        help="file for standard error")
+    parser.add_argument("--stdout", action="store", type=str, dest="stdout",
+                        help="file for standard output")
+    parser.add_argument("tel_id", choices=["ST", "LST1", "LST2", "all"],
+                        help="telescope identifier LST1, LST2, ST or all.")
 
     return parser
 
@@ -289,6 +303,7 @@ def sequencercliparsing():
     options.mode = opts.mode
     options.nightsum = opts.nightsum
     options.simulate = opts.simulate
+    options.test = opts.test
     options.verbose = opts.verbose
     options.warning = opts.warning
     options.compressed = opts.compressed
