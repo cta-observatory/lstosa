@@ -455,6 +455,7 @@ def setqueuevalues(queue_list, sequence_list):
     for s in sequence_list:
         s.tries = 0
         for q in queue_list:
+            print(q)
             if s.jobname == q["JobName"]:
                 s.action = "Check"
                 s.jobid = q["JobID"]
@@ -479,8 +480,8 @@ def setqueuevalues(queue_list, sequence_list):
                 s.tries += 1
                 verbose(
                     tag,
-                    f"Attributes of sequence {s.seq}, {s.action}, {s.jobname}"
-                    f"{s.jobid}, {s.state}, {s.cputime}, {s.exit} updated",
+                    f"Attributes of sequence {s.seq}, JobName: {s.jobname},"
+                    f"JobID: {s.jobid}, State: {s.state}, CPUTime: {s.cputime}, Exit: {s.exit} updated",
                 )
 
 
