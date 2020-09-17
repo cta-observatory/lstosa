@@ -457,19 +457,19 @@ def setqueuevalues(queue_list, sequence_list):
     for s in sequence_list:
         s.tries = 0
         for q in queue_list:
-            print(s.tries, q)
             if s.jobname == q["JobName"]:
                 s.action = "Check"
                 s.jobid = q["JobID"]
                 s.state = q["State"]
                 # FIXME leave only completed and running but properly calculating avg time duration
-                if s.state == "COMPLETED" or s.state == "RUNNING" or s.state == "CANCELLED" or "FAILED":
+                #if s.state == "COMPLETED" or s.state == "RUNNING" or s.state == "CANCELLED" or s.state == "FAILED":
+                if s.state == "COMPLETED" or s.state == "RUNNING":
+
                     if s.tries == 0:
                         s.cputime = q["CPUTime"]
                         s.walltime = q["Elapsed"]
                     else:
                         try:
-                            print(s.cputime, q["CPUTime"])
                             s.cputime = avg_time_duration(s.cputime, q["CPUTime"])
                         except AttributeError as ErrorName:
                             warning(tag, ErrorName)
@@ -479,7 +479,7 @@ def setqueuevalues(queue_list, sequence_list):
                             warning(tag, ErrorName)
                     if s.state == "COMPLETED":
                         s.exit = q["ExitCode"]
-                # FIXME add max_duration_time
+                # FIXME add max_duration_time to easily spot potencial problems
                 # FIXME fetch ERROR and STATE from python line
                 s.tries += 1
                 verbose(
@@ -521,6 +521,10 @@ def avg_time_duration(a, b):
 
     if a != "00:00:00" and b != "00:00:00":
         time_duration = time.strftime('%H:%M:%S', time.gmtime(np.mean((a_seconds,b_seconds))))
+    elif a is None:
+        time_duration = b
+    elif b is None:
+        time_duration = a
     else:
         time_duration = sumtime(a, b)
 
