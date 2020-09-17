@@ -431,7 +431,7 @@ def getqueuejoblist(sequence_list):
     tag = gettag()
     command = cfg.get("ENV", "SACCTBIN")
     user = cfg.get("ENV", "USER")
-    sacct_format = "--format=jobid%8,jobname%25,cputime,elapsed,maxrss,state,exitcode"
+    sacct_format = "--format=jobid%8,jobname%25,cputime,elapsed,state,exitcode"
     commandargs = [command, "-u", user, sacct_format]
     queue_list = []
     try:
