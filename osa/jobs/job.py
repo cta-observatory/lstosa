@@ -457,6 +457,7 @@ def setqueuevalues(queue_list, sequence_list):
     for s in sequence_list:
         s.tries = 0
         for q in queue_list:
+            print(q)
             if s.jobname == q["JobName"]:
                 s.action = "Check"
                 s.jobid = q["JobID"]
@@ -467,6 +468,7 @@ def setqueuevalues(queue_list, sequence_list):
                         s.walltime = q["Elapsed"]
                     else:
                         try:
+                            print(s.cputime, q["CPUTime"])
                             s.cputime = avg_time_duration(s.cputime, q["CPUTime"])
                         except AttributeError as ErrorName:
                             warning(tag, ErrorName)
