@@ -460,17 +460,18 @@ def setqueuevalues(queue_list, sequence_list):
                 s.jobid = q["JobID"]
                 s.state = q["State"]
                 if s.state == "COMPLETED" or s.state == "RUNNING":
-                    s.jobhost = q["jobhost"]
                     if s.tries == 0:
                         s.cputime = q["CPUTime"]
                         s.walltime = q["Elapsed"]
                     else:
                         try:
-                            s.cputime = sumtime(s.cputime, q["CPUTime"])
+                            #s.cputime = sumtime(s.cputime, q["CPUTime"])
+                            s.cputime = q["CPUTime"]
                         except AttributeError as ErrorName:
                             warning(tag, ErrorName)
                         try:
-                            s.walltime = sumtime(s.cputime, q["Elapsed"])
+                            #s.walltime = sumtime(s.cputime, q["Elapsed"])
+                            s.walltime = q["Elapsed"]
                         except AttributeError as ErrorName:
                             warning(tag, ErrorName)
                     if s.state == "COMPLETED":
@@ -478,9 +479,8 @@ def setqueuevalues(queue_list, sequence_list):
                 s.tries += 1
                 verbose(
                     tag,
-                    f"Attributes of sequence {s.seq}, {s.action},"
-                    f"{s.jobid}, {s.state}, {s.jobhost},"
-                    f"{s.cputime}, {s.exit} updated",
+                    f"Attributes of sequence {s.seq}, {s.action}, {s.jobname}"
+                    f"{s.jobid}, {s.state}, {s.cputime}, {s.exit} updated",
                 )
 
 
