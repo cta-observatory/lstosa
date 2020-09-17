@@ -316,7 +316,6 @@ def createjobtemplate(s, get_content=False):
         content += f"#SBATCH --array=0-{int(n_subruns) - 1} \n"
     content += "#SBATCH --cpus-per-task=1 \n"
     content += "#SBATCH --mem-per-cpu=15G \n"
-    content += "#SBATCH -t 0-24:00\n"
     content += f"#SBATCH -D {options.directory} \n"
     content += f"#SBATCH -o log/slurm.{str(s.run).zfill(5)}_%a_%A.out \n"
     content += f"#SBATCH -e log/slurm.{str(s.run).zfill(5)}_%a_%A.err \n"
@@ -454,6 +453,7 @@ def getqueuejoblist(sequence_list):
         #
         #     document = xml.dom.minidom.parseString(xmloutput)
         #     queue_list = xmlhandle.xmlhandleData(document)
+        print(sequence_list)
         setqueuevalues(queue_list, sequence_list)
 
     return queue_list
