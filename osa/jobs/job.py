@@ -462,7 +462,7 @@ def setqueuevalues(queue_list, sequence_list):
                 s.action = "Check"
                 s.jobid = q["JobID"]
                 s.state = q["State"]
-                if s.state == "COMPLETED" or s.state == "RUNNING":
+                if s.state == "COMPLETED" or s.state == "RUNNING" or s.state == "CANCELLED":
                     if s.tries == 0:
                         s.cputime = q["CPUTime"]
                         s.walltime = q["Elapsed"]
