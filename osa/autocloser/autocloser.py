@@ -284,7 +284,7 @@ class Sequence(object):
         if (
                 self.dictSequence["Tel"] != "ST"
                 and self.dictSequence["DL1%"] == "100"
-                and self.dictSequence["DATACHECK%"] == "100"
+                #and self.dictSequence["DATACHECK%"] == "100"
                 and self.dictSequence["MUONS%"] == "100"
                 and self.dictSequence["DL2%"] == "100"
         ):
