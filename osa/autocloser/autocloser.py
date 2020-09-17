@@ -127,7 +127,6 @@ class Telescope(object):
         if not self.build_Sequences():
             log.warning(f"Sequencer for {self.telescope} is empty! Ignoring {self.telescope}")
             return
-        self.problem = Problem(self.telescope)
         self.incidence = Incidence(self.telescope)
 
     def __iter__(self):
@@ -349,34 +348,6 @@ class Sequence(object):
                     continue
         return False
 
-    def is_error23(self):
-        log.debug("Check for error 23 in merpp")
-        historyFile = f"{analysis_path(self.dictSequence['Tel'])}/sequence_{self.dictSequence['Tel']}_0{self.dictSequence['Run']}.history"
-        subruns = []
-        with open(historyFile, "r") as f:
-            for line in f:
-                try:
-                    if line.split()[1] == "merpp" and int(line.split()[10]) == 23:
-                        subruns.append(line.split()[8].split(".")[1][0:3])
-                except IndexError:
-                    continue
-        return subruns
-
-
-    def is_rc1_for_ST(self):
-        log.debug("Check for rc 1 in ST")
-        if (
-                self.dictSequence["Type"] == "STEREO"
-                and self.dictSequence["Exit"] == "1"
-                and self.dictSequence["_S_%"] == "0"
-                and self.dictSequence["_Q_%"] == "0"
-                and self.dictSequence["State"] == "C"
-                and self.dictSequence["Action"] == "Simulate"
-        ):
-            return True
-        return False
-
-
     def has_all_subruns(self):
         import glob
 
@@ -555,109 +526,6 @@ class Incidence(object):
                 f.write(text)
         return
 
-
-class Problem(object):
-    def __init__(self, telescope):
-        self.telescope = telescope
-        # self.recoveredReports = ''
-
-    # def recoverReport(self, run):
-    #     self.recoveredReports = ''
-    #     log.debug('Recovering report files for %s, sequence %s' %
-    #               (self.telescope, run))
-    #
-    #     fileList = [item for item in
-    #                 os.listdir('%s' % analysis_path(self.telescope))
-    #                 if all(i in item for i in ['%s' % run, '_Y_', '.root'])]
-    #     repsList = [item.replace('.rep', '.root').replace('_D_', '_Y_')
-    #                 for item in os.listdir('%s' % reportsPath(self.telescope))
-    #                 if (all(i in item for i in ['%s' % run, '_D_', '.rep']) and
-    #                     os.stat('%s/%s' % (reportsPath(self.telescope),
-    #                                        item)).st_size != 0)]
-    #     missingReps = [item for item in fileList if item not in repsList]
-    #     if not missingReps:
-    #         log.warning('Could not determine which report files are missing! '
-    #                     'Most likely the report was already recovered and you '
-    #                     'have to wait for the sequencer. If this warning '
-    #                     'persists there something seriously wrong!')
-    #         return False
-
-    # recoverFailure = False
-    # subrunList = []
-    # for subrun in missingReps:
-    #     if args.simulate:
-    #         subrunList.append(subrun[20:24])
-    #         continue
-    #     createReportArgs = ['timeout', '1200', 'bash',
-    #                         '%s' % recRepMacro(),
-    #                         '%s/%s' % (analysis_path(self.telescope),
-    #                                    subrun)]
-    #     log.debug('Executing "%s"' % ' '.join(createReportArgs))
-    #     createReport = subprocess.Popen(createReportArgs,
-    #                                     stdout=subprocess.PIPE,
-    #                                     stderr=subprocess.STDOUT)
-    #     stdout, stderr = createReport.communicate()
-    #     if createReport.returncode == 124:
-    #         log.warning('Time out, CreateReport.sh took longer than 20min')
-    #     if createReport.returncode != 0:
-    #         log.warning("Could not create missing report file for %s!\n"
-    #                     "See below the output of the "
-    #                     "CreateReport.sh script:\n---\n%s---" %
-    #                     (subrun, stdout))
-    #         recoverFailure = True
-    #         continue
-    #     log.debug(stdout)
-    #     subrunList.append(subrun[20:24])
-
-    # if subrunList:
-    #     subrunList.sort()
-    #     self.recoveredReports = '%s(%s)' % (run, ', '.join(i for i in
-    #                                                        subrunList))
-    # if recoverFailure:
-    #     return False
-    # return True
-
-    # def determineErrorWithApe(self, run):
-    #     log.debug("Running ape to determine error of run %s" % run)
-    #     starSummaryFile = '%s/star*%s*%s.root' % (analysis_path(self.telescope),
-    #                                               run, self.telescope)
-    #     ape = subprocess.Popen('ape %s' % starSummaryFile, shell=True,
-    #                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    #     stdout, stderr = ape.communicate()
-    #     if ape.returncode != 1:
-    #         log.warning('Return code from ape is %i, should be 1.\n'
-    #                     'See output:\n' % ape.returncode + stdout)
-    #         return ''
-    #     if any([error for error in stdout.split(' ')
-    #             if error not in ['7', '17', '34', '2', '20'] and not
-    #         error == '\x1b[0m\n\x1b[0m']):
-    #         log.warning('Could not interpret "ape", see output:\n' + stdout)
-    #         return ''
-    #     log.debug('ape output:\n' + stdout)
-    #     return stdout
-
-    # def is_too_few_star_events(self, run):
-    #     log.debug("Check if too few events in star files")
-    #     import ROOT as root
-    #     marssys = os.path.expandvars("$MARSSYS")
-    #     # if var does not exists, it will not get expanded ...
-    #     if marssys == "$MARSSYS":
-    #         log.warning("$MARSSYS variable not set in bash")
-    #         return False
-    #     if root.gSystem.Load(marssys + "/libmars.so") < 0:
-    #         log.warning("Could not load Mars library")
-    #         return False
-    #     # check if there are more than 100 events in the star files
-    #     for t in ['LST1', 'LST2']:
-    #         star_dir = analysis_path(t).replace("Analysis", "Star")
-    #         ch = root.TChain("Events")
-    #         ch.Add("%s/20*%s*_I_*.root" % (star_dir, run))
-    #         if ch.GetEntries() > 100:
-    #             log.debug("More than 100 events found in %s star files" % t)
-    #             return False
-    #     return True
-
-
 def is_night_time():
     if 8 <= hour <= 18:
         return False
@@ -799,7 +667,6 @@ def check_for_output_files(path):
         #           'in "%s" after closing: %s' % (path, file_names_str))
 
 
-# the if is basically necessary when building the docs
 if __name__ == "__main__":
 
     # when problems occur?
