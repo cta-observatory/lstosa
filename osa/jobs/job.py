@@ -442,7 +442,7 @@ def getqueuejoblist(sequence_list):
         error(tag, f"Command '{stringify(commandargs)}' failed, {ValueError}", ValueError)
     else:
         queue_header = sacct_output.splitlines()[0].split()
-        queue_lines = sacct_output.replace("+", "").splitlines()[2:]
+        queue_lines = sacct_output.replace("+", "").replace("sequence_", "").replace(".py", "").splitlines()[2:]
         queue_sequences = [line.split() for line in queue_lines]
         queue_list = [dict(zip(queue_header, sequence)) for sequence in queue_sequences]
         setqueuevalues(queue_list, sequence_list)
@@ -459,8 +459,6 @@ def setqueuevalues(queue_list, sequence_list):
                 s.action = "Check"
                 s.jobid = q["JobID"]
                 s.state = q["State"]
-                print(s.state)
-                print(s.jobid)
                 if s.state == "COMPLETED" or s.state == "RUNNING":
                     s.jobhost = q["jobhost"]
                     if s.tries == 0:
