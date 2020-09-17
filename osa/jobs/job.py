@@ -457,7 +457,7 @@ def setqueuevalues(queue_list, sequence_list):
     for s in sequence_list:
         s.tries = 0
         for q in queue_list:
-            print(q)
+            print(s.tries, q)
             if s.jobname == q["JobName"]:
                 s.action = "Check"
                 s.jobid = q["JobID"]
@@ -478,6 +478,8 @@ def setqueuevalues(queue_list, sequence_list):
                             warning(tag, ErrorName)
                     if s.state == "COMPLETED":
                         s.exit = q["ExitCode"]
+                # FIXME add max_duration_time
+                # FIXME fetch ERROR and STATE from python line
                 s.tries += 1
                 verbose(
                     tag,
