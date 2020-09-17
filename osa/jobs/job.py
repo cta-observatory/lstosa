@@ -1,6 +1,9 @@
 import datetime
 import subprocess
+import time
 from os.path import exists, join
+
+import numpy as np
 
 from osa.configs.config import cfg
 from osa.utils import options
@@ -501,6 +504,24 @@ def sumtime(a, b):
     if len(c) == 7:
         c = "0" + c
     return c
+
+
+def avg_time_duration(a, b):
+
+    a_hh, a_mm, a_ss = a.split(":")
+    b_hh, b_mm, b_ss = b.split(":")
+
+    a_seconds = a_hh * 3600 + a_mm * 60 + a_ss
+    b_seconds = b_hh * 3600 + b_mm * 60 + b_ss
+
+    if a != "00:00:00" and b != "00:00:00":
+        time_duration = time.strftime('%H:%M:%S', time.gmtime(np.mean((a_seconds,b_seconds))))
+    else:
+        time_duration = sumtime(a, b)
+
+    return time_duration
+
+
 
 
 def date_in_yymmdd(datestring):
