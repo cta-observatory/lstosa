@@ -266,17 +266,17 @@ class Sequence(object):
         return False
 
     def is_running(self):
-        if self.dictSequence["State"] == "R":
+        if self.dictSequence["State"] == "RUNNING":
             return True
         return False
 
     def is_complete(self):
-        if self.dictSequence["State"] == "C":
+        if self.dictSequence["State"] == "COMPLETED":
             return True
         return False
 
     def is_onHold(self):
-        if self.dictSequence["State"] == "H":
+        if self.dictSequence["State"] == "PENDING":
             return True
         return False
 
@@ -284,7 +284,7 @@ class Sequence(object):
         if (
                 self.dictSequence["Tel"] != "ST"
                 and self.dictSequence["DL1%"] == "100"
-                #and self.dictSequence["DATACHECK%"] == "100"
+                and self.dictSequence["DATACHECK%"] == "100"
                 and self.dictSequence["MUONS%"] == "100"
                 and self.dictSequence["DL2%"] == "100"
         ):
