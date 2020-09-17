@@ -457,6 +457,7 @@ def setqueuevalues(queue_list, sequence_list):
     for s in sequence_list:
         s.tries = 0
         for q in queue_list:
+            print('DEBUG:', q)
             if s.jobname == q["JobName"]:
                 s.action = "Check"
                 s.jobid = q["JobID"]
@@ -521,16 +522,16 @@ def avg_time_duration(a, b):
 
     if a != "00:00:00" and b != "00:00:00":
         time_duration = time.strftime('%H:%M:%S', time.gmtime(np.mean((a_seconds,b_seconds))))
-    elif a is None:
+    elif a is None and b is not None:
         time_duration = b
-    elif b is None:
+    elif b is None and a is not None:
         time_duration = a
+    elif a is None and b is None:
+        time_duration = "00:00:00"
     else:
         time_duration = sumtime(a, b)
 
     return time_duration
-
-
 
 
 def date_in_yymmdd(datestring):
