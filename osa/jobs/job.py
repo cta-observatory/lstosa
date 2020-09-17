@@ -511,8 +511,8 @@ def avg_time_duration(a, b):
     a_hh, a_mm, a_ss = a.split(":")
     b_hh, b_mm, b_ss = b.split(":")
 
-    a_seconds = int(a_hh * 3600 + a_mm * 60 + a_ss)
-    b_seconds = int(b_hh * 3600 + b_mm * 60 + b_ss)
+    a_seconds = int(a_hh) * 3600 + int(a_mm) * 60 + int(a_ss)
+    b_seconds = int(b_hh) * 3600 + int(b_mm) * 60 + int(b_ss)
 
     if a != "00:00:00" and b != "00:00:00":
         time_duration = time.strftime('%H:%M:%S', time.gmtime(np.mean((a_seconds,b_seconds))))
