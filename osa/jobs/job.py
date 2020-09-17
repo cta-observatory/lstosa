@@ -40,7 +40,6 @@ def historylevel(historyfile, type):
             try:
                 program = words[1]
                 exit_status = int(words[10])
-                print("DEBUG:", program, exit_status)
             except IndexError as err:
                 error(tag, f"Malformed history file {historyfile}, {err}", 3)
             except ValueError as err:
@@ -455,7 +454,6 @@ def setqueuevalues(queue_list, sequence_list):
     for s in sequence_list:
         s.tries = 0
         for q in queue_list:
-            print(q)
             if s.jobname == q["JobName"]:
                 s.action = "Check"
                 s.jobid = q["JobID"]
@@ -466,13 +464,11 @@ def setqueuevalues(queue_list, sequence_list):
                         s.walltime = q["Elapsed"]
                     else:
                         try:
-                            #s.cputime = sumtime(s.cputime, q["CPUTime"])
-                            s.cputime = q["CPUTime"]
+                            s.cputime = sumtime(s.cputime, q["CPUTime"])/s.tries
                         except AttributeError as ErrorName:
                             warning(tag, ErrorName)
                         try:
-                            #s.walltime = sumtime(s.cputime, q["Elapsed"])
-                            s.walltime = q["Elapsed"]
+                            s.walltime = sumtime(s.cputime, q["Elapsed"])/s.tries
                         except AttributeError as ErrorName:
                             warning(tag, ErrorName)
                     if s.state == "COMPLETED":
@@ -480,8 +476,8 @@ def setqueuevalues(queue_list, sequence_list):
                 s.tries += 1
                 verbose(
                     tag,
-                    f"Attributes of sequence {s.seq}, JobName: {s.jobname},"
-                    f"JobID: {s.jobid}, State: {s.state}, CPUTime: {s.cputime}, Exit: {s.exit} updated",
+                    f"Queue attributes: sequence {s.seq}, JobName {s.jobname}, "
+                    f"JobID {s.jobid}, State {s.state}, CPUTime {s.cputime}, Exit {s.exit} updated",
                 )
 
 

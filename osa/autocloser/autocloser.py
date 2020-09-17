@@ -299,7 +299,7 @@ class Sequence(object):
                 self.dictSequence["Type"] == "DATA"
                 and self.dictSequence["Exit"] == "0"
                 and self.is_100()
-                and self.dictSequence["State"] == "C"
+                and self.dictSequence["State"] == "COMPLETED"
                 and int(self.dictSequence["Subruns"]) > 0
         ):
             return True
@@ -310,8 +310,7 @@ class Sequence(object):
                 and self.dictSequence["DATACHECK%"] == "None"
                 and self.dictSequence["MUONS%"] == "None"
                 and self.dictSequence["DL2%"] == "None"
-                and self.dictSequence["State"] == "C"
-                #and int(self.dictSequence["Subruns"]) == 1
+                and self.dictSequence["State"] == "COMPLETED"
         ):
             return True
         # if (
