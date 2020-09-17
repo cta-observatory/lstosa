@@ -693,23 +693,6 @@ def understand_mono_sequence(tel, seq):
         seq.readyToClose = True
         return True
 
-    if seq.is_error7or17or34():
-        seq.understood = True
-        apeOutput = tel.problem.determineErrorWithApe(seq.dictSequence["Run"])
-        if not apeOutput:
-            log.warning("Could not determine error 7/17/34 for star with ape")
-            return True
-        if "7" in apeOutput:
-            log.info("Updating incidences: error 7 for star")
-            tel.incidence.add_incidence("error7", seq.dictSequence["Run"])
-        if "17" in apeOutput:
-            log.info("Updating incidences: error 17 for star")
-            tel.incidence.add_incidence("error17", seq.dictSequence["Run"])
-        if "34" in apeOutput:
-            log.info("Updating incidences: error 34 for star")
-            tel.incidence.add_incidence("error34", seq.dictSequence["Run"])
-        seq.readyToClose = True
-        return True
 
     if seq.is_missingReport():
         seq.understood = True
