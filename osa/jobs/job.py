@@ -467,11 +467,11 @@ def setqueuevalues(queue_list, sequence_list):
                         s.walltime = q["Elapsed"]
                     else:
                         try:
-                            s.cputime = sumtime(s.cputime, q["CPUTime"])
+                            s.cputime = avg_time_duration(s.cputime, q["CPUTime"])
                         except AttributeError as ErrorName:
                             warning(tag, ErrorName)
                         try:
-                            s.walltime = sumtime(s.cputime, q["Elapsed"])
+                            s.walltime = avg_time_duration(s.cputime, q["Elapsed"])
                         except AttributeError as ErrorName:
                             warning(tag, ErrorName)
                     if s.state == "COMPLETED":
