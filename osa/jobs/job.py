@@ -442,18 +442,9 @@ def getqueuejoblist(sequence_list):
         error(tag, f"Command '{stringify(commandargs)}' failed, {ValueError}", ValueError)
     else:
         queue_header = sacct_output.splitlines()[0].split()
-        queue_lines = sacct_output.replace("+","").splitlines()[2:]
+        queue_lines = sacct_output.replace("+", "").splitlines()[2:]
         queue_sequences = [line.split() for line in queue_lines]
         queue_list = [dict(zip(queue_header, sequence)) for sequence in queue_sequences]
-        # With PBS Torque a xml table can be fetched
-        # # verbose(key, "qstat -x gives the folloging output\n{0}".format(xml).rstrip())
-        # if len(xmloutput) != 0:
-        #     import xml.dom.minidom
-        #     from dev import xmlhandle
-        #
-        #     document = xml.dom.minidom.parseString(xmloutput)
-        #     queue_list = xmlhandle.xmlhandleData(document)
-        print(sequence_list)
         setqueuevalues(queue_list, sequence_list)
 
     return queue_list
@@ -468,6 +459,8 @@ def setqueuevalues(queue_list, sequence_list):
                 s.action = "Check"
                 s.jobid = q["JobID"]
                 s.state = q["State"]
+                print(s.state)
+                print(s.jobid)
                 if s.state == "COMPLETED" or s.state == "RUNNING":
                     s.jobhost = q["jobhost"]
                     if s.tries == 0:
