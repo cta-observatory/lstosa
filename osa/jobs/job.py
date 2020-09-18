@@ -523,10 +523,13 @@ def setqueuevalues(queue_list, sequence_list):
                                 warning(tag, ErrorName)
                         if s.state == "COMPLETED":
                             s.exit = queue_item["ExitCode"]
-                    if queue_item["JobID"] == nxt["JobID"]:
-                        pass
-                    else:
-                        s.tries += 1
+                    try:
+                        if queue_item["JobID"] == nxt["JobID"]:
+                            pass
+                        else:
+                            s.tries += 1
+                    except TypeError as err:
+                        warning(tag, "Reached the end of queue:", err)
                     verbose(
                         tag,
                         f"Queue attributes: sequence {s.seq}, JobName {s.jobname}, "
