@@ -33,7 +33,7 @@ def dl1_to_dl2(
 
 def select_config(tmp_path):
 
-    config_file = Path(__file__).resolve().parent / ".." / ".." / ".." / "cfg" / "sequencer.cfg"
+    config_file = Path(__file__).resolve().parent / ".." / ".." / ".." / options.configfile
     in_config_arg = False
     for args in sys.argv:
         if in_config_arg:
@@ -45,7 +45,6 @@ def select_config(tmp_path):
     config_filename = PurePath(config_file).name
     temp_config_path = tmp_path / config_filename
     shutil.copy(config_file, str(temp_config_path))
-    options.configfile = str(temp_config_path)
 
 
 def make_args_r0_to_dl1():
