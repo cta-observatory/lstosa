@@ -501,6 +501,7 @@ def setqueuevalues(queue_list, sequence_list):
     for s in sequence_list:
         s.tries = 0
         for previous, queue_item, nxt in previous_and_next(queue_list):
+            print(queue_item)
             try:
                 if queue_item['JobName'] == "python":
                     if s.jobname == previous["JobName"]:
