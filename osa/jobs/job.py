@@ -445,7 +445,7 @@ def getqueuejoblist(sequence_list):
     else:
         queue_header = sacct_output.splitlines()[0].split()
         queue_lines = sacct_output.replace("+", "").replace("sequence_", "").replace(".py", "").splitlines()[2:]
-        queue_sequences = [line.split() for line in queue_lines]
+        queue_sequences = [line.split() for line in queue_lines if "batch" not in line]
         queue_list = [dict(zip(queue_header, sequence)) for sequence in queue_sequences]
         setqueuevalues(queue_list, sequence_list)
 
@@ -457,17 +457,48 @@ def setqueuevalues(queue_list, sequence_list):
     for s in sequence_list:
         s.tries = 0
         for q in queue_list:
-            print('DEBUG:', "try", s.tries, q)
             if s.jobname == q["JobName"]:
                 s.action = "Check"
                 s.jobid = q["JobID"]
                 s.state = q["State"]
                 # FIXME leave only completed and running but properly calculating avg time duration
-                #if s.state == "COMPLETED" or s.state == "RUNNING" or s.state == "CANCELLED" or s.state == "FAILED":
                 if s.state == "COMPLETED" or s.state == "RUNNING" or s.state == "PENDING":
-
                     if s.tries == 0:
-                        print("first time here")
+                        s.cputime = q["CPUTime"]
+                        s.walltime = q["Elapsed"]
+                    else:
+                        try:
+                            s.cputime = avg_time_duration(s.cputime, q["CPUTime"])
+                        except AttributeError as ErrorName:
+                            warning(tag, ErrorName)
+                        try:
+                            s.walltime = avg_time_duration(s.cputime, q["Elapsed"])
+                        except AttributeError as ErrorName:
+                            warning(tag, ErrorName)
+                    if s.state == "COMPLETED":
+                        s.exit = q["ExitCode"]
+                # FIXME add max_duration_time to easily spot potencial problems
+                # FIXME fetch ERROR and STATE from python line
+                s.tries += 1
+                verbose(
+                    tag,
+                    f"Queue attributes: sequence {s.seq}, JobName {s.jobname}, "
+                    f"JobID {s.jobid}, State {s.state}, CPUTime {s.cputime}, Exit {s.exit} updated",
+                )
+
+
+def setqueuevalues_new(queue_list, sequence_list):
+    tag = gettag()
+    for s in sequence_list:
+        s.tries = 0
+        for q in queue_list:
+            if s.jobname == q["JobName"]:
+                s.action = "Check"
+                s.jobid = q["JobID"]
+                s.state = q["State"]
+                # FIXME leave only completed and running but properly calculating avg time duration
+                if s.state == "COMPLETED" or s.state == "RUNNING" or s.state == "PENDING":
+                    if s.tries == 0:
                         s.cputime = q["CPUTime"]
                         s.walltime = q["Elapsed"]
                     else:
