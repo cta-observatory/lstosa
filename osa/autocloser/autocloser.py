@@ -6,8 +6,6 @@ import re
 import subprocess
 
 from osa.utils import options
-from osa.utils.utils import lstdate_to_dir
-from osa.configs.config import cfg
 from osa.utils.cliopts import set_default_directory_if_needed
 
 __all__ = ["Telescope", "Sequence"]
@@ -304,7 +302,7 @@ class Sequence(object):
             return True
         if (
                 self.dictSequence["Type"] == "CALI"
-                and self.dictSequence["Exit"] == "0:0"
+                and self.dictSequence["Exit"] == "2:0"  # Leave until the calib sequence is implemented
                 and self.dictSequence["DL1%"] == "None"
                 and self.dictSequence["DATACHECK%"] == "None"
                 and self.dictSequence["MUONS%"] == "None"
@@ -322,31 +320,31 @@ class Sequence(object):
         #    return True
         return False
 
-    def is_error2(self):
-        log.debug("Check for 'short runs'")
-        if (
-                self.dictSequence["Type"] == "DATA"
-                and (self.dictSequence["Exit"] == "2" or self.dictSequence["Exit"] == "222")
-                and self.dictSequence["_Y_%"] == "100"
-                and self.dictSequence["_D_%"] == "0"
-                and self.dictSequence["_I_%"] == "0"
-                and self.dictSequence["State"] == "C"
-                and int(self.dictSequence["Subruns"]) < min_subruns_per_run
-        ):
-            return True
-        return False
-
-    def is_error2noint(self):
-        log.debug("Check if runs were calibrated with no or few interleaved ped/cal events")
-        historyFile = f"{analysis_path(self.dictSequence['Tel'])}/sequence_{self.dictSequence['Tel']}_0{self.dictSequence['Run']}.history"
-        with open(historyFile, "r") as f:
-            for line in f:
-                try:
-                    if line.split()[1] == "sorcerer" and int(line.split()[10]) == 2:
-                        return True
-                except IndexError:
-                    continue
-        return False
+    # def is_error2(self):
+    #     log.debug("Check for 'short runs'")
+    #     if (
+    #             self.dictSequence["Type"] == "DATA"
+    #             and (self.dictSequence["Exit"] == "2" or self.dictSequence["Exit"] == "222")
+    #             and self.dictSequence["_Y_%"] == "100"
+    #             and self.dictSequence["_D_%"] == "0"
+    #             and self.dictSequence["_I_%"] == "0"
+    #             and self.dictSequence["State"] == "C"
+    #             and int(self.dictSequence["Subruns"]) < min_subruns_per_run
+    #     ):
+    #         return True
+    #     return False
+    #
+    # def is_error2noint(self):
+    #     log.debug("Check if runs were calibrated with no or few interleaved ped/cal events")
+    #     historyFile = f"{analysis_path(self.dictSequence['Tel'])}/sequence_{self.dictSequence['Tel']}_0{self.dictSequence['Run']}.history"
+    #     with open(historyFile, "r") as f:
+    #         for line in f:
+    #             try:
+    #                 if line.split()[1] == "sorcerer" and int(line.split()[10]) == 2:
+    #                     return True
+    #             except IndexError:
+    #                 continue
+    #     return False
 
     def has_all_subruns(self):
         import glob
@@ -412,21 +410,11 @@ class Incidence(object):
         # known incidences (keys in both dicts have to be unique!):
         self.incidencesMono = {
             "error2": "Short runs(# of subruns) excluded from OSA",
-            "error2noint": "Runs(# of subruns) for which sorcerer "
-                           "returned error 2 "
-                           "(too few interleaved Ped/Cal events)",
-            "error7": "Runs for which star returned error 7 (No starguider information available)",
-            "error17": "Runs for which star returned error 17 (Too many mirrors in bad state)",
-            "error34": "Runs for which star returned error 34 (Not appropriate image cleaning)",
-            "recReps": "Recovered report files for subruns",
-            "error222": "Subruns that could not be calibrated",
-            "error23": "Broken report lines for subruns",
+            "default_time_calib": "Used a default time calibration from same operiod",
+
         }
-        self.incidencesStereo = {"error3": "Short runs(# of subruns) for which superstar files are empty"}
         self.incidencesDict = {}
         for k in self.incidencesMono:
-            self.incidencesDict[k] = []
-        for k in self.incidencesStereo:
             self.incidencesDict[k] = []
         # runs with these errors get discarded
         self.errors_to_discard = ["error2"]
