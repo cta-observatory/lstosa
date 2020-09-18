@@ -6,7 +6,7 @@ from glob import glob
 from os.path import join
 
 from osa.autocloser.closer import is_day_closed
-from dev.dot import writeworkflow
+# from dev.dot import writeworkflow
 from osa.configs.config import cfg
 from osa.jobs.job import getqueuejoblist, preparedailyjobs, preparejobs, preparestereojobs, submitjobs
 from osa.nightsummary.extract import extractruns, extractsequences, extractsequencesstereo, extractsubruns
@@ -130,7 +130,7 @@ def stereo_process(telescope, s1_list, s2_list):
     # building the sequences
     sequence_list = extractsequencesstereo(s1_list, s2_list)
     # workflow and Submission
-    writeworkflow(sequence_list)
+    # writeworkflow(sequence_list)
     # adds the scripts
     preparestereojobs(sequence_list)
     # preparedailyjobs(dailysrc_list)
