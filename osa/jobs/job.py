@@ -521,7 +521,7 @@ def setqueuevalues(queue_list, sequence_list):
                                 s.walltime = avg_time_duration(s.cputime, queue_item["Elapsed"])
                             except AttributeError as ErrorName:
                                 warning(tag, ErrorName)
-                        if s.state == "COMPLETED":
+                        if s.state == "COMPLETED" or s.state == "FAILED":
                             s.exit = queue_item["ExitCode"]
                     try:
                         if queue_item["JobID"] == nxt["JobID"]:
