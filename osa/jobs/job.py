@@ -529,6 +529,9 @@ def setqueuevalues(queue_list, sequence_list):
                                 pass
                             else:
                                 s.tries += 1
+                        else:
+                            s.tries += 1
+
 
                     verbose(
                         tag,
