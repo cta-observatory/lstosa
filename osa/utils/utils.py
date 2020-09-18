@@ -11,8 +11,8 @@ from socket import gethostname
 from osa.configs.config import cfg
 from osa.utils.iofile import writetofile
 
-from ..configs import options
-from .standardhandle import error, errornonfatal, gettag, verbose, warning
+from osa.configs import options
+from osa.utils.standardhandle import error, errornonfatal, gettag, verbose, warning
 
 
 def getdate(date, sep):
