@@ -501,13 +501,12 @@ def setqueuevalues(queue_list, sequence_list):
     for s in sequence_list:
         s.tries = 0
         for previous, queue_item, nxt in previous_and_next(queue_list):
-            print(queue_item)
             if queue_item['JobName'] == "python":
                 if s.jobname == previous["JobName"]:
+                    print(queue_item, "nextID", nxt["JobID"])
                     s.action = "Check"
                     s.jobid = queue_item["JobID"]
                     s.state = queue_item["State"]
-                    # FIXME leave only completed and running but properly calculating avg time duration
                     if s.state == "COMPLETED" or s.state == "RUNNING" or s.state == "PENDING" or s.state == "FAILED":
                         if s.tries == 0:
                             s.cputime = queue_item["CPUTime"]
