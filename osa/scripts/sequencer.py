@@ -5,10 +5,10 @@ from decimal import Decimal
 from glob import glob
 from os.path import join
 
-from osa.autocloser.closer import is_day_closed
+from osa.utils.utils import is_day_closed
 # from dev.dot import writeworkflow
 from osa.configs.config import cfg
-from osa.jobs.job import getqueuejoblist, preparedailyjobs, preparejobs, preparestereojobs, submitjobs
+from osa.jobs.job import getqueuejoblist, preparejobs, preparestereojobs, submitjobs
 from osa.nightsummary.extract import extractruns, extractsequences, extractsequencesstereo, extractsubruns
 from osa.nightsummary.nightsummary import readnightsummary
 from osa.reports.report import rule, start
