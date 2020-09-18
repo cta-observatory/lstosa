@@ -7,7 +7,7 @@ from os.path import exists, join
 import numpy as np
 
 from osa.configs.config import cfg
-from osa.utils import options
+from osa.configs import options
 from osa.utils.iofile import readfromfile, writetofile
 from osa.utils.standardhandle import error, gettag, stringify, verbose, warning
 from osa.utils.utils import lstdate_to_dir

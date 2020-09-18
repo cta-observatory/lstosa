@@ -2,7 +2,7 @@ import shutil
 import sys
 from pathlib import Path, PurePath
 
-from osa.utils import options
+from osa.configs import options
 from osa.provenance.capture import trace
 from osa.provenance.io import *
 

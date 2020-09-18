@@ -4,7 +4,7 @@ from glob import glob
 from os.path import basename, exists, join
 
 from osa.configs.config import cfg
-from osa.utils import options
+from osa.configs import options
 from osa.utils.standardhandle import gettag, verbose
 from osa.utils.utils import lstdate_to_dir
 

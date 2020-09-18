@@ -14,7 +14,7 @@ from osa.jobs.job import createjobtemplate
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import readnightsummary
 from osa.provenance.utils import get_log_config
-from osa.utils import options
+from osa.configs import options
 from osa.utils.cliopts import simprocparsing
 from osa.utils.utils import lstdate_to_number
 from osa.utils.standardhandle import gettag

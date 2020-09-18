@@ -12,7 +12,7 @@ from osa.jobs.job import getqueuejoblist, preparedailyjobs, preparejobs, prepare
 from osa.nightsummary.extract import extractruns, extractsequences, extractsequencesstereo, extractsubruns
 from osa.nightsummary.nightsummary import readnightsummary
 from osa.reports.report import rule, start
-from osa.utils import options
+from osa.configs import options
 from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_needed
 from osa.utils.standardhandle import gettag, output, verbose
 from osa.veto.veto import getvetolist, getclosedlist

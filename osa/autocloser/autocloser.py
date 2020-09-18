@@ -5,8 +5,8 @@ import os
 import re
 import subprocess
 
-from osa.utils import options
-from osa.utils.cliopts import set_default_directory_if_needed
+from osa.configs import options
+from osa.utils.utils import lstdate_to_dir
 
 __all__ = ["Telescope", "Sequence"]
 

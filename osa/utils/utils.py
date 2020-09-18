@@ -11,7 +11,7 @@ from socket import gethostname
 from osa.configs.config import cfg
 from osa.utils.iofile import writetofile
 
-from . import options
+from ..configs import options
 from .standardhandle import error, errornonfatal, gettag, verbose, warning
 
 

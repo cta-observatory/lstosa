@@ -4,7 +4,7 @@ from os.path import abspath, basename, dirname, join
 
 from osa.configs.config import cfg
 
-from . import options
+from ..configs import options
 from .standardhandle import error, gettag, verbose
 from .utils import getcurrentdate2, getnightdirectory, is_defined
 

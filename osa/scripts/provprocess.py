@@ -11,7 +11,7 @@ from osa.configs.config import cfg
 from osa.provenance.capture import get_activity_id, get_file_hash
 from osa.provenance.io import *
 from osa.provenance.utils import get_log_config
-from osa.utils import options
+from osa.configs import options
 from osa.utils.cliopts import provprocessparsing
 from osa.utils.standardhandle import error, gettag, output, warning
 

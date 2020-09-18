@@ -8,7 +8,7 @@ from filecmp import cmp
 from glob import glob
 from os import unlink
 from os.path import basename, exists, isdir, islink, join
-from osa.utils import options
+from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.cliopts import closercliparsing
 from osa.utils.standardhandle import error, gettag, output, verbose, warning

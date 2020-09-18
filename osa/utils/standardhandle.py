@@ -3,7 +3,7 @@ import inspect
 import sys
 from os.path import basename
 
-from osa.utils import options
+from osa.configs import options
 
 
 def gettag():
