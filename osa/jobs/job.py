@@ -461,11 +461,11 @@ def previous_and_next(iterable):
 
 
 def setqueuevalues_original(queue_list, sequence_list):
+    """Deprecated"""
     tag = gettag()
     for s in sequence_list:
         s.tries = 0
         for q in queue_list:
-            print(q)
             if s.jobname == q["JobName"]:
                 s.action = "Check"
                 s.jobid = q["JobID"]
@@ -500,11 +500,9 @@ def setqueuevalues(queue_list, sequence_list):
     tag = gettag()
     for s in sequence_list:
         s.tries = 0
-        print("try:", s.tries, s.jobname)
         for previous, queue_item, nxt in previous_and_next(queue_list):
             try:
                 if queue_item['JobName'] == "python" and s.jobname == previous["JobName"]:
-                    print("try:", s.tries, queue_item)
                     s.action = "Check"
                     s.jobid = queue_item["JobID"]
                     s.state = queue_item["State"]
@@ -530,9 +528,7 @@ def setqueuevalues(queue_list, sequence_list):
                             else:
                                 s.tries += 1
                         else:
-                            s.tries += 1
-
-
+                            s.tries += 1  # Last item of the queue reached
                     verbose(
                         tag,
                         f"Queue attributes: sequence {s.seq}, JobName {s.jobname}, "
