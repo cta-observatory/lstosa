@@ -17,13 +17,13 @@ from osa.nightsummary.extract import extractruns, extractsequences, extractsubru
 from osa.nightsummary.nightsummary import getnightsummaryfile, readnightsummary
 from osa.rawcopy.raw import arerawfilestransferred, get_check_rawdir
 from osa.reports.report import finished_assignments, finished_text, start
-from osa.utils.utils import createlock, getlockfile, is_defined, lstdate_to_dir, make_directory
+from osa.utils.utils import createlock, getlockfile, is_defined, lstdate_to_dir, make_directory, is_day_closed
 from osa.veto.veto import createclosed
-from osa.autocloser.register import register_run_concept_files
+from osa.utils.register import register_run_concept_files
 
 __all__ = [
     "closer",
-    "is_day_closed",
+    "use_night_summary",
     "use_night_summary",
     "is_raw_data_available",
     "is_sequencer_successful",
@@ -84,16 +84,6 @@ def closer():
             error(tag, "Never thought about this possibility, please check the code", 9)
 
         post_process(sequencer_tuple)
-
-
-def is_day_closed():
-    """Get the name and Check for the existence of the Closer flag file."""
-
-    answer = False
-    flag_file = getlockfile()
-    if exists(flag_file):
-        answer = True
-    return answer
 
 
 def use_night_summary():
