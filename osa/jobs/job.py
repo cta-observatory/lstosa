@@ -504,7 +504,7 @@ def setqueuevalues(queue_list, sequence_list):
         for previous, queue_item, nxt in previous_and_next(queue_list):
             try:
                 if queue_item['JobName'] == "python" and s.jobname == previous["JobName"]:
-                    print("try:", s.tries, queue_item, "nextID", nxt["JobID"])
+                    print("try:", s.tries, queue_item)
                     s.action = "Check"
                     s.jobid = queue_item["JobID"]
                     s.state = queue_item["State"]
@@ -524,10 +524,11 @@ def setqueuevalues(queue_list, sequence_list):
                         if s.state == "COMPLETED" or s.state == "FAILED":
                             s.exit = queue_item["ExitCode"]
 
-                        if queue_item["JobID"] == nxt["JobID"]:
-                            pass
-                        else:
-                            s.tries += 1
+                        if nxt is not None:
+                            if queue_item["JobID"] == nxt["JobID"]:
+                                pass
+                            else:
+                                s.tries += 1
 
                     verbose(
                         tag,
