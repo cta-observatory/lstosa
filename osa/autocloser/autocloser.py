@@ -561,7 +561,6 @@ def understand_mono_sequence(tel, seq):
         seq.readyToClose = True
         return True
 
-
     if seq.is_missingReport():
         seq.understood = True
         if not tel.problem.recoverReport(seq.dictSequence["Run"]):

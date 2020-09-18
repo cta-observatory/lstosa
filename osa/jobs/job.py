@@ -457,16 +457,17 @@ def setqueuevalues(queue_list, sequence_list):
     for s in sequence_list:
         s.tries = 0
         for q in queue_list:
-            print('DEBUG:', q)
+            print('DEBUG:', "try", s.tries, q)
             if s.jobname == q["JobName"]:
                 s.action = "Check"
                 s.jobid = q["JobID"]
                 s.state = q["State"]
                 # FIXME leave only completed and running but properly calculating avg time duration
                 #if s.state == "COMPLETED" or s.state == "RUNNING" or s.state == "CANCELLED" or s.state == "FAILED":
-                if s.state == "COMPLETED" or s.state == "RUNNING":
+                if s.state == "COMPLETED" or s.state == "RUNNING" or s.state == "PENDING":
 
                     if s.tries == 0:
+                        print("first time here")
                         s.cputime = q["CPUTime"]
                         s.walltime = q["Elapsed"]
                     else:
