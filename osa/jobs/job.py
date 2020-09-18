@@ -500,40 +500,40 @@ def setqueuevalues(queue_list, sequence_list):
     tag = gettag()
     for s in sequence_list:
         s.tries = 0
+        print("try:", s.tries)
         for previous, queue_item, nxt in previous_and_next(queue_list):
             try:
-                if queue_item['JobName'] == "python":
-                    if s.jobname == previous["JobName"]:
-                        print(queue_item, "nextID", nxt["JobID"])
-                        s.action = "Check"
-                        s.jobid = queue_item["JobID"]
-                        s.state = queue_item["State"]
-                        if s.state == "COMPLETED" or s.state == "RUNNING" or s.state == "PENDING" or s.state == "FAILED":
-                            if s.tries == 0:
-                                s.cputime = queue_item["CPUTime"]
-                                s.walltime = queue_item["Elapsed"]
-                            else:
-                                try:
-                                    s.cputime = avg_time_duration(s.cputime, queue_item["CPUTime"])
-                                except AttributeError as ErrorName:
-                                    warning(tag, ErrorName)
-                                try:
-                                    s.walltime = avg_time_duration(s.cputime, queue_item["Elapsed"])
-                                except AttributeError as ErrorName:
-                                    warning(tag, ErrorName)
-                            if s.state == "COMPLETED" or s.state == "FAILED":
-                                s.exit = queue_item["ExitCode"]
+                if queue_item['JobName'] == "python" and s.jobname == previous["JobName"]:
+                    print("try:", s.tries, queue_item, "nextID", nxt["JobID"])
+                    s.action = "Check"
+                    s.jobid = queue_item["JobID"]
+                    s.state = queue_item["State"]
+                    if s.state == "COMPLETED" or s.state == "RUNNING" or s.state == "PENDING" or s.state == "FAILED":
+                        if s.tries == 0:
+                            s.cputime = queue_item["CPUTime"]
+                            s.walltime = queue_item["Elapsed"]
+                        else:
+                            try:
+                                s.cputime = avg_time_duration(s.cputime, queue_item["CPUTime"])
+                            except AttributeError as ErrorName:
+                                warning(tag, ErrorName)
+                            try:
+                                s.walltime = avg_time_duration(s.cputime, queue_item["Elapsed"])
+                            except AttributeError as ErrorName:
+                                warning(tag, ErrorName)
+                        if s.state == "COMPLETED" or s.state == "FAILED":
+                            s.exit = queue_item["ExitCode"]
 
-                            if queue_item["JobID"] == nxt["JobID"]:
-                                pass
-                            else:
-                                s.tries += 1
+                        if queue_item["JobID"] == nxt["JobID"]:
+                            pass
+                        else:
+                            s.tries += 1
 
-                        verbose(
-                            tag,
-                            f"Queue attributes: sequence {s.seq}, JobName {s.jobname}, "
-                            f"JobID {s.jobid}, State {s.state}, CPUTime {s.cputime}, Exit {s.exit} updated",
-                        )
+                    verbose(
+                        tag,
+                        f"Queue attributes: sequence {s.seq}, JobName {s.jobname}, "
+                        f"JobID {s.jobid}, State {s.state}, CPUTime {s.cputime}, Exit {s.exit} updated",
+                    )
             except TypeError as err:
                 warning(tag, f"Reached the end of queue: {err}")
 
