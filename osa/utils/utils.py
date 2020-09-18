@@ -334,3 +334,13 @@ def get_md5sum_and_copy(inputf, outputf):
             error(tag, f"{ErrorValue}", 2)
         else:
             return md5.hexdigest()
+
+
+def is_day_closed():
+    """Get the name and Check for the existence of the Closer flag file."""
+
+    answer = False
+    flag_file = getlockfile()
+    if exists(flag_file):
+        answer = True
+    return answer
