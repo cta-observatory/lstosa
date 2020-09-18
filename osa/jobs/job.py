@@ -514,6 +514,11 @@ def sumtime(a, b):
 
 def avg_time_duration(a, b):
 
+    if a is None:
+        a = "00:00:00"
+    elif b is None:
+        b = "00:00:00"
+
     a_hh, a_mm, a_ss = a.split(":")
     b_hh, b_mm, b_ss = b.split(":")
 
