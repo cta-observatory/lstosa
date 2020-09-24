@@ -27,7 +27,7 @@ LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 def do_setup():
     """Set-up folder structure and check flags."""
 
-    pathDL1 = Path(cfg.get("LST1", "ANALYSISDIR")) / options.directory
+    pathDL1 = Path(cfg.get("LST1", "DL1DIR")) / options.directory
     pathDL2 = Path(cfg.get("LST1", "DL2DIR")) / options.directory
     pathDL1sub = pathDL1 / options.prod_id
     pathDL2sub = pathDL2 / options.prod_id
