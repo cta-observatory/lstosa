@@ -1,6 +1,7 @@
 """Python module used for writing in different modes to stdout and stderr"""
 import inspect
 import sys
+from datetime import datetime
 from os.path import basename
 
 from osa.utils import options
@@ -24,7 +25,11 @@ def output(block, message):
 
 
 def printinfo(filehandle, concept, block, message):
-    print("{0} [{1}]: {2}".format(concept, block, message), file=filehandle)
+
+    # dd/mm/YY H:M:S
+    now = datetime.now()
+    timestamp = now.strftime("%d/%m/%Y %H:%M:%S")
+    print("{0} {1} [{2}]: {3}".format(timestamp, concept, block, message), file=filehandle)
 
 
 def verbose(block, message):
