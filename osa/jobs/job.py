@@ -315,7 +315,7 @@ def createjobtemplate(s, get_content=False):
     # SLURM assignments
     content += "\n"
     content += "#SBATCH -A dpps \n"
-    content += "#SBATCH -p short \n"
+    content += "#SBATCH -p long \n"
     if s.type == "DATA":
         content += f"#SBATCH --array=0-{int(n_subruns) - 1} \n"
     content += "#SBATCH --cpus-per-task=1 \n"
