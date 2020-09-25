@@ -7,8 +7,7 @@ import sys
 from pathlib import Path
 
 from osa.configs.config import cfg
-from osa.utils import options
-
+from osa.configs import options
 
 __all__ = ["parse_variables", "get_log_config"]
 
@@ -104,7 +103,7 @@ def get_log_config():
     """Get logging configuration from an OSA config file"""
 
     # default config filename value
-    config_file = Path(__file__).resolve().parent / ".." / ".." / "cfg" / "sequencer.cfg"
+    config_file = Path(__file__).resolve().parent / ".." / ".." / options.configfile
     std_logger_file = Path(__file__).resolve().parent / "config" / "logger.yaml"
 
     # fetch config filename value from args

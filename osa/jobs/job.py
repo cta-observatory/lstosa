@@ -7,7 +7,7 @@ from os.path import exists, join
 import numpy as np
 
 from osa.configs.config import cfg
-from osa.utils import options
+from osa.configs import options
 from osa.utils.iofile import readfromfile, writetofile
 from osa.utils.standardhandle import error, gettag, stringify, verbose, warning
 from osa.utils.utils import lstdate_to_dir
@@ -247,6 +247,7 @@ def createjobtemplate(s, get_content=False):
     """This file contains instruction to be submitted to SLURM"""
 
     bindir = cfg.get("LSTOSA", "PYTHONDIR")
+    scriptsdir = cfg.get("LSTOSA", "SCRIPTSDIR")
     calibdir = cfg.get("LST1", "CALIBDIR")
     pedestaldir = cfg.get("LST1", "PEDESTALDIR")
     drivedir = cfg.get("LST1", "DRIVEDIR")
@@ -255,11 +256,11 @@ def createjobtemplate(s, get_content=False):
 
     command = None
     if s.type == "CALI":
-        command = join(bindir, "calibrationsequence.py")
+        command = join(scriptsdir, "calibrationsequence.py")
     elif s.type == "DATA":
-        command = join(bindir, "datasequence.py")
+        command = join(scriptsdir, "datasequence.py")
     elif s.type == "STEREO":
-        command = join(bindir, "stereosequence.py")
+        command = join(scriptsdir, "stereosequence.py")
 
     # directly use python interpreter from current working environment
     # python = join(config.cfg.get('ENV', 'PYTHONBIN'), 'python')
