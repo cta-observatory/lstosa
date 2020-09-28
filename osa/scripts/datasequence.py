@@ -100,15 +100,14 @@ def r0_to_dl1(
     nightdir = lstdate_to_dir(options.date)
     fullcommand = lstchaincommand
     datafile = join(
-        cfg.get("LST1", "RAWDIR"), nightdir, f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "R0SUFFIX")}'
+        cfg.get("LST1", "RAWDIR"),
+        nightdir, f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "R0SUFFIX")}'
     )
-    nightdir = lstdate_to_dir(options.date)
-    dl1_directory = join(cfg.get('LST1', 'DL1DIR'), nightdir, cfg.get("LSTOSA", "DL1-PROD-ID"))
 
     commandargs = [
         fullcommand,
         "--input-file=" + datafile,
-        "--output-dir=" + dl1_directory,
+        "--output-dir=" + options.directory,
         "--pedestal-file=" + pedestalfile,
         "--calibration-file=" + calibrationfile,
         "--config=" + configfile,
@@ -154,15 +153,15 @@ def dl1_to_dl2(run_str, historyfile):
     rf_models_directory = cfg.get("LSTOSA", "RF-MODELS-DIR")
     lstchaincommand = cfg.get("LSTOSA", "DL1-DL2")
     fullcommand = lstchaincommand
-    datafile = join(options.directory, f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}')
-
-    nightdir = lstdate_to_dir(options.date)
-    dl2_directory = join(cfg.get('LST1', 'DL2DIR'), nightdir, cfg.get("LST1", "DL2-PROD-ID"))
+    datafile = join(
+        options.directory,
+        f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}'
+    )
 
     commandargs = [
         fullcommand,
         "--input-file=" + datafile,
-        "--output-dir=" + dl2_directory,
+        "--output-dir=" + options.directory,
         "--path-models=" + rf_models_directory,
         "--config=" + configfile,
     ]
