@@ -136,7 +136,7 @@ def finished_assignments(sequence_list):
     return dictionary
 
 
-def history(run, program, inputfile, inputcard, rc, historyfile):
+def history(run, prod_id, program, inputfile, inputcard, rc, historyfile):
     """Appends a history line to the history file.
 
     A history line reports the outcome of the execution of a Mars executable.
@@ -145,6 +145,8 @@ def history(run, program, inputfile, inputcard, rc, historyfile):
     ----------
     run : str
         Run/sequence analyzed.
+    prod_id : str
+        Prod ID of the run/sequence analyzed.
     program : str
         Mars executable used.
     inputfile : str
@@ -159,5 +161,5 @@ def history(run, program, inputfile, inputcard, rc, historyfile):
     """
     now = datetime.utcnow()
     datestring = now.strftime("%a %b %d %X UTC %Y")  # Similar but not equal to %c (no timezone)
-    stringtowrite = f"{run} {program} {datestring} {inputfile} {inputcard} {rc}\n"
+    stringtowrite = f"{run} {program} {prod_id} {datestring} {inputfile} {inputcard} {rc}\n"
     appendtofile(historyfile, stringtowrite)

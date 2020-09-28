@@ -162,7 +162,7 @@ def datasequencecliparsing(command):
     parser = OptionParser(usage=message)
     parser.add_option("-c", "--config", action="store", dest="configfile", default=None, help="use specific config file [default cfg/sequencer.cfg]")
     parser.add_option("-d", "--date", action="store", type="string", dest="date", help="observation ending date YYYY_MM_DD [default today]")
-    parser.add_option("-o", "--outputdir", action="store", type="string", dest="directory", help="analysis output directory")
+    parser.add_option("-o", "--outputdir", action="store", type="string", dest="directory", help="analysis working directory")
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="make lots of noise for debugging")
     parser.add_option("-w", "--warnings", action="store_true", dest="warning", default=False, help="show useful warnings")
     parser.add_option("-z", "--rawzip", action="store_true", dest="compressed", default=False, help="Use input as compressed raw.gz files")

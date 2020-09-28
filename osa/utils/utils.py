@@ -60,7 +60,11 @@ def getnightdirectory():
         from lstchain.version import get_version
 
         options.lstchain_version = "v" + get_version()
-        options.prod_id = options.lstchain_version + "_" + cfg.get("LST1", "VERSION")
+
+        if cfg.get("LST1", "DL1-PROD-ID") is not None:
+            options.prod_id = cfg.get("LST1", "DL1-PROD-ID")
+        else:
+            options.prod_id = options.lstchain_version + "_" + cfg.get("LST1", "VERSION")
 
     directory = join(cfg.get(options.tel_id, "ANALYSISDIR"), nightdir, options.prod_id)
 

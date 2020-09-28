@@ -62,12 +62,12 @@ def failedhistory(historyfile, maxnumber):
     exit_status = []
     for line in readfromfile(historyfile).splitlines():
         words = line.split()
-        # columns 2, 10 and 11 of history file contains the info (index 1, 9 and 10 respectively)
+        # columns 2, 10, 11 and 12 of history file contains the info (index 1, -3, -2 and -1 respectively)
         programme.append(words[1])
-        goal.append(words[8])
-        card.append(words[9])
+        goal.append(words[-3])
+        card.append(words[-2])
         try:
-            exit_status.append(int(words[10]))
+            exit_status.append(int(words[-1]))
         except ValueError as e:
             error(tag, f"Malformed file {historyfile}, {e}", 4)
         verbose(tag, "extracting line: {0}".format(line))
