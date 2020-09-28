@@ -109,7 +109,7 @@ def pedestalsequencecliparsing(command):
 
 def calibrationsequencecliparsing(command):
     tag = gettag()
-    message = "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <pedoutfile> <caloutfile> <CAL_RUN_ID> <PED_RUN_ID>  <TEL_ID>"
+    message = "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] [prod-id] <pedoutfile> <caloutfile> <CAL_RUN_ID> <PED_RUN_ID>  <TEL_ID>"
     parser = OptionParser(usage=message)
     parser.add_option("-c", "--config", action="store", dest="configfile", default=None, help="use specific config file [default cfg/sequencer.cfg]")
     parser.add_option("-d", "--date", action="store", type="string", dest="date", help="observation ending date YYYY_MM_DD [default today]")
@@ -119,7 +119,7 @@ def calibrationsequencecliparsing(command):
     parser.add_option("-z", "--rawzip", action="store_true", dest="compressed", default=False, help="Use input as compressed raw.gz files")
     parser.add_option("--stderr", action="store", type="string", dest="stderr", help="file for standard error")
     parser.add_option("--stdout", action="store", type="string", dest="stdout", help="file for standard output")
-
+    parser.add_option("--prod-id", action="store", type=str, dest="prod_id", help="Set the prod ID to define data directories")
     # parse the command line
     (opts, args) = parser.parse_args()
 
@@ -132,6 +132,7 @@ def calibrationsequencecliparsing(command):
     options.verbose = opts.verbose
     options.warning = opts.warning
     options.compressed = opts.compressed
+    options.prod_id = opts.prod_id
 
     # the standardhandle has to be declared here, since verbose and warnings are options from the cli
     verbose(tag, f"the options are {opts}")
@@ -157,7 +158,7 @@ def calibrationsequencecliparsing(command):
 
 def datasequencecliparsing(command):
     tag = gettag()
-    message = "usage: %prog  [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] \
+    message = "usage: %prog  [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] [--prod-id]\
     <calibrationfile> <pedestalfile> <drivefile> <timecalibration> <ucts_t0_dragon> <dragon_counter0> <ucts_t0_tib> <tib_counter> <RUN> <TEL_ID>"
     parser = OptionParser(usage=message)
     parser.add_option("-c", "--config", action="store", dest="configfile", default=None, help="use specific config file [default cfg/sequencer.cfg]")
@@ -169,7 +170,7 @@ def datasequencecliparsing(command):
     parser.add_option("--stderr", action="store", type="string", dest="stderr", help="file for standard error")
     parser.add_option("--stdout", action="store", type="string", dest="stdout", help="file for standard output")
     parser.add_option("-s", "--simulate", action="store_true", dest="simulate", default=False, help="do not submit sequences as jobs")
-    parser.add_option("--prod_id", action="store", type=str, dest="prod_id", help="Set the prod_id variable which defines data directories")
+    parser.add_option("--prod-id", action="store", type=str, dest="prod_id", help="Set the prod ID to define data directories")
 
     # parse the command line
     (opts, args) = parser.parse_args()
