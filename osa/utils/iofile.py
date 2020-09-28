@@ -2,7 +2,7 @@ import filecmp
 from os import remove, rename
 from os.path import exists, isfile
 
-from osa.utils import options
+from osa.configs import options
 from osa.utils.standardhandle import error, gettag, verbose
 
 

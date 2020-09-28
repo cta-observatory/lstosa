@@ -2,7 +2,7 @@ from glob import glob
 from os.path import exists, join
 
 from osa.configs.config import cfg
-from osa.utils import options
+from osa.configs import options
 from osa.utils.iofile import readfromfile
 from osa.utils.standardhandle import error, gettag, verbose
 

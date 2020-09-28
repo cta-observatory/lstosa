@@ -5,7 +5,7 @@ from os.path import join
 from osa.configs.config import cfg
 from osa.jobs.job import historylevel
 from osa.reports.report import history
-from osa.utils import options
+from osa.configs import options
 from osa.utils.cliopts import calibrationsequencecliparsing
 from osa.utils.standardhandle import error, gettag, stringify, verbose
 from osa.utils.utils import lstdate_to_dir

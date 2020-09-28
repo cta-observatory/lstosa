@@ -5,14 +5,14 @@ from decimal import Decimal
 from glob import glob
 from os.path import join
 
-from closer import is_day_closed
-from dev.dot import writeworkflow
+from osa.utils.utils import is_day_closed
+# from dev.dot import writeworkflow
 from osa.configs.config import cfg
-from osa.jobs.job import getqueuejoblist, preparedailyjobs, preparejobs, preparestereojobs, submitjobs
+from osa.jobs.job import getqueuejoblist, preparejobs, preparestereojobs, submitjobs
 from osa.nightsummary.extract import extractruns, extractsequences, extractsequencesstereo, extractsubruns
 from osa.nightsummary.nightsummary import readnightsummary
 from osa.reports.report import rule, start
-from osa.utils import options
+from osa.configs import options
 from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_needed
 from osa.utils.standardhandle import gettag, output, verbose
 from osa.veto.veto import getvetolist, getclosedlist
@@ -22,7 +22,10 @@ __all__ = ["sequencer", "single_process"]
 
 def sequencer():
     """Runs the sequencer
-    This is the main script to be called in crontab
+    This is the main script to be called in crontab by LSTOSA
+    For every run in the NightSummary.txt file it preparares 
+    a SLURM job array which sends a datasequence.py 
+    for every subrun in the run
     """
 
     process_mode = None
@@ -94,7 +97,9 @@ def single_process(telescope, process_mode):
     # adds the scripts
     preparejobs(sequence_list)
 
-    # queue_list = getqueuejoblist(sequence_list)
+    #if test in order to be able to run it locally
+    if not options.test:
+        queue_list = getqueuejoblist(sequence_list)
     veto_list = getvetolist(sequence_list)
     closed_list = getclosedlist(sequence_list)
     updatelstchainstatus(sequence_list)
@@ -125,7 +130,7 @@ def stereo_process(telescope, s1_list, s2_list):
     # building the sequences
     sequence_list = extractsequencesstereo(s1_list, s2_list)
     # workflow and Submission
-    writeworkflow(sequence_list)
+    # writeworkflow(sequence_list)
     # adds the scripts
     preparestereojobs(sequence_list)
     # preparedailyjobs(dailysrc_list)
@@ -187,10 +192,10 @@ def reportsequences(seqlist):
         "Exit",
     ]
     if options.tel_id == "LST1" or options.tel_id == "LST2":
-        header.append("DL1 %")
-        header.append("DATACHECK %")
-        header.append("MUONS %")
-        header.append("DL2 %")
+        header.append("DL1%")
+        header.append("DATACHECK%")
+        header.append("MUONS%")
+        header.append("DL2%")
 
     matrix.append(header)
     for s in seqlist:

@@ -1,9 +1,8 @@
 import subprocess
 from os.path import exists, isfile, join
 
-from osa.configs import config
+from osa.configs import config, options
 from osa.rawcopy.raw import arerawfilestransferred, get_check_rawdir
-from osa.utils import options
 from osa.utils.iofile import readfromfile, writetofile
 from osa.utils.standardhandle import error, gettag, stringify, verbose
 from osa.utils.utils import build_lstbasename

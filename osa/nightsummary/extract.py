@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from datamodel import RunObj, SequenceCalibration, SequenceData, SequenceStereo, SubrunObj
+from osa.configs.datamodel import RunObj, SequenceCalibration, SequenceData, SequenceStereo, SubrunObj
 from osa.jobs.job import setsequencefilenames, setsequencecalibfilenames
-from osa.utils import options
+from osa.configs import options
 from osa.utils.standardhandle import error, gettag, verbose, warning
 from osa.utils.utils import lstdate_to_iso
 

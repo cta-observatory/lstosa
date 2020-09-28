@@ -13,7 +13,7 @@ These docs try to create and organize the missing documentation for LSTOSA.
 
 It also introduces a documentation of the API.
 For the python part of LSTOSA, we use the `autodoc` extension of Sphinx, which
-pulls in the doumentation from the docstrings.
+pulls in the documentation from the docstrings.
 
 
 Contents:
@@ -21,7 +21,7 @@ Contents:
 .. _lstosa_guide:
 .. toctree::
     :caption: LSTOSA Guide
-    :maxdepth: 1
+    :maxdepth: 3
 
     introduction/index    
     components/index
@@ -35,8 +35,7 @@ Contents:
     :caption: LSTOSA Code
     :maxdepth: 1
 
-    lstosapython/index
-    closer/index
+    modules/modules.rst
     deletion/index
     utilities/index
 

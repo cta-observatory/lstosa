@@ -3,10 +3,9 @@ from fnmatch import fnmatchcase
 from glob import glob
 from os.path import basename, getsize, join
 
-from osa.configs import config
+from osa.configs import config, options
 from osa.configs.config import cfg
 from osa.rawcopy.raw import getrawdir
-from osa.utils import options
 from osa.utils.iofile import appendtofile
 from osa.utils.standardhandle import gettag, output, verbose
 

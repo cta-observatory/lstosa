@@ -5,10 +5,10 @@ import os
 import re
 import subprocess
 
-from osa.utils import options
+from osa.configs import options
 from osa.utils.utils import lstdate_to_dir
 
-__all__ = ["Telescope", "Sequence"]  # these members will appear in the docs
+__all__ = ["Telescope", "Sequence"]
 
 log = logging.getLogger("autocloser_logger")
 log.setLevel(logging.DEBUG)
@@ -33,18 +33,21 @@ def valid_date(s):
 
 
 def argument_parser():
-    parser = argparse.ArgumentParser(description="This script is an automatic error handler and closer for OSA.")
+    parser = argparse.ArgumentParser(description="This script is an automatic error handler and closer for LSTOSA.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Turn on verbose mode")
-    parser.add_argument("-t", "--test", action="store_true", help="Test mode with example sequences, only works locally")
-    parser.add_argument("-s", "--simulate", action="store_true", help="Create nothing, only simulate closer (safe mode)")
-    parser.add_argument("-c", "--ignoreCronlock", action="store_true", help='Ignore "cron.lock"')
+    parser.add_argument("-t", "--test", action="store_true",
+                        help="Test mode with example sequences, only works locally")
+    parser.add_argument("-s", "--simulate", action="store_true",
+                        help="Create nothing, only simulate closer (safe mode)")
+    parser.add_argument("--ignorecronlock", action="store_true", help='Ignore "cron.lock"')
     parser.add_argument("-i", "--onlyIncidences", action="store_true", help="Writing down only incidences, not closing")
     parser.add_argument("-d", "--date", help="Date - format YYYY_MM_DD", type=valid_date)
     parser.add_argument("-f", "--force", action="store_true", help="Force the autocloser to close the day")
     parser.add_argument("-e", "--equal", action="store_true", help="Skip check for equal amount of sequences")
     parser.add_argument("-w", "--woIncidences", action="store_true", help="Close without writing down incidences.")
     parser.add_argument("-r", "--runwise", action="store_true", help="Close the day run-wise.")
-    parser.add_argument("--config-file", action="store_true", default="cfg/sequencer.cfg", help="OSA config file.")
+    parser.add_argument("-c", "--config-file", dest="osa_config_file", default="cfg/sequencer.cfg",
+                        help="OSA config file.")
     parser.add_argument("-l", "--log", default="", help="Write log to a file.")
     parser.add_argument("tel", nargs="*", default="LST1", choices=["LST1", "LST2", "ST"])
     return parser
@@ -52,18 +55,17 @@ def argument_parser():
 
 def analysis_path(tel):
     options.tel_id = tel
-    obsdate = f"{year:.4i}_{month:.2i}_{day:.2i}"
-    # FIXME: properly get sequencer.cfg file
-    nightdir = lstdate_to_dir(obsdate)
+    options.date = f"{year:04}_{month:02}_{day:02}"
+    running_analysis_dir = set_default_directory_if_needed()
     if args.test:
         return f"./{tel}"
-    return nightdir
+    return running_analysis_dir
 
 
 def closedFlag(tel):
     if args.test:
         return f"./{tel}/NightFinished.txt"
-    return f"/data/{tel}/OSA/Closer{year:.4i}/{month:.2i}/{day:.2i}/NightFinished.txt"
+    return f"/data/{tel}/OSA/Closer{year:04}/{month:02}/{day:02}/NightFinished.txt"
 
 
 def exampleSeq(tel):
@@ -113,7 +115,7 @@ class Telescope(object):
         if not os.path.exists(analysis_path(self.telescope)):
             log.warning(f"'Analysis' folder does not exist for {self.telescope}! Ignoring {self.telescope}")
             return
-        if not self.lockAutomaticSequencer() and not args.ignoreCronlock:
+        if not self.lockAutomaticSequencer() and not args.ignorecronlock:
             log.warning(f"{self.telescope} already locked! Ignoring {self.telescope}")
             return
         if not self.simulate_sequencer():
@@ -123,7 +125,6 @@ class Telescope(object):
         if not self.build_Sequences():
             log.warning(f"Sequencer for {self.telescope} is empty! Ignoring {self.telescope}")
             return
-        self.problem = Problem(self.telescope)
         self.incidence = Incidence(self.telescope)
 
     def __iter__(self):
@@ -164,9 +165,15 @@ class Telescope(object):
         if args.test:
             self.read_file()
         else:
-            seqArgs = ["python", "sequencer.py", "-s", "-d", f"{year:.4i}_{month:.2i}_{day:.2i}", self.telescope]
+            seqArgs = [
+                "python", "sequencer.py",
+                "-s",
+                "-c", f"{args.osa_config_file}",
+                "-d", f"{year:04}_{month:02}_{day:02}",
+                self.telescope
+            ]
             log.debug(f"Executing {' '.join(seqArgs)}")
-            seqr = subprocess.Popen(seqArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            seqr = subprocess.Popen(seqArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
             self.stdout, self.stderr = seqr.communicate()
             log.info(self.stdout)
             if seqr.returncode != 0:
@@ -190,7 +197,7 @@ class Telescope(object):
         for line in self.seqLines:
             if data and line:
                 self.data_lines.append(line)
-            elif "Tel  Seq" in line:  # this is the key line
+            elif "Tel   Seq" in line:
                 data = True
                 header = False
                 self.keyLine = line
@@ -208,9 +215,9 @@ class Telescope(object):
     def close(self):
         log.info("Closing...")
         if args.simulate:
-            closerArgs = ["closer", "-s", "-v", "-y", "-d", f"{year:.4i}_{month:.2i}_{day:.2i}", self.telescope]
+            closerArgs = ["closer", "-s", "-v", "-y", "-d", f"{year:04}_{month:02}_{day:02}", self.telescope]
         else:
-            closerArgs = ["closer", "-v", "-y", "-d", f"{year:.4i}_{month:.2i}_{day:.2i}", self.telescope]
+            closerArgs = ["closer", "-v", "-y", "-d", f"{year:04}_{month:02}_{day:02}", self.telescope]
 
         if args.test:
             self.closed = True
@@ -229,7 +236,7 @@ class Telescope(object):
 class Sequence(object):
     """As for now the keys for the 'dictSequence' are:
     (LST1) Tel Seq Parent Type Run Subruns Source Wobble Action Tries JobID
-    State Host CPU_time Walltime Exit  DL1% MUON% DATACHECK% DL2%
+    State Host CPU_time Walltime Exit  DL1% MUONS% DATACHECK% DL2%
 
     All the values in the 'dictSequence' are strings
     """
@@ -256,218 +263,88 @@ class Sequence(object):
         return False
 
     def is_running(self):
-        if self.dictSequence["State"] == "R":
+        if self.dictSequence["State"] == "RUNNING":
             return True
         return False
 
     def is_complete(self):
-        if self.dictSequence["State"] == "C":
+        if self.dictSequence["State"] == "COMPLETED":
             return True
         return False
 
     def is_onHold(self):
-        if self.dictSequence["State"] == "H":
+        if self.dictSequence["State"] == "PENDING":
             return True
         return False
 
     def is_100(self):
         if (
-            self.dictSequence["Tel"] != "ST"
-            and self.dictSequence["DL1 %"] == "100"
-            and self.dictSequence["DATACHECK %"] == "100"
-            and self.dictSequence["MUON %"] == "100"
-            and self.dictSequence["DL2 %"] == "100"
+                self.dictSequence["Tel"] != "ST"
+                and self.dictSequence["DL1%"] == "100"
+                and self.dictSequence["DATACHECK%"] == "100"
+                and self.dictSequence["MUONS%"] == "100"
+                and self.dictSequence["DL2%"] == "100"
         ):
             return True
-        if self.dictSequence["Tel"] == "ST" and self.dictSequence["DL3 %"] == "100":
+        if self.dictSequence["Tel"] == "ST" and self.dictSequence["DL3%"] == "100":
             return True
         return False
 
     def is_flawless(self):
         log.debug("Check if flawless")
         if (
-            self.dictSequence["Type"] == "DATA"
-            and self.dictSequence["Exit"] == "0"
-            and self.is_100()
-            and self.dictSequence["State"] == "C"
-            and int(self.dictSequence["Subruns"]) > 0
+                self.dictSequence["Type"] == "DATA"
+                and self.dictSequence["Exit"] == "0:0"
+                and self.is_100()
+                and self.dictSequence["State"] == "COMPLETED"
+                and int(self.dictSequence["Subruns"]) > 0
         ):
             return True
         if (
-            self.dictSequence["Type"] == "CALIBRATION"
-            and self.dictSequence["Exit"] == "0"
-            and self.dictSequence["_Y_%"] == "None"
-            and self.dictSequence["_D_%"] == "None"
-            and self.dictSequence["_I_%"] == "None"
-            and self.dictSequence["State"] == "C"
-            and int(self.dictSequence["Subruns"]) == 1
+                self.dictSequence["Type"] == "CALI"
+                and self.dictSequence["Exit"] == "2:0"  # Leave until the calib sequence is implemented
+                and self.dictSequence["DL1%"] == "None"
+                and self.dictSequence["DATACHECK%"] == "None"
+                and self.dictSequence["MUONS%"] == "None"
+                and self.dictSequence["DL2%"] == "None"
+                and self.dictSequence["State"] == "COMPLETED"
         ):
             return True
-        if (
-            self.dictSequence["Type"] == "STEREO"
-            and self.dictSequence["Exit"] == "0"
-            and self.is_100()
-            and self.dictSequence["State"] == "C"
-            and int(self.dictSequence["Subruns"]) > 0
-        ):
-            return True
+        # if (
+        #         self.dictSequence["Type"] == "STEREO"
+        #         and self.dictSequence["Exit"] == "0"
+        #         and self.is_100()
+        #         and self.dictSequence["State"] == "C"
+        #         and int(self.dictSequence["Subruns"]) > 0
+        # ):
+        #    return True
         return False
 
-    # this error was "fixed" in the sequencer, it should not occur anymore!
-    def is_error2(self):
-        log.debug("Check for 'short runs'")
-        if (
-            self.dictSequence["Type"] == "DATA"
-            and (self.dictSequence["Exit"] == "2" or self.dictSequence["Exit"] == "222")
-            and self.dictSequence["_Y_%"] == "100"
-            and self.dictSequence["_D_%"] == "0"
-            and self.dictSequence["_I_%"] == "0"
-            and self.dictSequence["State"] == "C"
-            and int(self.dictSequence["Subruns"]) < min_subruns_per_run
-        ):
-            return True
-        return False
-
-    def is_error2noint(self):
-        log.debug("Check if runs were calibrated with no or few interleaved ped/cal events")
-        historyFile = f"{analysis_path(self.dictSequence['Tel'])}/sequence_{self.dictSequence['Tel']}_0{self.dictSequence['Run']}.history"
-        with open(historyFile, "r") as f:
-            for line in f:
-                try:
-                    if line.split()[1] == "sorcerer" and int(line.split()[10]) == 2:
-                        return True
-                except IndexError:
-                    continue
-        return False
-
-    def is_error23(self):
-        log.debug("Check for error 23 in merpp")
-        historyFile = f"{analysis_path(self.dictSequence['Tel'])}/sequence_{self.dictSequence['Tel']}_0{self.dictSequence['Run']}.history"
-        subruns = []
-        with open(historyFile, "r") as f:
-            for line in f:
-                try:
-                    if line.split()[1] == "merpp" and int(line.split()[10]) == 23:
-                        subruns.append(line.split()[8].split(".")[1][0:3])
-                except IndexError:
-                    continue
-        return subruns
-
-    def is_error7or17or34(self):
-        log.debug("Check for 'error 7/17/34'")
-        if (
-            self.dictSequence["Type"] == "DATA"
-            and self.is_100()
-            and (
-                self.dictSequence["Exit"] == "7"
-                or self.dictSequence["Exit"] == "17"
-                or self.dictSequence["Exit"] == "34"
-                or self.dictSequence["Exit"] == "6"
-            )
-            and self.dictSequence["State"] == "C"
-            and int(self.dictSequence["Subruns"]) > 0
-        ):
-            return True
-        return False
-
-    # not yet implemented
-    def is_error222(self):
-        log.debug("Check for 'error 222'")
-        if (
-            self.dictSequence["Type"] == "DATA"
-            and self.dictSequence["Exit"] == "222"
-            and self.dictSequence["State"] == "C"
-            and self.dictSequence["_Y_%"] == "100"
-            and self.dictSequence["_D_%"] == "0"
-            and self.dictSequence["_I_%"] == "0"
-        ):
-            return True
-        return False
-
-    # not yet implemented
-    def is_afterError222(self, run):
-        log.debug("Check for corrected 'error 222'")
-        if (
-            self.dictSequence["Type"] == "DATA"
-            and self.dictSequence["Exit"] == "0"
-            and 0 < int(self.dictSequence["_Y_%"]) < 100
-            and 0 < int(self.dictSequence["_D_%"]) < 100
-            and 0 < int(self.dictSequence["_I_%"]) < 100
-            and self.dictSequence["State"] == "C"
-            and self.dictSequence["Run"] in run
-        ):
-            return True
-        return False
-
-    def is_error3(self):
-        """SuperStar file is empty.
-        This normally happens when there is few data
-        """
-        log.debug("Check for error 3")
-        if (
-            self.dictSequence["Type"] == "STEREO"
-            and self.dictSequence["Exit"] == "3"
-            and self.dictSequence["_S_%"] == "0"
-            and self.dictSequence["_Q_%"] == "0"
-            and self.dictSequence["State"] == "C"
-            and int(self.dictSequence["Subruns"]) < min_subruns_per_run
-        ):
-            return True
-        return False
-
-    # stereo error 1
-    def is_rc1_for_ST(self):
-        log.debug("Check for rc 1 in ST")
-        if (
-            self.dictSequence["Type"] == "STEREO"
-            and self.dictSequence["Exit"] == "1"
-            and self.dictSequence["_S_%"] == "0"
-            and self.dictSequence["_Q_%"] == "0"
-            and self.dictSequence["State"] == "C"
-            and self.dictSequence["Action"] == "Simulate"
-        ):
-            return True
-        return False
-
-    def is_missingReport(self):
-        log.debug("Check for missing reports")
-        if self.dictSequence["Tel"] == "ST":
-            return False
-        if (
-            self.dictSequence["Type"] == "DATA"
-            and self.dictSequence["_Y_%"] == "100"
-            and int(self.dictSequence["_D_%"]) < 100
-            and self.dictSequence["_I_%"] == "0"
-            and self.dictSequence["State"] == "C"
-            and self.dictSequence["Action"] == "Veto"
-            and int(self.dictSequence["Subruns"]) > 0
-            and (
-                self.dictSequence["Exit"] == "255" or self.dictSequence["Exit"] == "25" or self.dictSequence["Exit"] == "254"
-            )
-        ):
-            return True
-        return False
-
-    # this check is obsolete since now we have the has_all_subruns check
-    def has_equal_nr_of_subruns(self, teldict):
-        log.debug("Check for equal nr of subruns")
-        if self.dictSequence["Tel"] == "ST":
-            log.debug("Cannot check for equal nr of subruns for ST")
-            return True
-        if "LST1" not in teldict or "LST2" not in teldict:
-            log.debug("Cannot check for equal nr of subruns in mono case")
-            return True
-        otherTel = "LST1" if self.dictSequence["Tel"] == "LST2" else "LST2"
-        if teldict[otherTel].closed:
-            log.debug("The other telescope seems to be closed")
-            return True
-        otherSubruns = 0
-        for s in teldict[otherTel]:
-            if s.dictSequence["Run"] == self.dictSequence["Run"]:
-                otherSubruns = int(s.dictSequence["Subruns"])
-        if abs(int(self.dictSequence["Subruns"]) - otherSubruns) > max_diff_subruns:
-            return False
-        return True
+    # def is_error2(self):
+    #     log.debug("Check for 'short runs'")
+    #     if (
+    #             self.dictSequence["Type"] == "DATA"
+    #             and (self.dictSequence["Exit"] == "2" or self.dictSequence["Exit"] == "222")
+    #             and self.dictSequence["_Y_%"] == "100"
+    #             and self.dictSequence["_D_%"] == "0"
+    #             and self.dictSequence["_I_%"] == "0"
+    #             and self.dictSequence["State"] == "C"
+    #             and int(self.dictSequence["Subruns"]) < min_subruns_per_run
+    #     ):
+    #         return True
+    #     return False
+    #
+    # def is_error2noint(self):
+    #     log.debug("Check if runs were calibrated with no or few interleaved ped/cal events")
+    #     historyFile = f"{analysis_path(self.dictSequence['Tel'])}/sequence_{self.dictSequence['Tel']}_0{self.dictSequence['Run']}.history"
+    #     with open(historyFile, "r") as f:
+    #         for line in f:
+    #             try:
+    #                 if line.split()[1] == "sorcerer" and int(line.split()[10]) == 2:
+    #                     return True
+    #             except IndexError:
+    #                 continue
+    #     return False
 
     def has_all_subruns(self):
         import glob
@@ -476,7 +353,7 @@ class Sequence(object):
         if self.dictSequence["Tel"] == "ST":
             log.debug("Cannot check for missing subruns in the middle for ST")
             return True
-        if self.dictSequence["Type"] == "CALIBRATION":
+        if self.dictSequence["Type"] == "CALI":
             log.debug("Cannot check for missing subruns in the middle for CALIBRATION")
             return True
         search_str = f"{analysis_path(self.dictSequence['Tel'])}/20*_{int(self.dictSequence['Run']):08d}.*_Y_*.root"
@@ -497,7 +374,7 @@ class Sequence(object):
                 "-v",
                 "-y",
                 "-d",
-                f"{year:.4i}_{month:.2i}_{day:.2i}",
+                f"{year:04}_{month:02}_{day:02}",
                 f"--seq={self.dictSequence['Run']}",
                 self.dictSequence["Tel"],
             ]
@@ -507,7 +384,7 @@ class Sequence(object):
                 "-v",
                 "-y",
                 "-d",
-                f"{year:.4i}_{month:.2i}_{day:.2i}",
+                f"{year:04}_{month:02}_{day:02}",
                 f"--seq={self.dictSequence['Run']}",
                 self.dictSequence["Tel"],
             ]
@@ -525,36 +402,6 @@ class Sequence(object):
         self.closed = True
         return True
 
-    # TODO This function is not used until now
-    # def readCCrun(self):
-    #     log.debug('Reading and parsing CC*.run file for %s' %
-    #               self.dictSequence['Tel'])
-    #     if not glob.glob(ccReportFiles(self.dictSequence['Tel'])):
-    #         log.warning('Could not find any CC*.run file for %s' %
-    #                     self.dictSequence['Tel'])
-    #         return False
-    #     foundCCrun = False
-    #     for ccRun in glob.glob(ccReportFiles(self.dictSequence['Tel'])):
-    #         with open(ccRun, 'r') as f:
-    #             for line in f:
-    #                 if line.split()[1] == self.dictSequence['Run']:
-    #                     ccDict = {'hv_settings': line.split()[hv_settings_pos],
-    #                               'test_run': line.split()[test_run_pos],
-    #                               'sumt': line.split()[sumt_pos],
-    #                               'Moon_filter': line.split()[Moon_filter_pos]}
-    #                     self.dictSequence.update(ccDict)
-    #                     log.debug(self.dictSequence)
-    #                     foundCCrun = True
-    #                     break
-    #         if foundCCrun:
-    #             break
-    #
-    #     # if not foundCCrun:
-    #     #     log.warning('Could not find matching report line for run %s' %
-    #     #                 self.dictSequence['Run'])
-    #     #     return False
-    #     return True
-
 
 # add the sequences to the incidencesDict
 class Incidence(object):
@@ -563,28 +410,18 @@ class Incidence(object):
         # known incidences (keys in both dicts have to be unique!):
         self.incidencesMono = {
             "error2": "Short runs(# of subruns) excluded from OSA",
-            "error2noint": "Runs(# of subruns) for which sorcerer "
-            "returned error 2 "
-            "(too few interleaved Ped/Cal events)",
-            "error7": "Runs for which star returned error 7 (No starguider information available)",
-            "error17": "Runs for which star returned error 17 (Too many mirrors in bad state)",
-            "error34": "Runs for which star returned error 34 (Not appropriate image cleaning)",
-            "recReps": "Recovered report files for subruns",
-            "error222": "Subruns that could not be calibrated",
-            "error23": "Broken report lines for subruns",
+            "default_time_calib": "Used a default time calibration from same operiod",
+
         }
-        self.incidencesStereo = {"error3": "Short runs(# of subruns) for which superstar files are empty"}
         self.incidencesDict = {}
         for k in self.incidencesMono:
-            self.incidencesDict[k] = []
-        for k in self.incidencesStereo:
             self.incidencesDict[k] = []
         # runs with these errors get discarded
         self.errors_to_discard = ["error2"]
         self.write_header()
 
     def write_header(self):
-        self.header = f"NIGHT={year:.4i}-{month:.2i}-{day:.2i}\nTELESCOPE={self.telescope}\nCOMMENTS="
+        self.header = f"NIGHT={year:04}-{month:02}-{day:02}\nTELESCOPE={self.telescope}\nCOMMENTS="
         return
 
     def write_error(self, text, runs):
@@ -677,109 +514,6 @@ class Incidence(object):
                 f.write(text)
         return
 
-
-class Problem(object):
-    def __init__(self, telescope):
-        self.telescope = telescope
-        # self.recoveredReports = ''
-
-    # def recoverReport(self, run):
-    #     self.recoveredReports = ''
-    #     log.debug('Recovering report files for %s, sequence %s' %
-    #               (self.telescope, run))
-    #
-    #     fileList = [item for item in
-    #                 os.listdir('%s' % analysis_path(self.telescope))
-    #                 if all(i in item for i in ['%s' % run, '_Y_', '.root'])]
-    #     repsList = [item.replace('.rep', '.root').replace('_D_', '_Y_')
-    #                 for item in os.listdir('%s' % reportsPath(self.telescope))
-    #                 if (all(i in item for i in ['%s' % run, '_D_', '.rep']) and
-    #                     os.stat('%s/%s' % (reportsPath(self.telescope),
-    #                                        item)).st_size != 0)]
-    #     missingReps = [item for item in fileList if item not in repsList]
-    #     if not missingReps:
-    #         log.warning('Could not determine which report files are missing! '
-    #                     'Most likely the report was already recovered and you '
-    #                     'have to wait for the sequencer. If this warning '
-    #                     'persists there something seriously wrong!')
-    #         return False
-
-    # recoverFailure = False
-    # subrunList = []
-    # for subrun in missingReps:
-    #     if args.simulate:
-    #         subrunList.append(subrun[20:24])
-    #         continue
-    #     createReportArgs = ['timeout', '1200', 'bash',
-    #                         '%s' % recRepMacro(),
-    #                         '%s/%s' % (analysis_path(self.telescope),
-    #                                    subrun)]
-    #     log.debug('Executing "%s"' % ' '.join(createReportArgs))
-    #     createReport = subprocess.Popen(createReportArgs,
-    #                                     stdout=subprocess.PIPE,
-    #                                     stderr=subprocess.STDOUT)
-    #     stdout, stderr = createReport.communicate()
-    #     if createReport.returncode == 124:
-    #         log.warning('Time out, CreateReport.sh took longer than 20min')
-    #     if createReport.returncode != 0:
-    #         log.warning("Could not create missing report file for %s!\n"
-    #                     "See below the output of the "
-    #                     "CreateReport.sh script:\n---\n%s---" %
-    #                     (subrun, stdout))
-    #         recoverFailure = True
-    #         continue
-    #     log.debug(stdout)
-    #     subrunList.append(subrun[20:24])
-
-    # if subrunList:
-    #     subrunList.sort()
-    #     self.recoveredReports = '%s(%s)' % (run, ', '.join(i for i in
-    #                                                        subrunList))
-    # if recoverFailure:
-    #     return False
-    # return True
-
-    # def determineErrorWithApe(self, run):
-    #     log.debug("Running ape to determine error of run %s" % run)
-    #     starSummaryFile = '%s/star*%s*%s.root' % (analysis_path(self.telescope),
-    #                                               run, self.telescope)
-    #     ape = subprocess.Popen('ape %s' % starSummaryFile, shell=True,
-    #                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    #     stdout, stderr = ape.communicate()
-    #     if ape.returncode != 1:
-    #         log.warning('Return code from ape is %i, should be 1.\n'
-    #                     'See output:\n' % ape.returncode + stdout)
-    #         return ''
-    #     if any([error for error in stdout.split(' ')
-    #             if error not in ['7', '17', '34', '2', '20'] and not
-    #         error == '\x1b[0m\n\x1b[0m']):
-    #         log.warning('Could not interpret "ape", see output:\n' + stdout)
-    #         return ''
-    #     log.debug('ape output:\n' + stdout)
-    #     return stdout
-
-    # def is_too_few_star_events(self, run):
-    #     log.debug("Check if too few events in star files")
-    #     import ROOT as root
-    #     marssys = os.path.expandvars("$MARSSYS")
-    #     # if var does not exists, it will not get expanded ...
-    #     if marssys == "$MARSSYS":
-    #         log.warning("$MARSSYS variable not set in bash")
-    #         return False
-    #     if root.gSystem.Load(marssys + "/libmars.so") < 0:
-    #         log.warning("Could not load Mars library")
-    #         return False
-    #     # check if there are more than 100 events in the star files
-    #     for t in ['LST1', 'LST2']:
-    #         star_dir = analysis_path(t).replace("Analysis", "Star")
-    #         ch = root.TChain("Events")
-    #         ch.Add("%s/20*%s*_I_*.root" % (star_dir, run))
-    #         if ch.GetEntries() > 100:
-    #             log.debug("More than 100 events found in %s star files" % t)
-    #             return False
-    #     return True
-
-
 def is_night_time():
     if 8 <= hour <= 18:
         return False
@@ -804,16 +538,6 @@ def understand_mono_sequence(tel, seq):
         log.info("Updating incidences: run calibrated w/o interleaved ped/cal")
         tel.incidence.add_incidence("error2noint", f"{seq.dictSequence['Run']}({seq.dictSequence['Subruns']})")
 
-    if seq.is_error23():
-        subruns_with_error23 = seq.is_error23()
-        if len(subruns_with_error23) > max_broken_report_lines_per_sequence:
-            log.warning("Too many broken report lines for this sequence!")
-            seq.understood = True
-            return True
-        for subrun in subruns_with_error23:
-            run_with_subrun_str = f"{seq.dictSequence['Run']}.{subrun}"
-            if tel.incidence.add_incidence("error23", run_with_subrun_str):
-                log.info(f"Updating incidences: merpp error 23 for {run_with_subrun_str}")
 
     # maybe this check is obsolete since we introduced error2noint
     if seq.is_error2():
@@ -822,24 +546,6 @@ def understand_mono_sequence(tel, seq):
         tel.incidence.add_incidence("error2", f"{seq.dictSequence['Run']}({seq.dictSequence['Subruns']})")
         seq.discarded = True
         log.info("Discarding this sequence from OSA")
-        seq.readyToClose = True
-        return True
-
-    if seq.is_error7or17or34():
-        seq.understood = True
-        apeOutput = tel.problem.determineErrorWithApe(seq.dictSequence["Run"])
-        if not apeOutput:
-            log.warning("Could not determine error 7/17/34 for star with ape")
-            return True
-        if "7" in apeOutput:
-            log.info("Updating incidences: error 7 for star")
-            tel.incidence.add_incidence("error7", seq.dictSequence["Run"])
-        if "17" in apeOutput:
-            log.info("Updating incidences: error 17 for star")
-            tel.incidence.add_incidence("error17", seq.dictSequence["Run"])
-        if "34" in apeOutput:
-            log.info("Updating incidences: error 34 for star")
-            tel.incidence.add_incidence("error34", seq.dictSequence["Run"])
         seq.readyToClose = True
         return True
 
@@ -948,26 +654,8 @@ def check_for_output_files(path):
         #           'in "%s" after closing: %s' % (path, file_names_str))
 
 
-# the if is basically necessary when building the docs
 if __name__ == "__main__":
 
-    #########################################################
-    # this stuff should probably go into a separate cfg file!
-
-    # positions of the values in the CC*.run file
-    # at the moment we do not use the CC*.run file in the AutoCloser
-    hv_settings_pos = 20
-    test_run_pos = 38
-    sumt_pos = 53
-    Moon_filter_pos = 62
-
-    # difference in subruns for one sequence that LST1 and LST2 are allowed to have
-    # this check is obsolete since now we have the has_all_subruns check
-    max_diff_subruns = 8  # 5
-    # how many broken report lines should be tolerated?
-    max_broken_report_lines_per_sequence = 2
-    max_broken_report_lines_per_telescope = 8
-    # how many subruns for a run is the minimum for the run not to be discarded
     # when problems occur?
     min_subruns_per_run = 5
     #########################################################
@@ -1001,7 +689,7 @@ if __name__ == "__main__":
     if args.test:
         log.debug("Test mode.")
 
-    if args.ignoreCronlock:
+    if args.ignorecronlock:
         log.debug("Ignoring cron.lock")
 
     if args.onlyIncidences:
@@ -1028,13 +716,10 @@ if __name__ == "__main__":
         day = datetime.datetime.now().day
         hour = datetime.datetime.now().hour
 
-    message = f"\n========== Starting {os.path.basename(__file__)}"
-    message += f" at {datetime.datetime.now()} for night {year:.4i}_{month:.2i}_{day:.2i}"
-    message += f" for {' '.join(args.tel)} ===========\n"
+    message = f"\n========== Starting {os.path.basename(__file__)}" \
+              f" at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}" \
+              f" for night {year:04}_{month:02}_{day:02} for {' '.join(args.tel)} ===========\n"
     log.info(message)
-    #
-    # END OF FIRST BLOCK
-    #
 
     # if is_night_time():
     #     exit(1)
@@ -1051,11 +736,11 @@ if __name__ == "__main__":
         if not telescopes[tel].incidence.check_previous_incidences(tel):
             log.debug("No previous incidences found")
 
-        if len(telescopes[tel].incidence.incidencesDict["error23"]) > max_broken_report_lines_per_telescope:
-            log.warning("Too many broken report lines! Something is wrong!")
-            # interrupt unless closing is forced
-            if not args.force:
-                continue
+        # if len(telescopes[tel].incidence.incidencesDict["error23"]) > max_broken_report_lines_per_telescope:
+        #     log.warning("Too many broken report lines! Something is wrong!")
+        #     # interrupt unless closing is forced
+        #     if not args.force:
+        #         continue
 
         # loop over sequences
         for seq in telescopes[tel]:
