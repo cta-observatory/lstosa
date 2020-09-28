@@ -1,9 +1,13 @@
 import datetime
 import subprocess
+import time
+from itertools import tee, islice, chain
 from os.path import exists, join
 
+import numpy as np
+
 from osa.configs.config import cfg
-from osa.utils import options
+from osa.configs import options
 from osa.utils.iofile import readfromfile, writetofile
 from osa.utils.standardhandle import error, gettag, stringify, verbose, warning
 from osa.utils.utils import lstdate_to_dir
@@ -39,8 +43,9 @@ def historylevel(historyfile, type):
             words = line.split()
             try:
                 program = words[1]
-                exit_status = int(words[10])
-                print("DEBUG:", program, exit_status)
+                prod_id = words[2]
+                exit_status = int(words[-1])
+                verbose(tag, f"{program}, finished with error {exit_status}")
             except IndexError as err:
                 error(tag, f"Malformed history file {historyfile}, {err}", 3)
             except ValueError as err:
@@ -54,7 +59,7 @@ def historylevel(historyfile, type):
                         level = 3
                 elif program == cfg.get("LSTOSA", "DL1-DL2"):
                     nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "DL1-DL2").split(",")]
-                    if exit_status in nonfatalrcs:
+                    if (exit_status in nonfatalrcs) and (prod_id == cfg.get("LST1", "DL2-PROD-ID")):
                         level = 0
                     else:
                         level = 2
@@ -244,6 +249,7 @@ def createjobtemplate(s, get_content=False):
     """This file contains instruction to be submitted to SLURM"""
 
     bindir = cfg.get("LSTOSA", "PYTHONDIR")
+    scriptsdir = cfg.get("LSTOSA", "SCRIPTSDIR")
     calibdir = cfg.get("LST1", "CALIBDIR")
     pedestaldir = cfg.get("LST1", "PEDESTALDIR")
     drivedir = cfg.get("LST1", "DRIVEDIR")
@@ -252,11 +258,11 @@ def createjobtemplate(s, get_content=False):
 
     command = None
     if s.type == "CALI":
-        command = join(bindir, "calibrationsequence.py")
+        command = join(scriptsdir, "calibrationsequence.py")
     elif s.type == "DATA":
-        command = join(bindir, "datasequence.py")
+        command = join(scriptsdir, "datasequence.py")
     elif s.type == "STEREO":
-        command = join(bindir, "stereosequence.py")
+        command = join(scriptsdir, "stereosequence.py")
 
     # directly use python interpreter from current working environment
     # python = join(config.cfg.get('ENV', 'PYTHONBIN'), 'python')
@@ -270,7 +276,7 @@ def createjobtemplate(s, get_content=False):
         commandargs.append("-w")
     if options.configfile:
         commandargs.append("-c")
-        commandargs.append(guesscorrectinputcard(s))
+        commandargs.append(join(bindir, guesscorrectinputcard(s)))
     if options.compressed:
         commandargs.append("-z")
     # commandargs.append('--stderr=sequence_{0}_'.format(s.jobname) + "{0}.err'" + ".format(str(job_id))")
@@ -310,14 +316,15 @@ def createjobtemplate(s, get_content=False):
     content = "#!/bin/env python\n"
     # SLURM assignments
     content += "\n"
-    content += "#SBATCH -p compute \n"
+    content += "#SBATCH -A dpps \n"
+    content += "#SBATCH -p long \n"
     if s.type == "DATA":
         content += f"#SBATCH --array=0-{int(n_subruns) - 1} \n"
     content += "#SBATCH --cpus-per-task=1 \n"
-    content += "#SBATCH --mem-per-cpu=25G \n"
-    content += "#SBATCH -t 0-24:00\n"
-    content += f"#SBATCH -o {options.log_directory}/slurm.%A_%a.%N.out \n"
-    content += f"#SBATCH -e {options.log_directory}/slurm.%A_%a.%N.err \n"
+    content += "#SBATCH --mem-per-cpu=15G \n"
+    content += f"#SBATCH -D {options.directory} \n"
+    content += f"#SBATCH -o log/slurm.{str(s.run).zfill(5)}_%a_%A.out \n"
+    content += f"#SBATCH -e log/slurm.{str(s.run).zfill(5)}_%a_%A.err \n"
     content += "\n"
 
     content += "import subprocess \n"
@@ -330,8 +337,8 @@ def createjobtemplate(s, get_content=False):
     content += "subprocess.call([\n"
     for i in commandargs:
         content += f"    '{i}',\n"
-    content += f"    '--stderr=sequence_{0}_".format(s.jobname) + "{0}.err'" + '.format(str(job_id))' + ',\n'
-    content += "    '--stdout=sequence_{0}_".format(s.jobname) + "{0}.out'" + '.format(str(job_id))' + ',\n'
+    content += f"    '--stderr=log/sequence_{s.jobname}" + "_{0}_{1}.err'" + '.format(str(subruns).zfill(4), str(str(job_id)))' + ',\n'
+    content += f"    '--stdout=log/sequence_{s.jobname}" + "_{0}_{1}.out'" + '.format(str(subruns).zfill(4), str(str(job_id)))' + ',\n'
     if s.type == "DATA":
         content += "    '{0}".format(str(s.run).zfill(5)) + ".{0}'" + '.format(str(subruns).zfill(4))' + ',\n'
     else:
@@ -428,61 +435,110 @@ def submitjobs(sequence_list):
 
 def getqueuejoblist(sequence_list):
     tag = gettag()
-    # we have to work out the method to get if the sequence has been submitted or not
-    command = cfg.get("ENV", "SQUEUEBIN")
-    commandargs = [command]
+    command = cfg.get("ENV", "SACCTBIN")
+    user = cfg.get("ENV", "USER")
+    sacct_format = "--format=jobid%8,jobname%25,cputime,elapsed,state,exitcode"
+    commandargs = [command, "-u", user, sacct_format]
     queue_list = []
     try:
-        xmloutput = subprocess.check_output(commandargs)
+        sacct_output = subprocess.check_output(commandargs, universal_newlines=True)
     except subprocess.CalledProcessError as Error:
         error(tag, f"Command '{stringify(commandargs)}' failed, {Error}", 2)
     except OSError as ValueError:
         error(tag, f"Command '{stringify(commandargs)}' failed, {ValueError}", ValueError)
     else:
-        # verbose(key, "qstat -x gives the folloging output\n{0}".format(xml).rstrip())
-        if len(xmloutput) != 0:
-            import xml.dom.minidom
-            from dev import xmlhandle
-
-            document = xml.dom.minidom.parseString(xmloutput)
-            queue_list = xmlhandle.xmlhandleData(document)
-            setqueuevalues(queue_list, sequence_list)
+        queue_header = sacct_output.splitlines()[0].split()
+        queue_lines = sacct_output.replace("+", "").replace("sequence_", "").replace(".py", "").splitlines()[2:]
+        queue_sequences = [line.split() for line in queue_lines if "batch" not in line]
+        queue_list = [dict(zip(queue_header, sequence)) for sequence in queue_sequences]
+        setqueuevalues(queue_list, sequence_list)
 
     return queue_list
+
+
+def previous_and_next(iterable):
+    prevs, items, nexts = tee(iterable, 3)
+    prevs = chain([None], prevs)
+    nexts = chain(islice(nexts, 1, None), [None])
+    return zip(prevs, items, nexts)
+
+
+def setqueuevalues_original(queue_list, sequence_list):
+    """Deprecated"""
+    tag = gettag()
+    for s in sequence_list:
+        s.tries = 0
+        for q in queue_list:
+            if s.jobname == q["JobName"]:
+                s.action = "Check"
+                s.jobid = q["JobID"]
+                s.state = q["State"]
+                # FIXME leave only completed and running but properly calculating avg time duration
+                if s.state == "COMPLETED" or s.state == "RUNNING" or s.state == "PENDING":
+                    if s.tries == 0:
+                        s.cputime = q["CPUTime"]
+                        s.walltime = q["Elapsed"]
+                    else:
+                        try:
+                            s.cputime = avg_time_duration(s.cputime, q["CPUTime"])
+                        except AttributeError as ErrorName:
+                            warning(tag, ErrorName)
+                        try:
+                            s.walltime = avg_time_duration(s.cputime, q["Elapsed"])
+                        except AttributeError as ErrorName:
+                            warning(tag, ErrorName)
+                    if s.state == "COMPLETED":
+                        s.exit = q["ExitCode"]
+                # FIXME add max_duration_time to easily spot potencial problems
+                # FIXME fetch ERROR and STATE from python line
+                s.tries += 1
+                verbose(
+                    tag,
+                    f"Queue attributes: sequence {s.seq}, JobName {s.jobname}, "
+                    f"JobID {s.jobid}, State {s.state}, CPUTime {s.cputime}, Exit {s.exit} updated",
+                )
 
 
 def setqueuevalues(queue_list, sequence_list):
     tag = gettag()
     for s in sequence_list:
         s.tries = 0
-        for q in queue_list:
-            if s.jobname == q["name"]:
-                s.action = "Check"
-                s.jobid = q["jobid"]
-                s.state = q["state"]
-                if s.state == "C" or s.state == "R":
-                    s.jobhost = q["jobhost"]
-                    if s.tries == 0:
-                        s.cputime = q["cputime"]
-                        s.walltime = q["walltime"]
-                    else:
-                        try:
-                            s.cputime = sumtime(s.cputime, q["cputime"])
-                        except AttributeError as ErrorName:
-                            warning(tag, ErrorName)
-                        try:
-                            s.walltime = sumtime(s.cputime, q["walltime"])
-                        except AttributeError as ErrorName:
-                            warning(tag, ErrorName)
-                    if s.state == "C":
-                        s.exit = q["exit"]
-                s.tries += 1
-                verbose(
-                    tag,
-                    f"Attributes of sequence {s.seq}, {s.action},"
-                    f"{s.jobid}, {s.state}, {s.jobhost},"
-                    f"{s.cputime}, {s.exit} updated",
-                )
+        for previous, queue_item, nxt in previous_and_next(queue_list):
+            try:
+                if queue_item['JobName'] == "python" and s.jobname == previous["JobName"]:
+                    s.action = "Check"
+                    s.jobid = queue_item["JobID"]
+                    s.state = queue_item["State"]
+                    if s.state == "COMPLETED" or s.state == "RUNNING" or s.state == "PENDING" or s.state == "FAILED":
+                        if s.tries == 0:
+                            s.cputime = queue_item["CPUTime"]
+                            s.walltime = queue_item["Elapsed"]
+                        else:
+                            try:
+                                s.cputime = avg_time_duration(s.cputime, queue_item["CPUTime"])
+                            except AttributeError as ErrorName:
+                                warning(tag, ErrorName)
+                            try:
+                                s.walltime = avg_time_duration(s.cputime, queue_item["Elapsed"])
+                            except AttributeError as ErrorName:
+                                warning(tag, ErrorName)
+                        if s.state == "COMPLETED" or s.state == "FAILED":
+                            s.exit = queue_item["ExitCode"]
+
+                        if nxt is not None:
+                            if queue_item["JobID"] == nxt["JobID"]:
+                                pass
+                            else:
+                                s.tries += 1
+                        else:
+                            s.tries += 1  # Last item of the queue reached
+                    verbose(
+                        tag,
+                        f"Queue attributes: sequence {s.seq}, JobName {s.jobname}, "
+                        f"JobID {s.jobid}, State {s.state}, CPUTime {s.cputime}, Exit {s.exit} updated",
+                    )
+            except TypeError as err:
+                warning(tag, f"Reached the end of queue: {err}")
 
 
 def sumtime(a, b):
@@ -505,6 +561,33 @@ def sumtime(a, b):
     if len(c) == 7:
         c = "0" + c
     return c
+
+
+def avg_time_duration(a, b):
+
+    if a is None:
+        a = "00:00:00"
+    elif b is None:
+        b = "00:00:00"
+
+    a_hh, a_mm, a_ss = a.split(":")
+    b_hh, b_mm, b_ss = b.split(":")
+
+    a_seconds = int(a_hh) * 3600 + int(a_mm) * 60 + int(a_ss)
+    b_seconds = int(b_hh) * 3600 + int(b_mm) * 60 + int(b_ss)
+
+    if a != "00:00:00" and b != "00:00:00":
+        time_duration = time.strftime('%H:%M:%S', time.gmtime(np.mean((a_seconds,b_seconds))))
+    elif a is None and b is not None:
+        time_duration = b
+    elif b is None and a is not None:
+        time_duration = a
+    elif a is None and b is None:
+        time_duration = "00:00:00"
+    else:
+        time_duration = sumtime(a, b)
+
+    return time_duration
 
 
 def date_in_yymmdd(datestring):
