@@ -6,6 +6,7 @@ from glob import glob
 from os.path import join
 
 from osa.utils.utils import is_day_closed
+
 # from dev.dot import writeworkflow
 from osa.configs.config import cfg
 from osa.jobs.job import getqueuejoblist, preparejobs, preparestereojobs, submitjobs
@@ -16,8 +17,6 @@ from osa.configs import options
 from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_needed
 from osa.utils.standardhandle import gettag, output, verbose
 from osa.veto.veto import getvetolist, getclosedlist
-
-__all__ = ["sequencer", "single_process"]
 
 
 def sequencer():
@@ -97,7 +96,7 @@ def single_process(telescope, process_mode):
     # adds the scripts
     preparejobs(sequence_list)
 
-    #if test in order to be able to run it locally
+    # if test in order to be able to run it locally
     if not options.test:
         queue_list = getqueuejoblist(sequence_list)
     veto_list = getvetolist(sequence_list)

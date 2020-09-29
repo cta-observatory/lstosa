@@ -260,9 +260,7 @@ def main():
     istherearawgz = False
 
     if len(files) == 0:
-        sys.stderr.write(
-            f"ERROR [{sys.argv[0]}]: No files with extension ({', '.join(suffix)}) found in directory {daqdir}\n"
-        )
+        sys.stderr.write(f"ERROR [{sys.argv[0]}]: No files with extension ({', '.join(suffix)}) found in directory {daqdir}\n")
         sys.stderr.flush()
         sys.exit(1)
 

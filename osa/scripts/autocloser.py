@@ -35,10 +35,8 @@ def valid_date(s):
 def argument_parser():
     parser = argparse.ArgumentParser(description="This script is an automatic error handler and closer for LSTOSA.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Turn on verbose mode")
-    parser.add_argument("-t", "--test", action="store_true",
-                        help="Test mode with example sequences, only works locally")
-    parser.add_argument("-s", "--simulate", action="store_true",
-                        help="Create nothing, only simulate closer (safe mode)")
+    parser.add_argument("-t", "--test", action="store_true", help="Test mode with example sequences, only works locally")
+    parser.add_argument("-s", "--simulate", action="store_true", help="Create nothing, only simulate closer (safe mode)")
     parser.add_argument("--ignorecronlock", action="store_true", help='Ignore "cron.lock"')
     parser.add_argument("-i", "--onlyIncidences", action="store_true", help="Writing down only incidences, not closing")
     parser.add_argument("-d", "--date", help="Date - format YYYY_MM_DD", type=valid_date)
@@ -46,8 +44,7 @@ def argument_parser():
     parser.add_argument("-e", "--equal", action="store_true", help="Skip check for equal amount of sequences")
     parser.add_argument("-w", "--woIncidences", action="store_true", help="Close without writing down incidences.")
     parser.add_argument("-r", "--runwise", action="store_true", help="Close the day run-wise.")
-    parser.add_argument("-c", "--config-file", dest="osa_config_file", default="cfg/sequencer.cfg",
-                        help="OSA config file.")
+    parser.add_argument("-c", "--config-file", dest="osa_config_file", default="cfg/sequencer.cfg", help="OSA config file.")
     parser.add_argument("-l", "--log", default="", help="Write log to a file.")
     parser.add_argument("tel", nargs="*", default="LST1", choices=["LST1", "LST2", "ST"])
     return parser
@@ -166,11 +163,14 @@ class Telescope(object):
             self.read_file()
         else:
             seqArgs = [
-                "python", "sequencer.py",
+                "python",
+                "sequencer.py",
                 "-s",
-                "-c", f"{args.osa_config_file}",
-                "-d", f"{year:04}_{month:02}_{day:02}",
-                self.telescope
+                "-c",
+                f"{args.osa_config_file}",
+                "-d",
+                f"{year:04}_{month:02}_{day:02}",
+                self.telescope,
             ]
             log.debug(f"Executing {' '.join(seqArgs)}")
             seqr = subprocess.Popen(seqArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
@@ -279,11 +279,11 @@ class Sequence(object):
 
     def is_100(self):
         if (
-                self.dictSequence["Tel"] != "ST"
-                and self.dictSequence["DL1%"] == "100"
-                and self.dictSequence["DATACHECK%"] == "100"
-                and self.dictSequence["MUONS%"] == "100"
-                and self.dictSequence["DL2%"] == "100"
+            self.dictSequence["Tel"] != "ST"
+            and self.dictSequence["DL1%"] == "100"
+            and self.dictSequence["DATACHECK%"] == "100"
+            and self.dictSequence["MUONS%"] == "100"
+            and self.dictSequence["DL2%"] == "100"
         ):
             return True
         if self.dictSequence["Tel"] == "ST" and self.dictSequence["DL3%"] == "100":
@@ -293,21 +293,21 @@ class Sequence(object):
     def is_flawless(self):
         log.debug("Check if flawless")
         if (
-                self.dictSequence["Type"] == "DATA"
-                and self.dictSequence["Exit"] == "0:0"
-                and self.is_100()
-                and self.dictSequence["State"] == "COMPLETED"
-                and int(self.dictSequence["Subruns"]) > 0
+            self.dictSequence["Type"] == "DATA"
+            and self.dictSequence["Exit"] == "0:0"
+            and self.is_100()
+            and self.dictSequence["State"] == "COMPLETED"
+            and int(self.dictSequence["Subruns"]) > 0
         ):
             return True
         if (
-                self.dictSequence["Type"] == "CALI"
-                and self.dictSequence["Exit"] == "2:0"  # Leave until the calib sequence is implemented
-                and self.dictSequence["DL1%"] == "None"
-                and self.dictSequence["DATACHECK%"] == "None"
-                and self.dictSequence["MUONS%"] == "None"
-                and self.dictSequence["DL2%"] == "None"
-                and self.dictSequence["State"] == "COMPLETED"
+            self.dictSequence["Type"] == "CALI"
+            and self.dictSequence["Exit"] == "2:0"  # Leave until the calib sequence is implemented
+            and self.dictSequence["DL1%"] == "None"
+            and self.dictSequence["DATACHECK%"] == "None"
+            and self.dictSequence["MUONS%"] == "None"
+            and self.dictSequence["DL2%"] == "None"
+            and self.dictSequence["State"] == "COMPLETED"
         ):
             return True
         # if (
@@ -411,7 +411,6 @@ class Incidence(object):
         self.incidencesMono = {
             "error2": "Short runs(# of subruns) excluded from OSA",
             "default_time_calib": "Used a default time calibration from same operiod",
-
         }
         self.incidencesDict = {}
         for k in self.incidencesMono:
@@ -514,6 +513,7 @@ class Incidence(object):
                 f.write(text)
         return
 
+
 def is_night_time():
     if 8 <= hour <= 18:
         return False
@@ -537,7 +537,6 @@ def understand_mono_sequence(tel, seq):
     if seq.is_error2noint():
         log.info("Updating incidences: run calibrated w/o interleaved ped/cal")
         tel.incidence.add_incidence("error2noint", f"{seq.dictSequence['Run']}({seq.dictSequence['Subruns']})")
-
 
     # maybe this check is obsolete since we introduced error2noint
     if seq.is_error2():
@@ -716,9 +715,11 @@ if __name__ == "__main__":
         day = datetime.datetime.now().day
         hour = datetime.datetime.now().hour
 
-    message = f"\n========== Starting {os.path.basename(__file__)}" \
-              f" at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}" \
-              f" for night {year:04}_{month:02}_{day:02} for {' '.join(args.tel)} ===========\n"
+    message = (
+        f"\n========== Starting {os.path.basename(__file__)}"
+        f" at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        f" for night {year:04}_{month:02}_{day:02} for {' '.join(args.tel)} ===========\n"
+    )
     log.info(message)
 
     # if is_night_time():

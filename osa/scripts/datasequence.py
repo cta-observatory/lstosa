@@ -15,8 +15,6 @@ from osa.utils.cliopts import datasequencecliparsing
 from osa.utils.standardhandle import error, gettag, verbose
 from osa.utils.utils import lstdate_to_dir
 
-__all__ = ["datasequence", "r0_to_dl1", "dl1_to_dl2"]
-
 
 def datasequence(args):
     """ Performs all the steps to process a whole run
@@ -99,10 +97,7 @@ def r0_to_dl1(
     lstchaincommand = cfg.get("LSTOSA", "R0-DL1")
     nightdir = lstdate_to_dir(options.date)
     fullcommand = lstchaincommand
-    datafile = join(
-        cfg.get("LST1", "RAWDIR"),
-        nightdir, f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "R0SUFFIX")}'
-    )
+    datafile = join(cfg.get("LST1", "RAWDIR"), nightdir, f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "R0SUFFIX")}')
 
     commandargs = [
         fullcommand,
@@ -128,8 +123,13 @@ def r0_to_dl1(
         error(tag, f"Command {'stringify(commandargs)'} failed, {ValueError}", ValueError)
     else:
         history(
-            run_str, cfg.get('LST1', 'DL1-PROD-ID'), basename(fullcommand),
-            basename(calibrationfile), basename(pedestalfile), rc, historyfile
+            run_str,
+            cfg.get("LST1", "DL1-PROD-ID"),
+            basename(fullcommand),
+            basename(calibrationfile),
+            basename(pedestalfile),
+            rc,
+            historyfile,
         )
         return rc
 
@@ -153,10 +153,7 @@ def dl1_to_dl2(run_str, historyfile):
     rf_models_directory = cfg.get("LSTOSA", "RF-MODELS-DIR")
     lstchaincommand = cfg.get("LSTOSA", "DL1-DL2")
     fullcommand = lstchaincommand
-    datafile = join(
-        options.directory,
-        f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}'
-    )
+    datafile = join(options.directory, f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}')
 
     commandargs = [
         fullcommand,
@@ -174,10 +171,7 @@ def dl1_to_dl2(run_str, historyfile):
     except OSError as ValueError:
         error(tag, f"Command {'stringify(commandargs)'} failed, {ValueError}", ValueError)
     else:
-        history(
-            run_str, cfg.get('LST1', 'DL2-PROD-ID'), basename(fullcommand),
-            basename(datafile), basename(configfile), rc, historyfile
-        )
+        history(run_str, cfg.get("LST1", "DL2-PROD-ID"), basename(fullcommand), basename(datafile), basename(configfile), rc, historyfile)
         return rc
 
 
