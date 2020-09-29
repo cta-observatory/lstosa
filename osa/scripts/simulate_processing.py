@@ -83,7 +83,7 @@ def parse_template(template, idx):
             line = line.replace(r"{0}.format(str(subruns).zfill(4))", str(idx).zfill(4))
             if "--stdout=" in line or "--stderr" in line or "srun" in line:
                 continue
-            if "--prod_id" in line:
+            if "--prod-id" in line:
                 args.append("-s")
             args.append(line.strip())
         if line.startswith("subprocess.call"):

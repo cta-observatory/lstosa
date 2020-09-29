@@ -18,7 +18,7 @@ def parse_variables(class_instance):
     # -c cfg/sequencer.cfg
     # -d 2020_02_18
     # -o /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
-    # --prod_id v0.4.3_v00
+    # --prod-id v0.4.3_v00
     # /fefs/aswg/data/real/calibration/20200218/v00/calibration.Run02006.0000.hdf5
     # /fefs/aswg/data/real/calibration/20200218/v00/drs4_pedestal.Run02005.0000.fits
     # /fefs/aswg/data/real/calibration/20191124/v00/time_calibration.Run01625.0000.hdf5
