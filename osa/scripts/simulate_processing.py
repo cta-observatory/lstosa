@@ -120,10 +120,7 @@ def simulate_processing():
             if sl.runobj.type != "DATA":
                 continue
             with mp.Pool() as pool:
-                args_ds = [
-                    parse_template(createjobtemplate(s, get_content=True), subrun_idx)
-                    for subrun_idx in range(sl.subrun)
-                ]
+                args_ds = [parse_template(createjobtemplate(s, get_content=True), subrun_idx) for subrun_idx in range(sl.subrun)]
                 processed = pool.map(simulate_subrun_processing, args_ds)
 
         # produce prov if overwrite prov arg

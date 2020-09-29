@@ -1,6 +1,6 @@
-''' End-of-Night script and functions. Check that everthing has been processed
+""" End-of-Night script and functions. Check that everthing has been processed
     Collect results, merge them if needed
-'''
+"""
 import os.path
 import re
 import sys
@@ -23,7 +23,7 @@ from osa.utils.register import register_run_concept_files
 
 
 def closer():
-    ''' En empty docstring to test sphinx work '''
+    """ An empty docstring to test sphinx work """
 
     # initiating report
     start(tag)

@@ -6,6 +6,7 @@ from glob import glob
 from os.path import join
 
 from osa.utils.utils import is_day_closed
+
 # from dev.dot import writeworkflow
 from osa.configs.config import cfg
 from osa.jobs.job import getqueuejoblist, preparejobs, preparestereojobs, submitjobs
@@ -95,7 +96,7 @@ def single_process(telescope, process_mode):
     # adds the scripts
     preparejobs(sequence_list)
 
-    #if test in order to be able to run it locally
+    # if test in order to be able to run it locally
     if not options.test:
         queue_list = getqueuejoblist(sequence_list)
     veto_list = getvetolist(sequence_list)

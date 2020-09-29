@@ -33,8 +33,8 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
         # next is the way of searching 3 digits after a dot in filenames
         # subrunsearch = re.search("(?<=\.)\d\d\d_", basename(inputf))
         # if subrunsearch:
-            # and strip the zeroes after getting the first 3 character
-            # subrun = subrunsearch.group(0)[0:3].lstrip("0")
+        # and strip the zeroes after getting the first 3 character
+        # subrun = subrunsearch.group(0)[0:3].lstrip("0")
         outputf = join(outputdir, basename(inputf))
         if exists(outputf) and cmp(inputf, outputf):
             # do nothing than acknowledging

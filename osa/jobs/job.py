@@ -337,10 +337,10 @@ def createjobtemplate(s, get_content=False):
     content += "subprocess.call([\n"
     for i in commandargs:
         content += f"    '{i}',\n"
-    content += f"    '--stderr=log/sequence_{s.jobname}" + "_{0}_{1}.err'" + '.format(str(subruns).zfill(4), str(str(job_id)))' + ',\n'
-    content += f"    '--stdout=log/sequence_{s.jobname}" + "_{0}_{1}.out'" + '.format(str(subruns).zfill(4), str(str(job_id)))' + ',\n'
+    content += f"    '--stderr=log/sequence_{s.jobname}" + "_{0}_{1}.err'" + ".format(str(subruns).zfill(4), str(str(job_id)))" + ",\n"
+    content += f"    '--stdout=log/sequence_{s.jobname}" + "_{0}_{1}.out'" + ".format(str(subruns).zfill(4), str(str(job_id)))" + ",\n"
     if s.type == "DATA":
-        content += "    '{0}".format(str(s.run).zfill(5)) + ".{0}'" + '.format(str(subruns).zfill(4))' + ',\n'
+        content += "    '{0}".format(str(s.run).zfill(5)) + ".{0}'" + ".format(str(subruns).zfill(4))" + ",\n"
     else:
         content += f"    '{str(s.run).zfill(5)}',\n"
     content += f"    '{options.tel_id}'\n"
@@ -505,7 +505,7 @@ def setqueuevalues(queue_list, sequence_list):
         s.tries = 0
         for previous, queue_item, nxt in previous_and_next(queue_list):
             try:
-                if queue_item['JobName'] == "python" and s.jobname == previous["JobName"]:
+                if queue_item["JobName"] == "python" and s.jobname == previous["JobName"]:
                     s.action = "Check"
                     s.jobid = queue_item["JobID"]
                     s.state = queue_item["State"]
@@ -577,7 +577,7 @@ def avg_time_duration(a, b):
     b_seconds = int(b_hh) * 3600 + int(b_mm) * 60 + int(b_ss)
 
     if a != "00:00:00" and b != "00:00:00":
-        time_duration = time.strftime('%H:%M:%S', time.gmtime(np.mean((a_seconds,b_seconds))))
+        time_duration = time.strftime("%H:%M:%S", time.gmtime(np.mean((a_seconds, b_seconds))))
     elif a is None and b is not None:
         time_duration = b
     elif b is None and a is not None:

@@ -50,9 +50,7 @@ def drs4_pedestal(run_ped, pedestal_output_file, historyfile):
     inputcard = cfg.get(options.tel_id, "CALIBRATIONCONFIGCARD")
     nightdir = lstdate_to_dir(options.date)
     input_file = join(
-        cfg.get("LST1", "RAWDIR"),
-        nightdir,
-        f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_ped}.0000{cfg.get("LSTOSA", "R0SUFFIX")}',
+        cfg.get("LST1", "RAWDIR"), nightdir, f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_ped}.0000{cfg.get("LSTOSA", "R0SUFFIX")}',
     )
     max_events = cfg.get("LSTOSA", "MAX_PED_EVENTS")
     commandargs = [
@@ -93,9 +91,7 @@ def calibrate(calibration_run_id, pedestal_file, calibration_output_file, histor
     inputcard = cfg.get(options.tel_id, "CALIBRATIONCONFIGCARD")
     nightdir = lstdate_to_dir(options.date)
     calibration_data_file = join(
-        cfg.get("LST1", "RAWDIR"),
-        nightdir,
-        f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{calibration_run_id}.0000{cfg.get("LSTOSA", "R0SUFFIX")}',
+        cfg.get("LST1", "RAWDIR"), nightdir, f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{calibration_run_id}.0000{cfg.get("LSTOSA", "R0SUFFIX")}',
     )
     calib_config_file = cfg.get("LSTOSA", "CALIBCONFIGFILE")
     flat_field_sample_size = cfg.get("LSTOSA", "FLATFIELDCALCULATORSAMPLESIZE")
