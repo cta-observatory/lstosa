@@ -10,8 +10,6 @@ from osa.utils.cliopts import calibrationsequencecliparsing
 from osa.utils.standardhandle import error, gettag, stringify, verbose
 from osa.utils.utils import lstdate_to_dir
 
-__all__ = ["calibrationsequence"]
-
 
 def calibrationsequence(args):
 

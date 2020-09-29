@@ -17,8 +17,6 @@ from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_need
 from osa.utils.standardhandle import gettag, output, verbose
 from osa.veto.veto import getvetolist, getclosedlist
 
-__all__ = ["sequencer", "single_process"]
-
 
 def sequencer():
     """Runs the sequencer

@@ -15,8 +15,6 @@ from osa.utils.cliopts import datasequencecliparsing
 from osa.utils.standardhandle import error, gettag, verbose
 from osa.utils.utils import lstdate_to_dir
 
-__all__ = ["datasequence", "r0_to_dl1", "dl1_to_dl2"]
-
 
 def datasequence(args):
     """ Performs all the steps to process a whole run
