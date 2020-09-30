@@ -106,8 +106,8 @@ def calibrate(calibration_run_id, pedestal_file, calibration_output_file, histor
         "--input_file=" + calibration_data_file,
         "--output_file=" + calibration_output_file,
         "--pedestal_file=" + pedestal_file,
-        "--FlatFieldCalculator.sample_size=" + flat_field_sample_size,
-        "--PedestalCalculator.sample_size=" + pedestal_cal_sample_size,
+        "--FlasherFlatFieldCalculator.sample_size=" + flat_field_sample_size,
+        "--PedestalIntegrator.sample_size=" + pedestal_cal_sample_size,
         "--EventSource.max_events=" + event_source_max_events,
         "--config=" + calib_config_file,
     ]
