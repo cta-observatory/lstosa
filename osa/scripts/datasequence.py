@@ -1,24 +1,23 @@
 """
- Script that is called from the batch system to process a run 
+ Script that is called from the batch system to process a run
 """
 
 import subprocess
 import sys
 from os.path import basename, join
 
+from osa.configs import options
 from osa.configs.config import cfg
 from osa.jobs.job import historylevel
 from osa.provenance.capture import trace
 from osa.reports.report import history
-from osa.configs import options
 from osa.utils.cliopts import datasequencecliparsing
-from osa.utils.standardhandle import error, gettag, verbose
+from osa.utils.standardhandle import error, gettag, stringify, verbose
 from osa.utils.utils import lstdate_to_dir
 
 
 def datasequence(args):
-    """ Performs all the steps to process a whole run
-    """
+    """ Performs all the steps to process a whole run """
 
     calibrationfile = args[0]
     pedestalfile = args[1]
@@ -94,13 +93,16 @@ def r0_to_dl1(
         return 0
 
     configfile = cfg.get("LSTOSA", "CONFIGFILE")
-    lstchaincommand = cfg.get("LSTOSA", "R0-DL1")
+    command = cfg.get("LSTOSA", "R0-DL1")
     nightdir = lstdate_to_dir(options.date)
-    fullcommand = lstchaincommand
-    datafile = join(cfg.get("LST1", "RAWDIR"), nightdir, f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "R0SUFFIX")}')
+    datafile = join(
+        cfg.get("LST1", "RAWDIR"),
+        nightdir,
+        f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "R0SUFFIX")}',
+    )
 
     commandargs = [
-        fullcommand,
+        command,
         "--input-file=" + datafile,
         "--output-dir=" + options.directory,
         "--pedestal-file=" + pedestalfile,
@@ -115,17 +117,17 @@ def r0_to_dl1(
     ]
 
     try:
-        verbose(tag, f"Executing {'stringify(commandargs)'}")
+        verbose(tag, f"Executing {stringify(commandargs)}")
         rc = subprocess.call(commandargs)
     except subprocess.CalledProcessError as Error:
         error(tag, f"{Error}", rc)
     except OSError as ValueError:
-        error(tag, f"Command {'stringify(commandargs)'} failed, {ValueError}", ValueError)
+        error(tag, f"Command {stringify(commandargs)} failed, {ValueError}", ValueError)
     else:
         history(
             run_str,
-            cfg.get("LST1", "DL1-PROD-ID"),
-            basename(fullcommand),
+            options.dl1_prod_id,  # TODO: consider only DL2 prod ID?
+            command,
             basename(calibrationfile),
             basename(pedestalfile),
             rc,
@@ -151,27 +153,47 @@ def dl1_to_dl2(run_str, historyfile):
 
     configfile = cfg.get("LSTOSA", "CONFIGFILE")
     rf_models_directory = cfg.get("LSTOSA", "RF-MODELS-DIR")
-    lstchaincommand = cfg.get("LSTOSA", "DL1-DL2")
-    fullcommand = lstchaincommand
-    datafile = join(options.directory, f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}')
+    command = cfg.get("LSTOSA", "DL1-DL2")  # FIXME  change LSTOSA by lstchain
+    nightdir = lstdate_to_dir(options.date)
+
+    if cfg.get("LST1", "DL2-PROD-ID") is not None:
+        output_dl2_directory = join(
+            cfg.get("LST1", "DL2DIR"), nightdir, cfg.get("LST1", "DL2-PROD-ID")
+        )
+    else:
+        output_dl2_directory = options.directory
+    verbose(tag, f"DL2 output directory: {output_dl2_directory}")
+
+    datafile = join(
+        options.directory,
+        f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}',
+    )
 
     commandargs = [
-        fullcommand,
+        command,
         "--input-file=" + datafile,
-        "--output-dir=" + options.directory,
+        "--output-dir=" + output_dl2_directory,
         "--path-models=" + rf_models_directory,
         "--config=" + configfile,
     ]
 
     try:
-        verbose(tag, f"Executing {'stringify(commandargs)'}")
+        verbose(tag, f"Executing {stringify(commandargs)}")
         rc = subprocess.call(commandargs)
     except subprocess.CalledProcessError as Error:
         error(tag, f"{Error}", rc)
     except OSError as ValueError:
-        error(tag, f"Command {'stringify(commandargs)'} failed, {ValueError}", ValueError)
+        error(tag, f"Command {stringify(commandargs)} failed, {ValueError}", ValueError)
     else:
-        history(run_str, cfg.get("LST1", "DL2-PROD-ID"), basename(fullcommand), basename(datafile), basename(configfile), rc, historyfile)
+        history(
+            run_str,
+            options.dl2_prod_id,
+            command,
+            basename(datafile),
+            basename(configfile),
+            rc,
+            historyfile,
+        )
         return rc
 
 
