@@ -1,6 +1,6 @@
 import sys
 import tempfile
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 from os import unlink
 from pathlib import Path
 
@@ -20,10 +20,10 @@ def readconf():
         raise FileNotFoundError(f"Configuration file {file} not found.")
 
     tag = gettag()
-    conf = SafeConfigParser(allow_no_value=True)
+    conf = ConfigParser(allow_no_value=True)
     try:
         conf.read(file)
-    except SafeConfigParser.Error as err:
+    except ConfigParser.Error as err:
         error(tag, err, 3)
     verbose(tag, "sections of the config file are {0}".format(conf.sections()))
     return conf
