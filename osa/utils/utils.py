@@ -8,10 +8,9 @@ from os import getpid, makedirs, readlink, symlink, walk
 from os.path import basename, dirname, exists, isdir, isfile, islink, join, split
 from socket import gethostname
 
+from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.iofile import writetofile
-
-from osa.configs import options
 from osa.utils.standardhandle import error, errornonfatal, gettag, verbose, warning
 
 
@@ -52,20 +51,7 @@ def getnightdirectory():
     tag = gettag()
     verbose(tag, f"Getting analysis path for tel_id {options.tel_id}")
     nightdir = lstdate_to_dir(options.date)
-
-    if not options.prod_id:
-        import warnings
-
-        warnings.simplefilter(action="ignore", category=FutureWarning)
-        from lstchain.version import get_version
-
-        options.lstchain_version = "v" + get_version()
-
-        if cfg.get("LST1", "DL1-PROD-ID") is not None:
-            options.prod_id = cfg.get("LST1", "DL1-PROD-ID")
-        else:
-            options.prod_id = options.lstchain_version + "_" + cfg.get("LST1", "VERSION")
-
+    options.prod_id = get_prod_id()
     directory = join(cfg.get(options.tel_id, "ANALYSISDIR"), nightdir, options.prod_id)
 
     if not exists(directory):
@@ -77,6 +63,72 @@ def getnightdirectory():
             make_directory(directory)
     verbose(tag, f"Analysis directory: {directory}")
     return directory
+
+
+def get_lstchain_version():
+    import warnings
+
+    warnings.simplefilter(action="ignore", category=FutureWarning)
+    from lstchain.version import get_version
+
+    options.lstchain_version = "v" + get_version() + "_" + cfg.get("LST1", "VERSION")
+    return options.lstchain_version
+
+
+def get_prod_id():
+    tag = gettag()
+
+    if not options.prod_id:
+        if cfg.get("LST1", "PROD-ID") is not None:
+            options.prod_id = cfg.get("LST1", "PROD-ID")
+        else:
+            options.prod_id = get_lstchain_version()
+
+    verbose(tag, f"Getting the prod ID for the running analysis directory: {options.prod_id}")
+
+    return options.prod_id
+
+
+def get_calib_prod_id():
+    tag = gettag()
+
+    if not options.calib_prod_id:
+        if cfg.get("LST1", "CALIB-PROD-ID") is not None:
+            options.calib_prod_id = cfg.get("LST1", "CALIB-PROD-ID")
+        else:
+            options.calib_prod_id = get_lstchain_version()
+
+    verbose(tag, f"Getting prod ID for calibration products: {options.calib_prod_id}")
+
+    return options.calib_prod_id
+
+
+def get_dl1_prod_id():
+    tag = gettag()
+
+    if not options.dl1_prod_id:
+        if cfg.get("LST1", "DL1-PROD-ID") is not None:
+            options.dl1_prod_id = cfg.get("LST1", "DL1-PROD-ID")
+        else:
+            options.dl1_prod_id = get_lstchain_version()
+
+    verbose(tag, f"Getting prod ID for DL1 products: {options.dl1_prod_id}")
+
+    return options.dl1_prod_id
+
+
+def get_dl2_prod_id():
+    tag = gettag()
+
+    if not options.dl2_prod_id:
+        if cfg.get("LST1", "DL2-PROD-ID") is not None:
+            options.dl2_prod_id = cfg.get("LST1", "DL2-PROD-ID")
+        else:
+            options.dl2_prod_id = get_lstchain_version()
+
+    verbose(tag, f"Getting prod ID for DL2 products: {options.dl2_prod_id}")
+
+    return options.dl2_prod_id
 
 
 def make_directory(dir):
@@ -127,7 +179,9 @@ def getrawdatadays():
         error(tag, f"{daqdir}, {OSError}", OSError)
     else:
         for element in dirs:
-            if isdir(join(daqdir, element)) and fnmatch(element, "20[0-9][0-9]_[0-1][0-9]_[0-3][0-9]"):
+            if isdir(join(daqdir, element)) and fnmatch(
+                element, "20[0-9][0-9]_[0-1][0-9]_[0-3][0-9]"
+            ):
                 # we check for directory naming
                 verbose(tag, f"Found raw dir {element}")
                 validset.append(element)
@@ -144,17 +198,25 @@ def getstereodatadays():
             year = basename(dirname(root))
             if isdir(join(root, element)) and dirname(dirname(root)) == stereodir:
                 # we check for directory naming
-                verbose(tag, f"Found stereo dir {element}, {dirname(dirname(root))} == {stereodir}")
+                verbose(
+                    tag,
+                    f"Found stereo dir {element}, {dirname(dirname(root))} == {stereodir}",
+                )
                 validset.add("_".join([year, month, element]))
             else:
-                verbose(tag, f"Element {element} not a stereo dir {isdir(element)}, {dirname(dirname(root))} != {stereodir}")
+                verbose(
+                    tag,
+                    f"Element {element} not a stereo dir {isdir(element)}, {dirname(dirname(root))} != {stereodir}",
+                )
     return validset
 
 
 def getfinisheddays():
     tag = gettag()
     parent_lockdir = cfg.get(options.tel_id, "CLOSERDIR")
-    basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get("LSTOSA", "TEXTSUFFIX")
+    basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get(
+        "LSTOSA", "TEXTSUFFIX"
+    )
     validlist = []
     for root, dirs, files in walk(parent_lockdir):
         for f in files:
@@ -194,8 +256,14 @@ def createlock(lockfile, content):
 
 def getlockfile():
     tag = gettag()
-    basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get("LSTOSA", "TEXTSUFFIX")
-    dir = join(cfg.get(options.tel_id, "CLOSERDIR"), lstdate_to_dir(options.date), options.prod_id)
+    basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get(
+        "LSTOSA", "TEXTSUFFIX"
+    )
+    dir = join(
+        cfg.get(options.tel_id, "CLOSERDIR"),
+        lstdate_to_dir(options.date),
+        options.prod_id,
+    )
     lockfile = join(dir, basename)
     verbose(tag, f"Lock file is {lockfile}")
     return lockfile
@@ -249,7 +317,11 @@ def lstdate_to_dir(night):
     tag = gettag()
     nightdir = night.split(cfg.get("LST", "DATESEPARATOR"))
     if len(nightdir) != 3:
-        error(tag, f"Error: night directory structure could not be created from {nightdir}\n", 1)
+        error(
+            tag,
+            f"Error: night directory structure could not be created from {nightdir}\n",
+            1,
+        )
     # dir = join(nightdir[0], nightdir[1], nightdir[2])
     dir = "".join(nightdir)
     return dir

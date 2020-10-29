@@ -60,8 +60,8 @@ def parse_variables(class_instance):
         class_instance.ObservationRun = class_instance.args[8].split(".")[0]
         class_instance.ObservationSubRun = class_instance.args[8].split(".")[1]
         class_instance.ObservationDate = re.findall(r"running_analysis/(\d{8})/", class_instance.args[9])[0]
-        class_instance.SoftwareVersion = re.findall(r"running_analysis/\d{8}/(v.*)_v", class_instance.args[9])[0]
-        class_instance.ProdID = re.findall(r"running_analysis/\d{8}/v.*_v(.*)/", class_instance.args[9])[0]
+        class_instance.SoftwareVersion = options.lstchain_version
+        class_instance.ProdID = options.prod_id
         class_instance.CalibrationRun = str(re.findall(r"Run(\d{4}).", class_instance.args[0])[0]).zfill(5)
         class_instance.PedestalRun = str(re.findall(r"Run(\d{4}).", class_instance.args[1])[0]).zfill(5)
         # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5
@@ -81,13 +81,15 @@ def parse_variables(class_instance):
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
         class_instance.ObservationSubRun = class_instance.args[0].split(".")[1]
         class_instance.ObservationDate = re.findall(r"running_analysis/(\d{8})/", class_instance.args[1])[0]
-        class_instance.SoftwareVersion = re.findall(r"running_analysis/\d{8}/(v.*)_v", class_instance.args[1])[0]
-        class_instance.DL1ProdID = re.findall(r"running_analysis/\d{8}/v.*_v(.*)/", class_instance.args[1])[0]
+        class_instance.SoftwareVersion = options.lstchain_version
+        class_instance.DL1ProdID = options.prod_id
+        class_instance.DL2ProdID = options.dl2_prod_id
         class_instance.RFModelEnergyFile = str(Path(rf_models_directory) / "reg_energy.sav")
         class_instance.RFModelDispFile = str(Path(rf_models_directory) / "reg_disp_vector.sav")
         class_instance.RFModelGammanessFile = str(Path(rf_models_directory) / "cls_gh.sav")
         # /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.0001.h5
         running_analysis_dir = re.findall(r"(.*)sequence", class_instance.args[1])[0]
+        # FIXME: add correct path in case of different DL2 prod ID
         outdir_dl2 = running_analysis_dir.replace("running_analysis", "DL2")
         class_instance.DL2SubrunDataset = f"{outdir_dl2}{dl2_prefix}.Run{class_instance.args[0]}{h5}"
         # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5

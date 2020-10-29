@@ -1,6 +1,6 @@
 import subprocess
 import sys
-from os.path import join
+from os import path
 
 from osa.configs.config import cfg
 from osa.jobs.job import historylevel
@@ -10,129 +10,242 @@ from osa.utils.cliopts import calibrationsequencecliparsing
 from osa.utils.standardhandle import error, gettag, stringify, verbose
 from osa.utils.utils import lstdate_to_dir
 
+import lstchain.visualization.plot_drs4 as drs4
+import lstchain.visualization.plot_calib as calib
+
 
 def calibrationsequence(args):
 
-    # this is the python interface to run sorcerer with the -c option for calibration
-    # args: <RUN>
-    pedestal_output_file = args[0]
-    calibration_output_file = args[1]
-    run_ped = args[2]
-    run_cal = args[3]
+    pedestal_filename = args[0]
+    calibration_filename = args[1]
+    ped_run_number = args[2]
+    cal_run_number = args[3]
 
-    historyfile = join(options.directory, f"sequence_{options.tel_id }_{run_cal}.history")
+    historyfile = path.join(
+        options.directory, f"sequence_{options.tel_id }_{cal_run_number}.history"
+    )
     level, rc = historylevel(historyfile, "CALIBRATION")
     verbose(tag, f"Going to level {level}")
-    print("historyfile:", historyfile, run_ped)
-    print("PEDESTAL directory:", options.directory, options.tel_id)
-    print("level & rc:", level, rc)
-    # sys.exit()
+    if level == 3:
+        rc = drs4_pedestal(ped_run_number, pedestal_filename, historyfile)
+        level -= 1
+        verbose(tag, f"Going to level {level}")
     if level == 2:
-        rc = drs4_pedestal(run_ped, pedestal_output_file, historyfile)
+        rc = calibrate_charge(
+            ped_run_number,
+            cal_run_number,
+            pedestal_filename,
+            calibration_filename,
+            historyfile,
+        )
         level -= 1
         verbose(tag, f"Going to level {level}")
     if level == 1:
-        rc = calibrate(run_cal, pedestal_output_file, calibration_output_file, historyfile)
+        rc = calibrate_time(
+            cal_run_number, pedestal_filename, calibration_filename, historyfile
+        )
         level -= 1
         verbose(tag, f"Going to level {level}")
     if level == 0:
-        verbose(tag, f"Job for sequence {run_ped} finished without fatal errors")
+        verbose(tag, f"Job for sequence {ped_run_number} finished without fatal errors")
     return rc
 
 
 def drs4_pedestal(run_ped, pedestal_output_file, historyfile):
 
-    # sequencetextfile = join(options.directory, "sequence_" + options.tel_id + "_" + run_ped + ".txt")
-    # bindir = cfg.get("LSTOSA", "LSTCHAINDIR")
-    # daqdir = cfg.get(options.tel_id, "RAWDIR")
-    # carddir = cfg.get('LSTOSA', 'CARDDIR')
-    # configcard = join(carddir, inputcard)
-    inputcard = cfg.get(options.tel_id, "CALIBRATIONCONFIGCARD")
     nightdir = lstdate_to_dir(options.date)
-    input_file = join(
-        cfg.get("LST1", "RAWDIR"), nightdir, f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_ped}.0000{cfg.get("LSTOSA", "R0SUFFIX")}',
+    calib_configfile = None
+    input_file = path.join(
+        cfg.get("LST1", "RAWDIR"),
+        nightdir,
+        f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_ped}.0000{cfg.get("LSTOSA", "R0SUFFIX")}',
     )
-    max_events = cfg.get("LSTOSA", "MAX_PED_EVENTS")
+    output_file = path.join(options.directory, pedestal_output_file)
     commandargs = [
         cfg.get("PROGRAM", "PEDESTAL"),
         "--input-file=" + input_file,
-        "--output-file=" + pedestal_output_file,
-        "--max-events=" + max_events,
+        "--output-file=" + output_file,
     ]
     commandconcept = "drs4_pedestal"
-    # pedestalfile = "drs4_pedestal"
-    print("COMMAND for pedestal:", commandargs)
 
-    # error handling, for now no nonfatal errors are implemented for CALIBRATION
+    # Error handling, for now no nonfatal errors are implemented for CALIBRATION
     try:
         verbose(tag, f"Executing {stringify(commandargs)}")
         rc = subprocess.call(commandargs)
-    # except OSError as (ValueError, NameError):
     except OSError as ValueError:
-        history(run_ped, commandconcept, pedestal_output_file, inputcard, ValueError, historyfile)
-        error(tag, f"Could not execute {stringify(commandargs)}, {ValueError}", ValueError)
+        history(
+            run_ped,
+            options.calib_prod_id,
+            commandconcept,
+            pedestal_output_file,
+            calib_configfile,
+            ValueError,
+            historyfile,
+        )
+        error(
+            tag, f"Could not execute {stringify(commandargs)}, {ValueError}", ValueError
+        )
     except subprocess.CalledProcessError as Error:
         error(tag, Error, rc)
     else:
-        history(run_ped, commandconcept, pedestal_output_file, inputcard, rc, historyfile)
+        history(
+            run_ped,
+            options.calib_prod_id,
+            commandconcept,
+            pedestal_output_file,
+            calib_configfile,
+            rc,
+            historyfile,
+        )
 
     if rc != 0:
         sys.exit(rc)
+
+    plot_file = path.join(
+        options.directory, "log", f"drs4_pedestal.Run{run_ped}.0000.pdf"
+    )
+    verbose(tag, f"Producing plots in {plot_file} ...")
+    drs4.plot_pedestals(
+        input_file,
+        output_file,
+        run_ped,
+        plot_file,
+        tel_id=1,
+        offset_value=300,
+    )
+
     return rc
 
 
-def calibrate(calibration_run_id, pedestal_file, calibration_output_file, historyfile):
+def calibrate_charge(
+    run_ped, calibration_run, pedestal_file, calibration_output_file, historyfile
+):
 
-    # sequencetextfile = join(options.directory, 'sequence_' + options.tel_id + '_' + run + '.txt')
-    # bindir = cfg.get("LSTOSA", "LSTCHAINDIR")
-    # daqdir = cfg.get(options.tel_id, "RAWDIR")
-    # carddir = cfg.get('LSTOSA', 'CARDDIR')
-    # configcard = join(carddir, inputcard)
-    inputcard = cfg.get(options.tel_id, "CALIBRATIONCONFIGCARD")
     nightdir = lstdate_to_dir(options.date)
-    calibration_data_file = join(
-        cfg.get("LST1", "RAWDIR"), nightdir, f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{calibration_run_id}.0000{cfg.get("LSTOSA", "R0SUFFIX")}',
+    calibration_run_file = path.join(
+        cfg.get("LST1", "RAWDIR"),
+        nightdir,
+        f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{calibration_run}.0000{cfg.get("LSTOSA", "R0SUFFIX")}',
     )
-    calib_config_file = cfg.get("LSTOSA", "CALIBCONFIGFILE")
-    flat_field_sample_size = cfg.get("LSTOSA", "FLATFIELDCALCULATORSAMPLESIZE")
-    pedestal_cal_sample_size = cfg.get("LSTOSA", "PEDESTALCALCULATORSAMPLESIZE")
-    event_source_max_events = cfg.get("LSTOSA", "EVENTSOURCEMAXEVENTS")
-    # calibration_version = cfg.get('LSTOSA', 'CALIBRATION_VERSION')  #def: 0
-    # n_events_statistics = cfg.get('LSTOSA', 'STATISTICS')  #def: 10000
-    # calibration_base_dir = cfg.get('LSTOSA', 'CALIB_BASE_DIRECTORY')  #def: '/fefs/aswg/data/real'
-    # calculate_time_run = cfg.get('LSTOSA', 'CALCULATE_TIME_RUN')  #def: '1625'
+    calib_configfile = cfg.get("LSTOSA", "CALIBCONFIGFILE")
+    output_file = path.join(options.directory, calibration_output_file)
+    log_output_file = path.join(
+        options.directory, "log", f"calibration.Run{calibration_run}.0000.log"
+    )
     commandargs = [
         cfg.get("PROGRAM", "CALIBRATION"),
-        "--input_file=" + calibration_data_file,
-        "--output_file=" + calibration_output_file,
+        "--input_file=" + calibration_run_file,
+        "--output_file=" + output_file,
         "--pedestal_file=" + pedestal_file,
-        "--FlasherFlatFieldCalculator.sample_size=" + flat_field_sample_size,
-        "--PedestalIntegrator.sample_size=" + pedestal_cal_sample_size,
-        "--EventSource.max_events=" + event_source_max_events,
-        "--config=" + calib_config_file,
+        "--config=" + calib_configfile,
+        "--log_file=" + log_output_file,
     ]
-    # FIXME: Include time calibration!
-    # optional.add_argument('--ff_calibration', help="Perform the charge calibration (yes/no)",type=str, default='yes')
-    # optional.add_argument('--tel_id', help="telescope id. Default = 1", type=int, default=1)
-    commandconcept = "calibration"
-    calibrationfile = "new_calib"
-    print("COMAND for calib:", commandargs)
+    commandconcept = "charge_calibration"
+
+    # Error handling, for now no nonfatal errors are implemented for CALIBRATION
+    try:
+        verbose(tag, f"Executing {stringify(commandargs)}")
+        rc = subprocess.call(commandargs)
+    except OSError as ValueError:
+        history(
+            calibration_run,
+            options.calib_prod_id,
+            commandconcept,
+            calibration_output_file,
+            path.basename(calib_configfile),
+            ValueError,
+            historyfile,
+        )
+        error(
+            tag, f"Could not execute {stringify(commandargs)}, {ValueError}", ValueError
+        )
+    except subprocess.CalledProcessError as Error:
+        error(tag, Error, rc)
+    else:
+        history(
+            calibration_run,
+            options.calib_prod_id,
+            commandconcept,
+            calibration_output_file,
+            path.basename(calib_configfile),
+            rc,
+            historyfile,
+        )
+
+    if rc != 0:
+        sys.exit(rc)
+
+    plot_file = path.join(
+        options.directory,
+        "log",
+        f"calibration.Run{calibration_run}.0000.pedestal.Run{run_ped}.0000.pdf",
+    )
+    calib.read_file(output_file, tel_id=1)
+    verbose(tag, f"Producing plots in {plot_file} ...")
+    calib.plot_all(
+        calib.ped_data, calib.ff_data, calib.calib_data, calibration_run, plot_file
+    )
+
+    return rc
+
+
+def calibrate_time(
+    calibration_run, pedestal_file, calibration_output_file, historyfile
+):
+
+    nightdir = lstdate_to_dir(options.date)
+    calibration_data_file = path.join(
+        cfg.get("LST1", "RAWDIR"),
+        nightdir,
+        f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{calibration_run}.0000{cfg.get("LSTOSA", "R0SUFFIX")}',
+    )
+    calib_configfile = cfg.get("LSTOSA", "CALIBCONFIGFILE")
+    time_calibration_output_file = path.join(
+        options.directory, f"time_{calibration_output_file}"
+    )
+    # calculate_time_run = cfg.get('LSTOSA', 'CALCULATE_TIME_RUN')  #def: '1625'
+    commandargs = [
+        cfg.get("PROGRAM", "TIME_CALIBRATION"),
+        "--input-file=" + calibration_data_file,
+        "--output-file=" + time_calibration_output_file,
+        "--pedestal-file=" + pedestal_file,
+        "--config=" + calib_configfile,
+    ]
+    commandconcept = "time_calibration"
 
     # error handling, for now no nonfatal errors are implemented for CALIBRATION
     try:
         verbose(tag, f"Executing {stringify(commandargs)}")
         rc = subprocess.call(commandargs)
-    # except OSError as (ValueError, NameError):
     except OSError as ValueError:
-        history(calibration_run_id, commandconcept, calibrationfile, inputcard, ValueError, historyfile)
-        error(tag, f"Could not execute {stringify(commandargs)}, {ValueError}", ValueError)
+        history(
+            calibration_run,
+            options.calib_prod_id,
+            commandconcept,
+            path.basename(time_calibration_output_file),
+            path.basename(calib_configfile),
+            ValueError,
+            historyfile,
+        )
+        error(
+            tag, f"Could not execute {stringify(commandargs)}, {ValueError}", ValueError
+        )
     except subprocess.CalledProcessError as Error:
         error(tag, Error, rc)
     else:
-        history(calibration_run_id, commandconcept, calibrationfile, inputcard, rc, historyfile)
+        history(
+            calibration_run,
+            options.calib_prod_id,
+            commandconcept,
+            path.basename(time_calibration_output_file),
+            path.basename(calib_configfile),
+            rc,
+            historyfile,
+        )
 
     if rc != 0:
         sys.exit(rc)
+
     return rc
 
 

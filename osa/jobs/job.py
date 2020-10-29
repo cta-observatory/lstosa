@@ -1,13 +1,13 @@
 import datetime
+import os
 import subprocess
 import time
-from itertools import tee, islice, chain
-from os.path import exists, join
+from itertools import chain, islice, tee
 
 import numpy as np
 
-from osa.configs.config import cfg
 from osa.configs import options
+from osa.configs.config import cfg
 from osa.utils.iofile import readfromfile, writetofile
 from osa.utils.standardhandle import error, gettag, stringify, verbose, warning
 from osa.utils.utils import lstdate_to_dir
@@ -36,43 +36,63 @@ def historylevel(historyfile, type):
     exit_status = 0
     if type == "PEDESTAL":
         level -= 2
-    if type == "CALIBRATION":
-        level -= 1
-    if exists(historyfile):
+    if os.path.exists(historyfile):
         for line in readfromfile(historyfile).splitlines():
+            # FIXME: create a dict with the program, exit status and prod id to take into account
+            # not only the last history line but also the others.
             words = line.split()
             try:
                 program = words[1]
                 prod_id = words[2]
                 exit_status = int(words[-1])
-                verbose(tag, f"{program}, finished with error {exit_status}")
+                verbose(
+                    tag,
+                    f"{program}, finished with error {exit_status} and prod ID {prod_id}",
+                )
             except IndexError as err:
                 error(tag, f"Malformed history file {historyfile}, {err}", 3)
             except ValueError as err:
                 error(tag, f"Malformed history file {historyfile}, {err}", 3)
             else:
                 if program == cfg.get("LSTOSA", "R0-DL1"):
-                    nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
+                    nonfatalrcs = [
+                        int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")
+                    ]
                     if exit_status in nonfatalrcs:
                         level = 2
                     else:
                         level = 3
                 elif program == cfg.get("LSTOSA", "DL1-DL2"):
-                    nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "DL1-DL2").split(",")]
-                    if (exit_status in nonfatalrcs) and (prod_id == cfg.get("LST1", "DL2-PROD-ID")):
+                    nonfatalrcs = [
+                        int(k) for k in cfg.get("NONFATALRCS", "DL1-DL2").split(",")
+                    ]
+                    if (exit_status in nonfatalrcs) and (
+                        prod_id == options.dl2_prod_id
+                    ):
+                        verbose(
+                            tag, f"DL2 prod ID: {options.dl2_prod_id} already produced"
+                        )
                         level = 0
                     else:
                         level = 2
-                elif program == "calibration":
-                    if exit_status == 0:
-                        level = 0
-                    else:
-                        level = 1
+                        verbose(
+                            tag, f"DL2 prod ID: {options.dl2_prod_id} not produced yet"
+                        )
                 elif program == "drs4_pedestal":
                     if exit_status == 0:
+                        level = 2
+                    else:
+                        level = 3
+                elif program == "charge_calibration":
+                    if exit_status == 0:
                         level = 1
                     else:
+                        level = 2
+                elif program == "time_calibration":
+                    if exit_status == 0:
                         level = 0
+                    else:
+                        level = 1
 
                 else:
                     error(tag, f"Programme name not identified {program}", 6)
@@ -119,7 +139,7 @@ def setrunfromparent(sequence_list):
 def createsequencetxt(s, sequence_list):
     tag = gettag()
     text_suffix = cfg.get("LSTOSA", "TEXTSUFFIX")
-    f = join(options.directory, f"sequence_{s.jobname}{text_suffix}")
+    f = os.path.join(options.directory, f"sequence_{s.jobname}{text_suffix}")
     start = s.subrun_list[0].timestamp
     ped = ""
     cal = ""
@@ -143,7 +163,7 @@ def createsequencetxt(s, sequence_list):
     content += "# Date of sunrise of the observation night\n"
     content += f"Night: {s.night}\n"
     content += "# Start time of the sequence (first data run)\n"
-    content += f"Start: {start}\n"  # TODO: get the right date and time
+    content += f"Start: {start}\n"
     content += "# Source name of all runs of sequence\n"
     content += f"Source: {s.sourcewobble}\n"
     content += f"Telescope: {options.tel_id.lstrip('M1')}\n"
@@ -179,9 +199,9 @@ def setsequencefilenames(s):
     veto_suffix = cfg.get("LSTOSA", "VETOSUFFIX")
     basename = f"sequence_{s.jobname}"
 
-    s.script = join(options.directory, basename + script_suffix)
-    s.veto = join(options.directory, basename + veto_suffix)
-    s.history = join(options.directory, basename + history_suffix)
+    s.script = os.path.join(options.directory, basename + script_suffix)
+    s.veto = os.path.join(options.directory, basename + veto_suffix)
+    s.history = os.path.join(options.directory, basename + history_suffix)
     # calibfiles cannot be set here, since they require the runfromparent
 
 
@@ -211,7 +231,11 @@ def setsequencecalibfilenames(sequence_list):
                 pedfile = f"drs4_pedestal.Run{ped_run_string}.0000{pedestal_suffix}"
                 drivefile = f"drive_log_{yy}_{mm}_{dd}{drive_suffix}"
             elif options.mode == "S" or options.mode == "T":
-                error(tag, "Exiting, mode not implemented yet. Try with 'P' mode instead", 6)
+                error(
+                    tag,
+                    "Exiting, mode not implemented yet. Try with 'P' mode instead",
+                    6,
+                )
         s.calibration = calfile
         s.time_calibration = timecalfile
         s.pedestal = pedfile
@@ -220,9 +244,9 @@ def setsequencecalibfilenames(sequence_list):
 
 def guesscorrectinputcard(s):
     """Returns guessed input card for:
-     datasequencer
-     calibrationsequence
-     stereosequence
+    datasequencer
+    calibrationsequence
+    stereosequence
     """
     # if it fails, return the default one
     # FIXME: implement a way of selecting Nov cfg file
@@ -258,11 +282,11 @@ def createjobtemplate(s, get_content=False):
 
     command = None
     if s.type == "CALI":
-        command = join(scriptsdir, "calibrationsequence.py")
+        command = os.path.join(scriptsdir, "calibrationsequence.py")
     elif s.type == "DATA":
-        command = join(scriptsdir, "datasequence.py")
+        command = os.path.join(scriptsdir, "datasequence.py")
     elif s.type == "STEREO":
-        command = join(scriptsdir, "stereosequence.py")
+        command = os.path.join(scriptsdir, "stereosequence.py")
 
     # directly use python interpreter from current working environment
     # python = join(config.cfg.get('ENV', 'PYTHONBIN'), 'python')
@@ -276,7 +300,7 @@ def createjobtemplate(s, get_content=False):
         commandargs.append("-w")
     if options.configfile:
         commandargs.append("-c")
-        commandargs.append(join(bindir, guesscorrectinputcard(s)))
+        commandargs.append(os.path.join(bindir, guesscorrectinputcard(s)))
     if options.compressed:
         commandargs.append("-z")
     # commandargs.append('--stderr=sequence_{0}_'.format(s.jobname) + "{0}.err'" + ".format(str(job_id))")
@@ -287,16 +311,21 @@ def createjobtemplate(s, get_content=False):
     commandargs.append(options.prod_id)
 
     if s.type == "CALI":
-        commandargs.append(join(pedestaldir, nightdir, version, s.pedestal))
-        commandargs.append(join(calibdir, nightdir, version, s.calibration))
-        ped_run = str(s.previousrun).zfill(5)
-        commandargs.append(ped_run)
+        commandargs.append(s.pedestal)
+        commandargs.append(s.calibration)
+        ped_run_number = str(s.previousrun).zfill(5)
+        cal_run_number = str(s.run).zfill(5)
+        commandargs.append(ped_run_number)
+        commandargs.append(cal_run_number)
 
     if s.type == "DATA":
-        commandargs.append(join(calibdir, nightdir, version, s.calibration))
-        commandargs.append(join(pedestaldir, nightdir, version, s.pedestal))
-        commandargs.append(join(calibdir, nightdir, version, "time_" + s.calibration))
-        commandargs.append(join(drivedir, s.drive))
+        # commandargs.append(join(calibdir, nightdir, version, s.calibration))
+        # commandargs.append(join(pedestaldir, nightdir, version, s.pedestal))
+        # commandargs.append(join(calibdir, nightdir, version, "time_" + s.calibration))
+        commandargs.append(os.path.join(options.directory, s.calibration))
+        commandargs.append(os.path.join(options.directory, s.pedestal))
+        commandargs.append(os.path.join(options.directory, "time_" + s.calibration))
+        commandargs.append(os.path.join(drivedir, s.drive))
         # pedfile = s.pedestal
         ucts_t0_dragon = s.subrun_list[0].ucts_t0_dragon
         commandargs.append(ucts_t0_dragon)
@@ -337,12 +366,25 @@ def createjobtemplate(s, get_content=False):
     content += "subprocess.call([\n"
     for i in commandargs:
         content += f"    '{i}',\n"
-    content += f"    '--stderr=log/sequence_{s.jobname}" + "_{0}_{1}.err'" + ".format(str(subruns).zfill(4), str(str(job_id)))" + ",\n"
-    content += f"    '--stdout=log/sequence_{s.jobname}" + "_{0}_{1}.out'" + ".format(str(subruns).zfill(4), str(str(job_id)))" + ",\n"
+    content += (
+        f"    '--stderr=log/sequence_{s.jobname}"
+        + "_{0}_{1}.err'"
+        + ".format(str(subruns).zfill(4), str(str(job_id)))"
+        + ",\n"
+    )
+    content += (
+        f"    '--stdout=log/sequence_{s.jobname}"
+        + "_{0}_{1}.out'"
+        + ".format(str(subruns).zfill(4), str(str(job_id)))"
+        + ",\n"
+    )
     if s.type == "DATA":
-        content += "    '{0}".format(str(s.run).zfill(5)) + ".{0}'" + ".format(str(subruns).zfill(4))" + ",\n"
-    else:
-        content += f"    '{str(s.run).zfill(5)}',\n"
+        content += (
+            "    '{0}".format(str(s.run).zfill(5))
+            + ".{0}'"
+            + ".format(str(subruns).zfill(4))"
+            + ",\n"
+        )
     content += f"    '{options.tel_id}'\n"
     content += "    ])"
 
@@ -353,81 +395,101 @@ def createjobtemplate(s, get_content=False):
         return content
 
 
-# def submitjobs(sequence_list, queue_list, veto_list):
 def submitjobs(sequence_list):
     tag = gettag()
     job_list = []
     command = cfg.get("ENV", "SBATCHBIN")
+    env_nodisplay = "--export=ALL,MPLBACKEND=Agg"
     for s in sequence_list:
-        commandargs = [command, s.script]
-        #        """ Introduce the job dependencies """
-        #        if len(s.parent_list) != 0:
-        #            commandargs.append('-W')
-        #            depend_string = 'depend='
-        #            if s.type == 'DATA':
-        #                depend_string += 'afterok'
-        #            elif s.type == 'STEREO':
-        #                depend_string += 'afterany'
-        #            for pseq in s.parent_list:
-        #                if pseq.jobid > 0:
-        #                    depend_string += ":{0}".format(pseq.jobid)
-        #            commandargs.append(depend_string)
-        #        """ Skip vetoed """
-        #        if s.action == 'Veto':
-        #            verbose(tag, "job {0} has been vetoed".format(s.jobname))
-        #        elif s.action == 'Closed':
-        #            verbose(tag, "job {0} is already closed".format(s.jobname))
-        #        elif s.action == 'Check' and s.state != 'C':
-        #            verbose(tag, "job {0} checked to be dispatched but not completed yet".format(s.jobname))
-        #            if s.state == 'H' or s.state == 'R':
-        #                # Reset values
-        #                s.exit = None
-        #                if s.state == 'H':
-        #                    s.jobhost = None
-        #                    s.cputime = None
-        #                    s.walltime = None
-        #        elif s.action == 'Check' and s.state == 'C' and s.exit == 0:
-        #            verbose(tag, "job {0} checked to be successful".format(s.jobname))
-        #        else:
-        #            if options.simulate == True:
-        #                commandargs.insert(0, 'echo')
-        #                s.action = 'Simulate'
-        #                # This jobid is negative showing it belongs to a simulated environment (not real jobid)
-        #                s.jobid = -1 - s.seq
-        #            else:
-        #                s.action = 'Submit'
-        #                # Reset the values to avoid misleading info from previous jobs
-        #                s.jobhost = None
-        #                s.state = 'Q'
-        #                s.cputime = None
-        #                s.walltime = None
-        #                s.exit = None
-        #            try:
-        #                stdout = subprocess.check_output(commandargs)
-        #            except subprocess.CalledProcessError as Error:
-        #                error(tag, Error, 2)
-        #            except OSError (ValueError, NameError):
-        #                error(tag, "Command {0}, {1}".format(stringify(commandargs), NameError), ValueError)
-        #            else:
-        #                if options.simulate == False:
-        #                    try:
-        #                        s.jobid = int(stdout.split('.', 1)[0])
-        #                    except ValueError as e:
-        #                        warning(tag, "Wrong parsing of jobid {0} not being an integer, {1}".format(stdout.split('.', 1)[0], e))
-        #        job_list.append(s.jobid)
-        #        verbose(tag, "{0} {1}".format(s.action, stringify(commandargs)))
-        if not options.simulate:
-            try:
-                verbose(tag, f"Launching script {s.script}")
-                subprocess.check_output(commandargs)
-            except subprocess.CalledProcessError as Error:
-                error(tag, Error, 2)
-            except OSError as err:
-                error(tag, f"Command '{command}' not found", err)
-        else:
-            verbose(tag, "SIMULATE Launching scripts")
+        commandargs = [command, "--parsable", env_nodisplay]
+        if s.type == "CALI":
+            commandargs.append(s.script)
+            if not options.simulate:
+                try:
+                    verbose(tag, f"Launching script {s.script}")
+                    parent_jobid = subprocess.check_output(
+                        commandargs,
+                        universal_newlines=True,
+                    ).split()[0]
+                except subprocess.CalledProcessError as Error:
+                    error(tag, Error, 2)
+                except OSError as err:
+                    error(tag, f"Command '{command}' not found", err)
+            else:
+                verbose(tag, "SIMULATE Launching scripts")
+            verbose(tag, commandargs)
 
-        verbose(tag, commandargs)
+            # FIXME here s.jobid has not been redefined se it keeps the one from previous time sequencer was launched
+        # Introduce the job dependencies after calibration sequence
+        if len(s.parent_list) != 0:
+            # commandargs.append('--dependency=')
+            if s.type == "DATA":
+                verbose(tag, f"Adding dependencies to job submission")
+                if not options.simulate:
+                    depend_string = f"--dependency=afterok:{parent_jobid}"
+                    commandargs.append(depend_string)
+                # Old MAGIC style:
+                # for pseq in s.parent_list:
+                #     if pseq.jobid is not None:
+                #         if int(pseq.jobid) > 0:
+                #             depend_string += ":{0}".format(pseq.jobid)
+                #        """ Skip vetoed """
+                #        if s.action == 'Veto':
+                #            verbose(tag, "job {0} has been vetoed".format(s.jobname))
+                #        elif s.action == 'Closed':
+                #            verbose(tag, "job {0} is already closed".format(s.jobname))
+                #        elif s.action == 'Check' and s.state != 'C':
+                #            verbose(tag, "job {0} checked to be dispatched but not completed yet".format(s.jobname))
+                #            if s.state == 'H' or s.state == 'R':
+                #                # Reset values
+                #                s.exit = None
+                #                if s.state == 'H':
+                #                    s.jobhost = None
+                #                    s.cputime = None
+                #                    s.walltime = None
+                #        elif s.action == 'Check' and s.state == 'C' and s.exit == 0:
+                #            verbose(tag, "job {0} checked to be successful".format(s.jobname))
+                #        else:
+                #            if options.simulate == True:
+                #                commandargs.insert(0, 'echo')
+                #                s.action = 'Simulate'
+                #                # This jobid is negative showing it belongs to a simulated environment (not real jobid)
+                #                s.jobid = -1 - s.seq
+                #            else:
+                #                s.action = 'Submit'
+                #                # Reset the values to avoid misleading info from previous jobs
+                #                s.jobhost = None
+                #                s.state = 'Q'
+                #                s.cputime = None
+                #                s.walltime = None
+                #                s.exit = None
+                #            try:
+                #                stdout = subprocess.check_output(commandargs)
+                #            except subprocess.CalledProcessError as Error:
+                #                error(tag, Error, 2)
+                #            except OSError (ValueError, NameError):
+                #                error(tag, "Command {0}, {1}".format(stringify(commandargs), NameError), ValueError)
+                #            else:
+                #                if options.simulate == False:
+                #                    try:
+                #                        s.jobid = int(stdout.split('.', 1)[0])
+                #                    except ValueError as e:
+                #                        warning(tag, "Wrong parsing of jobid {0} not being an integer, {1}".format(stdout.split('.', 1)[0], e))
+                #        job_list.append(s.jobid)
+                #        verbose(tag, "{0} {1}".format(s.action, stringify(commandargs)))
+                commandargs.append(s.script)
+                if not options.simulate:
+                    try:
+                        verbose(tag, f"Launching script {s.script}")
+                        subprocess.check_output(commandargs)
+                    except subprocess.CalledProcessError as Error:
+                        error(tag, Error, 2)
+                    except OSError as err:
+                        error(tag, f"Command '{command}' not found", err)
+                else:
+                    verbose(tag, "SIMULATE Launching scripts")
+
+                verbose(tag, commandargs)
         job_list.append(s.script)
 
     return job_list
@@ -445,10 +507,17 @@ def getqueuejoblist(sequence_list):
     except subprocess.CalledProcessError as Error:
         error(tag, f"Command '{stringify(commandargs)}' failed, {Error}", 2)
     except OSError as ValueError:
-        error(tag, f"Command '{stringify(commandargs)}' failed, {ValueError}", ValueError)
+        error(
+            tag, f"Command '{stringify(commandargs)}' failed, {ValueError}", ValueError
+        )
     else:
         queue_header = sacct_output.splitlines()[0].split()
-        queue_lines = sacct_output.replace("+", "").replace("sequence_", "").replace(".py", "").splitlines()[2:]
+        queue_lines = (
+            sacct_output.replace("+", "")
+            .replace("sequence_", "")
+            .replace(".py", "")
+            .splitlines()[2:]
+        )
         queue_sequences = [line.split() for line in queue_lines if "batch" not in line]
         queue_list = [dict(zip(queue_header, sequence)) for sequence in queue_sequences]
         setqueuevalues(queue_list, sequence_list)
@@ -463,66 +532,48 @@ def previous_and_next(iterable):
     return zip(prevs, items, nexts)
 
 
-def setqueuevalues_original(queue_list, sequence_list):
-    """Deprecated"""
-    tag = gettag()
-    for s in sequence_list:
-        s.tries = 0
-        for q in queue_list:
-            if s.jobname == q["JobName"]:
-                s.action = "Check"
-                s.jobid = q["JobID"]
-                s.state = q["State"]
-                # FIXME leave only completed and running but properly calculating avg time duration
-                if s.state == "COMPLETED" or s.state == "RUNNING" or s.state == "PENDING":
-                    if s.tries == 0:
-                        s.cputime = q["CPUTime"]
-                        s.walltime = q["Elapsed"]
-                    else:
-                        try:
-                            s.cputime = avg_time_duration(s.cputime, q["CPUTime"])
-                        except AttributeError as ErrorName:
-                            warning(tag, ErrorName)
-                        try:
-                            s.walltime = avg_time_duration(s.cputime, q["Elapsed"])
-                        except AttributeError as ErrorName:
-                            warning(tag, ErrorName)
-                    if s.state == "COMPLETED":
-                        s.exit = q["ExitCode"]
-                # FIXME add max_duration_time to easily spot potencial problems
-                # FIXME fetch ERROR and STATE from python line
-                s.tries += 1
-                verbose(
-                    tag,
-                    f"Queue attributes: sequence {s.seq}, JobName {s.jobname}, "
-                    f"JobID {s.jobid}, State {s.state}, CPUTime {s.cputime}, Exit {s.exit} updated",
-                )
-
-
 def setqueuevalues(queue_list, sequence_list):
     tag = gettag()
     for s in sequence_list:
         s.tries = 0
         for previous, queue_item, nxt in previous_and_next(queue_list):
             try:
-                if queue_item["JobName"] == "python" and s.jobname == previous["JobName"]:
+                if (
+                    queue_item["JobName"] == "python"
+                    and s.jobname == previous["JobName"]
+                ):
                     s.action = "Check"
                     s.jobid = queue_item["JobID"]
                     s.state = queue_item["State"]
-                    if s.state == "COMPLETED" or s.state == "RUNNING" or s.state == "PENDING" or s.state == "FAILED":
+                    list_of_states = [
+                        "COMPLETED",
+                        "RUNNING",
+                        "PENDING",
+                        "FAILED",
+                        "CANCELLED+",
+                    ]
+                    if s.state in list_of_states:
                         if s.tries == 0:
                             s.cputime = queue_item["CPUTime"]
                             s.walltime = queue_item["Elapsed"]
                         else:
                             try:
-                                s.cputime = avg_time_duration(s.cputime, queue_item["CPUTime"])
+                                s.cputime = avg_time_duration(
+                                    s.cputime, queue_item["CPUTime"]
+                                )
                             except AttributeError as ErrorName:
                                 warning(tag, ErrorName)
                             try:
-                                s.walltime = avg_time_duration(s.cputime, queue_item["Elapsed"])
+                                s.walltime = avg_time_duration(
+                                    s.cputime, queue_item["Elapsed"]
+                                )
                             except AttributeError as ErrorName:
                                 warning(tag, ErrorName)
-                        if s.state == "COMPLETED" or s.state == "FAILED":
+                        if (
+                            s.state == "COMPLETED"
+                            or s.state == "FAILED"
+                            or s.state == "CANCELLED+"
+                        ):
                             s.exit = queue_item["ExitCode"]
 
                         if nxt is not None:
@@ -577,7 +628,9 @@ def avg_time_duration(a, b):
     b_seconds = int(b_hh) * 3600 + int(b_mm) * 60 + int(b_ss)
 
     if a != "00:00:00" and b != "00:00:00":
-        time_duration = time.strftime("%H:%M:%S", time.gmtime(np.mean((a_seconds, b_seconds))))
+        time_duration = time.strftime(
+            "%H:%M:%S", time.gmtime(np.mean((a_seconds, b_seconds)))
+        )
     elif a is None and b is not None:
         time_duration = b
     elif b is None and a is not None:
