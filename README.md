@@ -1,12 +1,12 @@
 # LST Onsite Analysis (LSTOSA)
 
-Repository for the On-Site data reduction pipeline of the LST.
+Repository for the On-Site data analysis pipeline of the LST-1, the Large-Sized Telescope prototype of the LST.
 
 ## How to use it
 * You will need to install anaconda first.
 * Create and activate the conda environment including [lstchain](https://github.com/cta-observatory/cta-lstchain):
 ```
-git clone https://gitlab.com/contrera/lstosa.git
+git clone https://gitlab.cta-observatory.org/cta-array-elements/lst/analysis/lstosa.git
 cd lstosa
 conda env create -f environment.yml
 conda activate osa
@@ -23,6 +23,6 @@ conda develop .
 
 ### Further information
 
- - Docs: https://contrera.gitlab.io/lstosa/ 
-   - Status ![build status](https://gitlab.com/contrera/lstosa/badges/master/pipeline.svg)
- - Wiki: https://gitlab.com/contrera/lstosa/-/wikis/home
+ - Docs: https://lstosa.readthedocs.io/ 
+   - Status ![build status](https://gitlab.cta-observatory.org/cta-array-elements/lst/analysis/lstosa/badges/master/pipeline.svg)
+ - Check also the Wiki for more information
