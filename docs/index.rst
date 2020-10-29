@@ -9,11 +9,22 @@ Welcome to LSTOSA's documentation!
 **UNDER CONSTRUCTION!**
 
 LSTOSA is the *On-Site Analysis* system of LST.
-These docs try to create and organize the missing documentation for LSTOSA.
+These docs try to create and organize the documentation for LSTOSA.
+
+
+.. _lstosa logo:
+
+.. figure:: logo_lstosa.png
+
+
 
 It also introduces a documentation of the API.
 For the python part of LSTOSA, we use the `autodoc` extension of Sphinx, which
 pulls in the documentation from the docstrings.
+
+Code: https://gitlab.cta-observatory.org/cta-array-elements/lst/analysis/lstosa
+
+License: BSD-3
 
 
 Contents:
