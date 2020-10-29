@@ -13,6 +13,7 @@ from osa.utils.utils import (
     get_dl1_prod_id,
     get_dl2_prod_id,
     get_calib_prod_id,
+    get_lstchain_version
 )
 
 
@@ -355,7 +356,10 @@ def calibrationsequencecliparsing(command):
     options.configfile = set_default_configfile_if_needed(command)
     options.date = set_default_date_if_needed()
     options.directory = set_default_directory_if_needed()
-    options.calib_prod_id = get_calib_prod_id()
+    if cfg.get("LST1", "CALIB-PROD-ID") is not None:
+        options.calib_prod_id = get_calib_prod_id()
+    else:
+        options.calib_prod_id = options.prod_id
 
     return args
 
@@ -477,8 +481,15 @@ def datasequencecliparsing(command):
     options.configfile = set_default_configfile_if_needed(command)
     options.date = set_default_date_if_needed()
     options.directory = set_default_directory_if_needed()
-    options.dl1_prod_id = get_dl1_prod_id()
-    options.dl2_prod_id = get_dl2_prod_id()
+    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+        options.dl1_prod_id = get_dl1_prod_id()
+    else:
+        options.dl1_prod_id = options.prod_id
+
+    if cfg.get("LST1", "DL2-PROD-ID") is not None:
+        options.dl2_prod_id = get_dl2_prod_id()
+    else:
+        options.dl2_prod_id = options.prod_id
 
     return args
 
@@ -965,6 +976,7 @@ def provprocessparsing():
     options.configfile = opts.configfile
     options.filter = opts.filter
     options.quit = opts.quit
+    options.lstchain_version = get_lstchain_version()
 
 
 def simprocparsing():

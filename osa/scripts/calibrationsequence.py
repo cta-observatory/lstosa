@@ -121,7 +121,6 @@ def calibrate_charge(
     run_ped, calibration_run, pedestal_file, calibration_output_file, historyfile
 ):
 
-    options.calib_prod_id = options.prod_id
     nightdir = lstdate_to_dir(options.date)
     calibration_run_file = path.join(
         cfg.get("LST1", "RAWDIR"),
@@ -194,7 +193,6 @@ def calibrate_time(
     calibration_run, pedestal_file, calibration_output_file, historyfile
 ):
 
-    options.calib_prod_id = options.prod_id
     nightdir = lstdate_to_dir(options.date)
     calibration_data_file = path.join(
         cfg.get("LST1", "RAWDIR"),
