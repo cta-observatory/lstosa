@@ -126,7 +126,7 @@ def r0_to_dl1(
     else:
         history(
             run_str,
-            options.dl1_prod_id,  # TODO: consider only DL2 prod ID?
+            options.prod_id,  # TODO: consider only DL2 prod ID?
             command,
             basename(calibrationfile),
             basename(pedestalfile),
