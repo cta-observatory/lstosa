@@ -1,13 +1,13 @@
 import datetime
+import os
 import subprocess
 import time
-from itertools import tee, islice, chain
-from os.path import exists, join
+from itertools import chain, islice, tee
 
 import numpy as np
 
-from osa.configs.config import cfg
 from osa.configs import options
+from osa.configs.config import cfg
 from osa.utils.iofile import readfromfile, writetofile
 from osa.utils.standardhandle import error, gettag, stringify, verbose, warning
 from osa.utils.utils import lstdate_to_dir
@@ -36,7 +36,7 @@ def historylevel(historyfile, type):
     exit_status = 0
     if type == "PEDESTAL":
         level -= 2
-    if exists(historyfile):
+    if os.path.exists(historyfile):
         for line in readfromfile(historyfile).splitlines():
             # FIXME: create a dict with the program, exit status and prod id to take into account
             # not only the last history line but also the others.
@@ -139,7 +139,7 @@ def setrunfromparent(sequence_list):
 def createsequencetxt(s, sequence_list):
     tag = gettag()
     text_suffix = cfg.get("LSTOSA", "TEXTSUFFIX")
-    f = join(options.directory, f"sequence_{s.jobname}{text_suffix}")
+    f = os.path.join(options.directory, f"sequence_{s.jobname}{text_suffix}")
     start = s.subrun_list[0].timestamp
     ped = ""
     cal = ""
@@ -199,9 +199,9 @@ def setsequencefilenames(s):
     veto_suffix = cfg.get("LSTOSA", "VETOSUFFIX")
     basename = f"sequence_{s.jobname}"
 
-    s.script = join(options.directory, basename + script_suffix)
-    s.veto = join(options.directory, basename + veto_suffix)
-    s.history = join(options.directory, basename + history_suffix)
+    s.script = os.path.join(options.directory, basename + script_suffix)
+    s.veto = os.path.join(options.directory, basename + veto_suffix)
+    s.history = os.path.join(options.directory, basename + history_suffix)
     # calibfiles cannot be set here, since they require the runfromparent
 
 
@@ -282,11 +282,11 @@ def createjobtemplate(s, get_content=False):
 
     command = None
     if s.type == "CALI":
-        command = join(scriptsdir, "calibrationsequence.py")
+        command = os.path.join(scriptsdir, "calibrationsequence.py")
     elif s.type == "DATA":
-        command = join(scriptsdir, "datasequence.py")
+        command = os.path.join(scriptsdir, "datasequence.py")
     elif s.type == "STEREO":
-        command = join(scriptsdir, "stereosequence.py")
+        command = os.path.join(scriptsdir, "stereosequence.py")
 
     # directly use python interpreter from current working environment
     # python = join(config.cfg.get('ENV', 'PYTHONBIN'), 'python')
@@ -300,7 +300,7 @@ def createjobtemplate(s, get_content=False):
         commandargs.append("-w")
     if options.configfile:
         commandargs.append("-c")
-        commandargs.append(join(bindir, guesscorrectinputcard(s)))
+        commandargs.append(os.path.join(bindir, guesscorrectinputcard(s)))
     if options.compressed:
         commandargs.append("-z")
     # commandargs.append('--stderr=sequence_{0}_'.format(s.jobname) + "{0}.err'" + ".format(str(job_id))")
@@ -322,10 +322,10 @@ def createjobtemplate(s, get_content=False):
         # commandargs.append(join(calibdir, nightdir, version, s.calibration))
         # commandargs.append(join(pedestaldir, nightdir, version, s.pedestal))
         # commandargs.append(join(calibdir, nightdir, version, "time_" + s.calibration))
-        commandargs.append(join(options.directory, s.calibration))
-        commandargs.append(join(options.directory, s.pedestal))
-        commandargs.append(join(options.directory, "time_" + s.calibration))
-        commandargs.append(join(drivedir, s.drive))
+        commandargs.append(os.path.join(options.directory, s.calibration))
+        commandargs.append(os.path.join(options.directory, s.pedestal))
+        commandargs.append(os.path.join(options.directory, "time_" + s.calibration))
+        commandargs.append(os.path.join(drivedir, s.drive))
         # pedfile = s.pedestal
         ucts_t0_dragon = s.subrun_list[0].ucts_t0_dragon
         commandargs.append(ucts_t0_dragon)
@@ -401,78 +401,95 @@ def submitjobs(sequence_list):
     command = cfg.get("ENV", "SBATCHBIN")
     env_nodisplay = "--export=ALL,MPLBACKEND=Agg"
     for s in sequence_list:
-        commandargs = [command, env_nodisplay, s.script]
-        # Introduce the job dependencies
-        if len(s.parent_list) != 0:
-            print("DEBUG:", s.parent_list[0].run)
-            print("DEBUG:", s.parent_list[0].jobid)
-            print("DEBUG:", type(s.parent_list[0].jobid))
-            # commandargs.append('--dependency=')
-            depend_string = "--dependency="
-            if s.type == "DATA":
-                depend_string += "afterok"
-            elif s.type == "STEREO":
-                depend_string += "afterany"
-            for pseq in s.parent_list:
-                if int(pseq.jobid) > 0:
-                    depend_string += ":{0}".format(pseq.jobid)
-            commandargs.append(depend_string)
-        #        """ Skip vetoed """
-        #        if s.action == 'Veto':
-        #            verbose(tag, "job {0} has been vetoed".format(s.jobname))
-        #        elif s.action == 'Closed':
-        #            verbose(tag, "job {0} is already closed".format(s.jobname))
-        #        elif s.action == 'Check' and s.state != 'C':
-        #            verbose(tag, "job {0} checked to be dispatched but not completed yet".format(s.jobname))
-        #            if s.state == 'H' or s.state == 'R':
-        #                # Reset values
-        #                s.exit = None
-        #                if s.state == 'H':
-        #                    s.jobhost = None
-        #                    s.cputime = None
-        #                    s.walltime = None
-        #        elif s.action == 'Check' and s.state == 'C' and s.exit == 0:
-        #            verbose(tag, "job {0} checked to be successful".format(s.jobname))
-        #        else:
-        #            if options.simulate == True:
-        #                commandargs.insert(0, 'echo')
-        #                s.action = 'Simulate'
-        #                # This jobid is negative showing it belongs to a simulated environment (not real jobid)
-        #                s.jobid = -1 - s.seq
-        #            else:
-        #                s.action = 'Submit'
-        #                # Reset the values to avoid misleading info from previous jobs
-        #                s.jobhost = None
-        #                s.state = 'Q'
-        #                s.cputime = None
-        #                s.walltime = None
-        #                s.exit = None
-        #            try:
-        #                stdout = subprocess.check_output(commandargs)
-        #            except subprocess.CalledProcessError as Error:
-        #                error(tag, Error, 2)
-        #            except OSError (ValueError, NameError):
-        #                error(tag, "Command {0}, {1}".format(stringify(commandargs), NameError), ValueError)
-        #            else:
-        #                if options.simulate == False:
-        #                    try:
-        #                        s.jobid = int(stdout.split('.', 1)[0])
-        #                    except ValueError as e:
-        #                        warning(tag, "Wrong parsing of jobid {0} not being an integer, {1}".format(stdout.split('.', 1)[0], e))
-        #        job_list.append(s.jobid)
-        #        verbose(tag, "{0} {1}".format(s.action, stringify(commandargs)))
-        if not options.simulate:
-            try:
-                verbose(tag, f"Launching script {s.script}")
-                subprocess.check_output(commandargs)
-            except subprocess.CalledProcessError as Error:
-                error(tag, Error, 2)
-            except OSError as err:
-                error(tag, f"Command '{command}' not found", err)
-        else:
-            verbose(tag, "SIMULATE Launching scripts")
+        commandargs = [command, "--parsable", env_nodisplay]
+        if s.type == "CALI":
+            commandargs.append(s.script)
+            if not options.simulate:
+                try:
+                    verbose(tag, f"Launching script {s.script}")
+                    parent_jobid = subprocess.check_output(
+                        commandargs,
+                        universal_newlines=True,
+                    ).split()[0]
+                except subprocess.CalledProcessError as Error:
+                    error(tag, Error, 2)
+                except OSError as err:
+                    error(tag, f"Command '{command}' not found", err)
+            else:
+                verbose(tag, "SIMULATE Launching scripts")
+            verbose(tag, commandargs)
 
-        verbose(tag, commandargs)
+            # FIXME here s.jobid has not been redefined se it keeps the one from previous time sequencer was launched
+        # Introduce the job dependencies after calibration sequence
+        if len(s.parent_list) != 0:
+            # commandargs.append('--dependency=')
+            if s.type == "DATA":
+                verbose(tag, f"Adding dependencies to job submission")
+                if not options.simulate:
+                    depend_string = f"--dependency=afterok:{parent_jobid}"
+                    commandargs.append(depend_string)
+                # Old MAGIC style:
+                # for pseq in s.parent_list:
+                #     if pseq.jobid is not None:
+                #         if int(pseq.jobid) > 0:
+                #             depend_string += ":{0}".format(pseq.jobid)
+                #        """ Skip vetoed """
+                #        if s.action == 'Veto':
+                #            verbose(tag, "job {0} has been vetoed".format(s.jobname))
+                #        elif s.action == 'Closed':
+                #            verbose(tag, "job {0} is already closed".format(s.jobname))
+                #        elif s.action == 'Check' and s.state != 'C':
+                #            verbose(tag, "job {0} checked to be dispatched but not completed yet".format(s.jobname))
+                #            if s.state == 'H' or s.state == 'R':
+                #                # Reset values
+                #                s.exit = None
+                #                if s.state == 'H':
+                #                    s.jobhost = None
+                #                    s.cputime = None
+                #                    s.walltime = None
+                #        elif s.action == 'Check' and s.state == 'C' and s.exit == 0:
+                #            verbose(tag, "job {0} checked to be successful".format(s.jobname))
+                #        else:
+                #            if options.simulate == True:
+                #                commandargs.insert(0, 'echo')
+                #                s.action = 'Simulate'
+                #                # This jobid is negative showing it belongs to a simulated environment (not real jobid)
+                #                s.jobid = -1 - s.seq
+                #            else:
+                #                s.action = 'Submit'
+                #                # Reset the values to avoid misleading info from previous jobs
+                #                s.jobhost = None
+                #                s.state = 'Q'
+                #                s.cputime = None
+                #                s.walltime = None
+                #                s.exit = None
+                #            try:
+                #                stdout = subprocess.check_output(commandargs)
+                #            except subprocess.CalledProcessError as Error:
+                #                error(tag, Error, 2)
+                #            except OSError (ValueError, NameError):
+                #                error(tag, "Command {0}, {1}".format(stringify(commandargs), NameError), ValueError)
+                #            else:
+                #                if options.simulate == False:
+                #                    try:
+                #                        s.jobid = int(stdout.split('.', 1)[0])
+                #                    except ValueError as e:
+                #                        warning(tag, "Wrong parsing of jobid {0} not being an integer, {1}".format(stdout.split('.', 1)[0], e))
+                #        job_list.append(s.jobid)
+                #        verbose(tag, "{0} {1}".format(s.action, stringify(commandargs)))
+                commandargs.append(s.script)
+                if not options.simulate:
+                    try:
+                        verbose(tag, f"Launching script {s.script}")
+                        subprocess.check_output(commandargs)
+                    except subprocess.CalledProcessError as Error:
+                        error(tag, Error, 2)
+                    except OSError as err:
+                        error(tag, f"Command '{command}' not found", err)
+                else:
+                    verbose(tag, "SIMULATE Launching scripts")
+
+                verbose(tag, commandargs)
         job_list.append(s.script)
 
     return job_list
