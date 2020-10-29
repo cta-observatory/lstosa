@@ -1,5 +1,6 @@
-""" End-of-Night script and functions. Check that everthing has been processed
-    Collect results, merge them if needed
+"""
+End-of-Night script and functions. Check that everthing has been processed
+Collect results, merge them if needed
 """
 import os.path
 import re
@@ -23,7 +24,7 @@ from osa.utils.register import register_run_concept_files
 
 
 def closer():
-    """ An empty docstring to test sphinx work """
+    """Main function in charge of closing the sequences"""
 
     # initiating report
     start(tag)
