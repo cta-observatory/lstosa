@@ -283,7 +283,9 @@ def set_closed_with_file(ana_text):
     closer_file = getlockfile()
     is_closed = False
     if not options.simulate:
-        is_closed = createlock(closer_file, ana_text)
+        pass
+        # For the moment we do not generate NightFinished lock file
+        # is_closed = createlock(closer_file, ana_text)
     else:
         output(tag, f"SIMULATE Creation of lock file {closer_file}")
 
