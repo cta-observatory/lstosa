@@ -1,10 +1,11 @@
+import os
 import shutil
 from filecmp import cmp
 from glob import glob
 from os.path import basename, exists, join
 
-from osa.configs.config import cfg
 from osa.configs import options
+from osa.configs.config import cfg
 from osa.utils.standardhandle import gettag, verbose
 from osa.utils.utils import lstdate_to_dir
 
@@ -38,11 +39,16 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
         outputf = join(outputdir, basename(inputf))
         if exists(outputf) and cmp(inputf, outputf):
             # do nothing than acknowledging
-            verbose(tag, f"Destination file {outputf} exists and it is identical to input")
+            verbose(
+                tag, f"Destination file {outputf} exists and it is identical to input"
+            )
         else:
             # there is no output file or it is different
             verbose(tag, f"Moving file {outputf}")
             shutil.move(inputf, outputf)
+            if prefix == "dl1_LST-1" and suffix == ".h5":
+                verbose(tag, f"Keeping DL1 symlink in {inputf}")
+                os.symlink(outputf, inputf)
             # for the moment we are not interested in calculating the hash md5
             # md5sum = get_md5sum_and_copy(inputf, outputf)
             # verbose(tag, "Resulting md5sum={0}".format(md5sum))
@@ -102,7 +108,9 @@ def register_run_concept_files(run_string, concept):
     tag = gettag()
     inputdir = options.directory
     nightdir = lstdate_to_dir(options.date)
-    outputdir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id)
+    outputdir = join(
+        cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id
+    )
     type = cfg.get("LSTOSA", concept + "TYPE")
     prefix = cfg.get("LSTOSA", concept + "PREFIX")
     suffix = cfg.get("LSTOSA", concept + "SUFFIX")
