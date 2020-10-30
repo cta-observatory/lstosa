@@ -9,18 +9,26 @@ from filecmp import cmp
 from glob import glob
 from os import unlink
 from os.path import basename, exists, isdir, islink, join
+
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.cliopts import closercliparsing
-from osa.utils.standardhandle import error, gettag, output, verbose, warning
 from osa.jobs.job import arealljobscorrectlyfinished
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import getnightsummaryfile, readnightsummary
 from osa.rawcopy.raw import arerawfilestransferred, get_check_rawdir
 from osa.reports.report import finished_assignments, finished_text, start
-from osa.utils.utils import createlock, getlockfile, is_defined, lstdate_to_dir, make_directory, is_day_closed
-from osa.veto.veto import createclosed
+from osa.utils.cliopts import closercliparsing
 from osa.utils.register import register_run_concept_files
+from osa.utils.standardhandle import error, gettag, output, verbose, warning
+from osa.utils.utils import (
+    createlock,
+    getlockfile,
+    is_day_closed,
+    is_defined,
+    lstdate_to_dir,
+    make_directory,
+)
+from osa.veto.veto import createclosed
 
 
 def closer():
@@ -70,6 +78,11 @@ def closer():
 
         post_process(sequencer_tuple)
 
+        # FIXME add merge of datachecks
+        # Add DL1 symlinks to running_analysis
+        # Extract provenance
+        # Copy datacheck to www
+
 
 def use_night_summary():
     """Check for the usage of night summary option and file existence."""
@@ -92,6 +105,7 @@ def is_raw_data_available():
 
     answer = False
     if options.tel_id != "ST":
+        # FIXME: adapt this function
         raw_dir = get_check_rawdir()
         if isdir(raw_dir):
             answer = True
@@ -145,7 +159,9 @@ def ask_for_closing():
                 answer_check = True
                 if answer_user == "n" or answer_user == "N":
                     # the user does not want to close
-                    output(tag, f"Day {options.date} for {options.tel_id} will remain open")
+                    output(
+                        tag, f"Day {options.date} for {options.tel_id} will remain open"
+                    )
                     sys.exit(0)
                 elif answer_user == "y" or answer_user == "Y":
                     continue
@@ -204,10 +220,15 @@ def post_process_files(seq_list):
         for r in output_files_set:
             r_basename = basename(r)
             pattern_found = re.search(f"^{pattern}", r_basename)
-            verbose(tag, f"Was pattern {pattern} found in {r_basename} ?: {pattern_found}")
+            verbose(
+                tag, f"Was pattern {pattern} found in {r_basename} ?: {pattern_found}"
+            )
             if options.seqtoclose is not None:
                 seqtoclose_found = re.search(options.seqtoclose, r_basename)
-                verbose(tag, f"Was pattern {options.seqtoclose} found in {r_basename} ?: {seqtoclose_found}")
+                verbose(
+                    tag,
+                    f"Was pattern {options.seqtoclose} found in {r_basename} ?: {seqtoclose_found}",
+                )
                 if seqtoclose_found is None:
                     pattern_found = None
             if pattern_found is not None:
@@ -215,20 +236,21 @@ def post_process_files(seq_list):
                 if not options.simulate:
                     make_directory(dir)
                     if exists(new_dst):
-                        if islink(r):
-                            # delete because the link has been correctly copied
-                            verbose(tag, f"Original file {r} is just a link")
-                            if options.seqtoclose is None:
-                                verbose(tag, f"Deleting {r}")
-                                unlink(r)
-                        elif exists(r) and cmp(r, new_dst):
-                            # delete
-                            verbose(tag, f"Destination file exists and it is equal to {r}")
-                            if options.seqtoclose is None:
-                                verbose(tag, f"Deleting {r}")
-                                unlink(r)
-                        else:
-                            warning(tag, f"Original file {r} is not a link or is different than destination {new_dst}")
+                        pass
+                        # if islink(r):
+                        #    # delete because the link has been correctly copied
+                        #    verbose(tag, f"Original file {r} is just a link")
+                        #    if options.seqtoclose is None:
+                        #        verbose(tag, f"Deleting {r}")
+                        #        #unlink(r)
+                        # elif exists(r) and cmp(r, new_dst):
+                        #    # delete
+                        #    verbose(tag, f"Destination file exists and it is equal to {r}")
+                        #    if options.seqtoclose is None:
+                        #        verbose(tag, f"Deleting {r}")
+                        #        #unlink(r)
+                        # else:
+                        #    warning(tag, f"Original file {r} is not a link or is different than destination {new_dst}")
                     else:
                         verbose(tag, f"Destination file {new_dst} does not exists")
                         for s in seq_list:
@@ -238,14 +260,18 @@ def post_process_files(seq_list):
                                 # register and delete
                                 verbose(tag, f"Registering file {run_str_found}")
                                 register_run_concept_files(s.run_str, concept)
+                                # $dl1datepath/$version/dl1*.h5
+                                # $running_analysis/$date/$version/.
                                 if options.seqtoclose is None:
                                     if exists(r):
-                                        unlink(r)
+                                        # unlink(r)
+                                        pass
                                     else:
                                         verbose(tag, "File does not exists")
 
-                                setclosedfilename(s)
-                                createclosed(s.closed)
+                                # FIXME: for the moment we do not want to close
+                                # setclosedfilename(s)
+                                # createclosed(s.closed)
                                 break
                 delete_set.add(r)
         output_files_set -= delete_set
@@ -257,7 +283,9 @@ def set_closed_with_file(ana_text):
     closer_file = getlockfile()
     is_closed = False
     if not options.simulate:
-        is_closed = createlock(closer_file, ana_text)
+        pass
+        # For the moment we do not generate NightFinished lock file
+        # is_closed = createlock(closer_file, ana_text)
     else:
         output(tag, f"SIMULATE Creation of lock file {closer_file}")
 
@@ -292,7 +320,10 @@ def is_finished_check(nightsum):
             if arealljobscorrectlyfinished(sequence_list):
                 sequence_success = True
             else:
-                output(tag, "All raw files are transferred but the jobs did not correctly/yet finish")
+                output(
+                    tag,
+                    "All raw files are transferred but the jobs did not correctly/yet finish",
+                )
         else:
             output(tag, "More raw files are expected to appear")
     return [sequence_success, sequence_list]
