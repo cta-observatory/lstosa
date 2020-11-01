@@ -43,8 +43,6 @@ def copy_to_webserver():
 
 
 def create_destination_dir(host, datedir, prod_id):
-    # TODO add this directory via cfg
-    # /home/www/html/datacheck
     datacheck_basedir = Path(cfg.get("WEBSERVER", "DATACHECK"))
 
     # Create directory and copy the index.php to each directory
