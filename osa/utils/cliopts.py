@@ -2,18 +2,18 @@ from argparse import ArgumentParser
 from optparse import OptionParser  # from version 2.3 to 2.7
 from os.path import abspath, basename, dirname, join
 
-from osa.configs.config import cfg
-
 from osa.configs import options
+from osa.configs.config import cfg
 from osa.utils.standardhandle import error, gettag, verbose
 from osa.utils.utils import (
+    get_calib_prod_id,
+    get_dl1_prod_id,
+    get_dl2_prod_id,
+    get_lstchain_version,
+    get_prod_id,
     getcurrentdate2,
     getnightdirectory,
     is_defined,
-    get_dl1_prod_id,
-    get_dl2_prod_id,
-    get_calib_prod_id,
-    get_lstchain_version
 )
 
 
@@ -153,7 +153,9 @@ def closercliparsing():
 
 def pedestalsequencecliparsing(command):
     tag = gettag()
-    message = "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <PED_RUN_ID> <TEL_ID>"
+    message = (
+        "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <PED_RUN_ID> <TEL_ID>"
+    )
     parser = OptionParser(usage=message)
     parser.add_option(
         "-c",
@@ -836,7 +838,9 @@ def monolithcliparsing(command):
 
 def rawcopycliparsing(command):
     tag = gettag()
-    message = "usage: %prog [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-z] <TEL_ID>"
+    message = (
+        "usage: %prog [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-z] <TEL_ID>"
+    )
     parser = OptionParser(usage=message)
     parser.add_option(
         "-c",
@@ -998,9 +1002,7 @@ def simprocparsing():
         default="cfg/sequencer.cfg",
         help="use specific config file [default cfg/sequencer.cfg]",
     )
-    parser.add_option(
-        "-p", action="store_true", dest="provenance", help="produce provenance files"
-    )
+    parser.add_option("-p", action="store_true", dest="provenance", help="produce provenance files")
     parser.add_option(
         "--force",
         action="store_true",
@@ -1029,6 +1031,45 @@ def simprocparsing():
     options.provenance = opts.provenance
     options.force = opts.force
     options.append = opts.append
+
+
+def scopy_datacheck_parsing():
+    tag = gettag()
+    parser = ArgumentParser()
+    parser.add_argument(
+        "-d",
+        "--date",
+        action="store",
+        type=str,
+        dest="date",
+        help="observation ending date YYYY_MM_DD [default today]",
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        action="store",
+        dest="configfile",
+        default="cfg/sequencer.cfg",
+        help="use specific config file [default cfg/sequencer.cfg]",
+    )
+    parser.add_argument(
+        "tel_id",
+        choices=["ST", "LST1", "LST2", "all"],
+        help="telescope identifier LST1, LST2, ST or all.",
+    )
+
+    # parse the command line
+    opts = parser.parse_args()
+
+    # set global variables
+    options.date = opts.date
+    options.tel_id = opts.tel_id
+    options.configfile = opts.configfile
+
+    options.configfile = set_default_configfile_if_needed("sequencer.py")
+    options.date = set_default_date_if_needed()
+    options.directory = set_default_directory_if_needed()
+    options.prod_id = get_prod_id()
 
 
 def set_default_date_if_needed():

@@ -4,6 +4,7 @@ Collect results, merge them if needed
 """
 import os.path
 import re
+import subprocess
 import sys
 from filecmp import cmp
 from glob import glob
@@ -78,9 +79,7 @@ def closer():
 
         post_process(sequencer_tuple)
 
-        # FIXME add merge of datachecks
-        # Add DL1 symlinks to running_analysis
-        # Extract provenance
+        # TODO:
         # Copy datacheck to www
 
 
@@ -159,9 +158,7 @@ def ask_for_closing():
                 answer_check = True
                 if answer_user == "n" or answer_user == "N":
                     # the user does not want to close
-                    output(
-                        tag, f"Day {options.date} for {options.tel_id} will remain open"
-                    )
+                    output(tag, f"Day {options.date} for {options.tel_id} will remain open")
                     sys.exit(0)
                 elif answer_user == "y" or answer_user == "Y":
                     continue
@@ -182,7 +179,16 @@ def post_process(seq_tuple):
     seq_list = seq_tuple[1]
     analysis_dict = finished_assignments(seq_list)
     analysis_text = finished_text(analysis_dict)
+
+    # Close the sequences
     post_process_files(seq_list)
+
+    # First merge DL1 datacheck files and produce PDFs
+    merge_dl1datacheck(seq_list)
+
+    # Extract the provenance info
+    extract_provenance(seq_list)
+
     if options.seqtoclose is None:
         is_closed = set_closed_with_file(analysis_text)
         return is_closed
@@ -220,9 +226,7 @@ def post_process_files(seq_list):
         for r in output_files_set:
             r_basename = basename(r)
             pattern_found = re.search(f"^{pattern}", r_basename)
-            verbose(
-                tag, f"Was pattern {pattern} found in {r_basename} ?: {pattern_found}"
-            )
+            verbose(tag, f"Was pattern {pattern} found in {r_basename} ?: {pattern_found}")
             if options.seqtoclose is not None:
                 seqtoclose_found = re.search(options.seqtoclose, r_basename)
                 verbose(
@@ -362,6 +366,73 @@ def setclosedfilename(s):
     closed_suffix = cfg.get("LSTOSA", "CLOSEDSUFFIX")
     basename = f"sequence_{s.jobname}"
     s.closed = os.path.join(options.directory, basename + closed_suffix)
+
+
+def merge_dl1datacheck(seq_list):
+    """Merge every DL1 datacheck h5 files run-wise and generate the PDF files"""
+
+    tag = gettag()
+    verbose(tag, "Merging dl1 datacheck files and producing PDFs")
+
+    nightdir = lstdate_to_dir(options.date)
+
+    dl1_directory = join(cfg.get("LST1", "DL1DIR"), nightdir, options.prod_id)
+
+    for sequence in seq_list:
+        if sequence.type == "DATA":
+            cmd = [
+                "sbatch",
+                "--parsable",
+                "-D",
+                options.directory,
+                "-o",
+                f"log/slurm_mergedl1datacheck_{str(sequence.run).zfill(5)}_%j.out",
+                "-e",
+                f"log/slurm_mergedl1datacheck_{str(sequence.run).zfill(5)}_%j.err",
+                "lstchain_check_dl1",
+                f"--input-file={dl1_directory}/datacheck_dl1_LST-1.Run0{sequence.run}.*.h5",
+                f"--output-dir={dl1_directory}",
+            ]
+            if not options.simulate:
+                try:
+                    process = subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+                except subprocess.CalledProcessError as err:
+                    error(tag, f"Not able to merge DL1 datacheck: {err}")
+                # TODO implement an automatic scp to www datacheck,
+                # right after the production of the PDF files
+            else:
+                verbose(tag, "Simulate launching scripts")
+            verbose(tag, cmd)
+
+
+def extract_provenance(seq_list):
+    """Extract provenance run-wise from the prov.log file"""
+
+    tag = gettag()
+    verbose(tag, "Extract provenance run-wise")
+
+    nightdir = lstdate_to_dir(options.date)
+
+    for sequence in seq_list:
+        if sequence.type == "DATA":
+            cmd = [
+                "sbatch",
+                "-D",
+                options.directory,
+                "-o",
+                f"log/slurm_provenance_{str(sequence.run).zfill(5)}_%j.log",
+                f"{cfg.get('LSTOSA', 'SCRIPTSDIR')}/provprocess.py",
+                "-c",
+                options.configfile,
+                f"{str(sequence.run).zfill(5)}",
+                nightdir,
+                options.prod_id,
+            ]
+            if not options.simulate:
+                process = subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+            else:
+                verbose(tag, "Simulate launching scripts")
+            verbose(tag, cmd)
 
 
 if __name__ == "__main__":

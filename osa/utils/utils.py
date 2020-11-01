@@ -84,7 +84,10 @@ def get_prod_id():
         else:
             options.prod_id = get_lstchain_version()
 
-    verbose(tag, f"Getting the prod ID for the running analysis directory: {options.prod_id}")
+    verbose(
+        tag,
+        f"Getting the prod ID for the running analysis directory: {options.prod_id}",
+    )
 
     return options.prod_id
 
@@ -214,9 +217,7 @@ def getstereodatadays():
 def getfinisheddays():
     tag = gettag()
     parent_lockdir = cfg.get(options.tel_id, "CLOSERDIR")
-    basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get(
-        "LSTOSA", "TEXTSUFFIX"
-    )
+    basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get("LSTOSA", "TEXTSUFFIX")
     validlist = []
     for root, dirs, files in walk(parent_lockdir):
         for f in files:
@@ -256,9 +257,7 @@ def createlock(lockfile, content):
 
 def getlockfile():
     tag = gettag()
-    basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get(
-        "LSTOSA", "TEXTSUFFIX"
-    )
+    basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get("LSTOSA", "TEXTSUFFIX")
     dir = join(
         cfg.get(options.tel_id, "CLOSERDIR"),
         lstdate_to_dir(options.date),
