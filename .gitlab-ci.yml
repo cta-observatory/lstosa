@@ -1,5 +1,9 @@
 image: continuumio/anaconda3:latest
 
+stages:
+  - build
+  - test
+  
 before_script:
 - apt-get update && apt-get install -y build-essential
 - pip install --upgrade pip
