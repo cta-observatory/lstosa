@@ -22,7 +22,7 @@ testcode:
 testdocs:
   stage: test
   script:
-  - sphinx-build -b html ./docs ./docs/_build
+  - cd docs && make clean html
   only:
   - branches
   except:
@@ -31,7 +31,7 @@ testdocs:
 deploydocs:
   stage: deploy
   script:
-  - sphinx-build -b html ./docs public ./docs/_build
+  - cd docs && make clean html
   only:
   - master
   
