@@ -1,17 +1,18 @@
+import os
 import subprocess
 import sys
 from os import path
+from pathlib import Path
 
+import lstchain.visualization.plot_calib as calib
+import lstchain.visualization.plot_drs4 as drs4
+
+from osa.configs import options
 from osa.configs.config import cfg
 from osa.jobs.job import historylevel
 from osa.reports.report import history
-from osa.configs import options
 from osa.utils.cliopts import calibrationsequencecliparsing
-from osa.utils.standardhandle import error, gettag, stringify, verbose
-from osa.utils.utils import lstdate_to_dir
-
-import lstchain.visualization.plot_drs4 as drs4
-import lstchain.visualization.plot_calib as calib
+from osa.utils.standardhandle import error, gettag, stringify, verbose, warning
 
 
 def calibrationsequence(args):
@@ -41,9 +42,7 @@ def calibrationsequence(args):
         level -= 1
         verbose(tag, f"Going to level {level}")
     if level == 1:
-        rc = calibrate_time(
-            cal_run_number, pedestal_filename, calibration_filename, historyfile
-        )
+        rc = calibrate_time(cal_run_number, pedestal_filename, calibration_filename, historyfile)
         level -= 1
         verbose(tag, f"Going to level {level}")
     if level == 0:
@@ -53,13 +52,22 @@ def calibrationsequence(args):
 
 def drs4_pedestal(run_ped, pedestal_output_file, historyfile):
 
-    nightdir = lstdate_to_dir(options.date)
+    rawdata_path = Path(cfg.get("LST1", "RAWDIR"))
+    # Get raw data run no matter when was taken
+    run_drs4_file_list = [
+        file for file in rawdata_path.rglob(f'*/{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_ped}.0000*')
+    ]
+    if run_drs4_file_list:
+        input_file = str(run_drs4_file_list[0])
+    else:
+        error(
+            tag,
+            f"Files corresponding to DRS4 pedestal run {run_ped} not found",
+            1,
+        )
+        sys.exit(1)
+
     calib_configfile = None
-    input_file = path.join(
-        cfg.get("LST1", "RAWDIR"),
-        nightdir,
-        f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_ped}.0000{cfg.get("LSTOSA", "R0SUFFIX")}',
-    )
     output_file = path.join(options.directory, pedestal_output_file)
     commandargs = [
         cfg.get("PROGRAM", "PEDESTAL"),
@@ -82,9 +90,7 @@ def drs4_pedestal(run_ped, pedestal_output_file, historyfile):
             ValueError,
             historyfile,
         )
-        error(
-            tag, f"Could not execute {stringify(commandargs)}, {ValueError}", ValueError
-        )
+        error(tag, f"Could not execute {stringify(commandargs)}, {ValueError}", ValueError)
     except subprocess.CalledProcessError as Error:
         error(tag, Error, rc)
     else:
@@ -101,10 +107,8 @@ def drs4_pedestal(run_ped, pedestal_output_file, historyfile):
     if rc != 0:
         sys.exit(rc)
 
-    plot_file = path.join(
-        options.directory, "log", f"drs4_pedestal.Run{run_ped}.0000.pdf"
-    )
-    verbose(tag, f"Producing plots in {plot_file} ...")
+    plot_file = path.join(options.directory, "log", f"drs4_pedestal.Run{run_ped}.0000.pdf")
+    verbose(tag, f"Producing plots in {plot_file}")
     drs4.plot_pedestals(
         input_file,
         output_file,
@@ -117,16 +121,26 @@ def drs4_pedestal(run_ped, pedestal_output_file, historyfile):
     return rc
 
 
-def calibrate_charge(
-    run_ped, calibration_run, pedestal_file, calibration_output_file, historyfile
-):
+def calibrate_charge(run_ped, calibration_run, pedestal_file, calibration_output_file, historyfile):
 
-    nightdir = lstdate_to_dir(options.date)
-    calibration_run_file = path.join(
-        cfg.get("LST1", "RAWDIR"),
-        nightdir,
-        f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{calibration_run}.0000{cfg.get("LSTOSA", "R0SUFFIX")}',
-    )
+    rawdata_path = Path(cfg.get("LST1", "RAWDIR"))
+    # Get raw data run no matter when was taken
+    run_calib_file_list = [
+        file
+        for file in rawdata_path.rglob(
+            f'*/{cfg.get("LSTOSA", "R0PREFIX")}.Run{calibration_run}.0000*'
+        )
+    ]
+    if run_calib_file_list:
+        calibration_run_file = str(run_calib_file_list[0])
+    else:
+        error(
+            tag,
+            f"Files corresponding to calibration run {calibration_run} not found",
+            1,
+        )
+        sys.exit(1)
+
     calib_configfile = cfg.get("LSTOSA", "CALIBCONFIGFILE")
     output_file = path.join(options.directory, calibration_output_file)
     log_output_file = path.join(
@@ -142,7 +156,6 @@ def calibrate_charge(
     ]
     commandconcept = "charge_calibration"
 
-    # Error handling, for now no nonfatal errors are implemented for CALIBRATION
     try:
         verbose(tag, f"Executing {stringify(commandargs)}")
         rc = subprocess.call(commandargs)
@@ -156,9 +169,7 @@ def calibrate_charge(
             ValueError,
             historyfile,
         )
-        error(
-            tag, f"Could not execute {stringify(commandargs)}, {ValueError}", ValueError
-        )
+        error(tag, f"Could not execute {stringify(commandargs)}, {ValueError}", ValueError)
     except subprocess.CalledProcessError as Error:
         error(tag, Error, rc)
     else:
@@ -181,39 +192,30 @@ def calibrate_charge(
         f"calibration.Run{calibration_run}.0000.pedestal.Run{run_ped}.0000.pdf",
     )
     calib.read_file(output_file, tel_id=1)
-    verbose(tag, f"Producing plots in {plot_file} ...")
-    calib.plot_all(
-        calib.ped_data, calib.ff_data, calib.calib_data, calibration_run, plot_file
-    )
+    verbose(tag, f"Producing plots in {plot_file}")
+    calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, calibration_run, plot_file)
 
     return rc
 
 
-def calibrate_time(
-    calibration_run, pedestal_file, calibration_output_file, historyfile
-):
+def calibrate_time(calibration_run, pedestal_file, calibration_output_file, historyfile):
 
-    nightdir = lstdate_to_dir(options.date)
-    calibration_data_file = path.join(
-        cfg.get("LST1", "RAWDIR"),
-        nightdir,
-        f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{calibration_run}.0000{cfg.get("LSTOSA", "R0SUFFIX")}',
+    # A regular expression is used to fetch several input subruns
+    calibration_data_files = (
+        f'{cfg.get("LST1", "RAWDIR")}/*/'
+        f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{calibration_run}.*{cfg.get("LSTOSA", "R0SUFFIX")}'
     )
     calib_configfile = cfg.get("LSTOSA", "CALIBCONFIGFILE")
-    time_calibration_output_file = path.join(
-        options.directory, f"time_{calibration_output_file}"
-    )
-    # calculate_time_run = cfg.get('LSTOSA', 'CALCULATE_TIME_RUN')  #def: '1625'
+    time_calibration_output_file = path.join(options.directory, f"time_{calibration_output_file}")
     commandargs = [
         cfg.get("PROGRAM", "TIME_CALIBRATION"),
-        "--input-file=" + calibration_data_file,
+        "--input-file=" + calibration_data_files,
         "--output-file=" + time_calibration_output_file,
         "--pedestal-file=" + pedestal_file,
         "--config=" + calib_configfile,
     ]
     commandconcept = "time_calibration"
 
-    # error handling, for now no nonfatal errors are implemented for CALIBRATION
     try:
         verbose(tag, f"Executing {stringify(commandargs)}")
         rc = subprocess.call(commandargs)
@@ -227,9 +229,7 @@ def calibrate_time(
             ValueError,
             historyfile,
         )
-        error(
-            tag, f"Could not execute {stringify(commandargs)}, {ValueError}", ValueError
-        )
+        error(tag, f"Could not execute {stringify(commandargs)}, {ValueError}", ValueError)
     except subprocess.CalledProcessError as Error:
         error(tag, Error, rc)
     else:
@@ -244,7 +244,43 @@ def calibrate_time(
         )
 
     if rc != 0:
-        sys.exit(rc)
+        warning(
+            tag,
+            "Not able to create time calibration file. Creating a link "
+            "to default calibration time file corresponding to run 1625",
+        )
+        def_time_calib_run = cfg.get("LSTOSA", "DEFAULT-TIME-CALIB-RUN")
+        calibpath = Path(cfg.get("LST1", "CALIBDIR"))
+        outputf = time_calibration_output_file
+        file_list = [
+            file
+            for file in calibpath.rglob(
+                f"*/{options.calib_prod_id}/time_calibration.Run{def_time_calib_run}*"
+            )
+        ]
+        if file_list:
+            verbose(
+                tag,
+                "Creating a link to default calibration " "time file corresponding to run 1625",
+            )
+            inputf = file_list[0]
+            os.symlink(inputf, outputf)
+            rc = 0
+            history(
+                calibration_run,
+                options.calib_prod_id,
+                commandconcept,
+                path.basename(time_calibration_output_file),
+                path.basename(calib_configfile),
+                rc,
+                historyfile,
+            )
+        else:
+            error(
+                tag,
+                f"Default time calibration file {inputf} not found. Create it first.",
+                1,
+            )
 
     return rc
 
