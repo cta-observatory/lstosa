@@ -1,8 +1,4 @@
 image: continuumio/anaconda3:latest
-
-stages:
-  - build
-  - test
   
 before_script:
 - apt-get update && apt-get install -y build-essential
@@ -31,3 +27,11 @@ testdocs:
   - branches
   except:
   - master
+
+deploydocs:
+  stage: deploy
+  script:
+  - sphinx-build -b html ./docs public ./docs/_build
+  only:
+  - master
+  
