@@ -22,28 +22,8 @@ testcode:
 testdocs:
   stage: test
   script:
-  - sphinx-build -b html ./docs public
+  - sphinx-build -b html ./docs ./docs/_build
   only:
   - branches
   except:
   - master
-
-deploydocs:
-  stage: deploy
-  script:
-  - sphinx-build -b html ./docs public
-  artifacts:
-    paths:
-    - public
-  only:
-  - master
-  
-pages:
-  script:  
-  - sphinx-build -b html ./docs public
-  artifacts:
-    paths:
-    - public
-  only:
-  - master
-
