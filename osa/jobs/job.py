@@ -55,29 +55,19 @@ def historylevel(historyfile, type):
                 error(tag, f"Malformed history file {historyfile}, {err}", 3)
             else:
                 if program == cfg.get("LSTOSA", "R0-DL1"):
-                    nonfatalrcs = [
-                        int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")
-                    ]
+                    nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
                     if exit_status in nonfatalrcs:
                         level = 2
                     else:
                         level = 3
                 elif program == cfg.get("LSTOSA", "DL1-DL2"):
-                    nonfatalrcs = [
-                        int(k) for k in cfg.get("NONFATALRCS", "DL1-DL2").split(",")
-                    ]
-                    if (exit_status in nonfatalrcs) and (
-                        prod_id == options.dl2_prod_id
-                    ):
-                        verbose(
-                            tag, f"DL2 prod ID: {options.dl2_prod_id} already produced"
-                        )
+                    nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "DL1-DL2").split(",")]
+                    if (exit_status in nonfatalrcs) and (prod_id == options.dl2_prod_id):
+                        verbose(tag, f"DL2 prod ID: {options.dl2_prod_id} already produced")
                         level = 0
                     else:
                         level = 2
-                        verbose(
-                            tag, f"DL2 prod ID: {options.dl2_prod_id} not produced yet"
-                        )
+                        verbose(tag, f"DL2 prod ID: {options.dl2_prod_id} not produced yet")
                 elif program == "drs4_pedestal":
                     if exit_status == 0:
                         level = 2
@@ -274,11 +264,7 @@ def createjobtemplate(s, get_content=False):
 
     bindir = cfg.get("LSTOSA", "PYTHONDIR")
     scriptsdir = cfg.get("LSTOSA", "SCRIPTSDIR")
-    calibdir = cfg.get("LST1", "CALIBDIR")
-    pedestaldir = cfg.get("LST1", "PEDESTALDIR")
     drivedir = cfg.get("LST1", "DRIVEDIR")
-    nightdir = lstdate_to_dir(options.date)
-    version = cfg.get("LST1", "VERSION")
 
     command = None
     if s.type == "CALI":
@@ -290,10 +276,9 @@ def createjobtemplate(s, get_content=False):
 
     # directly use python interpreter from current working environment
     # python = join(config.cfg.get('ENV', 'PYTHONBIN'), 'python')
-    srunbin = cfg.get("ENV", "SRUNBIN")
 
     # beware we want to change this in the future
-    commandargs = [srunbin, "python", command]
+    commandargs = ["srun", "python", command]
     if options.verbose:
         commandargs.append("-v")
     if options.warning:
@@ -319,9 +304,6 @@ def createjobtemplate(s, get_content=False):
         commandargs.append(cal_run_number)
 
     if s.type == "DATA":
-        # commandargs.append(join(calibdir, nightdir, version, s.calibration))
-        # commandargs.append(join(pedestaldir, nightdir, version, s.pedestal))
-        # commandargs.append(join(calibdir, nightdir, version, "time_" + s.calibration))
         commandargs.append(os.path.join(options.directory, s.calibration))
         commandargs.append(os.path.join(options.directory, s.pedestal))
         commandargs.append(os.path.join(options.directory, "time_" + s.calibration))
@@ -424,9 +406,9 @@ def submitjobs(sequence_list):
         if len(s.parent_list) != 0:
             # commandargs.append('--dependency=')
             if s.type == "DATA":
-                verbose(tag, f"Adding dependencies to job submission")
+                verbose(tag, "Adding dependencies to job submission")
                 if not options.simulate:
-                    depend_string = f"--dependency=afterok:{parent_jobid}"
+                    depend_string = f"--dependency=afterok:{parent_jobid}" 
                     commandargs.append(depend_string)
                 # Old MAGIC style:
                 # for pseq in s.parent_list:
@@ -507,9 +489,7 @@ def getqueuejoblist(sequence_list):
     except subprocess.CalledProcessError as Error:
         error(tag, f"Command '{stringify(commandargs)}' failed, {Error}", 2)
     except OSError as ValueError:
-        error(
-            tag, f"Command '{stringify(commandargs)}' failed, {ValueError}", ValueError
-        )
+        error(tag, f"Command '{stringify(commandargs)}' failed, {ValueError}", ValueError)
     else:
         queue_header = sacct_output.splitlines()[0].split()
         queue_lines = (
@@ -538,10 +518,7 @@ def setqueuevalues(queue_list, sequence_list):
         s.tries = 0
         for previous, queue_item, nxt in previous_and_next(queue_list):
             try:
-                if (
-                    queue_item["JobName"] == "python"
-                    and s.jobname == previous["JobName"]
-                ):
+                if queue_item["JobName"] == "python" and s.jobname == previous["JobName"]:
                     s.action = "Check"
                     s.jobid = queue_item["JobID"]
                     s.state = queue_item["State"]
@@ -558,22 +535,14 @@ def setqueuevalues(queue_list, sequence_list):
                             s.walltime = queue_item["Elapsed"]
                         else:
                             try:
-                                s.cputime = avg_time_duration(
-                                    s.cputime, queue_item["CPUTime"]
-                                )
+                                s.cputime = avg_time_duration(s.cputime, queue_item["CPUTime"])
                             except AttributeError as ErrorName:
                                 warning(tag, ErrorName)
                             try:
-                                s.walltime = avg_time_duration(
-                                    s.cputime, queue_item["Elapsed"]
-                                )
+                                s.walltime = avg_time_duration(s.cputime, queue_item["Elapsed"])
                             except AttributeError as ErrorName:
                                 warning(tag, ErrorName)
-                        if (
-                            s.state == "COMPLETED"
-                            or s.state == "FAILED"
-                            or s.state == "CANCELLED+"
-                        ):
+                        if s.state == "COMPLETED" or s.state == "FAILED" or s.state == "CANCELLED+":
                             s.exit = queue_item["ExitCode"]
 
                         if nxt is not None:
@@ -628,9 +597,7 @@ def avg_time_duration(a, b):
     b_seconds = int(b_hh) * 3600 + int(b_mm) * 60 + int(b_ss)
 
     if a != "00:00:00" and b != "00:00:00":
-        time_duration = time.strftime(
-            "%H:%M:%S", time.gmtime(np.mean((a_seconds, b_seconds)))
-        )
+        time_duration = time.strftime("%H:%M:%S", time.gmtime(np.mean((a_seconds, b_seconds))))
     elif a is None and b is not None:
         time_duration = b
     elif b is None and a is not None:
