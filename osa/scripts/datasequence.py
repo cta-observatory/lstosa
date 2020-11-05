@@ -151,7 +151,7 @@ def dl1_to_dl2(run_str, historyfile):
     if options.simulate:
         return 0
 
-    configfile = cfg.get("LSTOSA", "CONFIGFILE")
+    configfile = cfg.get("LSTOSA", "DL2CONFIGFILE")
     rf_models_directory = cfg.get("LSTOSA", "RF-MODELS-DIR")
     command = cfg.get("LSTOSA", "DL1-DL2")  # FIXME  change LSTOSA by lstchain
     nightdir = lstdate_to_dir(options.date)
