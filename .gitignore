@@ -83,3 +83,4 @@ target
 # Ignore NightSummary directory
 NightSummary/
 testweb.sh
+misc/
