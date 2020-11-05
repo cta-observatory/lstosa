@@ -57,24 +57,23 @@ def create_destination_dir(host, datedir, prod_id):
 def scopy_files(host, datedir, files):
     # FIXME: Check if files exists already at webserver CHECK HASH
     # Copy PDF files
-    datacheck_basedir = Path("/gamma2/users/dmorcuende/test") / "datacheck"
-    lstchain_version = "v061"
+    datacheck_basedir = Path(cfg.get("WEBSERVER", "DATACHECK"))
     # Scopy files
     for pdf_file in files:
         if "drs4" in str(pdf_file):
-            destination_dir = datacheck_basedir / "drs4" / lstchain_version / datedir
+            destination_dir = datacheck_basedir / "drs4" / options.prod_id / datedir
             cmd = ["scp", str(pdf_file), f"{host}:{destination_dir}/."]
             subprocess.run(cmd)
 
         elif "calibration" in str(pdf_file):
             destination_dir = (
-                datacheck_basedir / "enf_calibration" / lstchain_version / datedir
+                datacheck_basedir / "enf_calibration" / options.prod_id / datedir
             )
             cmd = ["scp", pdf_file, f"{host}:{destination_dir}/."]
             subprocess.run(cmd)
 
         elif "datacheck_dl1" in str(pdf_file):
-            destination_dir = datacheck_basedir / "dl1" / lstchain_version / datedir
+            destination_dir = datacheck_basedir / "dl1" / options.prod_id / datedir
             cmd = ["scp", pdf_file, f"{host}:{destination_dir}/."]
             subprocess.run(cmd)
 
