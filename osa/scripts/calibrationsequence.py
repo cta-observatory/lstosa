@@ -16,6 +16,7 @@ from osa.utils.standardhandle import error, gettag, stringify, verbose, warning
 
 
 def calibrationsequence(args):
+    tag=gettag()
 
     pedestal_filename = args[0]
     calibration_filename = args[1]
@@ -51,6 +52,7 @@ def calibrationsequence(args):
 
 
 def drs4_pedestal(run_ped, pedestal_output_file, historyfile):
+    tag=gettag()
 
     rawdata_path = Path(cfg.get("LST1", "RAWDIR"))
     # Get raw data run no matter when was taken
@@ -122,6 +124,7 @@ def drs4_pedestal(run_ped, pedestal_output_file, historyfile):
 
 
 def calibrate_charge(run_ped, calibration_run, pedestal_file, calibration_output_file, historyfile):
+    tag=gettag()
 
     rawdata_path = Path(cfg.get("LST1", "RAWDIR"))
     # Get raw data run no matter when was taken
@@ -199,6 +202,7 @@ def calibrate_charge(run_ped, calibration_run, pedestal_file, calibration_output
 
 
 def calibrate_time(calibration_run, pedestal_file, calibration_output_file, historyfile):
+    tag=gettag()
 
     # A regular expression is used to fetch several input subruns
     calibration_data_files = (
