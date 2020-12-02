@@ -1,3 +1,7 @@
+stages:
+  - test
+  - docs
+
 image: continuumio/anaconda3:latest
   
 before_script:
@@ -14,24 +18,8 @@ testcode:
   stage: test
   script:
   - pytest osa/provenance/
-  only:
-  - branches
-  except:
-  - master
-
-testdocs:
-  stage: test
-  script:
-  - cd docs && make clean html
-  only:
-  - branches
-  except:
-  - master
 
 deploydocs:
-  stage: deploy
+  stage: docs
   script:
   - cd docs && make clean html
-  only:
-  - master
-  
