@@ -1,25 +1,26 @@
+image: continuumio/miniconda3:latest
+
 stages:
   - test
   - docs
-
-image: continuumio/anaconda3:latest
   
 before_script:
-- apt-get update && apt-get install -y build-essential
-- pip install --upgrade pip
-- source /opt/conda/etc/profile.d/conda.sh
-- conda env create -f environment.yml
-- conda activate osa
-- conda install sphinx
-- conda install sphinx_rtd_theme
-- conda develop .
+  - apt-get update && apt-get install -y build-essential
+  - source /opt/conda/etc/profile.d/conda.sh
+  - conda env create -f environment.yml
+  - conda activate osa
+  - conda develop .
 
 testcode:
+  tags:
+    - kubernetes
   stage: test
   script:
-  - pytest osa/provenance/
+    - pytest osa/provenance/
 
 deploydocs:
+  tags:
+    - kubernetes
   stage: docs
   script:
-  - cd docs && make clean html
+    - cd docs && make clean html
