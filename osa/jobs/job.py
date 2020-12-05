@@ -328,24 +328,27 @@ def createjobtemplate(s, get_content=False):
     # SLURM assignments
     content += "\n"
     content += "#SBATCH -A dpps \n"
-    content += "#SBATCH -p long \n"
+    content += "#SBATCH -p short \n"
     if s.type == "DATA":
         content += f"#SBATCH --array=0-{int(n_subruns) - 1} \n"
     content += "#SBATCH --cpus-per-task=1 \n"
-    content += "#SBATCH --mem-per-cpu=15G \n"
+    if s.type == "CALI":
+        content += "#SBATCH --mem-per-cpu=2G \n"
+    else:
+        content += "#SBATCH --mem-per-cpu=16G \n"
     content += f"#SBATCH -D {options.directory} \n"
     content += f"#SBATCH -o log/slurm.{str(s.run).zfill(5)}_%a_%A.out \n"
     content += f"#SBATCH -e log/slurm.{str(s.run).zfill(5)}_%a_%A.err \n"
     content += "\n"
 
     content += "import subprocess \n"
-    content += "import os \n"
+    content += "import sys, os \n"
     content += "\n\n"
 
     content += "subruns=os.getenv('SLURM_ARRAY_TASK_ID')\n"
     content += "job_id=os.getenv('SLURM_JOB_ID')\n"
 
-    content += "subprocess.call([\n"
+    content += "proc = subprocess.run([\n"
     for i in commandargs:
         content += f"    '{i}',\n"
     content += (
@@ -368,7 +371,9 @@ def createjobtemplate(s, get_content=False):
             + ",\n"
         )
     content += f"    '{options.tel_id}'\n"
-    content += "    ])"
+    content += "    ])\n"
+
+    content += "sys.exit(proc.returncode)"
 
     if not options.simulate:
         writetofile(s.script, content)
