@@ -1,5 +1,8 @@
 image: continuumio/miniconda3:latest
 
+tags:
+  - kubernetes
+
 stages:
   - test
   - docs
