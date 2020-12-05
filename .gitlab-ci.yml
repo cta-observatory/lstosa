@@ -5,13 +5,8 @@ stages:
 image: continuumio/anaconda3:latest
   
 before_script:
-- apt-get update && apt-get install -y build-essential
-- pip install --upgrade pip
-- source /opt/conda/etc/profile.d/conda.sh
 - conda env create -f environment.yml
 - conda activate osa
-- conda install sphinx
-- conda install sphinx_rtd_theme
 - conda develop .
 
 testcode:
