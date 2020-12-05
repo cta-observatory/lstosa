@@ -5,6 +5,7 @@ stages:
   - docs
   
 before_script:
+  - source /opt/conda/etc/profile.d/conda.sh
   - conda env create -f environment.yml
   - conda activate osa
   - conda develop .
