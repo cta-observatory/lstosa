@@ -391,7 +391,7 @@ def submitjobs(sequence_list):
         commandargs = [command, "--parsable", env_nodisplay]
         if s.type == "CALI":
             commandargs.append(s.script)
-            if not options.simulate:
+            if not options.simulate and not options.nocalib:
                 try:
                     verbose(tag, f"Launching script {s.script}")
                     parent_jobid = subprocess.check_output(
@@ -409,10 +409,9 @@ def submitjobs(sequence_list):
             # FIXME here s.jobid has not been redefined se it keeps the one from previous time sequencer was launched
         # Introduce the job dependencies after calibration sequence
         if len(s.parent_list) != 0:
-            # commandargs.append('--dependency=')
             if s.type == "DATA":
                 verbose(tag, "Adding dependencies to job submission")
-                if not options.simulate:
+                if not options.simulate and not options.nocalib:
                     depend_string = f"--dependency=afterok:{parent_jobid}" 
                     commandargs.append(depend_string)
                 # Old MAGIC style:

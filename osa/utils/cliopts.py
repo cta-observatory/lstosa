@@ -657,6 +657,13 @@ def sequencer_argparser():
         help="test LSTOSA locally outside the CTA-N IT container",
     )
     parser.add_argument(
+        "--nocalib",
+        action="store_true",
+        dest="nocalib",
+        default=False,
+        help="Skip calibration sequence. Run only data sequences",
+    )
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -719,6 +726,7 @@ def sequencercliparsing():
     options.nightsum = opts.nightsum
     options.simulate = opts.simulate
     options.test = opts.test
+    options.nocalib = opts.nocalib
     options.verbose = opts.verbose
     options.warning = opts.warning
     options.compressed = opts.compressed
