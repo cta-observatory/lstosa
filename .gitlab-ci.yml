@@ -5,7 +5,8 @@ stages:
   - docs
   
 before_script:
-  - source /opt/conda/etc/profile.d/conda.sh
+  - 'echo "CI Python version: $PYTHON_VERSION"'
+  - sed -i -e "s/- python=.*/- python=$PYTHON_VERSION/g" environment.yml 
   - conda env create -f environment.yml
   - conda activate osa
   - conda develop .
