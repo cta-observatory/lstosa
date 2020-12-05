@@ -1,8 +1,8 @@
+image: continuumio/miniconda3:latest
+
 stages:
   - test
   - docs
-
-image: continuumio/anaconda3:latest
   
 before_script:
 - conda env create -f environment.yml
