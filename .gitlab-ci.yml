@@ -5,7 +5,6 @@ stages:
   - docs
   
 before_script:
-  - ENV PATH=/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
   - conda env create -f environment.yml
   - conda activate osa
   - conda develop .
