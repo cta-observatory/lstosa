@@ -5,6 +5,7 @@ stages:
   - docs
   
 before_script:
+  - apt-get update && apt-get install -y build-essential
   - source /opt/conda/etc/profile.d/conda.sh
   - conda env create -f environment.yml
   - conda activate osa
