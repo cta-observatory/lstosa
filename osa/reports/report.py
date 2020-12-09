@@ -48,17 +48,22 @@ def finished_text(ana_dict):
     content += f"analysis.finished.night={ana_dict['NIGHT']}\n"
     content += f"analysis.finished.telescope={ana_dict['TELESCOPE']}\n"
 
-    if options.tel_id == "LST1" or options.tel_id == "LST2":
+    if options.tel_id == "LST1":
         content += f"analysis.finished.data.size={ana_dict['RAW_GB']} GB\n"
         content += f"analysis.finished.data.files.r0={ana_dict['FILES_RAW']}\n"
-        # FIXME: Add pedestal and calibration info
-        # content += f"analysis.finished.data.files.pedestal={ana_dict['FILES_PED']}\n"
-        # content += f"analysis.finished.data.files.calib={ana_dict['FILES_CALIB']}\n"
-        # content += f"analysis.finished.data.files.time_calib={ana_dict['FILES_TIMECALIB']}\n"
+        content += (
+            f"analysis.finished.data.files.pedestal={ana_dict['FILES_PEDESTAL']}\n"
+        )
+        content += f"analysis.finished.data.files.calib={ana_dict['FILES_CALIB']}\n"
+        content += (
+            f"analysis.finished.data.files.time_calib={ana_dict['FILES_TIMECALIB']}\n"
+        )
         content += f"analysis.finished.data.files.dl1={ana_dict['FILES_DL1']}\n"
         content += f"analysis.finished.data.files.dl2={ana_dict['FILES_DL2']}\n"
         content += f"analysis.finished.data.files.muons={ana_dict['FILES_MUON']}\n"
-        content += f"analysis.finished.data.files.datacheck={ana_dict['FILES_DATACHECK']}\n"
+        content += (
+            f"analysis.finished.data.files.datacheck={ana_dict['FILES_DATACHECK']}\n"
+        )
 
     if options.reason is not None:
         content += f"analysis.finished.data.comment={ana_dict['COMMENTS']}.\n"
@@ -73,14 +78,26 @@ def finished_assignments(sequence_list):
     anadir = options.directory
     disk_space_GB = 0
     rawnum = 0
-    if options.tel_id == "LST1" or options.tel_id == "LST2":
-        # FIXME: add all files 'PED', 'CALIB'?
-        concept_set = ["DL1", "DL2", "MUON", "DATACHECK"]
+    if options.tel_id == "LST1":
+        concept_set = [
+            "DL1",
+            "DL2",
+            "MUON",
+            "DATACHECK",
+            "PEDESTAL",
+            "CALIB",
+            "TIMECALIB",
+        ]
         rawdir = getrawdir()
         if sequence_list is not None:
             for s in sequence_list:
                 rawnum += s.subruns
-        data_files = glob(join(rawdir, f'*{cfg.get("LSTOSA", "R0PREFIX")}*{cfg.get("LSTOSA", "R0SUFFIX")}*'))
+        data_files = glob(
+            join(
+                rawdir,
+                f'*{cfg.get("LSTOSA", "R0PREFIX")}*{cfg.get("LSTOSA", "R0SUFFIX")}*',
+            )
+        )
         disk_space = 0
         for d in data_files:
             disk_space += getsize(d)
@@ -103,7 +120,9 @@ def finished_assignments(sequence_list):
             pattern_found = fnmatchcase(ana_file, pattern)
             # verbose(tag, f"Was pattern {pattern} found in {ana_file}?: {pattern_found}")
             if pattern_found:
-                verbose(tag, f"Was pattern {pattern} found in {ana_file}?: {pattern_found}")
+                verbose(
+                    tag, f"Was pattern {pattern} found in {ana_file}?: {pattern_found}"
+                )
                 file_no[concept] += 1
                 delete_set.add(a)
         ana_set -= delete_set
@@ -160,6 +179,10 @@ def history(run, dl2_prod_id, program, inputfile, inputcard, rc, historyfile):
         The history file that keeps track of the analysis steps.
     """
     now = datetime.utcnow()
-    datestring = now.strftime("%a %b %d %X UTC %Y")  # Similar but not equal to %c (no timezone)
-    stringtowrite = f"{run} {program} {dl2_prod_id} {datestring} {inputfile} {inputcard} {rc}\n"
+    datestring = now.strftime(
+        "%a %b %d %X UTC %Y"
+    )  # Similar but not equal to %c (no timezone)
+    stringtowrite = (
+        f"{run} {program} {dl2_prod_id} {datestring} {inputfile} {inputcard} {rc}\n"
+    )
     appendtofile(historyfile, stringtowrite)
