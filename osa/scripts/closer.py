@@ -79,8 +79,8 @@ def closer():
 
         post_process(sequencer_tuple)
 
-        # TODO:
-        # Copy datacheck to www
+        # TODO: Copy datacheck to www automation (currently done by another script)
+        # It is not so straightforward the usage of ssh/scp with SLURM
 
 
 def use_night_summary():
@@ -158,7 +158,9 @@ def ask_for_closing():
                 answer_check = True
                 if answer_user == "n" or answer_user == "N":
                     # the user does not want to close
-                    output(tag, f"Day {options.date} for {options.tel_id} will remain open")
+                    output(
+                        tag, f"Day {options.date} for {options.tel_id} will remain open"
+                    )
                     sys.exit(0)
                 elif answer_user == "y" or answer_user == "Y":
                     continue
@@ -174,6 +176,7 @@ def notify_neither_data_nor_reason_given():
 
 
 def post_process(seq_tuple):
+    tag = gettag()
     """Set of last instructions."""
 
     seq_list = seq_tuple[1]
@@ -196,6 +199,7 @@ def post_process(seq_tuple):
 
 
 def post_process_files(seq_list):
+    tag = gettag()
     """Identify the different types of files, try to close the sequences
     and copy output files to corresponding data directories.
 
@@ -205,13 +209,21 @@ def post_process_files(seq_list):
     """
 
     concept_set = []
-    if options.tel_id == "LST1" or options.tel_id == "LST2":
-        concept_set = ["DL1", "DL2", "MUON", "DATACHECK"]
+    if options.tel_id == "LST1":
+        concept_set = [
+            "DL1",
+            "DL2",
+            "MUON",
+            "DATACHECK",
+            "PEDESTAL",
+            "CALIB",
+            "TIMECALIB",
+        ]
     elif options.tel_id == "ST":
         concept_set = []
 
     nightdir = lstdate_to_dir(options.date)
-    output_files = glob(join(options.directory, "*LST-1.*"))
+    output_files = glob(join(options.directory, "*Run*"))
     output_files_set = set(output_files)
     for concept in concept_set:
         output(tag, f"Processing {concept} files, {len(output_files_set)} files left")
@@ -219,65 +231,102 @@ def post_process_files(seq_list):
             pattern = cfg.get("LSTOSA", concept + "PREFIX")
         else:
             pattern = cfg.get("LSTOSA", concept + "PATTERN")
-
         dir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id)
         delete_set = set()
         verbose(tag, f"Checking if {concept} files need to be moved to {dir}")
-        for r in output_files_set:
-            r_basename = basename(r)
-            pattern_found = re.search(f"^{pattern}", r_basename)
-            verbose(tag, f"Was pattern {pattern} found in {r_basename} ?: {pattern_found}")
+        for file in output_files_set:
+            file_basename = basename(file)
+            pattern_found = re.search(f"^{pattern}", file_basename)
+            # verbose(tag, f"Was pattern {pattern} found in {file_basename}?: {pattern_found}")
             if options.seqtoclose is not None:
-                seqtoclose_found = re.search(options.seqtoclose, r_basename)
-                verbose(
-                    tag,
-                    f"Was pattern {options.seqtoclose} found in {r_basename} ?: {seqtoclose_found}",
-                )
+                seqtoclose_found = re.search(options.seqtoclose, file_basename)
+                # verbose(tag, f"Was pattern {options.seqtoclose} found in {file_basename}?: {seqtoclose_found}")
                 if seqtoclose_found is None:
                     pattern_found = None
             if pattern_found is not None:
-                new_dst = join(dir, r_basename)
+                new_dst = join(dir, file_basename)
                 if not options.simulate:
                     make_directory(dir)
                     if exists(new_dst):
-                        pass
-                        # if islink(r):
-                        #    # delete because the link has been correctly copied
-                        #    verbose(tag, f"Original file {r} is just a link")
-                        #    if options.seqtoclose is None:
-                        #        verbose(tag, f"Deleting {r}")
-                        #        #unlink(r)
-                        # elif exists(r) and cmp(r, new_dst):
-                        #    # delete
-                        #    verbose(tag, f"Destination file exists and it is equal to {r}")
-                        #    if options.seqtoclose is None:
-                        #        verbose(tag, f"Deleting {r}")
-                        #        #unlink(r)
-                        # else:
-                        #    warning(tag, f"Original file {r} is not a link or is different than destination {new_dst}")
+                        if islink(file):
+                            # delete because the link has been correctly copied
+                            verbose(tag, f"Original file {file} is just a link")
+                            if options.seqtoclose is None:
+                                verbose(tag, f"Deleting {file}")
+                                # unlink(file)
+                        elif exists(file) and cmp(file, new_dst):
+                            # delete
+                            verbose(
+                                tag,
+                                f"Destination file exists and it is equal to {file}",
+                            )
+                            if options.seqtoclose is None:
+                                verbose(tag, f"Deleting {file}")
+                                # unlink(file)
+                        else:
+                            warning(
+                                tag,
+                                f"Original file {file} is not a link or is different than destination {new_dst}",
+                            )
                     else:
                         verbose(tag, f"Destination file {new_dst} does not exists")
                         for s in seq_list:
-                            verbose(tag, "Looking for {s}")
-                            run_str_found = re.search(s.run_str, r_basename)
-                            if run_str_found is not None:
-                                # register and delete
-                                verbose(tag, f"Registering file {run_str_found}")
-                                register_run_concept_files(s.run_str, concept)
-                                # $dl1datepath/$version/dl1*.h5
-                                # $running_analysis/$date/$version/.
-                                if options.seqtoclose is None:
-                                    if exists(r):
-                                        # unlink(r)
-                                        pass
-                                    else:
-                                        verbose(tag, "File does not exists")
+                            verbose(tag, f"Looking for {s}")
+
+                            if s.type == "DATA":
+                                run_str_found = re.search(s.run_str, file_basename)
+
+                                if run_str_found is not None:
+                                    # register and delete
+                                    verbose(tag, f"Registering file {run_str_found}")
+                                    register_run_concept_files(s.run_str, concept)
+                                    if options.seqtoclose is None:
+                                        if exists(file):
+                                            # unlink(file)
+                                            pass
+                                        else:
+                                            verbose(tag, "File does not exists")
+
+                            elif s.type == "CALI" or s.type == "DRS4":
+                                calib_run_str_found = re.search(
+                                    str(s.run), file_basename
+                                )
+                                drs4_run_str_found = re.search(
+                                    str(s.previousrun), file_basename
+                                )
+
+                                if calib_run_str_found is not None:
+                                    # register and delete
+                                    verbose(
+                                        tag, f"Registering file {calib_run_str_found}"
+                                    )
+                                    register_run_concept_files(str(s.run), concept)
+                                    if options.seqtoclose is None:
+                                        if exists(file):
+                                            # unlink(file)
+                                            pass
+                                        else:
+                                            verbose(tag, "File does not exists")
+
+                                if drs4_run_str_found is not None:
+                                    # register and delete
+                                    verbose(
+                                        tag, f"Registering file {drs4_run_str_found}"
+                                    )
+                                    register_run_concept_files(
+                                        str(s.previousrun), concept
+                                    )
+                                    if options.seqtoclose is None:
+                                        if exists(file):
+                                            # unlink(file)
+                                            pass
+                                        else:
+                                            verbose(tag, "File does not exists")
 
                                 # FIXME: for the moment we do not want to close
                                 # setclosedfilename(s)
                                 # createclosed(s.closed)
-                                break
-                delete_set.add(r)
+                delete_set.add(file)
         output_files_set -= delete_set
 
 
@@ -395,7 +444,9 @@ def merge_dl1datacheck(seq_list):
             ]
             if not options.simulate:
                 try:
-                    process = subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+                    process = subprocess.run(
+                        cmd, stdout=subprocess.PIPE, universal_newlines=True
+                    )
                 except subprocess.CalledProcessError as err:
                     error(tag, f"Not able to merge DL1 datacheck: {err}")
                 # TODO implement an automatic scp to www datacheck,
@@ -429,7 +480,9 @@ def extract_provenance(seq_list):
                 options.prod_id,
             ]
             if not options.simulate:
-                process = subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+                process = subprocess.run(
+                    cmd, stdout=subprocess.PIPE, universal_newlines=True
+                )
             else:
                 verbose(tag, "Simulate launching scripts")
             verbose(tag, cmd)
