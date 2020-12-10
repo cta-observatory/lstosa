@@ -202,17 +202,17 @@ def setsequencecalibfilenames(sequence_list):
     drive_suffix = cfg.get("LSTOSA", "DRIVESUFFIX")
     for s in sequence_list:
         if len(s.parent_list) == 0:
-            cal_run_string = str(s.run).zfill(4)
+            cal_run_string = str(s.run).zfill(5)
             calfile = f"calibration.Run{cal_run_string}.0000{calib_suffix}"
             timecalfile = f"time_calibration.Run{cal_run_string}.0000{calib_suffix}"
-            ped_run_string = str(s.previousrun).zfill(4)
+            ped_run_string = str(s.previousrun).zfill(5)
             pedfile = f"drs4_pedestal.Run{ped_run_string}.0000{pedestal_suffix}"
             nightdir = lstdate_to_dir(options.date)
             yy, mm, dd = date_in_yymmdd(nightdir)
             drivefile = f"drive_log_{yy}_{mm}_{dd}{drive_suffix}"
         else:
-            run_string = str(s.parent_list[0].run).zfill(4)
-            ped_run_string = str(s.parent_list[0].previousrun).zfill(4)
+            run_string = str(s.parent_list[0].run).zfill(5)
+            ped_run_string = str(s.parent_list[0].previousrun).zfill(5)
             nightdir = lstdate_to_dir(options.date)
             yy, mm, dd = date_in_yymmdd(nightdir)
             if options.mode == "P":
@@ -327,18 +327,19 @@ def createjobtemplate(s, get_content=False):
     content = "#!/bin/env python\n"
     # SLURM assignments
     content += "\n"
-    content += "#SBATCH -A dpps \n"
-    content += "#SBATCH -p short \n"
+    content += f"#SBATCH -A {cfg.get('SBATCH', 'ACCOUNT')} \n"
     if s.type == "DATA":
         content += f"#SBATCH --array=0-{int(n_subruns) - 1} \n"
     content += "#SBATCH --cpus-per-task=1 \n"
     if s.type == "CALI":
-        content += "#SBATCH --mem-per-cpu=2G \n"
+        content += f"#SBATCH -p {cfg.get('SBATCH', 'PARTITION-CALI')} \n"
+        content += f"#SBATCH --mem-per-cpu={cfg.get('SBATCH', 'MEMSIZE-CALI')} \n"
     else:
-        content += "#SBATCH --mem-per-cpu=16G \n"
+        content += f"#SBATCH -p {cfg.get('SBATCH', 'PARTITION-DATA')} \n"
+        content += f"#SBATCH --mem-per-cpu={cfg.get('SBATCH', 'MEMSIZE-DATA')} \n"
     content += f"#SBATCH -D {options.directory} \n"
-    content += f"#SBATCH -o log/slurm.{str(s.run).zfill(5)}_%a_%A.out \n"
-    content += f"#SBATCH -e log/slurm.{str(s.run).zfill(5)}_%a_%A.err \n"
+    content += f"#SBATCH -o log/slurm_{str(s.run).zfill(5)}.%4a_jobid%A.out \n"
+    content += f"#SBATCH -e log/slurm_{str(s.run).zfill(5)}.%4a_jobid%A.err \n"
     content += "\n"
 
     content += "import subprocess \n"
@@ -352,16 +353,12 @@ def createjobtemplate(s, get_content=False):
     for i in commandargs:
         content += f"    '{i}',\n"
     content += (
-        f"    '--stderr=log/sequence_{s.jobname}"
-        + "_{0}_{1}.err'"
-        + ".format(str(subruns).zfill(4), str(str(job_id)))"
-        + ",\n"
+        f"    '--stderr=log/sequence_{s.jobname}."
+        +"{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)), \n"
     )
     content += (
-        f"    '--stdout=log/sequence_{s.jobname}"
-        + "_{0}_{1}.out'"
-        + ".format(str(subruns).zfill(4), str(str(job_id)))"
-        + ",\n"
+        f"    '--stdout=log/sequence_{s.jobname}."
+        +"{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)), \n"
     )
     if s.type == "DATA":
         content += (

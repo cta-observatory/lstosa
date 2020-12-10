@@ -26,7 +26,7 @@ def calibrationsequence(args):
     cal_run_number = args[3]
 
     historyfile = path.join(
-        options.directory, f"sequence_{options.tel_id }_{cal_run_number}.history"
+            options.directory, f"sequence_{options.tel_id}_{cal_run_number}.history"
     )
     level, rc = historylevel(historyfile, "CALIBRATION")
     verbose(tag, f"Going to level {level}")
