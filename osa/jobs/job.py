@@ -338,8 +338,8 @@ def createjobtemplate(s, get_content=False):
         content += f"#SBATCH -p {cfg.get('SBATCH', 'PARTITION-DATA')} \n"
         content += f"#SBATCH --mem-per-cpu={cfg.get('SBATCH', 'MEMSIZE-DATA')} \n"
     content += f"#SBATCH -D {options.directory} \n"
-    content += f"#SBATCH -o log/slurm_{str(s.run).zfill(5)}.%4a_jobid%A.out \n"
-    content += f"#SBATCH -e log/slurm_{str(s.run).zfill(5)}.%4a_jobid%A.err \n"
+    content += f"#SBATCH -o log/slurm_{str(s.run).zfill(5)}.%4a_%A.out \n"
+    content += f"#SBATCH -e log/slurm_{str(s.run).zfill(5)}.%4a_%A.err \n"
     content += "\n"
 
     content += "import subprocess \n"
