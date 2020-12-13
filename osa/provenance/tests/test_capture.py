@@ -50,8 +50,8 @@ def select_config(tmp_path):
 def make_args_r0_to_dl1():
 
     return (
-        "calibration.Run2006.0000.hdf5",
-        "drs4_pedestal.Run2005.0000.fits",
+        "calibration.Run02006.0000.hdf5",
+        "drs4_pedestal.Run02005.0000.fits",
         "time_calibration",
         "drivefile",
         "ucts_t0_dragon",
@@ -80,6 +80,11 @@ def test_trace_r0_to_dl2(tmp_path):
     args_dl1 = make_args_r0_to_dl1()
     args_dl2 = make_args_dl1_to_dl2()
 
+    options.date = "2020_01_25"
+    options.calib_prod_id = "v0.6.3_v05"
+    options.dl2_prod_id = "v0.6.3_v05"
+    options.prod_id = "v0.6.3_v05"
+ 
     # track prov
     r0_to_dl1(*args_dl1)
     dl1_to_dl2(*args_dl2)
