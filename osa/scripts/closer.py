@@ -231,7 +231,15 @@ def post_process_files(seq_list):
             pattern = cfg.get("LSTOSA", concept + "PREFIX")
         else:
             pattern = cfg.get("LSTOSA", concept + "PATTERN")
-        dir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id)
+
+        # Create final destination directory for each data level
+        if concept in ["DL1", "MUON", "DATACHECK"]:
+            dir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl1_prod_id)
+        elif concept == "DL2":
+            dir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id)
+        elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
+            dir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id)
+
         delete_set = set()
         verbose(tag, f"Checking if {concept} files need to be moved to {dir}")
         for file in output_files_set:
