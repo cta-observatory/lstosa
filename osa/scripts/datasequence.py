@@ -133,6 +133,10 @@ def r0_to_dl1(
             rc,
             historyfile,
         )
+        try:    nonfatalrcs = [int(k) for k in cfg.get('NONFATALRCS','R0-DL1').split(",")]                                                                                                                                                   
+        except: nonfatalrcs = [0]                                                                                       
+        if rc not in nonfatalrcs:                                                                                       
+            sys.exit(rc)
         return rc
 
 
@@ -155,15 +159,6 @@ def dl1_to_dl2(run_str, historyfile):
     rf_models_directory = cfg.get("LSTOSA", "RF-MODELS-DIR")
     command = cfg.get("LSTOSA", "DL1-DL2")  # FIXME  change LSTOSA by lstchain
     nightdir = lstdate_to_dir(options.date)
-
-    if cfg.get("LST1", "DL2-PROD-ID") is not None:
-        output_dl2_directory = join(
-            cfg.get("LST1", "DL2DIR"), nightdir, cfg.get("LST1", "DL2-PROD-ID")
-        )
-    else:
-        output_dl2_directory = options.directory
-    verbose(tag, f"DL2 output directory: {output_dl2_directory}")
-
     datafile = join(
         options.directory,
         f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}',
@@ -172,7 +167,7 @@ def dl1_to_dl2(run_str, historyfile):
     commandargs = [
         command,
         "--input-file=" + datafile,
-        "--output-dir=" + output_dl2_directory,
+        "--output-dir=" + options.directory,
         "--path-models=" + rf_models_directory,
         "--config=" + configfile,
     ]
@@ -194,6 +189,10 @@ def dl1_to_dl2(run_str, historyfile):
             rc,
             historyfile,
         )
+        try:    nonfatalrcs = [int(k) for k in cfg.get('NONFATALRCS','DL1-DL2').split(",")]
+        except: nonfatalrcs = [0]
+        if rc not in nonfatalrcs:
+            sys.exit(rc)
         return rc
 
 
