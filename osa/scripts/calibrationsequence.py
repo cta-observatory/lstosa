@@ -252,6 +252,7 @@ def calibrate_time(calibration_run, pedestal_file, calibration_output_file, hist
         )
 
     if rc != 0:
+        # FIXME: capture correctly which is the corresponding error
         warning(
             tag,
             "Not able to create time calibration file. Creating a link "
@@ -289,6 +290,7 @@ def calibrate_time(calibration_run, pedestal_file, calibration_output_file, hist
                 f"Default time calibration file {inputf} not found. Create it first.",
                 1,
             )
+            sys.exit(1)
 
     return rc
 
