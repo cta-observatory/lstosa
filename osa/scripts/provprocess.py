@@ -24,6 +24,7 @@ PROV_PREFIX = provconfig["PREFIX"]
 
 def copy_used_file(src, outdir):
     """Copy file used in process."""
+    tag=gettag()
 
     # check src file exists
     if not Path(src).is_file():
@@ -52,6 +53,7 @@ def copy_used_file(src, outdir):
 
 def parse_lines_log(filter_step, run_number):
     """Filter content in log file to produce a run/process wise session log."""
+    tag=gettag()
     filtered = []
     with open(LOG_FILENAME, "r") as f:
         for line in f.readlines():
@@ -84,6 +86,7 @@ def parse_lines_log(filter_step, run_number):
 
 def parse_lines_run(filter_step, prov_lines, out):
     """Process provenance info to reduce session at run/process wise scope."""
+    tag=gettag()
 
     size = 0
     container = {}
@@ -212,6 +215,7 @@ def parse_lines_run(filter_step, prov_lines, out):
 
 def produce_provenance():
     """Create run-wise provenance products as JSON logs and graphs according to granularity."""
+    tag=gettag()
 
     # create prov products for each granularity level
     r0_to_dl1_processed_lines = []
@@ -220,7 +224,10 @@ def produce_provenance():
 
         processed_lines = []
         # derive destination folder
-        step_path = Path(fold) / options.date / options.prod_id
+        if fold == pathDL2:
+            step_path = Path(fold) / options.date / options.dl2_prod_id
+        else:
+            step_path = Path(fold) / options.date / options.prod_id
 
         # check destination folder exists
         if not step_path.exists():

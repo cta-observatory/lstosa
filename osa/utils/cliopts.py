@@ -150,11 +150,29 @@ def closercliparsing():
     # setting on the usage of night summary
     options.nightsum = True
 
+    options.prod_id = get_prod_id()
+
+    if cfg.get("LST1", "CALIB-PROD-ID") is not None:                                                                                                                                                                                          
+        options.calib_prod_id = get_calib_prod_id()                                                                                                                                                                                           
+    else:                                                                                                                                                                                                                                     
+        options.calib_prod_id = options.prod_id
+
+    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+        options.dl1_prod_id = get_dl1_prod_id()
+    else:
+        options.dl1_prod_id = options.prod_id
+
+    if cfg.get("LST1", "DL2-PROD-ID") is not None:
+        options.dl2_prod_id = get_dl2_prod_id()
+    else:
+        options.dl2_prod_id = options.prod_id
+
+
 
 def pedestalsequencecliparsing(command):
     tag = gettag()
     message = (
-        "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <PED_RUN_ID> <TEL_ID>"
+            "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <PED_RUN_ID> <TEL_ID>"
     )
     parser = OptionParser(usage=message)
     parser.add_option(
@@ -483,6 +501,12 @@ def datasequencecliparsing(command):
     options.configfile = set_default_configfile_if_needed(command)
     options.date = set_default_date_if_needed()
     options.directory = set_default_directory_if_needed()
+
+    if cfg.get("LST1", "CALIB-PROD-ID") is not None:
+        options.calib_prod_id = get_calib_prod_id()
+    else:
+        options.calib_prod_id = options.prod_id
+    
     if cfg.get("LST1", "DL1-PROD-ID") is not None:
         options.dl1_prod_id = get_dl1_prod_id()
     else:
@@ -492,6 +516,8 @@ def datasequencecliparsing(command):
         options.dl2_prod_id = get_dl2_prod_id()
     else:
         options.dl2_prod_id = options.prod_id
+
+    options.lstchain_version = get_lstchain_version()
 
     return args
 
@@ -744,106 +770,6 @@ def sequencercliparsing():
     options.date = set_default_date_if_needed()
 
 
-def monolithcliparsing(command):
-    tag = gettag()
-    message = "usage: %prog [-syvw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-t] TEL_ID"
-    parser = OptionParser(usage=message)
-    # options which define variables
-    parser.add_option(
-        "-c",
-        "--config",
-        action="store",
-        dest="configfile",
-        default=None,
-        help="use specific config file [default cfg/sequencer.cfg]",
-    )
-    parser.add_option(
-        "-t",
-        "--telescope",
-        action="store",
-        type="choice",
-        dest="tel_id",
-        choices=["LST1", "LST2", "ST"],
-        help="telescope identifier LST1, LST2 or ST [default all]",
-    )
-    parser.add_option(
-        "-s",
-        "--simulate",
-        action="store_true",
-        dest="simulate",
-        default=False,
-        help="do not run, just show what would happen",
-    )
-    parser.add_option(
-        "-y",
-        "--yes",
-        action="store_true",
-        dest="noninteractive",
-        default=False,
-        help="assume yes to all questions",
-    )
-    parser.add_option(
-        "-v",
-        "--verbose",
-        action="store_true",
-        dest="verbose",
-        default=False,
-        help="make lots of noise for debugging",
-    )
-    parser.add_option(
-        "-w",
-        "--warnings",
-        action="store_true",
-        dest="warning",
-        default=False,
-        help="show useful warnings",
-    )
-    parser.add_option(
-        "--stderr",
-        action="store",
-        type="string",
-        dest="stderr",
-        help="file for standard error",
-    )
-    parser.add_option(
-        "--stdout",
-        action="store",
-        type="string",
-        dest="stdout",
-        help="file for standard output",
-    )
-
-    # parse the command line
-    (opts, args) = parser.parse_args()
-
-    # set global variables
-    options.configfile = opts.configfile
-    options.stderr = opts.stderr
-    options.stdout = opts.stdout
-    options.tel_id = opts.tel_id
-    options.simulate = opts.simulate
-    options.noninteractive = opts.noninteractive
-    options.verbose = opts.verbose
-    options.warning = opts.warning
-
-    # the standardhandle has to be declared here, since verbose and warnings are options from the cli
-    verbose(tag, f"the options are {opts}")
-    verbose(tag, f"the argument is {args}")
-
-    # mapping the telescope argument to an option parameter (it might become an option in the future)
-    if len(args) > 1:
-        error(tag, "incorrect number of arguments, type -h for help", 2)
-    elif len(args) == 1:
-        if args[0] != "LST1" and args[0] != "LST2" and args[0] != "ST":
-            error(tag, "wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
-        options.tel_id = args[0]
-
-    # setting the default directory if needed
-    options.configfile = set_default_configfile_if_needed(command)
-
-    return args
-
-
 def rawcopycliparsing(command):
     tag = gettag()
     message = (
@@ -989,6 +915,17 @@ def provprocessparsing():
     options.filter = opts.filter
     options.quit = opts.quit
     options.lstchain_version = get_lstchain_version()
+
+    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+        options.dl1_prod_id = get_dl1_prod_id()
+    else:
+        options.dl1_prod_id = options.prod_id
+
+    if cfg.get("LST1", "DL2-PROD-ID") is not None:
+        options.dl2_prod_id = get_dl2_prod_id()
+    else:
+        options.dl2_prod_id = options.prod_id
+
 
 
 def simprocparsing():

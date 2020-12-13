@@ -71,7 +71,7 @@ def get_lstchain_version():
     warnings.simplefilter(action="ignore", category=FutureWarning)
     from lstchain.version import get_version
 
-    options.lstchain_version = "v" + get_version() + "_" + cfg.get("LST1", "VERSION")
+    options.lstchain_version = "v" + get_version()
     return options.lstchain_version
 
 
@@ -82,7 +82,7 @@ def get_prod_id():
         if cfg.get("LST1", "PROD-ID") is not None:
             options.prod_id = cfg.get("LST1", "PROD-ID")
         else:
-            options.prod_id = get_lstchain_version()
+            options.prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
 
     verbose(
         tag,
@@ -99,7 +99,7 @@ def get_calib_prod_id():
         if cfg.get("LST1", "CALIB-PROD-ID") is not None:
             options.calib_prod_id = cfg.get("LST1", "CALIB-PROD-ID")
         else:
-            options.calib_prod_id = get_lstchain_version()
+            options.calib_prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
 
     verbose(tag, f"Getting prod ID for calibration products: {options.calib_prod_id}")
 
@@ -113,7 +113,7 @@ def get_dl1_prod_id():
         if cfg.get("LST1", "DL1-PROD-ID") is not None:
             options.dl1_prod_id = cfg.get("LST1", "DL1-PROD-ID")
         else:
-            options.dl1_prod_id = get_lstchain_version()
+            options.dl1_prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
 
     verbose(tag, f"Getting prod ID for DL1 products: {options.dl1_prod_id}")
 
@@ -127,7 +127,7 @@ def get_dl2_prod_id():
         if cfg.get("LST1", "DL2-PROD-ID") is not None:
             options.dl2_prod_id = cfg.get("LST1", "DL2-PROD-ID")
         else:
-            options.dl2_prod_id = get_lstchain_version()
+            options.dl2_prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
 
     verbose(tag, f"Getting prod ID for DL2 products: {options.dl2_prod_id}")
 

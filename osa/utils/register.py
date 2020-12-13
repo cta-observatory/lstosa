@@ -97,7 +97,7 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
 
 
 def register_run_concept_files(run_string, concept):
-    """
+    """Prepare files to be moved to final destination directories
 
     Parameters
     ----------
@@ -108,9 +108,18 @@ def register_run_concept_files(run_string, concept):
     tag = gettag()
     inputdir = options.directory
     nightdir = lstdate_to_dir(options.date)
-    outputdir = join(
-        cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id
-    )
+    if concept == "DL2":
+        outputdir = join(
+            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id
+        )
+    elif concept in ["DL1", "DATACHECK", "MUON"]:
+        outputdir = join(
+            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl1_prod_id
+        )
+    elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
+        outputdir = join(
+                cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id
+        )
     type = cfg.get("LSTOSA", concept + "TYPE")
     prefix = cfg.get("LSTOSA", concept + "PREFIX")
     suffix = cfg.get("LSTOSA", concept + "SUFFIX")
