@@ -6,6 +6,7 @@ from pathlib import Path
 
 import lstchain.visualization.plot_calib as calib
 import lstchain.visualization.plot_drs4 as drs4
+import matplotlib.pyplot as plt
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -14,11 +15,15 @@ from osa.reports.report import history
 from osa.utils.cliopts import calibrationsequencecliparsing
 from osa.utils.standardhandle import error, gettag, stringify, verbose, warning
 
-import matplotlib as mpl                                                                                               
-
 
 def calibrationsequence(args):
-    tag=gettag()
+    """Handle the three steps for creating the calibration products:
+    DRS4 pedestal, charge calibration and time calibration files
+
+    :param args:
+    :return: Final return code, rc
+    """
+    tag = gettag()
 
     pedestal_filename = args[0]
     calibration_filename = args[1]
@@ -26,7 +31,7 @@ def calibrationsequence(args):
     cal_run_number = args[3]
 
     historyfile = path.join(
-            options.directory, f"sequence_{options.tel_id}_{cal_run_number}.history"
+        options.directory, f"sequence_{options.tel_id}_{cal_run_number}.history"
     )
     level, rc = historylevel(historyfile, "CALIBRATION")
     verbose(tag, f"Going to level {level}")
@@ -54,7 +59,14 @@ def calibrationsequence(args):
 
 
 def drs4_pedestal(run_ped, pedestal_output_file, historyfile):
-    tag=gettag()
+    """Create a DRS4 pedestal file
+
+    :param run_ped:
+    :param pedestal_output_file:
+    :param historyfile:
+    :return: Return code
+    """
+    tag = gettag()
 
     rawdata_path = Path(cfg.get("LST1", "RAWDIR"))
     # Get raw data run no matter when was taken
@@ -121,12 +133,22 @@ def drs4_pedestal(run_ped, pedestal_output_file, historyfile):
         tel_id=1,
         offset_value=300,
     )
+    plt.close("all")
 
     return rc
 
 
 def calibrate_charge(run_ped, calibration_run, pedestal_file, calibration_output_file, historyfile):
-    tag=gettag()
+    """Create a charge calibration file to transform from ADC counts to photo-electrons
+
+    :param run_ped:
+    :param calibration_run:
+    :param pedestal_file:
+    :param calibration_output_file:
+    :param historyfile:
+    :return rc: Return code
+    """
+    tag = gettag()
 
     rawdata_path = Path(cfg.get("LST1", "RAWDIR"))
     # Get raw data run no matter when was taken
@@ -191,8 +213,6 @@ def calibrate_charge(run_ped, calibration_run, pedestal_file, calibration_output
     if rc != 0:
         sys.exit(rc)
 
-    mpl.rcdefaults() 
-
     plot_file = path.join(
         options.directory,
         "log",
@@ -201,12 +221,21 @@ def calibrate_charge(run_ped, calibration_run, pedestal_file, calibration_output
     calib.read_file(output_file, tel_id=1)
     verbose(tag, f"Producing plots in {plot_file}")
     calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, calibration_run, plot_file)
+    plt.close("all")
 
     return rc
 
 
 def calibrate_time(calibration_run, pedestal_file, calibration_output_file, historyfile):
-    tag=gettag()
+    """Create a time calibration file
+
+    :param calibration_run:
+    :param pedestal_file:
+    :param calibration_output_file:
+    :param historyfile:
+    :return rc:
+    """
+    tag = gettag()
 
     # A regular expression is used to fetch several input subruns
     calibration_data_files = (
@@ -270,7 +299,7 @@ def calibrate_time(calibration_run, pedestal_file, calibration_output_file, hist
         if file_list:
             verbose(
                 tag,
-                "Creating a link to default calibration " "time file corresponding to run 1625",
+                "Creating a link to default calibration time file corresponding to run 1625",
             )
             inputf = file_list[0]
             os.symlink(inputf, outputf)
@@ -287,7 +316,7 @@ def calibrate_time(calibration_run, pedestal_file, calibration_output_file, hist
         else:
             error(
                 tag,
-                f"Default time calibration file {inputf} not found. Create it first.",
+                "Default time calibration file not found. Create it first.",
                 1,
             )
             sys.exit(1)
