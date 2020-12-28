@@ -221,6 +221,19 @@ def dl1_to_dl2(run_str, historyfile):
 if __name__ == "__main__":
     # set the options through cli parsing
     args = datasequencecliparsing(sys.argv[0])
+
+    # Logging
+    if options.verbose:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    format = logging.Formatter(
+        "%(asctime)s %(levelname)s [%(name)s] (%(module)s.%(funcName)s): %(message)s"
+    )
+    handler.setFormatter(format)
+    logging.getLogger().addHandler(handler)
+
     # run the routine
     rc = datasequence(args)
     sys.exit(rc)
