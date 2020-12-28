@@ -5,26 +5,23 @@ from decimal import Decimal
 from glob import glob
 from os.path import join
 
-from osa.utils.utils import is_day_closed
-
-# from dev.dot import writeworkflow
+from osa.configs import options
 from osa.configs.config import cfg
 from osa.jobs.job import getqueuejoblist, preparejobs, preparestereojobs, submitjobs
 from osa.nightsummary.extract import extractruns, extractsequences, extractsequencesstereo, extractsubruns
 from osa.nightsummary.nightsummary import readnightsummary
 from osa.reports.report import rule, start
-from osa.configs import options
 from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_needed
 from osa.utils.standardhandle import gettag, output, verbose
+from osa.utils.utils import is_day_closed
 from osa.veto.veto import getvetolist, getclosedlist
 
 
 def sequencer():
-    """Runs the sequencer
-    This is the main script to be called in crontab by LSTOSA
-    For every run in the NightSummary.txt file it preparares 
-    a SLURM job array which sends a datasequence.py 
-    for every subrun in the run
+    """
+    Main script to be called as cron job. It creates and execute
+    the calibration sequence and afterward it prepares a SLURM job
+    array which launches the data sequences for every subrun.
     """
 
     process_mode = None
@@ -40,11 +37,12 @@ def sequencer():
             process_mode = "stereo"
         sequence_lst1 = single_process("LST1", process_mode)
         sequence_lst2 = single_process("LST2", process_mode)
-        sequence_st = stereo_process("ST", sequence_lst1, sequence_lst2)
+        # stereo_process is missing right now
 
 
 def single_process(telescope, process_mode):
-    """Runs the single process for a single telescope
+    """
+    Runs the single process for a single telescope
     
     Parameters
     ----------
@@ -58,7 +56,7 @@ def single_process(telescope, process_mode):
     sequence_list : 
     """
 
-    # define global variables and create night directory
+    # Define global variables and create night directory
     sequence_list = []
     options.tel_id = telescope
     options.directory = set_default_directory_if_needed()
@@ -101,7 +99,7 @@ def single_process(telescope, process_mode):
         queue_list = getqueuejoblist(sequence_list)
     veto_list = getvetolist(sequence_list)
     closed_list = getclosedlist(sequence_list)
-    updatelstchainstatus(sequence_list)
+    update_sequence_status(sequence_list)
     # updatesequencedb(sequence_list)
     # actually, submitjobs does not need the queue_list nor veto_list
     # job_list = submitjobs(sequence_list, queue_list, veto_list)
@@ -122,7 +120,20 @@ def single_process(telescope, process_mode):
 
 
 def stereo_process(telescope, s1_list, s2_list):
+    """
+    Runs the stereo process for two or more telescopes
+    Currently not implemented.
 
+    Parameters
+    ----------
+    telescope
+    s1_list
+    s2_list
+
+    Returns
+    -------
+
+    """
     options.tel_id = telescope
     options.directory = set_default_directory_if_needed()
 
@@ -136,7 +147,7 @@ def stereo_process(telescope, s1_list, s2_list):
     queue_list = getqueuejoblist(sequence_list)
     veto_list = getvetolist(sequence_list)
     closed_list = getclosedlist(sequence_list)
-    updatelstchainstatus(sequence_list)
+    update_sequence_status(sequence_list)
     # actually, submitjobs does not need the queue_list nor veto_list
     job_list = submitjobs(sequence_list)
     # finalizing report
@@ -147,30 +158,54 @@ def stereo_process(telescope, s1_list, s2_list):
     return sequence_list
 
 
-def updatelstchainstatus(seq_list):
+def update_sequence_status(seq_list):
+    """
+    Update the percentage of files produced of each type (calibration, DL1,
+    DATACHECK, MUON and DL2) for every run considering the total number of subruns.
 
-    for s in seq_list:
-        if s.type == "CALI":
-            s.calibstatus = int(Decimal(getlstchainforsequence(s, "CALIB") * 100) / s.subruns)
-        elif s.type == "DATA":
-            s.dl1status = int(Decimal(getlstchainforsequence(s, "DL1") * 100) / s.subruns)
-            s.datacheckstatus = int(Decimal(getlstchainforsequence(s, "DATACHECK") * 100) / s.subruns)
-            s.muonstatus = int(Decimal(getlstchainforsequence(s, "MUON") * 100) / s.subruns)
-            s.dl2status = int(Decimal(getlstchainforsequence(s, "DL2") * 100) / s.subruns)
+    Parameters
+    ----------
+    seq_list
+        List of sequences of a given night corresponding to each run.
+    """
+    for seq in seq_list:
+        if seq.type == "CALI":
+            seq.calibstatus = int(Decimal(get_status_for_sequence(seq, "CALIB") * 100) / seq.subruns)
+        elif seq.type == "DATA":
+            seq.dl1status = int(Decimal(get_status_for_sequence(seq, "DL1") * 100) / seq.subruns)
+            seq.datacheckstatus = int(Decimal(get_status_for_sequence(seq, "DATACHECK") * 100) / seq.subruns)
+            seq.muonstatus = int(Decimal(get_status_for_sequence(seq, "MUON") * 100) / seq.subruns)
+            seq.dl2status = int(Decimal(get_status_for_sequence(seq, "DL2") * 100) / seq.subruns)
 
 
-def getlstchainforsequence(s, program):
+def get_status_for_sequence(s, program):
+    """
 
+    Parameters
+    ----------
+    s
+    program
+
+    Returns
+    -------
+    number_of_files
+
+    """
     prefix = cfg.get("LSTOSA", program + "PREFIX")
     suffix = cfg.get("LSTOSA", program + "SUFFIX")
     files = glob(join(options.directory, f"{prefix}*{s.run}*{suffix}"))
-    numberoffiles = len(files)
-    verbose(tag, f"Found {numberoffiles} {program} files for sequence name {s.jobname}")
-    return numberoffiles
+    number_of_files = len(files)
+    verbose(tag, f"Found {number_of_files} {program} files for sequence name {s.jobname}")
+    return number_of_files
 
 
 def reportsequences(seqlist):
+    """
 
+    Parameters
+    ----------
+    seqlist
+    """
     matrix = []
     header = [
         "Tel",
@@ -344,7 +379,13 @@ def reportsequences(seqlist):
 
 
 def prettyoutputmatrix(m, paddingspace):
+    """
 
+    Parameters
+    ----------
+    m
+    paddingspace
+    """
     maxfieldlength = []
     for i in range(len(m)):
         row = m[i]
