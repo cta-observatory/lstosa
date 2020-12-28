@@ -1,10 +1,10 @@
+import logging
 from argparse import ArgumentParser
-from optparse import OptionParser  # from version 2.3 to 2.7
+from optparse import OptionParser
 from os.path import abspath, basename, dirname, join
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.standardhandle import error, gettag, verbose
 from osa.utils.utils import (
     get_calib_prod_id,
     get_dl1_prod_id,
@@ -15,6 +15,8 @@ from osa.utils.utils import (
     getnightdirectory,
     is_defined,
 )
+
+log = logging.getLogger(__name__)
 
 
 def closer_argparser():
@@ -119,7 +121,6 @@ def closer_argparser():
 
 
 def closercliparsing():
-    tag = gettag()
 
     # parse the command line
     opts = closer_argparser().parse_args()
@@ -139,7 +140,7 @@ def closercliparsing():
     options.seqtoclose = opts.seqtoclose
     options.tel_id = opts.tel_id
 
-    verbose(tag, f"the options are {opts}")
+    log.debug(f"the options are {opts}")
 
     # setting the default date and directory if needed
     # options.configfile = set_default_configfile_if_needed('closer.py')
@@ -152,9 +153,9 @@ def closercliparsing():
 
     options.prod_id = get_prod_id()
 
-    if cfg.get("LST1", "CALIB-PROD-ID") is not None:                                                                                                                                                                                          
-        options.calib_prod_id = get_calib_prod_id()                                                                                                                                                                                           
-    else:                                                                                                                                                                                                                                     
+    if cfg.get("LST1", "CALIB-PROD-ID") is not None:
+        options.calib_prod_id = get_calib_prod_id()
+    else:
         options.calib_prod_id = options.prod_id
 
     if cfg.get("LST1", "DL1-PROD-ID") is not None:
@@ -168,11 +169,9 @@ def closercliparsing():
         options.dl2_prod_id = options.prod_id
 
 
-
 def pedestalsequencecliparsing(command):
-    tag = gettag()
     message = (
-            "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <PED_RUN_ID> <TEL_ID>"
+        "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <PED_RUN_ID> <TEL_ID>"
     )
     parser = OptionParser(usage=message)
     parser.add_option(
@@ -252,16 +251,16 @@ def pedestalsequencecliparsing(command):
     options.compressed = opts.compressed
 
     # the standardhandle has to be declared here, since verbose and warnings are options from the cli
-    verbose(tag, f"the options are {opts}")
-    verbose(tag, f"the argument is {args}")
+    log.debug(f"the options are {opts}")
+    log.debug(f"the argument is {args}")
 
     # mapping the telescope argument to an option parameter (it might become an option in the future)
     if len(args) != 2:
-        error(tag, "incorrect number of arguments, type -h for help", 2)
+        log.error("incorrect number of arguments, type -h for help", 2)
     elif args[1] == "ST":
-        error(tag, f"not yet ready for telescope ST", 2)
-    elif args[1] != "LST1" and args[1] != "LST2":
-        error(tag, "wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
+        log.error(f"not yet ready for telescope ST", 2)
+    elif args[1] not in ["LST1", "LST2"]:
+        log.error("wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
 
     options.tel_id = args[1]
 
@@ -272,8 +271,8 @@ def pedestalsequencecliparsing(command):
 
 
 def calibrationsequencecliparsing(command):
-    tag = gettag()
-    message = "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] [prod-id] <pedoutfile> <caloutfile> <CAL_RUN_ID> <PED_RUN_ID> <TEL_ID>"
+    message = "usage: %prog [-vw] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] [prod-id]" \
+              "<pedoutfile> <caloutfile> <CAL_RUN_ID> <PED_RUN_ID> <TEL_ID>"
     parser = OptionParser(usage=message)
     parser.add_option(
         "-c",
@@ -359,16 +358,16 @@ def calibrationsequencecliparsing(command):
     options.prod_id = opts.prod_id
 
     # the standardhandle has to be declared here, since verbose and warnings are options from the cli
-    verbose(tag, f"the options are {opts}")
-    verbose(tag, f"the argument is {args}")
+    log.debug(f"the options are {opts}")
+    log.debug(f"the argument is {args}")
 
     # mapping the telescope argument to an option parameter (it might become an option in the future)
     if len(args) != 5:
-        error(tag, "incorrect number of arguments, type -h for help", 2)
+        log.error("incorrect number of arguments, type -h for help", 2)
     elif args[4] == "ST":
-        error(tag, f"not yet ready for telescope ST", 2)
-    elif args[4] != "LST1" and args[4] != "LST2":
-        error(tag, "wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
+        log.error(f"not yet ready for telescope ST", 2)
+    elif args[4] not in ["LST1", "LST2"]:
+        log.error("wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
 
     options.tel_id = args[4]
 
@@ -385,9 +384,11 @@ def calibrationsequencecliparsing(command):
 
 
 def datasequencecliparsing(command):
-    tag = gettag()
-    message = "usage: %prog  [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] [--prod-id]\
-    <calibrationfile> <pedestalfile> <drivefile> <timecalibration> <ucts_t0_dragon> <dragon_counter0> <ucts_t0_tib> <tib_counter> <RUN> <TEL_ID>"
+    message = "usage: %prog  [-vw] [--stderr=FILE] [--stdout=FILE]" \
+              "[-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] [--prod-id]\
+              <calibrationfile> <pedestalfile> <drivefile> <timecalibration>" \
+              "<ucts_t0_dragon> <dragon_counter0> <ucts_t0_tib> <tib_counter>" \
+              "<RUN> <TEL_ID>"
     parser = OptionParser(usage=message)
     parser.add_option(
         "-c",
@@ -483,18 +484,18 @@ def datasequencecliparsing(command):
     options.prod_id = opts.prod_id
 
     # the standardhandle has to be declared here, since verbose and warnings are options from the cli
-    verbose(tag, f"the options are {opts}")
-    verbose(tag, f"the argument is {args}")
+    log.debug(f"the options are {opts}")
+    log.debug(f"the argument is {args}")
 
     # checking arguments
     if len(args) != 10:
-        error(tag, "incorrect number of arguments, type -h for help", 2)
+        log.error("incorrect number of arguments, type -h for help", 2)
 
     # mapping the telescope argument to an option parameter (it might become an option in the future)
     elif args[9] == "ST":
-        error(tag, f"not yet ready for telescope ST", 2)
+        log.error(f"not yet ready for telescope ST", 2)
     elif args[9] != "LST1" and args[9] != "LST2":
-        error(tag, "wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
+        log.error("wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
     options.tel_id = args[9]
 
     # setting the default date and directory if needed
@@ -506,7 +507,7 @@ def datasequencecliparsing(command):
         options.calib_prod_id = get_calib_prod_id()
     else:
         options.calib_prod_id = options.prod_id
-    
+
     if cfg.get("LST1", "DL1-PROD-ID") is not None:
         options.dl1_prod_id = get_dl1_prod_id()
     else:
@@ -523,7 +524,6 @@ def datasequencecliparsing(command):
 
 
 def stereosequencecliparsing(command):
-    tag = gettag()
     message = "usage: %prog  [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <RUN>"
     parser = OptionParser(usage=message)
     parser.add_option(
@@ -603,12 +603,12 @@ def stereosequencecliparsing(command):
     options.compressed = opts.compressed
 
     # the standardhandle has to be declared here, since verbose and warnings are options from the cli
-    verbose(tag, f"the options are {opts}")
-    verbose(tag, f"the argument is {args}")
+    log.debug(f"the options are {opts}")
+    log.debug(f"the argument is {args}")
 
     # checking arguments
     if len(args) != 1:
-        error(tag, "incorrect number of arguments, type -h for help", 2)
+        log.error("incorrect number of arguments, type -h for help", 2)
 
     # mapping the telescope argument to an option parameter (it might become an option in the future)
     options.tel_id = "ST"
@@ -737,7 +737,6 @@ def sequencer_argparser():
 
 
 def sequencercliparsing():
-    tag = gettag()
 
     # parse the command line
     opts = sequencer_argparser().parse_args()
@@ -759,7 +758,7 @@ def sequencercliparsing():
     options.tel_id = opts.tel_id
 
     # the standardhandle has to be declared before here, since verbose and warnings are options from the cli
-    verbose(tag, f"the options are {opts}")
+    log.debug(f"the options are {opts}")
 
     # set the default value for mode
     if not opts.mode:
@@ -771,7 +770,6 @@ def sequencercliparsing():
 
 
 def rawcopycliparsing(command):
-    tag = gettag()
     message = (
         "usage: %prog [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-z] <TEL_ID>"
     )
@@ -852,16 +850,16 @@ def rawcopycliparsing(command):
     options.compressed = opts.compressed
 
     # the standardhandle has to be declared here, since verbose and warnings are options from the cli
-    verbose(tag, f"the options are {opts}")
-    verbose(tag, f"the argument is {args}")
+    log.debug(f"the options are {opts}")
+    log.debug(f"the argument is {args}")
 
     # mapping the telescope argument to an option parameter (it might become an option in the future)
     if len(args) != 1:
-        error(tag, "incorrect number of arguments, type -h for help", 2)
+        log.error("incorrect number of arguments, type -h for help", 2)
     elif args[0] == "ST":
-        error(tag, f"not yet ready for telescope ST", 2)
-    elif args[0] != "LST1" and args[0] != "LST2":
-        error(tag, "wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
+        log.error(f"not yet ready for telescope ST", 2)
+    elif args[0] not in ["LST1", "LST2"]:
+        log.error("wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
     options.tel_id = args[0]
 
     # setting the default date and directory if needed
@@ -872,7 +870,6 @@ def rawcopycliparsing(command):
 
 
 def provprocessparsing():
-    tag = gettag()
     message = "usage: %prog [-c CONFIGFILE] [-f PROCESS] <RUN_NUMBER> <DATEFOLDER> <SUBFOLDER>"
     parser = OptionParser(usage=message)
     parser.add_option(
@@ -903,9 +900,9 @@ def provprocessparsing():
 
     # checking arguments
     if len(args) != 3:
-        error(tag, "incorrect number of arguments, type -h for help", 2)
+        log.error("incorrect number of arguments, type -h for help", 2)
     if opts.filter not in ["r0_to_dl1", "dl1_to_dl2", ""]:
-        error(tag, "incorrect value for --filter argument, type -h for help", 2)
+        log.error("incorrect value for --filter argument, type -h for help", 2)
 
     # set global variables
     options.run = args[0]
@@ -927,9 +924,7 @@ def provprocessparsing():
         options.dl2_prod_id = options.prod_id
 
 
-
 def simprocparsing():
-    tag = gettag()
     message = (
         "Usage: %prog [-c CONFIGFILE] [-p] [--force] [--append] <YYYY_MM_DD> <vX.X.X_vXX> <TEL_ID>\n"
         "Run script from OSA root folder.\n\n"
@@ -966,7 +961,7 @@ def simprocparsing():
 
     # checking arguments
     if len(args) != 3:
-        error(tag, "incorrect number of arguments, type -h for help", 2)
+        log.error("incorrect number of arguments, type -h for help")
 
     # set global variables
     options.date = args[0]
@@ -979,7 +974,6 @@ def simprocparsing():
 
 
 def scopy_datacheck_parsing():
-    tag = gettag()
     parser = ArgumentParser()
     parser.add_argument(
         "-d",
@@ -1032,12 +1026,11 @@ def set_default_directory_if_needed():
 
 
 def set_default_configfile_if_needed(command):
-    tag = gettag()
 
     # the default config will be the name of the program, with suffix .cfg
     # and present in the cfg subdir, trivial, isn't it?
 
-    verbose(tag, f"Command is {command}")
+    log.debug(f"Command is {command}")
     command_dirname = dirname(abspath(command))
     command_basename = basename(command)
 
@@ -1048,5 +1041,5 @@ def set_default_configfile_if_needed(command):
         # relative to absolute path conversion
         options.configfile = join(command_dirname, options.configfile)
 
-    verbose(tag, f"Setting default config file to {options.configfile}")
+    log.debug(f"Setting default config file to {options.configfile}")
     return options.configfile

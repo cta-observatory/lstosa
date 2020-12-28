@@ -474,5 +474,18 @@ def extract_provenance(seq_list):
 if __name__ == "__main__":
     # set the options through cli parsing
     closercliparsing()
+
+    # Logging
+    if options.verbose:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    format = logging.Formatter(
+        "%(asctime)s %(levelname)s [%(name)s] (%(module)s.%(funcName)s): %(message)s"
+    )
+    handler.setFormatter(format)
+    logging.getLogger().addHandler(handler)
+
     # run the routine
     closer()
