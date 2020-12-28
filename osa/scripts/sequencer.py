@@ -190,7 +190,7 @@ def reportsequences(seqlist):
         "Walltime",
         "Exit",
     ]
-    if options.tel_id == "LST1" or options.tel_id == "LST2":
+    if options.tel_id in ["LST1", "LST2"]:
         header.append("DL1%")
         header.append("DATACHECK%")
         header.append("MUONS%")
