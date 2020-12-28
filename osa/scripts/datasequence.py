@@ -137,10 +137,10 @@ def r0_to_dl1(
     try:
         log.debug(f"Executing {stringify(commandargs)}")
         rc = subprocess.call(commandargs)
-    except subprocess.CalledProcessError as Error:
-        log.exception(f"{Error}")
-    except OSError as ValueError:
-        log.exception(f"Command {stringify(commandargs)} failed, {ValueError}")
+    except subprocess.CalledProcessError as error:
+        log.exception(f"Subprocess error: {error}")
+    except OSError as error:
+        log.exception(f"Command {stringify(commandargs)} failed, {error}")
     else:
         history(
             run_str,
@@ -195,10 +195,10 @@ def dl1_to_dl2(run_str, historyfile):
     try:
         log.debug(f"Executing {stringify(commandargs)}")
         rc = subprocess.call(commandargs)
-    except subprocess.CalledProcessError as Error:
-        log.exception(f"{Error}", rc)
-    except OSError as ValueError:
-        log.exception(f"Command {stringify(commandargs)} failed, {ValueError}", ValueError)
+    except subprocess.CalledProcessError as error:
+        log.exception(f"Subprocess error: {error}")
+    except OSError as error:
+        log.exception(f"Command {stringify(commandargs)} failed, error: {error}")
     else:
         history(
             run_str,
