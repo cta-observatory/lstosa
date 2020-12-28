@@ -339,7 +339,16 @@ def set_closed_with_file(ana_text):
 
 
 def is_finished_check(nightsum):
+    """
 
+    Parameters
+    ----------
+    nightsum
+
+    Returns
+    -------
+
+    """
     # we ought to implement a method of successful or unsuccessful finishing
     # and it is done looking at the files
     sequence_success = False
