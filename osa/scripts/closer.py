@@ -13,7 +13,7 @@ from os.path import basename, exists, isdir, islink, join
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.jobs.job import arealljobscorrectlyfinished
+from osa.jobs.job import are_all_jobs_correctly_finished
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import getnightsummaryfile, readnightsummary
 from osa.rawcopy.raw import arerawfilestransferred, get_check_rawdir
@@ -378,7 +378,7 @@ def is_finished_check(nightsum):
         # FIXME: How can we check that all files are there?
         if arerawfilestransferred():
             verbose(tag, f"Are files transferred? {sequence_list}")
-            if arealljobscorrectlyfinished(sequence_list):
+            if are_all_jobs_correctly_finished(sequence_list):
                 sequence_success = True
             else:
                 output(

@@ -1,3 +1,7 @@
+"""
+Functions to handle the job submission using SLURM
+"""
+
 import datetime
 import logging
 import os
@@ -278,9 +282,6 @@ def createjobtemplate(s, get_content=False):
     elif s.type == "STEREO":
         command = os.path.join(scriptsdir, "stereosequence.py")
 
-    # directly use python interpreter from current working environment
-    # python = join(config.cfg.get('ENV', 'PYTHONBIN'), 'python')
-
     # beware we want to change this in the future
     commandargs = ["srun", "python", command]
     if options.verbose:
@@ -329,7 +330,7 @@ def createjobtemplate(s, get_content=False):
         n_subruns = int(sub.subrun)
 
     content = "#!/bin/env python\n"
-    # SLURM assignments
+    # Set sbatch parameters
     content += "\n"
     content += f"#SBATCH -A {cfg.get('SBATCH', 'ACCOUNT')} \n"
     if s.type == "DATA":
@@ -358,11 +359,11 @@ def createjobtemplate(s, get_content=False):
         content += f"    '{i}',\n"
     content += (
         f"    '--stderr=log/sequence_{s.jobname}."
-        +"{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)), \n"
+        + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)), \n"
     )
     content += (
         f"    '--stdout=log/sequence_{s.jobname}."
-        +"{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)), \n"
+        + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)), \n"
     )
     if s.type == "DATA":
         content += (
@@ -406,7 +407,7 @@ def submitjobs(sequence_list):
                     log.exception(f"Command '{command}' not found", err)
             log.debug(commandargs)
 
-                    # FIXME here s.jobid has not been redefined se it keeps the one from previous time sequencer was launched
+            # FIXME here s.jobid has not been redefined se it keeps the one from previous time sequencer was launched
         # Introduce the job dependencies after calibration sequence
         if len(s.parent_list) != 0 and s.type == "DATA":
             log.debug("Adding dependencies to job submission")

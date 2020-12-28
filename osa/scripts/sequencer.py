@@ -14,7 +14,12 @@ import logging
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.jobs.job import getqueuejoblist, preparejobs, preparestereojobs, submitjobs
-from osa.nightsummary.extract import extractruns, extractsequences, extractsequencesstereo, extractsubruns
+from osa.nightsummary.extract import (
+    extractruns,
+    extractsequences,
+    extractsequencesstereo,
+    extractsubruns,
+)
 from osa.nightsummary.nightsummary import read_nightsummary
 from osa.reports.report import rule, start
 from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_needed
@@ -52,7 +57,7 @@ def sequencer():
 def single_process(telescope, process_mode):
     """
     Runs the single process for a single telescope
-    
+
     Parameters
     ----------
     telescope : str
@@ -62,7 +67,7 @@ def single_process(telescope, process_mode):
 
     Returns
     -------
-    sequence_list : 
+    sequence_list :
     """
 
     # Define global variables and create night directory
@@ -179,10 +184,14 @@ def update_sequence_status(seq_list):
     """
     for seq in seq_list:
         if seq.type == "CALI":
-            seq.calibstatus = int(Decimal(get_status_for_sequence(seq, "CALIB") * 100) / seq.subruns)
+            seq.calibstatus = int(
+                Decimal(get_status_for_sequence(seq, "CALIB") * 100) / seq.subruns
+            )
         elif seq.type == "DATA":
             seq.dl1status = int(Decimal(get_status_for_sequence(seq, "DL1") * 100) / seq.subruns)
-            seq.datacheckstatus = int(Decimal(get_status_for_sequence(seq, "DATACHECK") * 100) / seq.subruns)
+            seq.datacheckstatus = int(
+                Decimal(get_status_for_sequence(seq, "DATACHECK") * 100) / seq.subruns
+            )
             seq.muonstatus = int(Decimal(get_status_for_sequence(seq, "MUON") * 100) / seq.subruns)
             seq.dl2status = int(Decimal(get_status_for_sequence(seq, "DL2") * 100) / seq.subruns)
 
