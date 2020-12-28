@@ -1,5 +1,5 @@
 """
- Script that is called from the batch system to process a run
+Script that is called from the batch system to process a run
 """
 
 import subprocess
@@ -12,8 +12,12 @@ from osa.jobs.job import historylevel
 from osa.provenance.capture import trace
 from osa.reports.report import history
 from osa.utils.cliopts import datasequencecliparsing
-from osa.utils.standardhandle import error, gettag, stringify, verbose
+from osa.utils.standardhandle import stringify
 from osa.utils.utils import lstdate_to_dir
+
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def datasequence(args):
@@ -41,7 +45,7 @@ def datasequence(args):
     sequenceprebuild = join(options.directory, f"sequence_{options.tel_id}_{run_str}")
     historyfile = sequenceprebuild + historysuffix
     level, rc = (3, 0) if options.simulate else historylevel(historyfile, "DATA")
-    verbose(tag, f"Going to level {level}")
+    log.debug(f"Going to level {level}")
 
     if level == 3:
         rc = r0_to_dl1(
@@ -57,13 +61,13 @@ def datasequence(args):
             historyfile,
         )
         level -= 1
-        verbose(tag, f"Going to level {level}")
+        log.debug(f"Going to level {level}")
     if level == 2:
         rc = dl1_to_dl2(run_str, historyfile)
         level -= 2
-        verbose(tag, f"Going to level {level}")
+        log.debug(f"Going to level {level}")
     if level == 0:
-        verbose(tag, f"Job for sequence {run_str} finished without fatal errors")
+        log.debug(f"Job for sequence {run_str} finished without fatal errors")
     return rc
 
 
@@ -131,12 +135,12 @@ def r0_to_dl1(
     ]
 
     try:
-        verbose(tag, f"Executing {stringify(commandargs)}")
+        log.debug(f"Executing {stringify(commandargs)}")
         rc = subprocess.call(commandargs)
     except subprocess.CalledProcessError as Error:
-        error(tag, f"{Error}", rc)
+        log.exception(f"{Error}")
     except OSError as ValueError:
-        error(tag, f"Command {stringify(commandargs)} failed, {ValueError}", ValueError)
+        log.exception(f"Command {stringify(commandargs)} failed, {ValueError}")
     else:
         history(
             run_str,
@@ -189,12 +193,12 @@ def dl1_to_dl2(run_str, historyfile):
     ]
 
     try:
-        verbose(tag, f"Executing {stringify(commandargs)}")
+        log.debug(f"Executing {stringify(commandargs)}")
         rc = subprocess.call(commandargs)
     except subprocess.CalledProcessError as Error:
-        error(tag, f"{Error}", rc)
+        log.exception(f"{Error}", rc)
     except OSError as ValueError:
-        error(tag, f"Command {stringify(commandargs)} failed, {ValueError}", ValueError)
+        log.exception(f"Command {stringify(commandargs)} failed, {ValueError}", ValueError)
     else:
         history(
             run_str,
@@ -215,7 +219,6 @@ def dl1_to_dl2(run_str, historyfile):
 
 
 if __name__ == "__main__":
-    tag = gettag()
     # set the options through cli parsing
     args = datasequencecliparsing(sys.argv[0])
     # run the routine
