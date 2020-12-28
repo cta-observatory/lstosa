@@ -2,13 +2,13 @@
 End-of-Night script and functions. Check that everything has been processed
 Collect results, merge them if needed
 """
+import logging
 import os.path
 import re
 import subprocess
 import sys
 from filecmp import cmp
 from glob import glob
-from os import unlink
 from os.path import basename, exists, isdir, islink, join
 
 from osa.configs import options
@@ -22,15 +22,12 @@ from osa.utils.cliopts import closercliparsing
 from osa.utils.register import register_run_concept_files
 from osa.utils.standardhandle import gettag
 from osa.utils.utils import (
-    createlock,
     getlockfile,
     is_day_closed,
     is_defined,
     lstdate_to_dir,
     make_directory,
 )
-from osa.veto.veto import createclosed
-import logging
 
 log = logging.getLogger(__name__)
 
