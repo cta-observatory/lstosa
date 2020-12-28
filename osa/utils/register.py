@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 from filecmp import cmp
@@ -6,8 +7,9 @@ from os.path import basename, exists, join
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.standardhandle import gettag, verbose
 from osa.utils.utils import lstdate_to_dir
+
+log = logging.getLogger(__name__)
 
 
 def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
@@ -22,10 +24,8 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
     prefix: prefix of the data file
     type : type of run for DB purposes
     """
-
-    tag = gettag()
     file_list = glob(join(inputdir, f"{prefix}*{run_str}*{suffix}"))
-    verbose(tag, f"File list is {file_list}")
+    log.debug(f"File list is {file_list}")
     # hostname = gethostname()
     # the default subrun index for most of the files
     # run = int(run_str.lstrip("0"))
@@ -39,19 +39,17 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
         outputf = join(outputdir, basename(inputf))
         if exists(outputf) and cmp(inputf, outputf):
             # do nothing than acknowledging
-            verbose(
-                tag, f"Destination file {outputf} exists and it is identical to input"
-            )
+            log.debug(f"Destination file {outputf} exists and it is identical to input")
         else:
             # there is no output file or it is different
-            verbose(tag, f"Moving file {outputf}")
+            log.debug(f"Moving file {outputf}")
             shutil.move(inputf, outputf)
             if prefix == "dl1_LST-1" and suffix == ".h5":
-                verbose(tag, f"Keeping DL1 symlink in {inputf}")
+                log.debug(f"Keeping DL1 symlink in {inputf}")
                 os.symlink(outputf, inputf)
             # for the moment we are not interested in calculating the hash md5
             # md5sum = get_md5sum_and_copy(inputf, outputf)
-            # verbose(tag, "Resulting md5sum={0}".format(md5sum))
+            # log.debug("Resulting md5sum={0}".format(md5sum))
             # mtime = datetime.fromtimestamp(getmtime(outputf))
             # size = getsize(outputf)
 
@@ -72,9 +70,9 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
             # querymatrix = select_db(s, u, d, storagetable, selections, conditions)
             # It could be that they don't exists
             # if len(querymatrix) != 0:
-            #     verbose(tag, "Resulting query={0}".format(querymatrix[0]))
+            #     log.debug("Resulting query={0}".format(querymatrix[0]))
             #     id_parent, daq_id, report_id = querymatrix[0]
-            #     verbose(tag, f"id_parent={id_parent}, daq_id={daq_id}, report_id={report_id}")
+            #     log.debug(f"id_parent={id_parent}, daq_id={daq_id}, report_id={report_id}")
 
             # Get also de sequence id
             # selections = ['ID']
@@ -83,7 +81,7 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
             # sequence_id = None
             # if len(querymatrix) != 0:
             #     sequence_id, = querymatrix[0]
-            #     verbose(tag, "sequence_id={0}".format(sequence_id))
+            #     log.debug("sequence_id={0}".format(sequence_id))
             # Finally we update or insert the file
             # night = lstdate_to_iso(options.date)
             # assignments = {'ID_PARENT': id_parent, 'DAQ_ID': daq_id,
@@ -104,8 +102,6 @@ def register_run_concept_files(run_string, concept):
     run_string
     concept
     """
-
-    tag = gettag()
     inputdir = options.directory
     nightdir = lstdate_to_dir(options.date)
     if concept == "DL2":
@@ -123,5 +119,5 @@ def register_run_concept_files(run_string, concept):
     type = cfg.get("LSTOSA", concept + "TYPE")
     prefix = cfg.get("LSTOSA", concept + "PREFIX")
     suffix = cfg.get("LSTOSA", concept + "SUFFIX")
-    verbose(tag, f"Registering {type} file for {prefix}*{run_string}*{suffix}")
+    log.debug(f"Registering {type} file for {prefix}*{run_string}*{suffix}")
     register_files(type, run_string, inputdir, prefix, suffix, outputdir)
