@@ -16,7 +16,7 @@ from osa.configs.config import cfg
 from osa.jobs.job import are_all_jobs_correctly_finished
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import get_nightsummary_file, read_nightsummary
-from osa.rawcopy.raw import arerawfilestransferred, get_check_rawdir
+from osa.rawcopy.raw import are_rawfiles_transferred, get_check_rawdir
 from osa.reports.report import finished_assignments, finished_text, start
 from osa.utils.cliopts import closercliparsing
 from osa.utils.register import register_run_concept_files
@@ -361,7 +361,7 @@ def is_finished_check(nightsum):
         # adds the scripts to sequences
         # job.preparejobs(sequence_list, run_list, subrun_list)
         # FIXME: How can we check that all files are there?
-        if arerawfilestransferred():
+        if are_rawfiles_transferred():
             log.debug(f"Are files transferred? {sequence_list}")
             if are_all_jobs_correctly_finished(sequence_list):
                 sequence_success = True
