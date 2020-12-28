@@ -1,16 +1,24 @@
+"""
+It reads the night summary file
+"""
+
+import logging
 import subprocess
 from os.path import exists, isfile, join
 
 from osa.configs import config, options
 from osa.rawcopy.raw import arerawfilestransferred, get_check_rawdir
 from osa.utils.iofile import readfromfile, writetofile
-from osa.utils.standardhandle import error, gettag, stringify, verbose
+from osa.utils.standardhandle import stringify
 from osa.utils.utils import build_lstbasename
 
-__all__ = ["buildexternal", "build", "readnightsummary", "getnightsummaryfile"]
+
+__all__ = ["build_external", "read_nightsummary", "get_nightsummary_file"]
+
+log = logging.getLogger(__name__)
 
 
-def buildexternal(command, rawdir):
+def build_external(command, rawdir):
     """Calls the create nightsummary script.
 
     This is usually the `create_nightsummary.py` file.
@@ -27,7 +35,6 @@ def buildexternal(command, rawdir):
     stdout : str
         The output of the create nightsummary script.
     """
-    tag = gettag()
     commandargs = [command]
     if not arerawfilestransferred():
         # ask for an incomplete night summary
@@ -35,85 +42,75 @@ def buildexternal(command, rawdir):
     commandargs.append(rawdir)
     try:
         stdout = subprocess.check_output(commandargs, universal_newlines=True)
-    except OSError(ValueError, NameError):
-        error(tag, f"Command {stringify(commandargs)}, {NameError}", ValueError)
-    except subprocess.CalledProcessError as Error:
-        error(tag, Error, 2)
+    except OSError as error:
+        log.exception(f"Command {stringify(commandargs)}, error: {error}")
+    except subprocess.CalledProcessError as error:
+        log.exception(f"Subprocess error: {error}")
     else:
-        verbose(tag, "Getting output...\n" + stdout.rstrip())
+        log.debug("Getting output...\n" + stdout.rstrip())
     return stdout
 
 
-def build(rawdir):
-    """This is a simple ls -1 -> file with a parsing of the file.
-    We use first the database approach and the directory listing as
-    a failover.
+def read_nightsummary():
     """
-    tag = gettag()
-    error(tag, "This function is not yet implemented", 2)
-
-
-def readnightsummary():
-    """Reads the nightsummary txt file.
-
-    For this it either calls the create nightsummary script or simply reads an
-    existing nightsummary file.
+    Reads the nightsummary txt file. It either calls the create nightsummary
+    script or simply reads an existing nightsummary file.
 
     Returns
     -------
     stdout : str
         The content of the nightsummary txt file.
     """
-    tag = gettag()
-    # at the moment we profit from the output of the nightsummary script
-    nightsumfile = getnightsummaryfile()
+
+    nightsummary_file = get_nightsummary_file()
     stdout = None
-    options.nightsum = True
-    # when executing the closer, 'options.nightsum' is always True
-    if not options.nightsum:
+    options.nightsummary = True
+    # when executing the closer, 'options.nightsummary' is always True
+    if not options.nightsummary:
         rawdir = get_check_rawdir()
         command = config.cfg.get("LSTOSA", "NIGHTSUMMARYSCRIPT")
-        verbose(tag, "executing command " + command + " " + rawdir)
-        stdout = buildexternal(command, rawdir)
+        log.debug("Executing command " + command + " " + rawdir)
+        stdout = build_external(command, rawdir)
         if not options.simulate:
-            writetofile(nightsumfile, stdout)
+            writetofile(nightsummary_file, stdout)
     else:
-        if nightsumfile:
-            if exists(nightsumfile) and isfile(nightsumfile):
+        if nightsummary_file:
+            if exists(nightsummary_file) and isfile(nightsummary_file):
                 try:
-                    stdout = readfromfile(nightsumfile)
-                except IOError as NameError:
-                    error(tag, f"Problems with file {nightsumfile}, {NameError}", 2)
+                    stdout = readfromfile(nightsummary_file)
+                except IOError as err:
+                    log.exception(f"Problems with file {nightsummary_file}, {err}")
             else:
-                error(tag, f"File {nightsumfile} does not exists", 2)
+                log.error(f"File {nightsummary_file} does not exists")
         else:
-            error(tag, "No night summary file specified", 2)
-    verbose(tag, f"Night Summary file: {nightsumfile}")
-    verbose(tag, f"Night Summary:\n{stdout}")
+            log.error("No night summary file specified")
+    log.debug(f"Night summary file: {nightsummary_file}")
+    log.debug(f"Night summary:\n{stdout}")
     return stdout
 
 
-def getnightsummaryfile():
-    """Builds the file name of the nightsummary txt file.
+def get_nightsummary_file():
+    """
+    Builds the file name of the night summary txt file.
 
     Returns
     -------
-    nightsummaryfile : str
-        File name of the nightsummary txt file
+    nightsummary_file : str
+        File name of the night summary txt file
     """
     if options.tel_id == "LST1" or options.tel_id == "LST2":
         nightsumprefix = config.cfg.get("LSTOSA", "NIGHTSUMMARYPREFIX")
         nightsumsuffix = config.cfg.get("LSTOSA", "TEXTSUFFIX")
         nightsumdir = config.cfg.get("LSTOSA", "NIGHTSUMDIR")
         basename = build_lstbasename(nightsumprefix, nightsumsuffix)
-        nightsummaryfile = join(nightsumdir, basename)
-        return nightsummaryfile
+        nightsummary_file = join(nightsumdir, basename)
+        return nightsummary_file
     # only the closer needs the night summary file in case of 'ST'.
     # since ST has no night summary file, we give him the one from LST1
     elif options.tel_id == "ST":
         nightsumprefix = config.cfg.get("LSTOSA", "NIGHTSUMMARYPREFIX")
         nightsumsuffix = config.cfg.get("LSTOSA", "TEXTSUFFIX")
         basename = build_lstbasename(nightsumprefix, nightsumsuffix)
-        nightsummaryfile = join(options.directory, basename)
-        return nightsummaryfile.replace("ST", "LST1")
+        nightsummary_file = join(options.directory, basename)
+        return nightsummary_file.replace("ST", "LST1")
     return None

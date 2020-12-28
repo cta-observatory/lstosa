@@ -1,20 +1,28 @@
 #!/usr/bin/env python
 
+"""
+Main LSTOSA script. It creates and execute the calibration sequence and
+prepares a SLURM job array which launches the data sequences for every subrun.
+"""
+
 import os
 from decimal import Decimal
 from glob import glob
 from os.path import join
 
+import logging
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.jobs.job import getqueuejoblist, preparejobs, preparestereojobs, submitjobs
 from osa.nightsummary.extract import extractruns, extractsequences, extractsequencesstereo, extractsubruns
-from osa.nightsummary.nightsummary import readnightsummary
+from osa.nightsummary.nightsummary import read_nightsummary
 from osa.reports.report import rule, start
 from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_needed
-from osa.utils.standardhandle import gettag, output, verbose
+from osa.utils.standardhandle import gettag
 from osa.utils.utils import is_day_closed
 from osa.veto.veto import getvetolist, getclosedlist
+
+log = logging.getLogger(__name__)
 
 
 def sequencer():
@@ -26,6 +34,7 @@ def sequencer():
 
     process_mode = None
     single_array = ["LST1", "LST2"]
+    tag = gettag()
     start(tag)
     if options.tel_id in single_array:
         process_mode = "single"
@@ -70,17 +79,17 @@ def single_process(telescope, process_mode):
 
     if process_mode == "single":
         if is_day_closed():
-            output(tag, f"Day {options.date} for {options.tel_id} already closed")
+            log.info(f"Day {options.date} for {options.tel_id} already closed")
             return sequence_list
     else:
         if process_mode == "stereo":
             # only simulation for single array required
-            options.nightsum = True
+            options.nightsummary = True
             options.simulate = True
             is_report_needed = False
 
     # building the sequences
-    night = readnightsummary()
+    night = read_nightsummary()
     subrun_list = extractsubruns(night)
     run_list = extractruns(subrun_list)
     # modifies run_list by adding the seq and parent info into runs
@@ -178,24 +187,26 @@ def update_sequence_status(seq_list):
             seq.dl2status = int(Decimal(get_status_for_sequence(seq, "DL2") * 100) / seq.subruns)
 
 
-def get_status_for_sequence(s, program):
+def get_status_for_sequence(sequence, program):
     """
+    Get number of files produced for a given sequence and data level.
 
     Parameters
     ----------
-    s
-    program
+    sequence
+    program : str
+        Options: 'CALIB', 'DL1', 'DATACHECK', 'MUON' or 'DL2'
 
     Returns
     -------
-    number_of_files
+    number_of_files : int
 
     """
     prefix = cfg.get("LSTOSA", program + "PREFIX")
     suffix = cfg.get("LSTOSA", program + "SUFFIX")
-    files = glob(join(options.directory, f"{prefix}*{s.run}*{suffix}"))
+    files = glob(join(options.directory, f"{prefix}*{sequence.run}*{suffix}"))
     number_of_files = len(files)
-    verbose(tag, f"Found {number_of_files} {program} files for sequence name {s.jobname}")
+    log.debug(f"Found {number_of_files} {program} files for sequence name {sequence.jobname}")
     return number_of_files
 
 
@@ -329,7 +340,7 @@ def reportsequences(seqlist):
 #         id = None
 #         if matrix:
 #             id = matrix[0][0]
-#         verbose(tag, f"To this sequence corresponds an entry in the {table} with ID {id}")
+#         log.debug(f"To this sequence corresponds an entry in the {table} with ID {id}")
 #         assignments = {
 #             'TELESCOPE': s.telescope,
 #             'NIGHT': s.night,
@@ -391,7 +402,6 @@ def prettyoutputmatrix(m, paddingspace):
         row = m[i]
         for j in range(len(row)):
             col = row[j]
-            # verbose(tag, "Row {0}, Col {1}, Val {2} Len {3}".format(i, j, col, l))
             if m.index(row) == 0:
                 maxfieldlength.append(len(str(col)))
             elif len(str(col)) > maxfieldlength[j]:
@@ -409,14 +419,24 @@ def prettyoutputmatrix(m, paddingspace):
             else:
                 # should be a string, left aligned
                 stringrow += f"{col}{lpadding}{rpadding}"
-        output(tag, stringrow)
+        log.info(stringrow)
 
 
 if __name__ == "__main__":
-    """Sequencer called as a script does the full job."""
 
-    tag = gettag()
-    # set the options through parsing of the command line interface
+    # Set the options through parsing of the command line interface
     sequencercliparsing()
-    # run the routine
+
+    # Logging
+    if options.verbose:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    format = logging.Formatter(
+        "%(asctime)s %(levelname)s [%(name)s] (%(module)s.%(funcName)s): %(message)s"
+    )
+    handler.setFormatter(format)
+    logging.getLogger().addHandler(handler)
+
     sequencer()

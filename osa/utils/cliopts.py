@@ -130,7 +130,7 @@ def closercliparsing():
     options.stdout = opts.stdout
     options.date = opts.date
     options.directory = opts.directory
-    options.nightsum = opts.nightsum
+    options.nightsummary = opts.nightsum
     options.noninteractive = opts.noninteractive
     options.simulate = opts.simulate
     options.verbose = opts.verbose
@@ -148,7 +148,7 @@ def closercliparsing():
     options.directory = set_default_directory_if_needed()
 
     # setting on the usage of night summary
-    options.nightsum = True
+    options.nightsummary = True
 
     options.prod_id = get_prod_id()
 
@@ -749,7 +749,7 @@ def sequencercliparsing():
     options.date = opts.date
     options.directory = opts.directory
     options.mode = opts.mode
-    options.nightsum = opts.nightsum
+    options.nightsummary = opts.nightsum
     options.simulate = opts.simulate
     options.test = opts.test
     options.nocalib = opts.nocalib

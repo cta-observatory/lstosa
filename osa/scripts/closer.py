@@ -87,7 +87,7 @@ def use_night_summary():
     """Check for the usage of night summary option and file existence."""
 
     answer = False
-    if options.nightsum:
+    if options.nightsummary:
         night_file = getnightsummaryfile()
         if exists(night_file):
             answer = True

@@ -17,8 +17,17 @@ from osa.utils.utils import lstdate_to_dir
 
 
 def datasequence(args):
-    """ Performs all the steps to process a whole run """
+    """
+    Performs all the steps to process a whole run
 
+    Parameters
+    ----------
+    args
+
+    Returns
+    -------
+
+    """
     calibrationfile = args[0]
     pedestalfile = args[1]
     time_calibration = args[2]
@@ -72,7 +81,8 @@ def r0_to_dl1(
     run_str,
     historyfile,
 ):
-    """Perform low and high-level calibration to raw camera images.
+    """
+    Perform low and high-level calibration to raw camera images.
     Apply image cleaning and obtain shower parameters.
 
     Parameters
@@ -87,6 +97,10 @@ def r0_to_dl1(
     tib_counter0
     run_str
     historyfile
+
+    Returns
+    -------
+    rc
     """
 
     if options.simulate:
@@ -133,16 +147,19 @@ def r0_to_dl1(
             rc,
             historyfile,
         )
-        try:    nonfatalrcs = [int(k) for k in cfg.get('NONFATALRCS','R0-DL1').split(",")]                                                                                                                                                   
-        except: nonfatalrcs = [0]                                                                                       
-        if rc not in nonfatalrcs:                                                                                       
+        try:
+            nonfatalrcs = [int(k) for k in cfg.get('NONFATALRCS', 'R0-DL1').split(",")]
+        except:
+            nonfatalrcs = [0]
+        if rc not in nonfatalrcs:
             sys.exit(rc)
         return rc
 
 
 @trace
 def dl1_to_dl2(run_str, historyfile):
-    """Apply already trained RFs models to DL1 files.
+    """
+    Apply already trained RFs models to DL1 files.
     It identifies the primary particle, reconstructs the energy
     and direction of the primary particle.
 
@@ -158,7 +175,6 @@ def dl1_to_dl2(run_str, historyfile):
     configfile = cfg.get("LSTOSA", "DL2CONFIGFILE")
     rf_models_directory = cfg.get("LSTOSA", "RF-MODELS-DIR")
     command = cfg.get("LSTOSA", "DL1-DL2")  # FIXME  change LSTOSA by lstchain
-    nightdir = lstdate_to_dir(options.date)
     datafile = join(
         options.directory,
         f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}',
@@ -189,15 +205,16 @@ def dl1_to_dl2(run_str, historyfile):
             rc,
             historyfile,
         )
-        try:    nonfatalrcs = [int(k) for k in cfg.get('NONFATALRCS','DL1-DL2').split(",")]
-        except: nonfatalrcs = [0]
+        try:
+            nonfatalrcs = [int(k) for k in cfg.get('NONFATALRCS', 'DL1-DL2').split(",")]
+        except:
+            nonfatalrcs = [0]
         if rc not in nonfatalrcs:
             sys.exit(rc)
         return rc
 
 
 if __name__ == "__main__":
-
     tag = gettag()
     # set the options through cli parsing
     args = datasequencecliparsing(sys.argv[0])
