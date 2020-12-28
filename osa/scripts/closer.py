@@ -117,7 +117,16 @@ def is_raw_data_available():
 
 
 def is_sequencer_successful(seq_tuple):
+    """
 
+    Parameters
+    ----------
+    seq_tuple
+
+    Returns
+    -------
+
+    """
     # TODO: implement a more reliable non - intrusive than is_finished_check.
     answer = seq_tuple[0]
     return answer
@@ -127,7 +136,6 @@ def notify_sequencer_errors():
     """A good notification helps the user on deciding to close it or not."""
 
     log.info("Sequencer did not complete or finish unsuccessfully")
-    pass
 
 
 def ask_for_closing():
@@ -193,13 +201,13 @@ def post_process(seq_tuple):
     extract_provenance(seq_list)
 
     if options.seqtoclose is None:
-        is_closed = set_closed_with_file(analysis_text)
-        return is_closed
+        return set_closed_with_file(analysis_text)
     return False
 
 
 def post_process_files(seq_list):
-    """Identify the different types of files, try to close the sequences
+    """
+    Identify the different types of files, try to close the sequences
     and copy output files to corresponding data directories.
 
     Parameters
@@ -244,10 +252,8 @@ def post_process_files(seq_list):
         for file in output_files_set:
             file_basename = basename(file)
             pattern_found = re.search(f"^{pattern}", file_basename)
-            # log.debug(f"Was pattern {pattern} found in {file_basename}?: {pattern_found}")
             if options.seqtoclose is not None:
                 seqtoclose_found = re.search(options.seqtoclose, file_basename)
-                # log.debug(f"Was pattern {options.seqtoclose} found in {file_basename}?: {seqtoclose_found}")
                 if seqtoclose_found is None:
                     pattern_found = None
             if pattern_found is not None:
@@ -263,9 +269,7 @@ def post_process_files(seq_list):
                                 # unlink(file)
                         elif exists(file) and cmp(file, new_dst):
                             # delete
-                            log.debug(
-                                f"Destination file exists and it is equal to {file}"
-                            )
+                            log.debug(f"Destination file exists and it is equal to {file}")
                             if options.seqtoclose is None:
                                 log.debug(f"Deleting {file}")
                                 # unlink(file)
@@ -285,48 +289,30 @@ def post_process_files(seq_list):
                                     # register and delete
                                     log.debug(f"Registering file {run_str_found}")
                                     register_run_concept_files(s.run_str, concept)
-                                    if options.seqtoclose is None:
-                                        if exists(file):
-                                            # unlink(file)
-                                            pass
-                                        else:
-                                            log.debug("File does not exists")
+                                    if options.seqtoclose is None and not exists(file):
+                                        log.debug("File does not exists")
 
-                            elif s.type == "CALI" or s.type == "DRS4":
-                                calib_run_str_found = re.search(
-                                    str(s.run), file_basename
-                                )
-                                drs4_run_str_found = re.search(
-                                    str(s.previousrun), file_basename
-                                )
+                            elif s.type in ["CALI", "DRS4"]:
+                                calib_run_str_found = re.search(str(s.run), file_basename)
+                                drs4_run_str_found = re.search(str(s.previousrun), file_basename)
 
                                 if calib_run_str_found is not None:
                                     # register and delete
                                     log.debug(f"Registering file {calib_run_str_found}")
                                     register_run_concept_files(str(s.run), concept)
-                                    if options.seqtoclose is None:
-                                        if exists(file):
-                                            # unlink(file)
-                                            pass
-                                        else:
-                                            log.debug("File does not exists")
+                                    if options.seqtoclose is None and not exists(file):
+                                        log.debug("File does not exists")
 
                                 if drs4_run_str_found is not None:
                                     # register and delete
                                     log.debug(f"Registering file {drs4_run_str_found}")
-                                    register_run_concept_files(
-                                        str(s.previousrun), concept
-                                    )
-                                    if options.seqtoclose is None:
-                                        if exists(file):
-                                            # unlink(file)
-                                            pass
-                                        else:
-                                            log.debug("File does not exists")
+                                    register_run_concept_files(str(s.previousrun), concept)
+                                    if options.seqtoclose is None and not exists(file):
+                                        log.debug("File does not exists")
 
-                                # FIXME: for the moment we do not want to close
-                                # setclosedfilename(s)
-                                # createclosed(s.closed)
+                # FIXME: for the moment we do not want to close
+                # setclosedfilename(s)
+                # createclosed(s.closed)
                 delete_set.add(file)
         output_files_set -= delete_set
 
@@ -440,9 +426,7 @@ def merge_dl1datacheck(seq_list):
             ]
             if not options.simulate:
                 try:
-                    process = subprocess.run(
-                        cmd, stdout=subprocess.PIPE, universal_newlines=True
-                    )
+                    process = subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
                 except subprocess.CalledProcessError as err:
                     log.exception(f"Not able to merge DL1 datacheck: {err}")
                 # TODO implement an automatic scp to www datacheck,
@@ -475,9 +459,7 @@ def extract_provenance(seq_list):
                 options.prod_id,
             ]
             if not options.simulate:
-                process = subprocess.run(
-                    cmd, stdout=subprocess.PIPE, universal_newlines=True
-                )
+                process = subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
             else:
                 log.debug("Simulate launching scripts")
             log.debug(cmd)
