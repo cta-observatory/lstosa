@@ -34,7 +34,7 @@ def xmlhandleJob(job):
                 jobhost = xmlhandlejobkey(job.getElementsByTagName('exec_host')[0])
             except IndexError as Error:
                 if state == 'C':
-                    warning(tag, "Job {0} found not having an exec_host, {1}".format(jobid, Error))
+                    log.warning("Job {0} found not having an exec_host, {1}".format(jobid, Error))
                 else:
                     error(tag, "Job {0} found not having an exec_host, {1}".format(jobid, Error),6) 
             else:
@@ -43,18 +43,18 @@ def xmlhandleJob(job):
                 try:
                     cputime = xmlhandlejobkey(job.getElementsByTagName('cput')[0])
                 except IndexError as Error:
-                    warning(tag, "CPU Time not yet found for {0}, {1}".format(name, Error))
+                    log.warning("CPU Time not yet found for {0}, {1}".format(name, Error))
                     cputime = '00:00:00'
                 try:
                     walltime = xmlhandlejobkey(job.getElementsByTagName('walltime')[0])
                 except IndexError as Error:
-                    warning(tag, "Wall time not yet found for {0}, {1}".format(name, Error))
+                    log.warning("Wall time not yet found for {0}, {1}".format(name, Error))
                     wallime = '00:00:00'
                 if state == 'C':
                     try:
                         exit = int(xmlhandlejobkey(job.getElementsByTagName('exit_status')[0]))
                     except IndexError as Error:
-                        warning(tag, "Malformed exit status in xml for jobid {0}, {1}".format(jobid, Error))
+                        log.warning("Malformed exit status in xml for jobid {0}, {1}".format(jobid, Error))
                         exit = None
 	return {'name': name, 'jobid': jobid, 'state': state, 'jobhost': jobhost, 'cputime': cputime, 'walltime':walltime, 'exit': exit}
 

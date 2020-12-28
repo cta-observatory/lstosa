@@ -35,7 +35,7 @@ def setvetoaction(name, sequence_list):
     for s in sequence_list:
         if s.jobname == name:
             s.action = 'Veto'
-            verbose(tag, "Attributes of sequence {0} updated".format(s.seq))
+            log.debug("Attributes of sequence {0} updated".format(s.seq))
 
 def updatevetos(sequence_list):
     tag = gettag()
@@ -45,7 +45,7 @@ def updatevetos(sequence_list):
         if (not exists(s.veto) and exists(s.history)):
             if failedhistory(s.history, int(cfg.get('LSTOSA', 'MAXTRYFAILED'))):
                 createveto(s.veto)
-                verbose(tag, "Created veto file {0}".format(s.veto))
+                log.debug("Created veto file {0}".format(s.veto))
 
 def failedhistory(historyfile, maxnumber):
     tag = gettag()
@@ -64,18 +64,18 @@ def failedhistory(historyfile, maxnumber):
             exit_status.append(int(words[10]))
         except ValueError as e:
             error(tag, "Malformed file {0}, {1}".format(historyfile, e), 4)
-        verbose(tag, "extracting line: {0}".format(line))
+        log.debug("extracting line: {0}".format(line))
     lsize = len(exit_status)
     strike = 0
     if (programme[-1] == "merpp") and (exit_status[-1] == 23):
         return False
     if lsize >= maxnumber and (goal[-1] != "new_calib"):
         for i in range(lsize-1):
-            # verbose(tag, "comparing {0}=={1}, {2}=={3}, {4}=={5}".format(exit_status[i], exit_status[lsize-1], card[i], card[lsize-1], programme[i], programme[lsize-1]))
+            # log.debug("comparing {0}=={1}, {2}=={3}, {4}=={5}".format(exit_status[i], exit_status[lsize-1], card[i], card[lsize-1], programme[i], programme[lsize-1]))
             if ((exit_status[i] != 0) and (exit_status[i] == exit_status[lsize-1]) and (card[i] == card[lsize-1]) and (programme[i] == programme[lsize-1])):
                 strike += 1
                 if strike == maxnumber - 1:
-                    verbose(tag, "Maximum amount of failures reached for {0}".format(historyfile))
+                    log.debug("Maximum amount of failures reached for {0}".format(historyfile))
                     return True
     return False
 
@@ -104,4 +104,4 @@ def setclosedaction(name, sequence_list):
     for s in sequence_list:
         if s.jobname == name:
             s.action = 'Closed'
-            verbose(tag, "Attributes of sequence {0} updated".format(s.seq))
+            log.debug("Attributes of sequence {0} updated".format(s.seq))

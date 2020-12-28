@@ -72,7 +72,7 @@ def is_activity_over():
     flag_file = join(cfg.get(options.tel_id, 'activityoverdir'),\
      magicdate_to_dir(options.date), basename)
     if exists(flag_file) and isfile(flag_file):
-        verbose(tag, "Flag file {0} indicates activity is over".\
+        log.debug("Flag file {0} indicates activity is over".\
          format(flag_file))
         return True
     else:
@@ -89,7 +89,7 @@ def is_activity_locked(flag_file):
 
     from os.path import exists, isfile
 
-    verbose(tag, "Lock file {0}".format(flag_file))
+    log.debug("Lock file {0}".format(flag_file))
     if exists(flag_file) and isfile(flag_file):
         return should_remove_lock(flag_file)
         #return True
@@ -109,7 +109,7 @@ def should_remove_lock(flag_file):
     try:
         log_file_path = environ['outfile']
     except:
-        warning(tag, "Environment variable outfile not found, cannot check Rawcopy log")
+        log.warning("Environment variable outfile not found, cannot check Rawcopy log")
         return(False)
 
     nlines=3
@@ -119,7 +119,7 @@ def should_remove_lock(flag_file):
         number_locks = sum(['Activity locked for ' in line for line in nonempty[-nlines:]])
     
     if (number_locks is nlines):
-        verbose(tag, "Lock should be released, removing it")
+        log.debug("Lock should be released, removing it")
         release_lock(flag_file)
         return(True)
 
@@ -158,7 +158,7 @@ def acquire_lock(lock_file):
     hostname = gethostname()
     content = "{0}:{1}".format(hostname, pid)
     if createlock(lock_file, content):
-        verbose(tag, "Lock file created {0}".format(lock_file))
+        log.debug("Lock file created {0}".format(lock_file))
         return True 
     else:
         return False 
@@ -186,28 +186,28 @@ def loop_until_activity_is_over():
 
         if rc == 1:
             # More files are pending but they need still to be copied
-            output(tag, "Waiting for {0}s...".format(wait_if_only_pending))
+            log.info("Waiting for {0}s...".format(wait_if_only_pending))
             try:
                 sleep(wait_if_only_pending)
             except (KeyboardInterrupt, SystemExit):
                 options.nocheck = False
-                output(tag, "Program quitted by user")
+                log.info("Program quitted by user")
                 break
         elif rc == 2:
             # No more files are pending
             if is_daq_over() or (is_data() and is_nighttime_over(wait_if_only_pending)):
                 set_activity_over()
             elif not is_data() and is_nighttime_over(wait_if_only_pending):
-                output(tag, "Time to break the loop and go to sleep without data...")
+                log.info("Time to break the loop and go to sleep without data...")
                 break
             else:
                 # Wait and check if new files appeared
-                output(tag, "Waiting for {0}s...".format(wait_if_no_new))
+                log.info("Waiting for {0}s...".format(wait_if_no_new))
                 try:
                     sleep(wait_if_no_new)
                 except (KeyboardInterrupt, SystemExit):
                     options.nocheck = False
-                    output(tag, "Program quitted by user")
+                    log.info("Program quitted by user")
                     break
         else:
             error(tag, "Exit status from copy={0} not foreseen."\
@@ -241,30 +241,30 @@ def handle_pools():
 
     """ Init pools: XFS for meta is the first 
         and Local for the rest to avoid remounts """
-    output(tag, "Initiating meta pool")
+    log.info("Initiating meta pool")
     meta_pool = XFSPool(meta_fs, meta_path)
-    output(tag, "Initiating report pool")
+    log.info("Initiating report pool")
     report_pool = LocalPool(report_path)
-    output(tag, "Initiating raw pool")
+    log.info("Initiating raw pool")
     raw_pool = LocalPool(raw_path)
-    output(tag, "Initiating compress pool")
+    log.info("Initiating compress pool")
     compress_pool = LocalPool(compress_path)
 
     """ Discover files older than timestamp """
     timestamp = datetime.utcnow() - timedelta(seconds=offset)
-    output(tag, "Discovering meta files in pool")
+    log.info("Discovering meta files in pool")
     meta_pool.discover(meta_suffix, timestamp, meta_processed)
-    output(tag, "Discovering report files in pool")
+    log.info("Discovering report files in pool")
     report_pool.discover(report_suffix, timestamp, report_processed)
-    output(tag, "Discovering raw files in pool")
+    log.info("Discovering raw files in pool")
     raw_pool.discover(raw_suffix, timestamp, raw_processed)
     """ Time reset for the output """
     timestamp = datetime.utcnow()
-    output(tag, "Discovering compress files in pool")
+    log.info("Discovering compress files in pool")
     compress_pool.discover(compress_suffix, timestamp, compress_processed)
 
     """ Match file objects between pool sets """
-    output(tag, "Assigning files to one another in pools")
+    log.info("Assigning files to one another in pools")
     interpool_match(meta_pool, report_pool, raw_pool, compress_pool)
     interpool_missing_summary(meta_pool, report_pool, raw_pool, compress_pool)
 
@@ -283,13 +283,13 @@ def handle_pools():
         rc = 2
 
     """ Destroy the pools after the iteration """
-    output(tag, "Destroying meta pool")
+    log.info("Destroying meta pool")
     meta_pool.destroy()
-    output(tag, "Destroying report pool")
+    log.info("Destroying report pool")
     report_pool.destroy()
-    output(tag, "Destroying raw pool")
+    log.info("Destroying raw pool")
     raw_pool.destroy()
-    output(tag, "Destroying compress pool")
+    log.info("Destroying compress pool")
     compress_pool.destroy()
 
     return rc
@@ -332,7 +332,7 @@ def is_nighttime_over(offset):
     from datetime import datetime, timedelta
     from utils import get_night_limit_timestamp
     now = datetime.utcnow()
-    verbose(tag, "Now is {0}".format(now))
+    log.debug("Now is {0}".format(now))
     night_limit_timestamp = get_night_limit_timestamp()
 
     """ Convert string into seconds and add offset """
@@ -340,10 +340,10 @@ def is_nighttime_over(offset):
     dt_obj += timedelta(seconds=offset)
 
     if now <= dt_obj:
-        verbose(tag, "We are still ahead of night time")
+        log.debug("We are still ahead of night time")
         return False
     else:
-        verbose(tag, "We are behind night time")
+        log.debug("We are behind night time")
         return True
 ##############################################################################
 #
@@ -380,7 +380,7 @@ def mount_or_unmount(action, fsystem, wait_remount):
             error(tag, "{0}".format(Error), Error.returncode)
     else:
         t_start = datetime.utcnow()
-        output(tag, "{0} {1}ed at {2}".format(fsystem, action, t_start))
+        log.info("{0} {1}ed at {2}".format(fsystem, action, t_start))
     return t_start
 ##############################################################################
 #
@@ -423,7 +423,7 @@ def set_activity_over():
     ao_basename = cfg.get('COPY', 'activityoverbasename')
     flag_file = join(cfg.get(options.tel_id, 'activityoverdir'),\
      magicdate_to_dir(options.date), ao_basename)
-    output(tag, "Activity COPY/COMPRESS set as finished")
+    log.info("Activity COPY/COMPRESS set as finished")
     return createlock(flag_file, '')
 ##############################################################################
 #
@@ -454,20 +454,20 @@ def set_summary_start(activity, start_string):
      where_conditions)
     if len(querymatrix) == 1:
         id, start, is_finished = querymatrix[0]
-        verbose(tag, "ID={0}, START={1} from select_db".format(id, start))
+        log.debug("ID={0}, START={1} from select_db".format(id, start))
     elif len(querymatrix) > 1:
         errornonfatal(tag, "{0} entries in {1} for {2}, {3}, {4}".\
          format(len(querymatrix), table, activity, night, options.tel_id))
     else:
         # Nothing selected, no entry
         id = 0
-        verbose(tag, "NO ID in {0} for {1}, {2}, {3}"\
+        log.debug("NO ID in {0} for {1}, {2}, {3}"\
          .format(table, activity, night, options.tel_id))
 
     """ Choose the start time if not found or NULL """
     if (not start) or (start == 'NULL'):
         start = start_string
-        verbose(tag, "{0} starting time = {1}".format(activity, start))
+        log.debug("{0} starting time = {1}".format(activity, start))
         """ Updating or Insert into database """
         table = cfg.get('MYSQL', 'summary')
         where_conditions = {'NIGHT': night, 'TELESCOPE': options.tel_id,\
@@ -632,7 +632,7 @@ def release_lock(file):
         error(tag, "Could not remove lock file {0}, {1}".\
          format(file, e.strerror), e.errno)
     else:
-        verbose(tag, "Lock successfully released")
+        log.debug("Lock successfully released")
 ##############################################################################
 #
 # def is_copy_finished 
@@ -658,7 +658,7 @@ def get_xml_entries(xml):
     try:
         doc = minidom.parse(xml)
     except:
-        warning(tag, "Malformed xml file {0}".format(xml))
+        log.warning("Malformed xml file {0}".format(xml))
     else:
         node = doc.documentElement
         entries = doc.getElementsByTagName('DAQEntry')
@@ -691,7 +691,7 @@ def get_xml_entries(xml):
                 else:
                     assignments[columns[key]] = entryObj
         for i in assignments.keys():
-            verbose(tag, "{0} => {1}".format(i, assignments[i]))
+            log.debug("{0} => {1}".format(i, assignments[i]))
     return assignments
 ##############################################################################
 #
@@ -761,7 +761,7 @@ class Pool(object):
 
         for fileobj in self.discovered:
             fileobj.update()
-            verbose(tag, "fileobj.mtime={0}, limit_timestamp={1}".\
+            log.debug("fileobj.mtime={0}, limit_timestamp={1}".\
              format(fileobj.mtime, limit_timestamp))
             if fileobj.mtime and fileobj.mtime < limit_timestamp:
                 is_processed = False
@@ -881,7 +881,7 @@ class XFSPool(MountPool):
             sleep(self.wait_remount)
         except (KeyboardInterrupt, SystemExit):
             options.nocheck = False
-            output(tag, "Program quitted by user")
+            log.info("Program quitted by user")
             raise 
 ##############################################################################
 #
@@ -955,7 +955,7 @@ class File(object):
         concept_list = ['path', 'dirname', 'basename', 'suffix', 'exists',\
          'isfile', 'size', 'mtime', 'md5sum']
         for c in concept_list:
-            verbose(tag, "{0} = {1}".format(c, self.__dict__[c]))
+            log.debug("{0} = {1}".format(c, self.__dict__[c]))
 ##############################################################################
 #
 # class MagicFile
@@ -986,7 +986,7 @@ class MagicFile(File):
         concept_list = ['mysql_table', 'mysql_id', 'date', 'telescope',\
          'run', 'subrun', 'sourcewobble']
         for c in concept_list:
-            verbose(tag, "{0} = {1}".format(c, self.__dict__[c]))
+            log.debug("{0} = {1}".format(c, self.__dict__[c]))
 ##############################################################################
     def interact_with_db_generic(self, assignments, conditions):
         tag = gettag()
@@ -1213,7 +1213,7 @@ class RawFile(MagicFile):
 
         """ Avoid copy/compress if it is OK """
         if block.compress.exists:
-            warning(tag, "Compress file {0} exists".\
+            log.warning("Compress file {0} exists".\
              format(block.compress.path))
             # To COMMENT
             #if '05062984.006' not in block.compress.path:
@@ -1230,7 +1230,7 @@ class RawFile(MagicFile):
                     """ File is there but not in md5sums, probably corrupt """
                     pass
         """ The activity and the md5sums file update """
-        output(tag, "Copy/Compress {0}".format(self.path))
+        log.info("Copy/Compress {0}".format(self.path))
         self.catmd5pigzmd5(block)
         update_md5sums(self.md5sum, self.basename, md5sums_file)
         update_md5sums(block.compress.md5sum, block.compress.basename,\
@@ -1261,7 +1261,7 @@ class RawFile(MagicFile):
                 errornonfatal(tag, "Failed, {0}".format(e.output))
         except (KeyboardInterrupt, SystemExit):
             release_lock(lock)
-            output(tag, "Exiting by user or system...")
+            log.info("Exiting by user or system...")
             sys.exit(1)
         else:
             end = datetime.utcnow()
@@ -1393,7 +1393,7 @@ class FileBlock(object):
         elif self.report:
             self.mtime = self.report.mtime
 
-        verbose(tag, "Block initated with mtime {0}".format(self.mtime))
+        log.debug("Block initated with mtime {0}".format(self.mtime))
 ##############################################################################
     def process(self):
         tag = gettag()
@@ -1478,12 +1478,12 @@ def interpool_match(meta_pool, report_pool, raw_pool, compress_pool):
             raw.meta.report = raw.report
             raw.report.meta = raw.meta
 
-    output(tag, "-> raw: {0}".format(len(raw_pool.discovered)))
-    output(tag, "--> assigned meta: {0}/{1}".\
+    log.info("-> raw: {0}".format(len(raw_pool.discovered)))
+    log.info("--> assigned meta: {0}/{1}".\
      format(meta_count, len(meta_pool.discovered)))
-    output(tag, "--> assigned reports: {0}/{1}".\
+    log.info("--> assigned reports: {0}/{1}".\
      format(report_count, len(report_pool.discovered)))
-    output(tag, "--> assigned compress: {0}/{1}".\
+    log.info("--> assigned compress: {0}/{1}".\
      format(compress_count, len(compress_pool.discovered)))
 ##############################################################################
 #
@@ -1521,29 +1521,29 @@ def interpool_missing_summary(meta_pool, report_pool, raw_pool, compress_pool):
             raw_report_orphans.append(r)
 
     if len(raw_zero) != 0:
-        output(tag, "Raw files with zero size: {0}".format(len(raw_zero)))
+        log.info("Raw files with zero size: {0}".format(len(raw_zero)))
         for o in raw_zero:
             warn_text = "{1}, DAQ{2} crash/reboot, Zero sized file {0}".\
              format(o.basename, o.mtime.replace(microsecond=0),\
              options.tel_id.lstrip('M'))
-            warning(tag, warn_text)
+            log.warning(warn_text)
             content += warn_text + "\n"
     if len(raw_meta_orphans) != 0:
-        output(tag, "Orphan raw files without .xml metadata: {0}".\
+        log.info("Orphan raw files without .xml metadata: {0}".\
          format(len(raw_meta_orphans)))
         for o in raw_meta_orphans:
             warn_text = "{1}, DAQ{2} crash/reboot, Missing xml for {0}".\
              format(o.basename, o.mtime.replace(microsecond=0),\
              options.tel_id.lstrip('M'))
-            warning(tag, warn_text)
+            log.warning(warn_text)
             content += warn_text + "\n"
     if len(raw_report_orphans) != 0:
-        output(tag, "Orphan raw files without .rep reports: {0}".\
+        log.info("Orphan raw files without .rep reports: {0}".\
                  format(len(raw_report_orphans)))
         for o in raw_report_orphans:
             warn_text = "{1}, SA++ crash/reboot, Missing rep for {0}".\
              format(o.basename, o.mtime.replace(microsecond=0))
-            warning(tag, warn_text)
+            log.warning(warn_text)
             content += warn_text + "\n"
 
     if content != '':
@@ -1586,7 +1586,7 @@ def build_block(meta_set, report_set, raw_set):
             if o.run and o.subrun:
                 lexical_set.add(o.run + o.subrun)
 
-    verbose(tag, "Lexical order gives {0} blocks: {1}".\
+    log.debug("Lexical order gives {0} blocks: {1}".\
      format(len(lexical_set), lexical_set))
 
     fileblock_set = set()
@@ -1598,12 +1598,12 @@ def build_block(meta_set, report_set, raw_set):
                 type = o.type
                 if (o.run and o.subrun) and (o.run + o.subrun) == l:
                     block[o.type] = o
-                    verbose(tag, "Added to block: {0} {1}".\
+                    log.debug("Added to block: {0} {1}".\
                      format(o.type, o.basename))
                     break
             else:
                 block[type] = None
-                verbose(tag, "Added to block: {0} {1}".format(type, None))
+                log.debug("Added to block: {0} {1}".format(type, None))
 
         if block[raw_type]:
             compress_path = join(cfg.get(options.tel_id, 'rawoutputdir'),\

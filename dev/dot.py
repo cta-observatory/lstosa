@@ -47,10 +47,10 @@ def writeworkflow(sequence_list):
     content += "}\n"
     if not options.simulate:
         replaced = writetofile(dot_path, content)
-    verbose(tag, "Workflow updated? {0} in {1}".format(replaced, dot_path))
+    log.debug("Workflow updated? {0} in {1}".format(replaced, dot_path))
     svg_path = dot_path.rsplit('.', 1)[0] + cfg.get('LSTOSA', 'SVGSUFFIX')
     if replaced or not exists(svg_path):
-        verbose(tag, "Updating workflow file: {0}".format(dot_path))
+        log.debug("Updating workflow file: {0}".format(dot_path))
         convert_dot_into_svg(dot_path, svg_path)
 
 
@@ -72,6 +72,6 @@ def convert_dot_into_svg(dotfile, svgfile):
         subprocess.call(commandargs)
     # except OSError as (ValueError, NameError):
     except OSError as NameError:
-        warning(tag, "svg file could not be created from dot file {0}, {1}".format(dotfile, NameError))
+        log.warning("svg file could not be created from dot file {0}, {1}".format(dotfile, NameError))
     else:
-        verbose(tag, "Workflow sketched in file {0} ".format(dotfile))
+        log.debug("Workflow sketched in file {0} ".format(dotfile))

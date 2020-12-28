@@ -58,7 +58,7 @@ def insert_and_select_id_db(servername, username, database, table,\
        id = 0
     else:
        id = int(feedback.strip())
-    verbose(tag, "LAST_INSERT_ID is {0}".format(id))
+    log.debug("LAST_INSERT_ID is {0}".format(id))
     return id
 ##############################################################################
 #
@@ -103,9 +103,9 @@ def update_or_insert_and_select_id_db(servername, username, database, table,\
         conditions = {}
         id = insert_and_select_id_db(servername, username, database, table,\
               assignments, conditions)
-        verbose(tag, "Inserted with ID={0}".format(id))
+        log.debug("Inserted with ID={0}".format(id))
     else:
-        verbose(tag, "Updated with ID={0}".format(id))
+        log.debug("Updated with ID={0}".format(id))
     return id
 ##############################################################################
 #
@@ -300,7 +300,7 @@ def connect_or_call(servername, username, database, sql_command):
         else:
             feedback = connect_db(servername, username, database, sql_command)
     else:
-        verbose(tag, "SIMULATE query to database: {0}".format(sql_command))
+        log.debug("SIMULATE query to database: {0}".format(sql_command))
     return feedback
 ##############################################################################
 #
@@ -346,7 +346,7 @@ def subprocess_call_db(servername, username, database, sql_command):
     except subprocess.CalledProcessError as e:
         error(tag, "MySQL> {0}: {1}".format(stringify(e.cmd), e.output), e.returncode)
     else:
-        verbose(tag, "Database query OK: {0}".format(sql_command))
+        log.debug("Database query OK: {0}".format(sql_command))
     return feedback
 ##############################################################################
 #
@@ -371,6 +371,6 @@ def connect_db(servername, username, database, sql_command):
         else:
             feedback = x.fetchall()
             conn.commit()
-            verbose(tag, "Database query OK: {0}".format(sql_command))
+            log.debug("Database query OK: {0}".format(sql_command))
         conn.close()
     return feedback
