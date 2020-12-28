@@ -32,3 +32,4 @@ filter = None
 quit = None
 test = False
 nocalib = False
+seqtoclose = None
