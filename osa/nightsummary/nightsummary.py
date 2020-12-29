@@ -4,6 +4,7 @@ It reads the night summary file
 
 import logging
 import subprocess
+import sys
 from os.path import exists, isfile, join
 
 from osa.configs import config, options
@@ -11,7 +12,6 @@ from osa.rawcopy.raw import are_rawfiles_transferred, get_check_rawdir
 from osa.utils.iofile import readfromfile, writetofile
 from osa.utils.standardhandle import stringify
 from osa.utils.utils import build_lstbasename
-
 
 __all__ = ["build_external", "read_nightsummary", "get_nightsummary_file"]
 
@@ -82,6 +82,7 @@ def read_nightsummary():
                     log.exception(f"Problems with file {nightsummary_file}, {err}")
             else:
                 log.error(f"File {nightsummary_file} does not exists")
+                sys.exit(1)
         else:
             log.error("No night summary file specified")
     log.debug(f"Night summary file path: {nightsummary_file}")
