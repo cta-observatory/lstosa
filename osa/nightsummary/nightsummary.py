@@ -7,7 +7,7 @@ import subprocess
 from os.path import exists, isfile, join
 
 from osa.configs import config, options
-from osa.rawcopy.raw import arerawfilestransferred, get_check_rawdir
+from osa.rawcopy.raw import are_rawfiles_transferred, get_check_rawdir
 from osa.utils.iofile import readfromfile, writetofile
 from osa.utils.standardhandle import stringify
 from osa.utils.utils import build_lstbasename
@@ -36,7 +36,7 @@ def build_external(command, rawdir):
         The output of the create nightsummary script.
     """
     commandargs = [command]
-    if not arerawfilestransferred():
+    if not are_rawfiles_transferred():
         # ask for an incomplete night summary
         commandargs.append("-i")
     commandargs.append(rawdir)
@@ -84,7 +84,7 @@ def read_nightsummary():
                 log.error(f"File {nightsummary_file} does not exists")
         else:
             log.error("No night summary file specified")
-    log.debug(f"Night summary file: {nightsummary_file}")
+    log.debug(f"Night summary file path: {nightsummary_file}")
     log.debug(f"Night summary:\n{stdout}")
     return stdout
 
