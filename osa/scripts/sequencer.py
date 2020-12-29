@@ -10,6 +10,8 @@ from decimal import Decimal
 from glob import glob
 from os.path import join
 
+from osa.utils.logging import MyFormatter
+
 import logging
 from osa.configs import options
 from osa.configs.config import cfg
@@ -437,15 +439,13 @@ if __name__ == "__main__":
     sequencercliparsing()
 
     # Logging
+    fmt = MyFormatter()
+    handler = logging.StreamHandler()
+    handler.setFormatter(fmt)
+    logging.root.addHandler(handler)
     if options.verbose:
-        log.setLevel(logging.DEBUG)
+        logging.root.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
-    handler = logging.StreamHandler()
-    format = logging.Formatter(
-        "%(asctime)s %(levelname)s [%(name)s] (%(module)s.%(funcName)s): %(message)s"
-    )
-    handler.setFormatter(format)
-    logging.getLogger().addHandler(handler)
 
     sequencer()
