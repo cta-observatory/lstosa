@@ -1,3 +1,6 @@
+"""
+Extract subrun, run, sequence list and build corresponding objects.
+"""
 import logging
 from datetime import datetime
 
@@ -54,14 +57,9 @@ def extractsubruns(nightsummary):
             sr.dragon_counter0 = str(word[7])
             sr.ucts_t0_tib = str(word[9])
             sr.tib_counter0 = str(word[10])
-            try:
-                sr.runobj = run_to_obj[current_run]
-            except:
-                # check if this is the first subrun. If not, print a warning
-                if sr.subrun != 1:
-                    log.warning(f"Missing {current_run}.001 subrun")
 
-                # build run object
+            try:
+                # Build run object
                 sr.runobj = RunObj()
                 sr.runobj.run_str = current_run_str
                 sr.runobj.run = current_run
@@ -73,10 +71,14 @@ def extractsubruns(nightsummary):
                 sr.runobj.telescope = options.tel_id
                 sr.runobj.night = lstdate_to_iso(options.date)
                 run_to_obj[sr.runobj.run] = sr.runobj
-
-            sr.runobj.subrun_list.append(sr)
-            sr.runobj.subruns = len(sr.runobj.subrun_list)
-            subrun_list.append(sr)
+            except KeyError as err:
+                log.warning(f"Key error, {err}")
+            except IndexError as err:
+                log.warning(f"Index error, {err}")
+            else:
+                sr.runobj.subrun_list.append(sr)
+                sr.runobj.subruns = len(sr.runobj.subrun_list)
+                subrun_list.append(sr)
         log.debug("Subrun list extracted")
     return subrun_list
 
