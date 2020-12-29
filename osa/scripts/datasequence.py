@@ -2,6 +2,7 @@
 Script that is called from the batch system to process a run
 """
 
+import logging
 import subprocess
 import sys
 from os.path import basename, join
@@ -12,10 +13,9 @@ from osa.jobs.job import historylevel
 from osa.provenance.capture import trace
 from osa.reports.report import history
 from osa.utils.cliopts import datasequencecliparsing
+from osa.utils.logging import MyFormatter
 from osa.utils.standardhandle import stringify
 from osa.utils.utils import lstdate_to_dir
-
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -223,16 +223,14 @@ if __name__ == "__main__":
     args = datasequencecliparsing(sys.argv[0])
 
     # Logging
+    fmt = MyFormatter()
+    handler = logging.StreamHandler()
+    handler.setFormatter(fmt)
+    logging.root.addHandler(handler)
     if options.verbose:
-        log.setLevel(logging.DEBUG)
+        logging.root.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
-    handler = logging.StreamHandler()
-    format = logging.Formatter(
-        "%(asctime)s %(levelname)s [%(name)s] (%(module)s.%(funcName)s): %(message)s"
-    )
-    handler.setFormatter(format)
-    logging.getLogger().addHandler(handler)
 
     # run the routine
     rc = datasequence(args)

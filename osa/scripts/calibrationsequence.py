@@ -18,6 +18,7 @@ from osa.configs.config import cfg
 from osa.jobs.job import historylevel
 from osa.reports.report import history
 from osa.utils.cliopts import calibrationsequencecliparsing
+from osa.utils.logging import MyFormatter
 from osa.utils.standardhandle import stringify
 
 log = logging.getLogger(__name__)
@@ -343,13 +344,15 @@ if __name__ == "__main__":
     # Set the options through cli parsing
     args = calibrationsequencecliparsing(sys.argv[0])
 
-    log.setLevel(logging.INFO)
+    # Logging
+    fmt = MyFormatter()
     handler = logging.StreamHandler()
-    format = logging.Formatter(
-        "%(asctime)s %(levelname)s [%(name)s] (%(module)s.%(funcName)s): %(message)s"
-    )
-    handler.setFormatter(format)
-    logging.getLogger().addHandler(handler)
+    handler.setFormatter(fmt)
+    logging.root.addHandler(handler)
+    if options.verbose:
+        logging.root.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
 
     # run the routine
     rc = calibrationsequence(args)
