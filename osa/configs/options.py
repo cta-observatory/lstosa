@@ -33,3 +33,4 @@ quit = None
 test = False
 nocalib = False
 seqtoclose = None
+run = None

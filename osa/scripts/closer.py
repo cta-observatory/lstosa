@@ -19,6 +19,7 @@ from osa.nightsummary.nightsummary import get_nightsummary_file, read_nightsumma
 from osa.rawcopy.raw import are_rawfiles_transferred, get_check_rawdir
 from osa.reports.report import finished_assignments, finished_text, start
 from osa.utils.cliopts import closercliparsing
+from osa.utils.logging import MyFormatter
 from osa.utils.register import register_run_concept_files
 from osa.utils.standardhandle import gettag
 from osa.utils.utils import (
@@ -476,16 +477,14 @@ if __name__ == "__main__":
     closercliparsing()
 
     # Logging
+    fmt = MyFormatter()
+    handler = logging.StreamHandler()
+    handler.setFormatter(fmt)
+    logging.root.addHandler(handler)
     if options.verbose:
-        log.setLevel(logging.DEBUG)
+        logging.root.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
-    handler = logging.StreamHandler()
-    format = logging.Formatter(
-        "%(asctime)s %(levelname)s [%(name)s] (%(module)s.%(funcName)s): %(message)s"
-    )
-    handler.setFormatter(format)
-    logging.getLogger().addHandler(handler)
 
     # run the routine
     closer()
