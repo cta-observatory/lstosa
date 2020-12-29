@@ -25,8 +25,14 @@ PROV_PREFIX = provconfig["PREFIX"]
 
 
 def copy_used_file(src, outdir):
-    """Copy file used in process."""
+    """
+    Copy file used in process.
 
+    Parameters
+    ----------
+    src
+    outdir
+    """
     # check src file exists
     if not Path(src).is_file():
         log.warning(f"{src} file cannot be accessed")
@@ -53,7 +59,19 @@ def copy_used_file(src, outdir):
 
 
 def parse_lines_log(filter_step, run_number):
-    """Filter content in log file to produce a run/process wise session log."""
+    """
+    Filter content in log file to produce a run/process wise session log.
+
+    Parameters
+    ----------
+    filter_step
+    run_number
+
+    Returns
+    -------
+    filtered
+
+    """
     filtered = []
     with open(LOG_FILENAME, "r") as f:
         for line in f.readlines():
@@ -85,8 +103,20 @@ def parse_lines_log(filter_step, run_number):
 
 
 def parse_lines_run(filter_step, prov_lines, out):
-    """Process provenance info to reduce session at run/process wise scope."""
+    """
+    Process provenance info to reduce session at run/process wise scope.
 
+    Parameters
+    ----------
+    filter_step
+    prov_lines
+    out
+
+    Returns
+    -------
+    working_lines
+
+    """
     size = 0
     container = {}
     working_lines = []
@@ -96,7 +126,6 @@ def parse_lines_run(filter_step, prov_lines, out):
     id_activity_run = ""
     end_time_line = ""
     for line in prov_lines:
-
         # get info
         remove = False
         endTime = line.get("endTime", "")
