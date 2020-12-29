@@ -11,7 +11,8 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.cliopts import scopy_datacheck_parsing
+from osa.utils.cliopts import copy_datacheck_parsing
+from osa.utils.logging import MyFormatter
 from osa.utils.utils import lstdate_to_dir
 
 log = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ def copy_to_webserver():
             log.warning("No files to be copied")
         else:
             log.debug("Transferring files")
-            scopy_files(cfg.get("WEBSERVER", "HOST"), nightdir, files_to_transfer)
+            copy_files(cfg.get("WEBSERVER", "HOST"), nightdir, files_to_transfer)
     else:
         log.warning("Files still not produced")
 
@@ -69,7 +70,7 @@ def create_destination_dir(host, datedir, prod_id):
         subprocess.run(cmd)
 
 
-def scopy_files(host, datedir, files):
+def copy_files(host, datedir, files):
     """
 
     Parameters
@@ -108,18 +109,13 @@ def is_merge_process_finished():
 
 
 if __name__ == "__main__":
-    scopy_datacheck_parsing()
+    copy_datacheck_parsing()
 
     # Logging
-    if options.verbose:
-        log.setLevel(logging.DEBUG)
-    else:
-        log.setLevel(logging.INFO)
+    fmt = MyFormatter()
     handler = logging.StreamHandler()
-    format = logging.Formatter(
-        "%(asctime)s %(levelname)s [%(name)s] (%(module)s.%(funcName)s): %(message)s"
-    )
-    handler.setFormatter(format)
-    logging.getLogger().addHandler(handler)
+    handler.setFormatter(fmt)
+    logging.root.addHandler(handler)
+    log.setLevel(logging.INFO)
 
     copy_to_webserver()

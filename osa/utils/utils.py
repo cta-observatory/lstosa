@@ -82,7 +82,7 @@ def getnightdirectory():
 
     if not exists(directory):
         if options.nightsummary and options.tel_id != "ST":
-            log.error(f"Night directory {directory} does not exists!", 2)
+            log.error(f"Night directory {directory} does not exists!")
         elif options.simulate:
             log.warning(f"Directory {directory} does not exists")
         else:
@@ -193,7 +193,7 @@ def make_directory(dir):
     if exists(dir):
         if not isdir(dir):
             # oups!! a file instead of a dir?
-            log.error(f"{dir} exists but is not a directory", 2)
+            log.error(f"{dir} exists but is not a directory")
         else:
             # it is a directory, OK, we could check for access.
             return False
@@ -201,7 +201,7 @@ def make_directory(dir):
         try:
             makedirs(dir)
         except IOError as error:
-            log.exception(f"Problems creating {dir}, {error}", 2)
+            log.exception(f"Problems creating {dir}, {error}")
         else:
             log.debug(f"Created {dir}")
             return True
@@ -313,7 +313,7 @@ def createlock(lockfile, content):
         if exists(lockfile) and isfile(lockfile):
             with open(lockfile, "r") as f:
                 hostpid = f.readline()
-            log.error(f"Lock by a previous process {hostpid}, exiting!\n", 4)
+            log.error(f"Lock by a previous process {hostpid}, exiting!\n")
         else:
             if not exists(dir):
                 make_directory(dir)
@@ -326,7 +326,7 @@ def createlock(lockfile, content):
                 log.debug(f"Lock file {lockfile} created")
                 return True
             else:
-                log.error(f"Expecting {dir} to be a directory, not a file", 3)
+                log.error(f"Expecting {dir} to be a directory, not a file")
 
 
 def getlockfile():
@@ -417,7 +417,7 @@ def dir_to_lstdate(dir):
         dircopy, nightdir[i] = split(dircopy)
     night = sep.join(nightdir)
     if len(night) != 10:
-        log.error(f"Error: night {night} could not be created from {dir}\n", 1)
+        log.error(f"Error: night {night} could not be created from {dir}\n")
     return night
 
 
