@@ -8,20 +8,28 @@ from pathlib import Path
 
 import yaml
 
-from osa.configs.datamodel import SequenceData
+from osa.configs import options
 from osa.configs.config import cfg
+from osa.configs.datamodel import SequenceData
 from osa.jobs.job import createjobtemplate
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
-from osa.nightsummary.nightsummary import readnightsummary
+from osa.nightsummary.nightsummary import read_nightsummary
 from osa.provenance.utils import get_log_config
-from osa.configs import options
 from osa.utils.cliopts import simprocparsing
+from osa.utils.logging import MyFormatter
 from osa.utils.utils import lstdate_to_number
-from osa.utils.standardhandle import gettag
 
-CONFIG_FLAGS = {"Go": True, "TearDL1": False, "TearDL2": False, "TearSubDL1": False, "TearSubDL2": False}
+CONFIG_FLAGS = {
+    "Go": True,
+    "TearDL1": False,
+    "TearDL2": False,
+    "TearSubDL1": False,
+    "TearSubDL2": False,
+}
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
+
+log = logging.getLogger(__name__)
 
 
 def do_setup():
@@ -34,9 +42,9 @@ def do_setup():
 
     if Path(LOG_FILENAME).exists() and not options.append:
         CONFIG_FLAGS["Go"] = False
-        logging.info(f"File {LOG_FILENAME} already exists.")
-        logging.info(f"You must rename/remove {LOG_FILENAME} to produce a clean provenance.")
-        logging.info(f"You can also set --append flag to append captured provenance.")
+        log.info(f"File {LOG_FILENAME} already exists.")
+        log.info(f"You must rename/remove {LOG_FILENAME} to produce a clean provenance.")
+        log.info(f"You can also set --append flag to append captured provenance.")
         return
 
     CONFIG_FLAGS["TearSubDL1"] = False if pathDL1sub.exists() or options.provenance else pathDL1sub
@@ -47,12 +55,12 @@ def do_setup():
     if options.provenance and not options.force:
         if pathDL1sub.exists():
             CONFIG_FLAGS["Go"] = False
-            logging.info(f"Folder {pathDL1sub} already exist.")
+            log.info(f"Folder {pathDL1sub} already exist.")
         if pathDL2sub.exists():
             CONFIG_FLAGS["Go"] = False
-            logging.info(f"Folder {pathDL2sub} already exist.")
+            log.info(f"Folder {pathDL2sub} already exist.")
         if not CONFIG_FLAGS["Go"]:
-            logging.info(f"You must enforce provenance files overwrite with --force flag.")
+            log.info(f"You must enforce provenance files overwrite with --force flag.")
             return
 
     pathDL1sub.mkdir(parents=True, exist_ok=True)
@@ -86,16 +94,16 @@ def parse_template(template, idx):
             if "--prod-id" in line:
                 args.append("-s")
             args.append(line.strip())
-        if line.startswith("subprocess.call"):
+        if "subprocess.run" in line:
             keep = True
-    args.pop()
-    return args
+    # Remove last two elements
+    return args[0:-2]
 
 
 def simulate_subrun_processing(args):
     """Simulate subrun processing."""
     run_str, subrun_idx = args[17].split(".")
-    logging.info(f"Simulating process call for run {run_str} subrun {subrun_idx}")
+    log.info(f"Simulating process call for run {run_str} subrun {subrun_idx}")
     subprocess.run(args)
 
 
@@ -104,8 +112,8 @@ def simulate_processing():
 
     options.mode = "P"
     options.simulate = True
-    night_content = readnightsummary()
-    logging.info(f"Night summary file content\n{night_content}")
+    night_content = read_nightsummary()
+    log.info(f"Night summary file content\n{night_content}")
 
     sub_run_list = extractsubruns(night_content)
     run_list = extractruns(sub_run_list)
@@ -120,7 +128,10 @@ def simulate_processing():
             if sl.runobj.type != "DATA":
                 continue
             with mp.Pool() as pool:
-                args_ds = [parse_template(createjobtemplate(s, get_content=True), subrun_idx) for subrun_idx in range(sl.subrun)]
+                args_ds = [
+                    parse_template(createjobtemplate(s, get_content=True), subrun_idx)
+                    for subrun_idx in range(sl.subrun)
+                ]
                 processed = pool.map(simulate_subrun_processing, args_ds)
 
         # produce prov if overwrite prov arg
@@ -134,19 +145,22 @@ def simulate_processing():
                 options.directory,
                 options.prod_id,
             ]
-            logging.info(f"Processing provenance for run {s.run_str}")
+            log.info(f"Processing provenance for run {s.run_str}")
             subprocess.run(args_pp)
 
 
 if __name__ == "__main__":
-    tag = gettag()
-    format = "%(asctime)s: %(message)s"
-    logging.basicConfig(level=logging.INFO, format=format)
+    # Logging
+    fmt = MyFormatter()
+    handler = logging.StreamHandler()
+    handler.setFormatter(fmt)
+    logging.root.addHandler(handler)
+    log.setLevel(logging.INFO)
 
     simprocparsing()
     options.directory = lstdate_to_number(options.date)
 
-    logging.info(f"Running simulate processing")
+    log.info(f"Running simulate processing")
 
     do_setup()
     if CONFIG_FLAGS["Go"]:

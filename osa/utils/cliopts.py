@@ -256,11 +256,11 @@ def pedestalsequencecliparsing(command):
 
     # mapping the telescope argument to an option parameter (it might become an option in the future)
     if len(args) != 2:
-        log.error("incorrect number of arguments, type -h for help", 2)
+        log.error("incorrect number of arguments, type -h for help")
     elif args[1] == "ST":
-        log.error(f"not yet ready for telescope ST", 2)
+        log.error(f"not yet ready for telescope ST")
     elif args[1] not in ["LST1", "LST2"]:
-        log.error("wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
+        log.error("wrong telescope id, use 'LST1', 'LST2' or 'ST'")
 
     options.tel_id = args[1]
 
@@ -363,11 +363,11 @@ def calibrationsequencecliparsing(command):
 
     # mapping the telescope argument to an option parameter (it might become an option in the future)
     if len(args) != 5:
-        log.error("incorrect number of arguments, type -h for help", 2)
+        log.error("incorrect number of arguments, type -h for help")
     elif args[4] == "ST":
-        log.error(f"not yet ready for telescope ST", 2)
+        log.error(f"not yet ready for telescope ST")
     elif args[4] not in ["LST1", "LST2"]:
-        log.error("wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
+        log.error("wrong telescope id, use 'LST1', 'LST2' or 'ST'")
 
     options.tel_id = args[4]
 
@@ -489,13 +489,13 @@ def datasequencecliparsing(command):
 
     # checking arguments
     if len(args) != 10:
-        log.error("incorrect number of arguments, type -h for help", 2)
+        log.error("incorrect number of argumentss, type -h for help")
 
     # mapping the telescope argument to an option parameter (it might become an option in the future)
     elif args[9] == "ST":
         log.error(f"not yet ready for telescope ST", 2)
     elif args[9] != "LST1" and args[9] != "LST2":
-        log.error("wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
+        log.error("wrong telescope id, use 'LST1', 'LST2' or 'ST'")
     options.tel_id = args[9]
 
     # setting the default date and directory if needed
@@ -608,7 +608,7 @@ def stereosequencecliparsing(command):
 
     # checking arguments
     if len(args) != 1:
-        log.error("incorrect number of arguments, type -h for help", 2)
+        log.error("incorrect number of arguments, type -h for help")
 
     # mapping the telescope argument to an option parameter (it might become an option in the future)
     options.tel_id = "ST"
@@ -855,11 +855,11 @@ def rawcopycliparsing(command):
 
     # mapping the telescope argument to an option parameter (it might become an option in the future)
     if len(args) != 1:
-        log.error("incorrect number of arguments, type -h for help", 2)
+        log.error("incorrect number of arguments, type -h for help")
     elif args[0] == "ST":
-        log.error(f"not yet ready for telescope ST", 2)
+        log.error(f"not yet ready for telescope ST")
     elif args[0] not in ["LST1", "LST2"]:
-        log.error("wrong telescope id, use 'LST1', 'LST2' or 'ST'", 2)
+        log.error("wrong telescope id, use 'LST1', 'LST2' or 'ST'")
     options.tel_id = args[0]
 
     # setting the default date and directory if needed
@@ -900,9 +900,9 @@ def provprocessparsing():
 
     # checking arguments
     if len(args) != 3:
-        log.error("incorrect number of arguments, type -h for help", 2)
+        log.error("incorrect number of arguments, type -h for help")
     if opts.filter not in ["r0_to_dl1", "dl1_to_dl2", ""]:
-        log.error("incorrect value for --filter argument, type -h for help", 2)
+        log.error("incorrect value for --filter argument, type -h for help")
 
     # set global variables
     options.run = args[0]
@@ -973,7 +973,7 @@ def simprocparsing():
     options.append = opts.append
 
 
-def scopy_datacheck_parsing():
+def copy_datacheck_parsing():
     parser = ArgumentParser()
     parser.add_argument(
         "-d",
