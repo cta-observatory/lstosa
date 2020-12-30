@@ -4,12 +4,9 @@ Functions to deal with dates, directories and prod IDs
 
 import hashlib
 import logging
-import os
-import re
 from datetime import datetime, timedelta
-from fnmatch import fnmatch
-from os import getpid, makedirs, readlink, symlink, walk
-from os.path import basename, dirname, exists, isdir, isfile, islink, join, split
+from os import getpid, makedirs, readlink, symlink
+from os.path import dirname, exists, isdir, isfile, islink, join, split
 from socket import gethostname
 
 from osa.configs import options
@@ -19,35 +16,21 @@ from osa.utils.iofile import writetofile
 log = logging.getLogger(__name__)
 
 
-def getdate(date, sep):
+def getcurrentdate(sep):
     """
+    Get current data following LST data-taking convention in which the date
+    changes at 12:00 pm instead of 00:00 or 12:00 am to cover a natural
+    data-taking night. This why a night offset is taken into account.
 
     Parameters
     ----------
-    date
-    sep
+    sep: string
+        Separator
 
     Returns
     -------
-
-    """
-    if not options.date:
-        stringdate = date.replace(cfg.get("LST", "DATESEPARATOR"), sep)
-    else:
-        stringdate = getcurrentdate2(sep)
-        log.debug(f"date is {stringdate}")
-    return stringdate
-
-
-def getcurrentdate2(sep):
-    """
-
-    Parameters
-    ----------
-    sep
-
-    Returns
-    -------
+    stringdate: string
+        Date in string format using the given separator
 
     """
     limitnight = int(cfg.get("LST", "NIGHTOFFSET"))
@@ -70,9 +53,12 @@ def getcurrentdate2(sep):
 
 def getnightdirectory():
     """
+    Get the path of the running_analysis directory for a certain night
 
     Returns
     -------
+    directory
+        Path of the running_analysis directory for a certain night
 
     """
     log.debug(f"Getting analysis path for tel_id {options.tel_id}")
@@ -205,92 +191,6 @@ def make_directory(dir):
         else:
             log.debug(f"Created {dir}")
             return True
-
-
-def sorted_nicely(l):
-    """Sort the given iterable in the way that humans expect.
-    Copied from:
-    http://stackoverflow.com/questions/2669059/how-to-sort-alpha-numeric-set-in-pytho
-
-    Parameters
-    ----------
-    l
-
-    Returns
-    -------
-
-    """
-    convert = lambda text: int(text) if text.isdigit() else text
-    alphanum_key = lambda key: [convert(c) for c in re.split("([0-9]+)", key)]
-    return sorted(l, key=alphanum_key)
-
-
-def getrawdatadays():
-    """
-
-    Returns
-    -------
-
-    """
-    daqdir = cfg.get(options.tel_id, "RAWDIR")
-    validset = []
-    try:
-        dirs = os.listdir(daqdir)
-    except OSError as error:
-        log.exception(f"{daqdir}, {error}")
-    else:
-        for element in dirs:
-            if isdir(join(daqdir, element)) and fnmatch(
-                element, "20[0-9][0-9]_[0-1][0-9]_[0-3][0-9]"
-            ):
-                # we check for directory naming
-                log.debug(f"Found raw dir {element}")
-                validset.append(element)
-    return set(validset)
-
-
-def getstereodatadays():
-    """
-
-    Returns
-    -------
-
-    """
-    stereodir = cfg.get(options.tel_id, "ANALYSISDIR")
-    validset = set()
-    for root, dirs, files in walk(stereodir):
-        for element in dirs:
-            month = basename(root)
-            year = basename(dirname(root))
-            if isdir(join(root, element)) and dirname(dirname(root)) == stereodir:
-                # we check for directory naming
-                log.debug(f"Found stereo dir {element}, {dirname(dirname(root))} == {stereodir}")
-                validset.add("_".join([year, month, element]))
-            else:
-                log.debug(
-                    f"Element {element} not a stereo dir {isdir(element)}, {dirname(dirname(root))} != {stereodir}"
-                )
-    return validset
-
-
-def getfinisheddays():
-    """
-
-    Returns
-    -------
-
-    """
-    parent_lockdir = cfg.get(options.tel_id, "CLOSERDIR")
-    basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get("LSTOSA", "TEXTSUFFIX")
-    validlist = []
-    for root, dirs, files in walk(parent_lockdir):
-        for f in files:
-            if f == basename:
-                # got the day
-                night_closed = dir_to_lstdate(root)
-                validlist.append(night_closed)
-                log.debug(f"Closed night {night_closed} found!")
-    return set(validlist)
 
 
 def createlock(lockfile, content):
