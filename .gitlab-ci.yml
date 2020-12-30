@@ -16,7 +16,7 @@ testcode:
     - kubernetes
   stage: test
   script:
-    - pytest osa/provenance/
+    - pytest
 
 deploydocs:
   tags:
