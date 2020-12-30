@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from fnmatch import fnmatchcase
 from glob import glob
@@ -7,12 +8,19 @@ from osa.configs import config, options
 from osa.configs.config import cfg
 from osa.rawcopy.raw import getrawdir
 from osa.utils.iofile import appendtofile
-from osa.utils.standardhandle import gettag, output, verbose
+
+log = logging.getLogger(__name__)
 
 __all__ = ["history", "start", "rule", "finished_assignments", "finished_text"]
 
 
 def start(parent_tag):
+    """
+
+    Parameters
+    ----------
+    parent_tag
+    """
     now = datetime.utcnow()
     simple_parent_tag = parent_tag.rsplit("(")[0]
     header(
@@ -22,28 +30,46 @@ def start(parent_tag):
 
 
 def header(message):
-    tag = gettag()
+    """
+
+    Parameters
+    ----------
+    message
+    """
     framesize = size()
     if len(message) < framesize - 2:
         prettyframe = int((framesize - 2 - len(message)) / 2) * "="
     else:
         prettyframe = ""
-    output(tag, f"{prettyframe} {message} {prettyframe}")
+    log.info(f"{prettyframe} {message} {prettyframe}")
 
 
 def rule():
-    tag = gettag()
     prettyframe = size() * "-"
-    output(tag, prettyframe)
+    log.info(prettyframe)
 
 
 def size():
-    framesize = int(config.cfg.get("OUTPUT", "REPORTWIDTH"))
-    return framesize
+    """
+
+    Returns
+    -------
+
+    """
+    return int(config.cfg.get("OUTPUT", "REPORTWIDTH"))
 
 
 def finished_text(ana_dict):
-    tag = gettag()
+    """
+
+    Parameters
+    ----------
+    ana_dict
+
+    Returns
+    -------
+
+    """
     content = f"analysis.finished.timestamp={ana_dict['END']}\n"
     content += f"analysis.finished.night={ana_dict['NIGHT']}\n"
     content += f"analysis.finished.telescope={ana_dict['TELESCOPE']}\n"
@@ -51,29 +77,32 @@ def finished_text(ana_dict):
     if options.tel_id == "LST1":
         content += f"analysis.finished.data.size={ana_dict['RAW_GB']} GB\n"
         content += f"analysis.finished.data.files.r0={ana_dict['FILES_RAW']}\n"
-        content += (
-            f"analysis.finished.data.files.pedestal={ana_dict['FILES_PEDESTAL']}\n"
-        )
+        content += f"analysis.finished.data.files.pedestal={ana_dict['FILES_PEDESTAL']}\n"
         content += f"analysis.finished.data.files.calib={ana_dict['FILES_CALIB']}\n"
-        content += (
-            f"analysis.finished.data.files.time_calib={ana_dict['FILES_TIMECALIB']}\n"
-        )
+        content += f"analysis.finished.data.files.time_calib={ana_dict['FILES_TIMECALIB']}\n"
         content += f"analysis.finished.data.files.dl1={ana_dict['FILES_DL1']}\n"
         content += f"analysis.finished.data.files.dl2={ana_dict['FILES_DL2']}\n"
         content += f"analysis.finished.data.files.muons={ana_dict['FILES_MUON']}\n"
-        content += (
-            f"analysis.finished.data.files.datacheck={ana_dict['FILES_DATACHECK']}\n"
-        )
+        content += f"analysis.finished.data.files.datacheck={ana_dict['FILES_DATACHECK']}\n"
 
     if options.reason is not None:
         content += f"analysis.finished.data.comment={ana_dict['COMMENTS']}.\n"
 
-    output(tag, content)
+    log.info(content)
     return content
 
 
 def finished_assignments(sequence_list):
-    tag = gettag()
+    """
+
+    Parameters
+    ----------
+    sequence_list
+
+    Returns
+    -------
+
+    """
     concept_set = []
     anadir = options.directory
     disk_space_GB = 0
@@ -98,13 +127,9 @@ def finished_assignments(sequence_list):
                 f'*{cfg.get("LSTOSA", "R0PREFIX")}*{cfg.get("LSTOSA", "R0SUFFIX")}*',
             )
         )
-        disk_space = 0
-        for d in data_files:
-            disk_space += getsize(d)
+        disk_space = sum(getsize(d) for d in data_files)
         disk_space_GB_f = float(disk_space) / (1000 * 1000 * 1000)
         disk_space_GB = int(round(disk_space_GB_f, 0))
-    elif options.tel_id == "ST":
-        concept_set = ["DL2"]
 
     ana_files = glob(join(anadir, "*" + cfg.get("LSTOSA", "R0SUFFIX")))
     file_no = {}
@@ -112,27 +137,24 @@ def finished_assignments(sequence_list):
 
     for concept in concept_set:
         pattern = f"{cfg.get('LSTOSA', concept + 'PREFIX')}*"
-        verbose(tag, f"Trying with {concept} and searching {pattern}")
+        log.debug(f"Trying with {concept} and searching {pattern}")
         file_no[concept] = 0
         delete_set = set()
         for a in ana_set:
             ana_file = basename(a)
             pattern_found = fnmatchcase(ana_file, pattern)
-            # verbose(tag, f"Was pattern {pattern} found in {ana_file}?: {pattern_found}")
             if pattern_found:
-                verbose(
-                    tag, f"Was pattern {pattern} found in {ana_file}?: {pattern_found}"
-                )
+                log.debug(f"Was pattern {pattern} found in {ana_file}?: {pattern_found}")
                 file_no[concept] += 1
                 delete_set.add(a)
         ana_set -= delete_set
 
     comment = None
     if options.reason is not None:
-        if options.reason == "other":
-            comment = "No data tonight: see Runbook"
-        elif options.reason == "moon":
+        if options.reason == "moon":
             comment = "No data taking tonight: Moon night"
+        elif options.reason == "other":
+            comment = "No data tonight: see Runbook"
         elif options.reason == "weather":
             comment = "No data taking tonight due to bad weather"
 
@@ -179,10 +201,6 @@ def history(run, dl2_prod_id, program, inputfile, inputcard, rc, historyfile):
         The history file that keeps track of the analysis steps.
     """
     now = datetime.utcnow()
-    datestring = now.strftime(
-        "%a %b %d %X UTC %Y"
-    )  # Similar but not equal to %c (no timezone)
-    stringtowrite = (
-        f"{run} {program} {dl2_prod_id} {datestring} {inputfile} {inputcard} {rc}\n"
-    )
+    datestring = now.strftime("%a %b %d %X UTC %Y")  # Similar but not equal to %c (no timezone)
+    stringtowrite = f"{run} {program} {dl2_prod_id} {datestring} {inputfile} {inputcard} {rc}\n"
     appendtofile(historyfile, stringtowrite)

@@ -18,7 +18,7 @@ def send_stream(stream):
         except subprocess.CalledProcessError as e:
             errornonfatal(tag, e.output)
     else:
-        verbose(tag, "Simulating: {0}".stringify(commandargs))
+        log.debug("Simulating: {0}".stringify(commandargs))
 ##############################################################################
 #
 # send_file

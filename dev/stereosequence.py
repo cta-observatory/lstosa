@@ -34,21 +34,21 @@ def stereosequence(args):
      format(options.tel_id, run_str))
     history_file = history_nosuffix + history_suffix
     level, rc = historylevel(history_file, 'STEREO')
-    verbose(tag, "Going to level {0}".format(level))
+    log.debug("Going to level {0}".format(level))
     if level == 3:
         rc = superstar(run_str, history_file)
         level -= 1
-        verbose(tag, "Going to level {0}".format(level))
+        log.debug("Going to level {0}".format(level))
     if level == 2:
         rc = melibea(run_str, history_file)
         level -= 1
-        verbose(tag, "Going to level {0}".format(level))
+        log.debug("Going to level {0}".format(level))
     if level == 1:
         rc = odie(run_str, history_file)
         level -=1
-        verbose(tag, "Going to level {0}".format(level))
+        log.debug("Going to level {0}".format(level))
     if level == 0:
-        verbose(tag, "Job for sequence {0} finished without fatal errors"\
+        log.debug("Job for sequence {0} finished without fatal errors"\
          .format(run_str))
     return rc
 ##############################################################################
@@ -129,7 +129,7 @@ def superstar_specific(full_mars_command, input_card, run_str, star_ind_LST1,\
          format(star_ind_M2), 1)        
 
     try:
-        verbose(tag, "Executing \"{0}\"".format(stringify(commandargs)))
+        log.debug("Executing \"{0}\"".format(stringify(commandargs)))
         rc = subprocess.call(commandargs)
     except subprocess.CalledProcessError as Error:
         error(tag, "{0}".format(Error), rc)
@@ -143,7 +143,7 @@ def superstar_specific(full_mars_command, input_card, run_str, star_ind_LST1,\
             error(tag, "No output or multiple output files found: ".
                     format(stringify(outputf)), 2)
         if is_empty_root_file(outputf[0]):
-            verbose(tag, "{0} is empty, i will delete it!".format(outputf[0]))
+            log.debug("{0} is empty, i will delete it!".format(outputf[0]))
             remove(outputf[0])
             rc = 3
 
@@ -263,7 +263,7 @@ def melibea_specific(full_mars_command, input_card, run_str, ind, out,\
          format(ind), 1)
 
     try:
-        verbose(tag, "Executing \"{0}\"".format(stringify(commandargs)))
+        log.debug("Executing \"{0}\"".format(stringify(commandargs)))
         rc = subprocess.call(commandargs)
     except subprocess.CalledProcessError as Error:
         error(tag, "{0}".format(Error), rc)
@@ -379,7 +379,7 @@ def odie_specific(full_mars_command, input_card, run_str, ind, out,\
          format(ind), 1)
 
     try:
-        verbose(tag, "Executing \"{0}\"".format(stringify(commandargs)))
+        log.debug("Executing \"{0}\"".format(stringify(commandargs)))
         rc = subprocess.call(commandargs)
     except subprocess.CalledProcessError as Error:
         error(tag, "{0}".format(Error), rc)

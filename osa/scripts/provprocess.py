@@ -4,18 +4,20 @@
 Provenance post processing script for OSA pipeline
 """
 import copy
+import logging
 import shutil
 from pathlib import Path, PurePath
 
 import yaml
 
+from osa.configs import options
 from osa.configs.config import cfg
 from osa.provenance.capture import get_activity_id, get_file_hash
 from osa.provenance.io import *
 from osa.provenance.utils import get_log_config
-from osa.configs import options
 from osa.utils.cliopts import provprocessparsing
-from osa.utils.standardhandle import error, gettag, output, warning
+
+log = logging.getLogger(__name__)
 
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
@@ -23,12 +25,17 @@ PROV_PREFIX = provconfig["PREFIX"]
 
 
 def copy_used_file(src, outdir):
-    """Copy file used in process."""
-    tag=gettag()
+    """
+    Copy file used in process.
 
+    Parameters
+    ----------
+    src
+    outdir
+    """
     # check src file exists
     if not Path(src).is_file():
-        warning(tag, f"{src} file cannot be accessed")
+        log.warning(f"{src} file cannot be accessed")
 
     hash_src = get_file_hash(src, buffer="content")
     filename = PurePath(src).name
@@ -45,21 +52,32 @@ def copy_used_file(src, outdir):
     if hash_src != hash_out:
         try:
             shutil.copyfile(src, str(destpath))
-            output(tag, f"copying {destpath}")
+            log.info(f"copying {destpath}")
         except Exception as ex:
-            warning(tag, f"could not copy {src} file into {str(destpath)}")
-            warning(tag, f"{ex}")
+            log.warning(f"could not copy {src} file into {str(destpath)}")
+            log.warning(f"{ex}")
 
 
 def parse_lines_log(filter_step, run_number):
-    """Filter content in log file to produce a run/process wise session log."""
-    tag=gettag()
+    """
+    Filter content in log file to produce a run/process wise session log.
+
+    Parameters
+    ----------
+    filter_step
+    run_number
+
+    Returns
+    -------
+    filtered
+
+    """
     filtered = []
     with open(LOG_FILENAME, "r") as f:
         for line in f.readlines():
             ll = line.split(PROV_PREFIX)
             if len(ll) != 3:
-                warning(tag, f"format {PROV_PREFIX} mismatch in log file {LOG_FILENAME}\n{line}")
+                log.warning(f"format {PROV_PREFIX} mismatch in log file {LOG_FILENAME}\n{line}")
                 continue
             prov_str = ll.pop()
             prov_dict = yaml.safe_load(prov_str)
@@ -85,9 +103,20 @@ def parse_lines_log(filter_step, run_number):
 
 
 def parse_lines_run(filter_step, prov_lines, out):
-    """Process provenance info to reduce session at run/process wise scope."""
-    tag=gettag()
+    """
+    Process provenance info to reduce session at run/process wise scope.
 
+    Parameters
+    ----------
+    filter_step
+    prov_lines
+    out
+
+    Returns
+    -------
+    working_lines
+
+    """
     size = 0
     container = {}
     working_lines = []
@@ -97,7 +126,6 @@ def parse_lines_run(filter_step, prov_lines, out):
     id_activity_run = ""
     end_time_line = ""
     for line in prov_lines:
-
         # get info
         remove = False
         endTime = line.get("endTime", "")
@@ -215,7 +243,6 @@ def parse_lines_run(filter_step, prov_lines, out):
 
 def produce_provenance():
     """Create run-wise provenance products as JSON logs and graphs according to granularity."""
-    tag=gettag()
 
     # create prov products for each granularity level
     r0_to_dl1_processed_lines = []
@@ -231,7 +258,7 @@ def produce_provenance():
 
         # check destination folder exists
         if not step_path.exists():
-            error(tag, f"Path {step_path} does not exist", 2)
+            log.error(f"Path {step_path} does not exist")
 
         # make folder log/ if does not exist
         outpath = step_path / "log"
@@ -244,7 +271,9 @@ def produce_provenance():
 
         # process temp log file
         if grain != "r0_to_dl2":
-            processed_lines = parse_lines_run(grain, read_prov(filename=session_log_filename), str(outpath))
+            processed_lines = parse_lines_run(
+                grain, read_prov(filename=session_log_filename), str(outpath)
+            )
         if grain == "r0_to_dl1":
             r0_to_dl1_processed_lines = copy.deepcopy(processed_lines)
         if grain == "dl1_to_dl2":
@@ -257,20 +286,20 @@ def produce_provenance():
             with open(log_path, "w") as f:
                 for line in processed_lines:
                     f.write(f"{line}\n")
-            output(tag, f"creating {log_path}")
+            log.info(f"creating {log_path}")
             provdoc = provlist2provdoc(processed_lines)
             # make json
             try:
                 provdoc2json(provdoc, str(json_filepath))
-                output(tag, f"creating {json_filepath}")
+                log.info(f"creating {json_filepath}")
             except Exception as ex:
-                error(tag, f"problem while creating json: {ex}", 2)
+                log.exception(f"problem while creating json: {ex}")
             # make graph
             try:
                 provdoc2graph(provdoc, str(graph_filepath), "pdf")
-                output(tag, f"creating {graph_filepath}")
+                log.info(f"creating {graph_filepath}")
             except Exception as ex:
-                error(tag, f"problem while creating graph: {ex}", 2)
+                log.exception(f"problem while creating graph: {ex}")
 
 
 if __name__ == "__main__":
@@ -281,8 +310,19 @@ if __name__ == "__main__":
     # -c cfg/sequencer.cfg
     # -f r0_to_dl1
     # -q
-    tag = gettag()
     provprocessparsing()
+
+    # Logging
+    if options.verbose:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    format = logging.Formatter(
+        "%(asctime)s %(levelname)s [%(name)s] (%(module)s.%(funcName)s): %(message)s"
+    )
+    handler.setFormatter(format)
+    logging.getLogger().addHandler(handler)
 
     pathRO = cfg.get("LST1", "RAWDIR")
     pathDL1 = cfg.get("LST1", "DL1DIR")
@@ -293,11 +333,11 @@ if __name__ == "__main__":
 
     # check LOG_FILENAME exists
     if not Path(LOG_FILENAME).exists():
-        error(tag, f"file {LOG_FILENAME} does not exist", 2)
+        log.error(f"file {LOG_FILENAME} does not exist")
 
     # check LOG_FILENAME is not empty
     if not Path(LOG_FILENAME).stat().st_size:
-        warning(tag, f"file {LOG_FILENAME} is empty")
+        log.warning(f"file {LOG_FILENAME} is empty")
         exit()
 
     # build base_filename

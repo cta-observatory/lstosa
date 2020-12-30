@@ -1,61 +1,114 @@
+import logging
 from glob import glob
 from os.path import exists, join
 
-from osa.configs.config import cfg
 from osa.configs import options
+from osa.configs.config import cfg
 from osa.utils.iofile import readfromfile
-from osa.utils.standardhandle import error, gettag, verbose
+
+log = logging.getLogger(__name__)
 
 
 def createveto(vetofile):
-    tag = gettag()
+    """
+
+    Parameters
+    ----------
+    vetofile
+    """
     try:
         open(vetofile, "w").close()
-    except IOError as e:
-        error(tag, f"Could not touch veto file {vetofile}, {e}", 2)
+    except IOError as error:
+        log.exception(f"Could not touch veto file {vetofile}, {error}")
 
 
 def isjobvetoed(name, veto_list):
+    """
+
+    Parameters
+    ----------
+    name
+    veto_list
+
+    Returns
+    -------
+
+    """
     try:
         veto_list.index(name)
-    except ValueError as e:
+    except ValueError:
         return False
     else:
         return True
 
 
 def getvetolist(sequence_list):
-    tag = gettag()
+    """
+
+    Parameters
+    ----------
+    sequence_list
+
+    Returns
+    -------
+
+    """
     updatevetos(sequence_list)
     veto_ls = glob(join(options.directory, "*{0}".format(cfg.get("LSTOSA", "VETOSUFFIX"))))
     veto_list = []
     for i in veto_ls:
         # we extract the job name
-        name = i.rsplit(cfg.get("LSTOSA", "VETOSUFFIX"))[0].split(join(options.directory, "sequence_"))[1]
+        name = i.rsplit(cfg.get("LSTOSA", "VETOSUFFIX"))[0].split(
+            join(options.directory, "sequence_")
+        )[1]
         veto_list.append(name)
         setvetoaction(name, sequence_list)
     return veto_list
 
 
 def setvetoaction(name, sequence_list):
-    tag = gettag()
+    """
+
+    Parameters
+    ----------
+    name
+    sequence_list
+    """
     for s in sequence_list:
         if s.jobname == name:
             s.action = "Veto"
-            verbose(tag, f"Attributes of sequence {s.seq} updated")
+            log.debug(f"Attributes of sequence {s.seq} updated")
 
 
 def updatevetos(sequence_list):
-    tag = gettag()
+    """
+
+    Parameters
+    ----------
+    sequence_list
+    """
     for s in sequence_list:
-        if not exists(s.veto) and exists(s.history):
-            if failedhistory(s.history, int(cfg.get("LSTOSA", "MAXTRYFAILED"))):
-                createveto(s.veto)
-                verbose(tag, f"Created veto file {s.veto}")
+        if (
+            not exists(s.veto)
+            and exists(s.history)
+            and failedhistory(s.history, int(cfg.get("LSTOSA", "MAXTRYFAILED")))
+        ):
+            createveto(s.veto)
+            log.debug(f"Created veto file {s.veto}")
 
 
 def failedhistory(historyfile, maxnumber):
-    tag = gettag()
+    """
+
+    Parameters
+    ----------
+    historyfile
+    maxnumber
+
+    Returns
+    -------
+
+    """
     programme = []
     card = []
     goal = []
@@ -68,18 +121,18 @@ def failedhistory(historyfile, maxnumber):
         card.append(words[-2])
         try:
             exit_status.append(int(words[-1]))
-        except ValueError as e:
-            error(tag, f"Malformed file {historyfile}, {e}", 4)
-        verbose(tag, "extracting line: {0}".format(line))
+        except ValueError as error:
+            log.exception(f"Malformed file {historyfile}, {error}")
+        log.debug("extracting line: {0}".format(line))
     lsize = len(exit_status)
-    strike = 0
     if (programme[-1] == "merpp") and (exit_status[-1] == 23):
         return False
     if lsize >= maxnumber and (goal[-1] != "new_calib"):
+        strike = 0
         for i in range(lsize - 1):
             # m  = f"{exit_status[i]}=={exit_status[lsize-1]}, "
             # m += f"{card[i]=={card[lsize-1]}, {programme[i]}=={programme[lsize-1]}"
-            # verbose(tag, f"comparing {m}")
+            # log.debug(f"comparing {m}")
             if (
                 (exit_status[i] != 0)
                 and (exit_status[i] == exit_status[lsize - 1])
@@ -88,33 +141,56 @@ def failedhistory(historyfile, maxnumber):
             ):
                 strike += 1
                 if strike == maxnumber - 1:
-                    verbose(tag, f"Maximum amount of failures reached for {historyfile}")
+                    log.debug(f"Maximum amount of failures reached for {historyfile}")
                     return True
     return False
 
 
 def createclosed(closedfile):
-    tag = gettag()
+    """
+
+    Parameters
+    ----------
+    closedfile
+    """
     try:
         open(closedfile, "w").close()
-    except IOError as e:
-        error(tag, f"Could not touch closed file {closedfile}, {e}", 2)
+    except IOError as error:
+        log.exception(f"Could not touch closed file {closedfile}, {error}")
 
 
 def getclosedlist(sequence_list):
+    """
+
+    Parameters
+    ----------
+    sequence_list
+
+    Returns
+    -------
+
+    """
     closed_ls = glob(join(options.directory, "*{0}".format(cfg.get("LSTOSA", "CLOSEDSUFFIX"))))
     closed_list = []
     for i in closed_ls:
         # we extract the job name
-        name = i.rsplit(cfg.get("LSTOSA", "CLOSEDSUFFIX"))[0].split(join(options.directory, "sequence_"))[1]
+        name = i.rsplit(cfg.get("LSTOSA", "CLOSEDSUFFIX"))[0].split(
+            join(options.directory, "sequence_")
+        )[1]
         closed_list.append(name)
         setclosedaction(name, sequence_list)
     return closed_list
 
 
 def setclosedaction(name, sequence_list):
-    tag = gettag()
+    """
+
+    Parameters
+    ----------
+    name
+    sequence_list
+    """
     for s in sequence_list:
         if s.jobname == name:
             s.action = "Closed"
-            verbose(tag, f"Attributes of sequence {s.seq} updated")
+            log.debug(f"Attributes of sequence {s.seq} updated")

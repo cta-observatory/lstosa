@@ -1,34 +1,34 @@
 import filecmp
+import logging
 from os import remove, rename
 from os.path import exists, isfile
 
 from osa.configs import options
-from osa.utils.standardhandle import error, gettag, verbose
+
+log = logging.getLogger(__name__)
 
 
 def readfromfile(file):
-    tag = gettag()
     if exists(file):
         if isfile(file):
             try:
                 with open(file, "r") as f:
                     return f.read()
             except (IOError, OSError) as e:
-                error(tag, f"{e.strerror} {e.filename}", e.errno)
+                log.exception(f"{e.strerror} {e.filename}")
         else:
-            error(tag, f"{file} is not a file", 1)
+            log.error(f"{file} is not a file")
     else:
-        error(tag, f"File does not exists {file}", 1)
+        log.error(f"File does not exists {file}")
 
 
 def writetofile(f, content):
-    tag = gettag()
     ftemp = f + ".tmp"
     try:
         with open(ftemp, "w") as filehandle:
             filehandle.write(f"{content}")
     except (IOError, OSError) as e:
-        error(tag, f"{e.strerror} {e.filename}", e.errno)
+        log.exception(f"{e.strerror} {e.filename}")
 
     if exists(f):
         if filecmp.cmp(f, ftemp):
@@ -37,31 +37,30 @@ def writetofile(f, content):
         else:
             if options.simulate:
                 remove(ftemp)
-                verbose(tag, f"SIMULATE File {ftemp} would replace {f}. Deleting {ftemp}")
+                log.debug(f"SIMULATE File {ftemp} would replace {f}. Deleting {ftemp}")
             else:
                 try:
                     rename(ftemp, f)
                 except (IOError, OSError) as e:
-                    error(tag, f"{e.strerror} {e.filename}", e.errno)
+                    log.exception(f"{e.strerror} {e.filename}")
     else:
         if options.simulate:
-            verbose(tag, f"SIMULATE File {ftemp} would be written as {f}. Deleting {ftemp}")
+            log.debug(f"SIMULATE File {ftemp} would be written as {f}. Deleting {ftemp}")
         else:
             rename(ftemp, f)
     return True
 
 
 def appendtofile(f, content):
-    tag = gettag()
     if exists(f) and isfile(f):
         if options.simulate:
-            verbose(tag, f"SIMULATE File {f} would be appended")
+            log.debug(f"SIMULATE File {f} would be appended")
         else:
             with open(f, "a") as filehandle:
                 try:
                     filehandle.write(content)
                 except IOError as e:
-                    error(tag, f"{e.strerror} {e.filename}", e.errno)
+                    log.exception(f"{e.strerror} {e.filename}")
     else:
         writetofile(f, content)
     return True

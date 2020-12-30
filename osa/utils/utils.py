@@ -1,71 +1,89 @@
+"""
+Functions to deal with dates, directories and prod IDs
+"""
+
 import hashlib
-import os
-import re
-import sys
+import logging
 from datetime import datetime, timedelta
-from fnmatch import fnmatch
-from os import getpid, makedirs, readlink, symlink, walk
-from os.path import basename, dirname, exists, isdir, isfile, islink, join, split
+from os import getpid, makedirs, readlink, symlink
+from os.path import dirname, exists, isdir, isfile, islink, join, split
 from socket import gethostname
 
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.iofile import writetofile
-from osa.utils.standardhandle import error, errornonfatal, gettag, verbose, warning
+
+log = logging.getLogger(__name__)
 
 
-def getdate(date, sep):
-    tag = gettag()
-    if not options.date:
-        stringdate = date.replace(cfg.get("LST", "DATESEPARATOR"), sep)
-    else:
-        stringdate = getcurrentdate2(sep)
-        verbose(tag, f"date is {stringdate}")
-    return stringdate
+def getcurrentdate(sep):
+    """
+    Get current data following LST data-taking convention in which the date
+    changes at 12:00 pm instead of 00:00 or 12:00 am to cover a natural
+    data-taking night. This why a night offset is taken into account.
 
+    Parameters
+    ----------
+    sep: string
+        Separator
 
-def getcurrentdate2(sep):
-    tag = gettag()
+    Returns
+    -------
+    stringdate: string
+        Date in string format using the given separator
+
+    """
     limitnight = int(cfg.get("LST", "NIGHTOFFSET"))
     now = datetime.utcnow()
     if (now.hour >= limitnight >= 0) or (now.hour < limitnight + 24 and limitnight < 0):
         # today, nothing to do
         pass
-    elif now.hour < limitnight and limitnight >= 0:
+    elif limitnight >= 0:
         # yesterday
         gap = timedelta(hours=24)
         now = now - gap
-    elif now.hour >= limitnight + 24 and limitnight < 0:
+    else:
         # tomorrow
         gap = timedelta(hours=24)
         now = now + gap
-    else:
-        error(tag, "ERROR: NIGHTOFFSET should be between range (-24, 24)\n", 2)
-        sys.exit(4)
     stringdate = now.strftime("%Y" + sep + "%m" + sep + "%d")
-    verbose(tag, f"stringdate by default {stringdate}")
+    log.debug(f"stringdate by default {stringdate}")
     return stringdate
 
 
 def getnightdirectory():
-    tag = gettag()
-    verbose(tag, f"Getting analysis path for tel_id {options.tel_id}")
+    """
+    Get the path of the running_analysis directory for a certain night
+
+    Returns
+    -------
+    directory
+        Path of the running_analysis directory for a certain night
+
+    """
+    log.debug(f"Getting analysis path for tel_id {options.tel_id}")
     nightdir = lstdate_to_dir(options.date)
     options.prod_id = get_prod_id()
     directory = join(cfg.get(options.tel_id, "ANALYSISDIR"), nightdir, options.prod_id)
 
     if not exists(directory):
-        if options.nightsum and options.tel_id != "ST":
-            error(tag, f"Night directory {directory} does not exists!", 2)
+        if options.nightsummary and options.tel_id != "ST":
+            log.error(f"Night directory {directory} does not exists!")
         elif options.simulate:
-            warning(tag, f"directory {directory} does not exists")
+            log.warning(f"Directory {directory} does not exists")
         else:
             make_directory(directory)
-    verbose(tag, f"Analysis directory: {directory}")
+    log.debug(f"Analysis directory: {directory}")
     return directory
 
 
 def get_lstchain_version():
+    """
+
+    Returns
+    -------
+
+    """
     import warnings
 
     warnings.simplefilter(action="ignore", category=FutureWarning)
@@ -76,187 +94,148 @@ def get_lstchain_version():
 
 
 def get_prod_id():
-    tag = gettag()
+    """
 
+    Returns
+    -------
+
+    """
     if not options.prod_id:
         if cfg.get("LST1", "PROD-ID") is not None:
             options.prod_id = cfg.get("LST1", "PROD-ID")
         else:
             options.prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
 
-    verbose(
-        tag,
-        f"Getting the prod ID for the running analysis directory: {options.prod_id}",
-    )
+    log.debug(f"Getting the prod ID for the running analysis directory: {options.prod_id}")
 
     return options.prod_id
 
 
 def get_calib_prod_id():
-    tag = gettag()
+    """
 
+    Returns
+    -------
+
+    """
     if not options.calib_prod_id:
         if cfg.get("LST1", "CALIB-PROD-ID") is not None:
             options.calib_prod_id = cfg.get("LST1", "CALIB-PROD-ID")
         else:
             options.calib_prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
 
-    verbose(tag, f"Getting prod ID for calibration products: {options.calib_prod_id}")
+    log.debug(f"Getting prod ID for calibration products: {options.calib_prod_id}")
 
     return options.calib_prod_id
 
 
 def get_dl1_prod_id():
-    tag = gettag()
+    """
 
+    Returns
+    -------
+
+    """
     if not options.dl1_prod_id:
         if cfg.get("LST1", "DL1-PROD-ID") is not None:
             options.dl1_prod_id = cfg.get("LST1", "DL1-PROD-ID")
         else:
             options.dl1_prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
 
-    verbose(tag, f"Getting prod ID for DL1 products: {options.dl1_prod_id}")
+    log.debug(f"Getting prod ID for DL1 products: {options.dl1_prod_id}")
 
     return options.dl1_prod_id
 
 
 def get_dl2_prod_id():
-    tag = gettag()
+    """
 
+    Returns
+    -------
+
+    """
     if not options.dl2_prod_id:
         if cfg.get("LST1", "DL2-PROD-ID") is not None:
             options.dl2_prod_id = cfg.get("LST1", "DL2-PROD-ID")
         else:
             options.dl2_prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
 
-    verbose(tag, f"Getting prod ID for DL2 products: {options.dl2_prod_id}")
+    log.debug(f"Getting prod ID for DL2 products: {options.dl2_prod_id}")
 
     return options.dl2_prod_id
 
 
 def make_directory(dir):
-    tag = gettag()
+    """
+
+    Parameters
+    ----------
+    dir
+
+    Returns
+    -------
+
+    """
     if exists(dir):
         if not isdir(dir):
             # oups!! a file instead of a dir?
-            error(tag, f"{dir} exists but is not a directory", 2)
+            log.error(f"{dir} exists but is not a directory")
         else:
             # it is a directory, OK, we could check for access.
             return False
     else:
         try:
             makedirs(dir)
-        except IOError:
-            error(tag, f"Problems creating {dir}, {IOError}", 2)
+        except IOError as error:
+            log.exception(f"Problems creating {dir}, {error}")
         else:
-            verbose(tag, f"Created {dir}")
+            log.debug(f"Created {dir}")
             return True
 
 
-def sorted_nicely(l):
-    """Sort the given iterable in the way that humans expect.
-    Copied from:
-    http://stackoverflow.com/questions/2669059/how-to-sort-alpha-numeric-set-in-pytho
+def createlock(lockfile, content):
+    """
 
     Parameters
     ----------
-    l
+    lockfile
+    content
 
     Returns
     -------
 
     """
-    convert = lambda text: int(text) if text.isdigit() else text
-    alphanum_key = lambda key: [convert(c) for c in re.split("([0-9]+)", key)]
-    return sorted(l, key=alphanum_key)
-
-
-def getrawdatadays():
-    tag = gettag()
-    daqdir = cfg.get(options.tel_id, "RAWDIR")
-    validset = []
-    try:
-        dirs = os.listdir(daqdir)
-    # except OSError as (ValueError, NameError):
-    except OSError:
-        error(tag, f"{daqdir}, {OSError}", OSError)
-    else:
-        for element in dirs:
-            if isdir(join(daqdir, element)) and fnmatch(
-                element, "20[0-9][0-9]_[0-1][0-9]_[0-3][0-9]"
-            ):
-                # we check for directory naming
-                verbose(tag, f"Found raw dir {element}")
-                validset.append(element)
-    return set(validset)
-
-
-def getstereodatadays():
-    tag = gettag()
-    stereodir = cfg.get(options.tel_id, "ANALYSISDIR")
-    validset = set()
-    for root, dirs, files in walk(stereodir):
-        for element in dirs:
-            month = basename(root)
-            year = basename(dirname(root))
-            if isdir(join(root, element)) and dirname(dirname(root)) == stereodir:
-                # we check for directory naming
-                verbose(
-                    tag,
-                    f"Found stereo dir {element}, {dirname(dirname(root))} == {stereodir}",
-                )
-                validset.add("_".join([year, month, element]))
-            else:
-                verbose(
-                    tag,
-                    f"Element {element} not a stereo dir {isdir(element)}, {dirname(dirname(root))} != {stereodir}",
-                )
-    return validset
-
-
-def getfinisheddays():
-    tag = gettag()
-    parent_lockdir = cfg.get(options.tel_id, "CLOSERDIR")
-    basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get("LSTOSA", "TEXTSUFFIX")
-    validlist = []
-    for root, dirs, files in walk(parent_lockdir):
-        for f in files:
-            if f == basename:
-                # got the day
-                night_closed = dir_to_lstdate(root)
-                validlist.append(night_closed)
-                verbose(tag, f"Closed night {night_closed} found!")
-    return set(validlist)
-
-
-def createlock(lockfile, content):
-    tag = gettag()
     dir = dirname(lockfile)
     if options.simulate:
-        verbose(tag, f"SIMULATE Creation of lock file {lockfile}")
+        log.debug(f"SIMULATE Creation of lock file {lockfile}")
         return True
     else:
         if exists(lockfile) and isfile(lockfile):
             with open(lockfile, "r") as f:
                 hostpid = f.readline()
-            error(tag, f"Lock by a previous process {hostpid}, exiting!\n", 4)
+            log.error(f"Lock by a previous process {hostpid}, exiting!\n")
         else:
             if not exists(dir):
                 make_directory(dir)
-                verbose(tag, f"Creating parent directory {dir} for lock file")
+                log.debug(f"Creating parent directory {dir} for lock file")
             if isdir(dir):
                 pid = str(getpid())
                 hostname = gethostname()
                 content = f"{hostname}:{pid}"
                 writetofile(lockfile, content)
-                verbose(tag, f"Lock file {lockfile} created")
+                log.debug(f"Lock file {lockfile} created")
                 return True
             else:
-                error(tag, f"Expecting {dir} to be a directory, not a file", 3)
+                log.error(f"Expecting {dir} to be a directory, not a file")
 
 
 def getlockfile():
-    tag = gettag()
+    """
+
+    Returns
+    -------
+
+    """
     basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get("LSTOSA", "TEXTSUFFIX")
     dir = join(
         cfg.get(options.tel_id, "CLOSERDIR"),
@@ -264,13 +243,13 @@ def getlockfile():
         options.prod_id,
     )
     lockfile = join(dir, basename)
-    verbose(tag, f"Lock file is {lockfile}")
+    log.debug(f"Lock file is {lockfile}")
     return lockfile
 
 
 def lstdate_to_number(night):
-    """Function to change from YYYY_MM_DD to YYYYMMDD
-    The iso standard separates year, month and day by a minus sign
+    """
+    Function to change from YYYY_MM_DD to YYYYMMDD
 
     Parameters
     ----------
@@ -281,13 +260,12 @@ def lstdate_to_number(night):
 
     """
     sepbar = ""
-    numberdate = night.replace(cfg.get("LST", "DATESEPARATOR"), sepbar)
-    return numberdate
+    return night.replace(cfg.get("LST", "DATESEPARATOR"), sepbar)
 
 
 def lstdate_to_iso(night):
-    """Function to change from YYYY_MM_DD to YYYY-MM-DD
-    The iso standard separates year, month and day by a minus sign
+    """
+    Function to change from YYYY_MM_DD to YYYY-MM-DD
 
     Parameters
     ----------
@@ -298,8 +276,7 @@ def lstdate_to_iso(night):
     Date in iso format YYYY-MM-DD
     """
     sepbar = "-"
-    isodate = night.replace(cfg.get("LST", "DATESEPARATOR"), sepbar)
-    return isodate
+    return night.replace(cfg.get("LST", "DATESEPARATOR"), sepbar)
 
 
 def lstdate_to_dir(night):
@@ -313,21 +290,17 @@ def lstdate_to_dir(night):
     -------
 
     """
-    tag = gettag()
     nightdir = night.split(cfg.get("LST", "DATESEPARATOR"))
     if len(nightdir) != 3:
-        error(
-            tag,
-            f"Error: night directory structure could not be created from {nightdir}\n",
-            1,
-        )
+        log.error(f"Night directory structure could not be created from {nightdir}")
     # dir = join(nightdir[0], nightdir[1], nightdir[2])
     dir = "".join(nightdir)
     return dir
 
 
 def dir_to_lstdate(dir):
-    """Function to change from WHATEVER/YYYY/MM/DD to YYYY_MM_DD
+    """
+    Function to change from WHATEVER/YYYY/MM/DD to YYYY_MM_DD
 
     Parameters
     ----------
@@ -337,7 +310,6 @@ def dir_to_lstdate(dir):
     -------
 
     """
-    tag = gettag()
     sep = cfg.get("LST", "DATESEPARATOR")
     dircopy = dir
     nightdir = ["YYYY", "MM", "DD"]
@@ -345,30 +317,52 @@ def dir_to_lstdate(dir):
         dircopy, nightdir[i] = split(dircopy)
     night = sep.join(nightdir)
     if len(night) != 10:
-        error(tag, f"Error: night {night} could not be created from {dir}\n", 1)
+        log.error(f"Error: night {night} could not be created from {dir}\n")
     return night
 
 
 def build_lstbasename(prefix, suffix):
-    basename = f"{prefix}_{lstdate_to_number(options.date)}{suffix}"
-    return basename
+    """
+
+    Parameters
+    ----------
+    prefix
+    suffix
+
+    Returns
+    -------
+
+    """
+    return f"{prefix}_{lstdate_to_number(options.date)}{suffix}"
 
 
 def is_defined(variable):
+    """
+
+    Parameters
+    ----------
+    variable
+
+    Returns
+    -------
+
+    """
     try:
         variable
     except NameError:
         variable = None
-    if variable is not None:
-        return True
-    else:
-        return False
+    return variable is not None
 
 
 def get_night_limit_timestamp():
+    """
+
+    Returns
+    -------
+
+    """
     from dev.mysql import select_db
 
-    tag = gettag()
     night_limit = None
     server = cfg.get("MYSQL", "server")
     user = cfg.get("MYSQL", "user")
@@ -381,13 +375,23 @@ def get_night_limit_timestamp():
     if len(matrix) > 0:
         night_limit = matrix[0][0]
     else:
-        errornonfatal(tag, "No night_limit found")
-    verbose(tag, f"Night limit is {night_limit}")
+        log.warning("No night_limit found")
+    log.debug(f"Night limit is {night_limit}")
     return night_limit
 
 
 def get_md5sum_and_copy(inputf, outputf):
-    tag = gettag()
+    """
+
+    Parameters
+    ----------
+    inputf
+    outputf
+
+    Returns
+    -------
+
+    """
     md5 = hashlib.md5()
     outputdir = dirname(outputf)
     make_directory(outputdir)
@@ -405,8 +409,8 @@ def get_md5sum_and_copy(inputf, outputf):
                     # got this error: write() argument must be str, not bytes
                     o.write(chunk)
         # except IOError as (ErrorValue, ErrorName):
-        except IOError as ErrorValue:
-            error(tag, f"{ErrorValue}", 2)
+        except IOError as error:
+            log.exception(f"{error}", 2)
         else:
             return md5.hexdigest()
 

@@ -1,20 +1,28 @@
 #!/usr/bin/env python
+"""
+Script to copy analysis products to datacheck webserver creating new
+directories whenever they are needed.
+"""
 
-import argparse
 import itertools
+import logging
 import subprocess
-import sys
 from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.cliopts import scopy_datacheck_parsing
-from osa.utils.standardhandle import error, gettag, output, verbose, warning
-from osa.utils.utils import get_prod_id, lstdate_to_dir
+from osa.utils.cliopts import copy_datacheck_parsing
+from osa.utils.logging import MyFormatter
+from osa.utils.utils import lstdate_to_dir
+
+log = logging.getLogger(__name__)
 
 
 def copy_to_webserver():
-    tag = gettag()
+    """
+    Get analysis products to be copied to the webserver,
+    create directories and eventually copy the files.
+    """
 
     # Check of merging process has already finished
     if is_merge_process_finished():
@@ -31,18 +39,26 @@ def copy_to_webserver():
         list_of_files = [drs4_pdf, calib_pdf, dl1_pdf]
         files_to_transfer = list(itertools.chain(*list_of_files))
 
-        verbose(tag, "Creating directories")
+        log.debug("Creating directories")
         create_destination_dir(cfg.get("WEBSERVER", "HOST"), nightdir, options.prod_id)
         if not files_to_transfer:
-            warning(tag, "No files to be copied")
+            log.warning("No files to be copied")
         else:
-            verbose(tag, "Transferring files")
-            scopy_files(cfg.get("WEBSERVER", "HOST"), nightdir, files_to_transfer)
+            log.debug("Transferring files")
+            copy_files(cfg.get("WEBSERVER", "HOST"), nightdir, files_to_transfer)
     else:
-        warning(tag, "Files still not produced")
+        log.warning("Files still not produced")
 
 
 def create_destination_dir(host, datedir, prod_id):
+    """
+
+    Parameters
+    ----------
+    host
+    datedir
+    prod_id
+    """
     datacheck_basedir = Path(cfg.get("WEBSERVER", "DATACHECK"))
 
     # Create directory and copy the index.php to each directory
@@ -54,7 +70,15 @@ def create_destination_dir(host, datedir, prod_id):
         subprocess.run(cmd)
 
 
-def scopy_files(host, datedir, files):
+def copy_files(host, datedir, files):
+    """
+
+    Parameters
+    ----------
+    host
+    datedir
+    files
+    """
     # FIXME: Check if files exists already at webserver CHECK HASH
     # Copy PDF files
     datacheck_basedir = Path(cfg.get("WEBSERVER", "DATACHECK"))
@@ -79,12 +103,19 @@ def scopy_files(host, datedir, files):
 
 
 def is_merge_process_finished():
-    # TODO:check that no lstchain_check_dl1 is still running
+    # TODO: still not implemented
+    #  check that no lstchain_check_dl1 is still running
     return True
 
 
 if __name__ == "__main__":
-    tag = gettag()
-    scopy_datacheck_parsing()
+    copy_datacheck_parsing()
+
+    # Logging
+    fmt = MyFormatter()
+    handler = logging.StreamHandler()
+    handler.setFormatter(fmt)
+    logging.root.addHandler(handler)
+    log.setLevel(logging.INFO)
 
     copy_to_webserver()
