@@ -11,7 +11,7 @@ from osa.utils.utils import (
     get_dl2_prod_id,
     get_lstchain_version,
     get_prod_id,
-    getcurrentdate2,
+    getcurrentdate,
     getnightdirectory,
     is_defined,
 )
@@ -1015,7 +1015,7 @@ def set_default_date_if_needed():
     if is_defined(options.date):
         return options.date
     else:
-        return getcurrentdate2(cfg.get("LST", "DATESEPARATOR"))
+        return getcurrentdate(cfg.get("LST", "DATESEPARATOR"))
 
 
 def set_default_directory_if_needed():
