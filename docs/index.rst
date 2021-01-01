@@ -1,55 +1,46 @@
-.. LSTOSA documentation master file, created by
-   sphinx-quickstart on Mon Apr 13 11:29:59 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. _lstosa:
 
-Welcome to LSTOSA's documentation!
-==================================
+LSTOSA: Onsite analysis pipeline for the CTA LST-1
+==================================================
 
-**UNDER CONSTRUCTION!**
+.. image:: logo_lstosa.png
+   :align: center
+   :width: 70%
 
-LSTOSA is the *On-Site Analysis* system of LST.
-These docs try to create and organize the documentation for LSTOSA.
+LSTOSA is the on-site analysis pipeline of the CTA Large-Sized Telescope
+prototype (LST-1).
 
+* Code: https://gitlab.cta-observatory.org/cta-array-elements/lst/analysis/lstosa
+* Docs: https://lstosa.readthedocs.io/
+* License: BSD-3
+* Python 3.7
 
-.. _lstosa logo:
-
-.. figure:: logo_lstosa.png
-
-
-
-It also introduces a documentation of the API.
-For the python part of LSTOSA, we use the `autodoc` extension of Sphinx, which
-pulls in the documentation from the docstrings.
-
-Code: https://gitlab.cta-observatory.org/cta-array-elements/lst/analysis/lstosa
-
-License: BSD-3
-
-
-Contents:
 
 .. _lstosa_guide:
-.. toctree::
-    :caption: LSTOSA Guide
-    :maxdepth: 3
 
-    introduction/index    
-    components/index
-    workflow/index
-    documents/index
-    howtocontribute/index
-    troubleshooting/index
+.. toctree::
+   :caption: LSTOSA Guide
+   :maxdepth: 1
+
+   introduction/index
+   components/index
+   workflow/index
+   howto/index
+   provenance/index
+   documents/index
+   howtocontribute/index
+   troubleshooting/index
+   references
 
 .. _lstosa_code:
+
 .. toctree::
-    :caption: LSTOSA Code
-    :maxdepth: 1
+   :caption: LSTOSA Code
+   :maxdepth: 1
 
-    modules/modules.rst
-    deletion/index
-    utilities/index
-
+   modules/modules.rst
+   deletion/index
+   utilities/index
 
 
 Indices and tables
@@ -57,4 +48,3 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
