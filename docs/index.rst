@@ -32,15 +32,22 @@ prototype (LST-1).
    troubleshooting/index
    references
 
-.. _lstosa_code:
+.. _lstosa_api_docs:
 
 .. toctree::
-   :caption: LSTOSA Code
-   :maxdepth: 1
+  :maxdepth: 1
+  :caption: API Documentation
+  :name: _lstosa_api_docs
 
-   modules/modules.rst
-   deletion/index
-   utilities/index
+  configuration
+  jobs
+  nightsummary
+  provenance
+  reports
+  scripts
+  utils
+  veto
+
 
 
 Indices and tables
@@ -48,3 +55,4 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
+* :ref:`search`

@@ -53,7 +53,7 @@ Python Docstrings
 
 For the docstrings in the python code we use the `NumPy Style`_.
 These docstrings are then interpreted by Sphinx and used to build the API
-references in the :ref:`osa_code` section.
+references in the LSTOSA code section.
 
 .. _`NumPy Style`: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html#example-numpy
 
