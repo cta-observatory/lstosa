@@ -1,10 +1,23 @@
 import logging
-from glob import glob
-from os.path import exists, join
+import os
+import glob
 
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.iofile import readfromfile
+
+__all__ = [
+    "createveto",
+    "createclosed",
+    "failedhistory",
+    "isjobvetoed",
+    "getvetolist",
+    "getclosedlist",
+    "setvetoaction",
+    "setclosedaction",
+    "updatevetos"
+]
+
 
 log = logging.getLogger(__name__)
 
@@ -54,12 +67,12 @@ def getvetolist(sequence_list):
 
     """
     updatevetos(sequence_list)
-    veto_ls = glob(join(options.directory, "*{0}".format(cfg.get("LSTOSA", "VETOSUFFIX"))))
+    veto_ls = glob.glob(os.path.join(options.directory, "*{0}".format(cfg.get("LSTOSA", "VETOSUFFIX"))))
     veto_list = []
     for i in veto_ls:
         # we extract the job name
         name = i.rsplit(cfg.get("LSTOSA", "VETOSUFFIX"))[0].split(
-            join(options.directory, "sequence_")
+            os.path.join(options.directory, "sequence_")
         )[1]
         veto_list.append(name)
         setvetoaction(name, sequence_list)
@@ -89,8 +102,8 @@ def updatevetos(sequence_list):
     """
     for s in sequence_list:
         if (
-            not exists(s.veto)
-            and exists(s.history)
+            not os.path.exists(s.veto)
+            and os.path.exists(s.history)
             and failedhistory(s.history, int(cfg.get("LSTOSA", "MAXTRYFAILED")))
         ):
             createveto(s.veto)
@@ -170,12 +183,12 @@ def getclosedlist(sequence_list):
     -------
 
     """
-    closed_ls = glob(join(options.directory, "*{0}".format(cfg.get("LSTOSA", "CLOSEDSUFFIX"))))
+    closed_ls = glob.glob(os.path.join(options.directory, "*{0}".format(cfg.get("LSTOSA", "CLOSEDSUFFIX"))))
     closed_list = []
     for i in closed_ls:
         # we extract the job name
         name = i.rsplit(cfg.get("LSTOSA", "CLOSEDSUFFIX"))[0].split(
-            join(options.directory, "sequence_")
+            os.path.join(options.directory, "sequence_")
         )[1]
         closed_list.append(name)
         setclosedaction(name, sequence_list)

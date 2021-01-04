@@ -1,6 +1,6 @@
 """
-End-of-Night script and functions. Check that everything has been processed
-Collect results, merge them if needed
+End-of-Night script and functions. Check that everything has been processed,
+collect results and merge them if needed.
 """
 import logging
 import os.path
@@ -29,6 +29,23 @@ from osa.utils.utils import (
     lstdate_to_dir,
     make_directory,
 )
+
+__all__ = [
+    "closer",
+    "use_night_summary",
+    "is_raw_data_available",
+    "is_sequencer_successful",
+    "notify_sequencer_errors",
+    "notify_neither_data_nor_reason_given",
+    "ask_for_closing",
+    "post_process",
+    "post_process_files",
+    "setclosedfilename",
+    "is_finished_check",
+    "extract_provenance",
+    "merge_dl1datacheck",
+    "set_closed_with_file"
+]
 
 log = logging.getLogger(__name__)
 
@@ -400,20 +417,31 @@ def is_finished_check(nightsum):
 #         )
 
 
-def setclosedfilename(s):
+def setclosedfilename(seq):
+    """
+    Close sequence and creates a .closed file
 
+    Parameters
+    ----------
+    seq: Sequence Object
+    """
     closed_suffix = cfg.get("LSTOSA", "CLOSEDSUFFIX")
-    basename = f"sequence_{s.jobname}"
-    s.closed = os.path.join(options.directory, basename + closed_suffix)
+    basename = f"sequence_{seq.jobname}"
+    seq.closed = os.path.join(options.directory, basename + closed_suffix)
 
 
 def merge_dl1datacheck(seq_list):
-    """Merge every DL1 datacheck h5 files run-wise and generate the PDF files"""
+    """
+    Merge every DL1 datacheck h5 files run-wise and generate the PDF files
+
+    Parameters
+    ----------
+    seq_list: list of sequence objects
+        List of Sequence Objects
+    """
 
     log.debug("Merging dl1 datacheck files and producing PDFs")
-
     nightdir = lstdate_to_dir(options.date)
-
     dl1_directory = join(cfg.get("LST1", "DL1DIR"), nightdir, options.prod_id)
 
     for sequence in seq_list:
@@ -433,7 +461,7 @@ def merge_dl1datacheck(seq_list):
             ]
             if not options.simulate:
                 try:
-                    process = subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+                    subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
                 except subprocess.CalledProcessError as err:
                     log.exception(f"Not able to merge DL1 datacheck: {err}")
                 # TODO implement an automatic scp to www datacheck,
@@ -444,8 +472,14 @@ def merge_dl1datacheck(seq_list):
 
 
 def extract_provenance(seq_list):
-    """Extract provenance run-wise from the prov.log file"""
+    """
+    Extract provenance run-wise from the prov.log file
 
+    Parameters
+    ----------
+    seq_list: list of sequence objects
+        List of Sequence Objects
+    """
     log.debug("Extract provenance run-wise")
 
     nightdir = lstdate_to_dir(options.date)
@@ -466,7 +500,7 @@ def extract_provenance(seq_list):
                 options.prod_id,
             ]
             if not options.simulate:
-                process = subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+                subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
             else:
                 log.debug("Simulate launching scripts")
             log.debug(cmd)

@@ -17,30 +17,35 @@ from osa.utils.logging import MyFormatter
 from osa.utils.standardhandle import stringify
 from osa.utils.utils import lstdate_to_dir
 
+__all__ = ["datasequence", "r0_to_dl1", "dl1_to_dl2"]
+
 log = logging.getLogger(__name__)
 
 
-def datasequence(args):
+def datasequence(
+    calibrationfile, pedestalfile, time_calibration, drivefile,
+    ucts_t0_dragon, dragon_counter0, ucts_t0_tib, tib_counter0,
+    run_str
+):
     """
     Performs all the steps to process a whole run
 
     Parameters
     ----------
-    args
+    calibrationfile
+    pedestalfile
+    time_calibration
+    drivefile
+    ucts_t0_dragon
+    dragon_counter0
+    ucts_t0_tib
+    tib_counter0
+    run_str
 
     Returns
     -------
 
     """
-    calibrationfile = args[0]
-    pedestalfile = args[1]
-    time_calibration = args[2]
-    drivefile = args[3]
-    ucts_t0_dragon = args[4]
-    dragon_counter0 = args[5]
-    ucts_t0_tib = args[6]
-    tib_counter0 = args[7]
-    run_str = args[8]
     historysuffix = cfg.get("LSTOSA", "HISTORYSUFFIX")
     sequenceprebuild = join(options.directory, f"sequence_{options.tel_id}_{run_str}")
     historyfile = sequenceprebuild + historysuffix
@@ -219,8 +224,9 @@ def dl1_to_dl2(run_str, historyfile):
 
 
 if __name__ == "__main__":
-    # set the options through cli parsing
-    args = datasequencecliparsing(sys.argv[0])
+    # set the arguments and options through cli parsing
+    (drs4_ped_file, calib_file, time_calib_file, drive_log_file,
+     ucts_t0_dragon, dragon_counter0, ucts_t0_tib, tib_counter, run_number) = datasequencecliparsing()
 
     # Logging
     fmt = MyFormatter()
@@ -233,5 +239,8 @@ if __name__ == "__main__":
         log.setLevel(logging.INFO)
 
     # run the routine
-    rc = datasequence(args)
+    rc = datasequence(
+        drs4_ped_file, calib_file, time_calib_file, drive_log_file,
+        ucts_t0_dragon, dragon_counter0, ucts_t0_tib, tib_counter, run_number
+    )
     sys.exit(rc)

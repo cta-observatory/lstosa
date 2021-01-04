@@ -29,6 +29,16 @@ from osa.utils.standardhandle import gettag
 from osa.utils.utils import is_day_closed
 from osa.veto.veto import getvetolist, getclosedlist
 
+__all__ = [
+    'sequencer',
+    'single_process',
+    'stereo_process',
+    'update_sequence_status',
+    'get_status_for_sequence',
+    'prettyoutputmatrix',
+    'reportsequences'
+]
+
 log = logging.getLogger(__name__)
 
 
@@ -223,10 +233,12 @@ def get_status_for_sequence(sequence, program):
 
 def reportsequences(seqlist):
     """
+    Update the status report table shown by the sequencer.
 
     Parameters
     ----------
-    seqlist
+    seqlist: List of sequence objects
+        List of sequences of a given date
     """
     matrix = []
     header = [
@@ -402,6 +414,7 @@ def reportsequences(seqlist):
 
 def prettyoutputmatrix(m, paddingspace):
     """
+    Build the status table shown by the sequencer.
 
     Parameters
     ----------

@@ -19,6 +19,14 @@ from osa.utils.cliopts import simprocparsing
 from osa.utils.logging import MyFormatter
 from osa.utils.utils import lstdate_to_number
 
+__all__ = [
+    "parse_template",
+    "do_setup",
+    "simulate_processing",
+    "simulate_subrun_processing",
+    "tear_down"
+]
+
 CONFIG_FLAGS = {
     "Go": True,
     "TearDL1": False,
