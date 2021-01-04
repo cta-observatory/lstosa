@@ -26,7 +26,6 @@ prototype (LST-1).
    components/index
    workflow/index
    howto/index
-   provenance/index
    documents/index
    howtocontribute/index
    troubleshooting/index
@@ -44,7 +43,7 @@ prototype (LST-1).
   nightsummary
   provenance
   reports
-  scripts
+  scripts/index
   utils
   veto
 

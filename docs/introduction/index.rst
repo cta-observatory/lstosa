@@ -34,4 +34,35 @@ analysis products are available to the LST Collaboration and delivered by intern
 The pipeline also performs data quality checks to debug potential problems. To ensure reproducibility
 LSTOSA tracks the provenance of the analysis products.
 
+++++++++++++++++++++
+Data reduction steps
+++++++++++++++++++++
 
+Data analysis steps implemented in `lstchain`_ are summarized in :numref:`reduction_steps`:
+
+.. figure:: reduction_steps_lstchain.png
+   :name: reduction_steps
+   :align: center
+   :width: 90%
+
+   Data reduction steps, starting from raw uncalibrated waveform signals to selected photon lists.
+
+.. _`lstchain`: https://github.com/cta-observatory/cta-lstchain
+
+++++++++++++++++++++++++
+Computing infrastructure
+++++++++++++++++++++++++
+
+An *IT Container* housing a compact data center, placed next to the telescope, allows us to record and
+process the data acquired by the telescope (data acquisition rate 3 TB per hour of observation), including LSTOSA
+pipeline data processing. The data center provides 55 computing nodes, each one with 32 cores, for a total of
+1760 cores and 3.5 PB of disk space. This cluster uses the CentOS operating system, administers the work load
+through the `SLURM`_ batch scheduling system and implements the Fujitsu Scalable File System **FEFS** based on Lustre.
+
+Once the data have been recorded and processed, they are copied via the network to the computing center PIC
+(Port d'Informació Científica) located in Barcelona. The members of the LST Collaboration have access to the
+so called *IT Container* and use it for the commissioning of the telescopes and preliminary astrophysics
+analysis. The vast computing power available in the *IT Container* is key to make possible the processing
+of LST-1 data.
+
+.. _`SLURM`: https://slurm.schedmd.com/

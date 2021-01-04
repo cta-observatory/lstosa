@@ -38,7 +38,9 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.napoleon',
     'sphinx_automodapi.automodapi',
-    'sphinx_automodapi.smart_resolver'
+    'sphinxarg.ext',
+    'numpydoc',
+    'sphinx.ext.mathjax'
 ]
 
 numpydoc_show_class_members = False
