@@ -16,6 +16,7 @@ __all__ = ["history", "start", "rule", "finished_assignments", "finished_text"]
 
 def start(parent_tag):
     """
+    Print out the header of the script (sequencer, closer, etc)
 
     Parameters
     ----------
@@ -178,9 +179,9 @@ def finished_assignments(sequence_list):
 
 
 def history(run, dl2_prod_id, program, inputfile, inputcard, rc, historyfile):
-    """Appends a history line to the history file.
-
-    A history line reports the outcome of the execution of a Mars executable.
+    """
+    Appends a history line to the history file.
+    A history line reports the outcome of the execution of a lstchain executable.
 
     Parameters
     ----------
@@ -191,12 +192,11 @@ def history(run, dl2_prod_id, program, inputfile, inputcard, rc, historyfile):
     program : str
         Mars executable used.
     inputfile : str
-        If needed, some input file used for the Mars executable (e.g. a scalib
-        file for sorcerer).
+        If needed, some input file used for the lstchain executable
     inputcard : str
-        Input card used for the Mars executable.
+        Input card used for the lstchain executable.
     rc : str or int
-        Return code of the Mars executable.
+        Return code of the lstchain executable.
     historyfile : str
         The history file that keeps track of the analysis steps.
     """

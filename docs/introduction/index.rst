@@ -1,44 +1,68 @@
 .. _introduction:
 
+************
 Introduction
 ************
 
-LSTOSA is born out of experience gained on *On-Site Analysis* (OSA) of the MAGIC
-data pipeline. Due to the large size of the daily recorded data, transferring the raw data 
-through the network connection from La Palma island to continental Europe in
-due time is an issue for the LST.
-Therefore a fast *LST On-Site Analysis* (LSTOSA) chain is being developed, aimed at performing
-a reduction the raw data at LST site, so that the high level data can be
-delivered by internet to the CTA data centers.
++++++++++++++++++++++++++
+Cherenkov Telescope Array
++++++++++++++++++++++++++
+The `Cherenkov Telescope Array CTA`_, is the next generation of ground-based Cherenkov telescopes observing the
+gamma-ray sky in the energy range  20 GeV - 300 TeV. The array will be composed of imaging atmospheric Cherenkov
+telescopes of three different sizes distributed into two sites, one in the northern hemisphere in the Canary Island
+of La Palma (Spain) and another located in the southern hemisphere at Paranal Observatory (Chile).
 
-1. A cron job creates a list of all the runs taken in the night (~ it takes 10 mins). The list is called a **NightSummary** file. 
+The prototype for CTA of the `Large-Sized Telescope LST-1`_, located at the Observatorio del Roque de Los Muchachos
+(ORM) in La Palma, is presently going through its commissioning phase. It is placed next to the two
+`MAGIC (Major Atmospheric Gamma Imaging Cherenkov) telescopes`_, which is an advantage for the operation, maintenance
+and calibration of the telescope. A total of four LSTs, among other different-size telescopes, will operate together
+at ORM as part of the CTA North (CTA-N) site.
 
-2. A **sequencer** script prepares a job for each run ( also called a sequence because it also includes the necesary calibration files).
+.. _`Cherenkov Telescope Array CTA`: https://www.cta-observatory.org
+.. _`Large-Sized Telescope LST-1`: https://www.cta-observatory.org/project/technology/lst/
+.. _`MAGIC (Major Atmospheric Gamma Imaging Cherenkov) telescopes`: https://magic.mpp.mpg.de/
 
-3.  These jobs are sent to the **slurm** batch system as array jobs which process each subrun in parallel. 
+++++++
+LSTOSA
+++++++
 
-4. In each **subrun** 2 steps are performed:
+LSTOSA is born out of experience gained on *On-Site Analysis* (OSA) of the MAGIC processing pipeline. Due to the
+large size of the daily recorded data, transferring the raw data through the network connection from La Palma island
+to continental Europe in due time is an issue for the LST-1. Therefore a fast *LST On-Site Analysis* (LSTOSA) chain
+is being developed, aimed at performing a reduction of the raw data at the LST-1 site, so that the low and intermediate
+analysis products are available to the LST Collaboration and delivered by internet to the CTA data centers.
+The pipeline also performs data quality checks to debug potential problems. To ensure reproducibility
+LSTOSA tracks the provenance of the analysis products.
 
-   A. **R0 to Dl1**: including DL1 production, Dl1 datacheck and muon extraction and processing.
+++++++++++++++++++++
+Data reduction steps
+++++++++++++++++++++
 
-   B. **DL1 to Dl2** generation.
+Data analysis steps implemented in `lstchain`_ are summarized in :numref:`reduction_steps`:
 
-5. A **closer script** (present an operator) checks all the sequences and merges the subrun results.
+.. figure:: reduction_steps_lstchain.png
+   :name: reduction_steps
+   :align: center
+   :width: 90%
 
-6. Plots and results are transferred to their final locations
+   Data reduction steps, starting from raw uncalibrated waveform signals to selected photon lists.
 
+.. _`lstchain`: https://github.com/cta-observatory/cta-lstchain
 
+++++++++++++++++++++++++
+Computing infrastructure
+++++++++++++++++++++++++
 
+An *IT Container* housing a compact data center, placed next to the telescope, allows us to record and
+process the data acquired by the telescope (data acquisition rate 3 TB per hour of observation), including LSTOSA
+pipeline data processing. The data center provides 55 computing nodes, each one with 32 cores, for a total of
+1760 cores and 3.5 PB of disk space. This cluster uses the CentOS operating system, administers the work load
+through the `SLURM`_ batch scheduling system and implements the Fujitsu Scalable File System **FEFS** based on Lustre.
 
+Once the data have been recorded and processed, they are copied via the network to the computing center PIC
+(Port d'Informació Científica) located in Barcelona. The members of the LST Collaboration have access to the
+so called *IT Container* and use it for the commissioning of the telescopes and preliminary astrophysics
+analysis. The vast computing power available in the *IT Container* is key to make possible the processing
+of LST-1 data.
 
-
-
-
-The basic scheme is shown in the :numref:`data flow`:
-
-.. _data flow:
-
-.. figure:: LSTOSA_flow.png
-
-    Data flow scheme of LST onsite analysis.
-
+.. _`SLURM`: https://slurm.schedmd.com/

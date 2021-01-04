@@ -1,8 +1,6 @@
 import logging
 import sys
-import tempfile
 from configparser import ConfigParser
-from os import unlink
 from pathlib import Path
 
 from osa.configs import options
@@ -13,6 +11,7 @@ log = logging.getLogger(__name__)
 def readconf():
     """
     Read cfg lstosa config file
+
     Returns
     -------
     conf: configuration file cfg
@@ -32,20 +31,7 @@ def readconf():
         conf.read(file)
     except ConfigParser.Error as err:
         log.exception(err)
-    log.debug("sections of the config file are {0}".format(conf.sections()))
-    return conf
-
-
-def read_properties(file):
-    """ To be used when config file has no header, creating a DUMMY header"""
-
-    with tempfile.NamedTemporaryFile(delete=False) as tf:
-        tf.write("[DUMMY]\n")
-        with open(file) as f:
-            tf.write(f.read())
-        tf.seek(0)
-        conf = readconf()
-    unlink(tf.name)
+    log.debug(f"Sections of the config file are {conf.sections()}")
     return conf
 
 

@@ -15,6 +15,8 @@ from osa.utils.cliopts import copy_datacheck_parsing
 from osa.utils.logging import MyFormatter
 from osa.utils.utils import lstdate_to_dir
 
+__all__ = ["copy_files", "copy_to_webserver", "create_destination_dir", "is_merge_process_finished"]
+
 log = logging.getLogger(__name__)
 
 

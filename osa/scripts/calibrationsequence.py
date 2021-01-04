@@ -21,29 +21,33 @@ from osa.utils.cliopts import calibrationsequencecliparsing
 from osa.utils.logging import MyFormatter
 from osa.utils.standardhandle import stringify
 
+__all__= [
+    "calibrationsequence",
+    "calibrate_charge",
+    "calibrate_time",
+    "drs4_pedestal",
+]
+
 log = logging.getLogger(__name__)
 
 
-def calibrationsequence(args):
+def calibrationsequence(pedestal_filename, calibration_filename, ped_run_number, cal_run_number):
     """
     Handle the three steps for creating the calibration products:
     DRS4 pedestal, charge calibration and time calibration files
 
     Parameters
     ----------
-    args
+    pedestal_filename
+    calibration_filename
+    ped_run_number
+    cal_run_number
 
     Returns
     -------
-    Return code
+    rc
 
     """
-    # FIXME: add input arguments explicitly
-    pedestal_filename = args[0]
-    calibration_filename = args[1]
-    ped_run_number = args[2]
-    cal_run_number = args[3]
-
     history_file = path.join(
         options.directory, f"sequence_{options.tel_id}_{cal_run_number}.history"
     )
@@ -342,7 +346,7 @@ def calibrate_time(calibration_run, pedestal_file, calibration_output_file, hist
 
 if __name__ == "__main__":
     # Set the options through cli parsing
-    args = calibrationsequencecliparsing(sys.argv[0])
+    pedoutfile, caloutfile, calib_run_number, ped_run_number = calibrationsequencecliparsing()
 
     # Logging
     fmt = MyFormatter()
@@ -355,5 +359,5 @@ if __name__ == "__main__":
         log.setLevel(logging.INFO)
 
     # run the routine
-    rc = calibrationsequence(args)
+    rc = calibrationsequence(pedoutfile, caloutfile, calib_run_number, ped_run_number)
     sys.exit(rc)
