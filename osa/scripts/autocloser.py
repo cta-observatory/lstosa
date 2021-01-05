@@ -6,7 +6,7 @@ import re
 import subprocess
 
 from osa.configs import options
-from osa.utils.utils import lstdate_to_dir
+from osa.utils.cliopts import set_default_directory_if_needed
 
 __all__ = ["Telescope", "Sequence"]
 
@@ -153,10 +153,7 @@ class Telescope(object):
 
     def is_transferred(self):
         log.debug(f"Checking if raw data is completely transferred for {self.telescope}")
-        for line in self.header_lines:
-            if "Expecting more raw data" in line:
-                return False
-        return True
+        return all("Expecting more raw data" not in line for line in self.header_lines)
 
     def simulate_sequencer(self):
         if args.test:
@@ -208,9 +205,7 @@ class Telescope(object):
     def build_Sequences(self):
         log.debug(f"Creating Sequence objects for {self.telescope}")
         self.sequences = [Sequence(self.keyLine, line) for line in self.data_lines]
-        if self.sequences:
-            return True
-        return False
+        return bool(self.sequences)
 
     def close(self):
         log.info("Closing...")
@@ -258,24 +253,16 @@ class Sequence(object):
         return
 
     def is_closed(self):
-        if self.dictSequence["Action"] == "Closed":
-            return True
-        return False
+        return self.dictSequence["Action"] == "Closed"
 
     def is_running(self):
-        if self.dictSequence["State"] == "RUNNING":
-            return True
-        return False
+        return self.dictSequence["State"] == "RUNNING"
 
     def is_complete(self):
-        if self.dictSequence["State"] == "COMPLETED":
-            return True
-        return False
+        return self.dictSequence["State"] == "COMPLETED"
 
     def is_onHold(self):
-        if self.dictSequence["State"] == "PENDING":
-            return True
-        return False
+        return self.dictSequence["State"] == "PENDING"
 
     def is_100(self):
         if (
@@ -286,9 +273,7 @@ class Sequence(object):
             and self.dictSequence["DL2%"] == "100"
         ):
             return True
-        if self.dictSequence["Tel"] == "ST" and self.dictSequence["DL3%"] == "100":
-            return True
-        return False
+        return self.dictSequence["Tel"] == "ST" and self.dictSequence["DL3%"] == "100"
 
     def is_flawless(self):
         log.debug("Check if flawless")
@@ -361,9 +346,7 @@ class Sequence(object):
         for i, x in enumerate(subrun_nrs, 1):
             if i != x:
                 return False
-        if not subrun_nrs or subrun_nrs[-1] != int(self.dictSequence["Subruns"]):
-            return False
-        return True
+        return bool(subrun_nrs and subrun_nrs[-1] == int(self.dictSequence["Subruns"]))
 
     def close(self):
         log.info("Closing sequence...")
@@ -406,6 +389,7 @@ class Sequence(object):
 # add the sequences to the incidencesDict
 class Incidence(object):
     def __init__(self, telescope):
+        self.incidencesStereo = None
         self.telescope = telescope
         # known incidences (keys in both dicts have to be unique!):
         self.incidencesMono = {
@@ -427,9 +411,7 @@ class Incidence(object):
         return f"{text}: {', '.join(run for run in runs)}."
 
     def has_incidences(self):
-        if any([self.incidencesDict[i] for i in self.incidencesDict]):
-            return True
-        return False
+        return any(self.incidencesDict[i] for i in self.incidencesDict)
 
     def check_previous_incidences(self, tel):
         input_file = incidencesFileTmp(tel)
@@ -446,10 +428,9 @@ class Incidence(object):
     def read_previous_incidences(self, input_file):
         log.debug(f"Trying to read {input_file}")
         try:
-            f = open(input_file, "r")
-            for l in [line for line in f.read().split("\n") if line]:
-                self.add_incidence(l.split(":")[0], l.split(":")[1])
-            f.close()
+            with open(input_file, "r") as f:
+                for l in [line for line in f.read().split("\n") if line]:
+                    self.add_incidence(l.split(":")[0], l.split(":")[1])
             return True
         except IOError:
             log.warning(f"Could not open {input_file}")
@@ -488,14 +469,14 @@ class Incidence(object):
     def write_incidences(self):
         log.info(f"Writing down incidences for {self.telescope}:")
         incidences = ""
-        if self.telescope == "ST":
-            for k in self.incidencesStereo:
-                if self.incidencesDict[k]:
-                    incidences += self.write_error(self.incidencesStereo[k], self.incidencesDict[k])
-        else:
+        if self.telescope != "ST":
             for k in self.incidencesMono:
                 if self.incidencesDict[k]:
                     incidences += self.write_error(self.incidencesMono[k], self.incidencesDict[k])
+        else:
+            for k in self.incidencesStereo:
+                if self.incidencesDict[k]:
+                    incidences += self.write_error(self.incidencesStereo[k], self.incidencesDict[k])
 
         # suggestion by Lab: always create incidence file, even if empty,
         # incidence table is clearer like this
@@ -600,13 +581,11 @@ def understand_sequence(tel, seq):
         log.warning("At least one subrun is missing!")
         return False
 
-    if tel.telescope == "LST1" or tel.telescope == "LST2":
-        if understand_mono_sequence(tel, seq):
-            return True
+    if tel.telescope in ["LST1", "LST2"] and understand_mono_sequence(tel, seq):
+        return True
 
-    if tel.telescope == "ST":
-        if understand_stereo_sequence(tel, seq):
-            return True
+    if tel.telescope == "ST" and understand_stereo_sequence(tel, seq):
+        return True
 
     if seq.is_flawless():
         seq.understood = True
@@ -624,9 +603,7 @@ def has_equal_nr_of_sequences(teldict):
     if teldict["LST1"].closed or teldict["LST2"].closed:
         log.debug("The other telescope seems to be closed")
         return True
-    if len(teldict["LST1"].sequences) != len(teldict["LST2"].sequences):
-        return False
-    return True
+    return len(teldict["LST1"].sequences) == len(teldict["LST2"].sequences)
 
 
 # def sendEmail(message):

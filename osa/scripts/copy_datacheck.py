@@ -15,16 +15,25 @@ from osa.utils.cliopts import copy_datacheck_parsing
 from osa.utils.logging import MyFormatter
 from osa.utils.utils import lstdate_to_dir
 
-__all__ = ["copy_files", "copy_to_webserver", "create_destination_dir", "is_merge_process_finished"]
+__all__ = ["copy_files", "create_destination_dir", "is_merge_process_finished"]
 
 log = logging.getLogger(__name__)
 
+# Logging
+fmt = MyFormatter()
+handler = logging.StreamHandler()
+handler.setFormatter(fmt)
+logging.root.addHandler(handler)
+log.setLevel(logging.INFO)
 
-def copy_to_webserver():
+
+def main():
     """
     Get analysis products to be copied to the webserver,
     create directories and eventually copy the files.
     """
+    # Set cli options and arguments
+    copy_datacheck_parsing()
 
     # Check of merging process has already finished
     if is_merge_process_finished():
@@ -111,13 +120,4 @@ def is_merge_process_finished():
 
 
 if __name__ == "__main__":
-    copy_datacheck_parsing()
-
-    # Logging
-    fmt = MyFormatter()
-    handler = logging.StreamHandler()
-    handler.setFormatter(fmt)
-    logging.root.addHandler(handler)
-    log.setLevel(logging.INFO)
-
-    copy_to_webserver()
+    main()

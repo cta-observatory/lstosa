@@ -49,9 +49,23 @@ __all__ = [
 
 log = logging.getLogger(__name__)
 
+# Logging
+fmt = MyFormatter()
+handler = logging.StreamHandler()
+handler.setFormatter(fmt)
+logging.root.addHandler(handler)
 
-def closer():
+
+def main():
     """Main function in charge of closing the sequences"""
+
+    # set the options through cli parsing
+    closercliparsing()
+
+    if options.verbose:
+        logging.root.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
 
     # initiating report
     tag = gettag()
@@ -507,18 +521,4 @@ def extract_provenance(seq_list):
 
 
 if __name__ == "__main__":
-    # set the options through cli parsing
-    closercliparsing()
-
-    # Logging
-    fmt = MyFormatter()
-    handler = logging.StreamHandler()
-    handler.setFormatter(fmt)
-    logging.root.addHandler(handler)
-    if options.verbose:
-        logging.root.setLevel(logging.DEBUG)
-    else:
-        log.setLevel(logging.INFO)
-
-    # run the routine
-    closer()
+    main()
