@@ -30,4 +30,4 @@ dependencies:
       - pytest_runner
       - pytest-ordering
       - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.5.3
-      - sphinx_automodapi
+      - sphinx-automodapi
