@@ -47,7 +47,9 @@ setup(
         "matplotlib",
         "numpy",
         "pyyaml",
-        "prov"
+        "prov",
+        "pydot",
+        "pydotplus"
     ],
     entry_points=entry_points
 )
