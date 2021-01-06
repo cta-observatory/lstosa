@@ -1,8 +1,6 @@
-import os
 import re
 
 from setuptools import setup, find_packages
-
 
 with open("osa/version.py") as f:
     __version__ = re.search('^__version__ = "(.*)"$', f.read()).group(1)
@@ -25,8 +23,7 @@ extras_require = {
         "sphinx",
         "sphinx_rtd_theme",
         "sphinx_automodapi",
-        "sphinx_argparse",
-        "numpydoc",
+        "sphinx_argparse"
     ],
     "tests": [
         "pytest",
@@ -45,7 +42,7 @@ setup(
     install_requires=[
         "lstchain==0.6.3",
         "matplotlib",
-        "numpy~=1.16",
+        "numpy",
         "pyyaml",
         "prov",
         "pydot",
