@@ -22,7 +22,7 @@ dependencies:
   - black
   - isort
   - sphinx
-  - sphinx-rtd-theme
+  - sphinx_rtd_theme
   - sphinx-argparse
   - pip:
       - lstchain
