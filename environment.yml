@@ -22,7 +22,6 @@ dependencies:
   - black
   - isort
   - sphinx
-  - numpydoc
   - sphinx_rtd_theme
   - sphinx-argparse
   - pip:
