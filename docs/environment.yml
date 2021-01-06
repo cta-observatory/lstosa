@@ -3,3 +3,4 @@ channels:
 dependencies:
   - python==3.7
   - numpy
+  - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.5.3
