@@ -23,7 +23,8 @@ extras_require = {
         "sphinx",
         "sphinx_rtd_theme",
         "sphinx_automodapi",
-        "sphinx_argparse"
+        "sphinx_argparse",
+        "sphinx-autoapi"
     ],
     "tests": [
         "pytest",

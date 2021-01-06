@@ -1,12 +1,17 @@
 version: 2
 
-# Build documentation in the docs/ directory with Sphinx
-sphinx:
-  configuration: docs/conf.py
-  builder: html
-
 conda:
-  environment: environment.yml
+  environment: docs/environment.yml
 
-formats:
-  - pdf
+python:
+  version: 3.7
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - docs
+        - tests
+
+sphinx:
+  builder: html
+  fail_on_warning: true

@@ -27,7 +27,6 @@ copyright = f"{author}.  Last updated {datetime.datetime.now().strftime('%d %b %
 # The full version, including alpha/beta/rc tags
 release = '0.0.1'
 
-
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -38,8 +37,11 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx_automodapi.automodapi',
     'sphinxarg.ext',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    # 'autoapi.extension'
 ]
+
+# autoapi_dirs = ['../osa']
 
 numpydoc_show_class_members = False
 
@@ -50,7 +52,6 @@ templates_path = ['_templates']
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-
 
 # -- Options for HTML output -------------------------------------------------
 
