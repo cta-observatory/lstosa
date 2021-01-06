@@ -30,7 +30,6 @@ from osa.utils.utils import is_day_closed
 from osa.veto.veto import getvetolist, getclosedlist
 
 __all__ = [
-    'sequencer',
     'single_process',
     'stereo_process',
     'update_sequence_status',
@@ -41,13 +40,26 @@ __all__ = [
 
 log = logging.getLogger(__name__)
 
+# Logging
+fmt = MyFormatter()
+handler = logging.StreamHandler()
+handler.setFormatter(fmt)
+logging.root.addHandler(handler)
 
-def sequencer():
+
+def main():
     """
     Main script to be called as cron job. It creates and execute
     the calibration sequence and afterward it prepares a SLURM job
     array which launches the data sequences for every subrun.
     """
+    # Set the options through parsing of the command line interface
+    sequencercliparsing()
+
+    if options.verbose:
+        logging.root.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
 
     process_mode = None
     single_array = ["LST1", "LST2"]
@@ -447,18 +459,4 @@ def prettyoutputmatrix(m, paddingspace):
 
 
 if __name__ == "__main__":
-
-    # Set the options through parsing of the command line interface
-    sequencercliparsing()
-
-    # Logging
-    fmt = MyFormatter()
-    handler = logging.StreamHandler()
-    handler.setFormatter(fmt)
-    logging.root.addHandler(handler)
-    if options.verbose:
-        logging.root.setLevel(logging.DEBUG)
-    else:
-        log.setLevel(logging.INFO)
-
-    sequencer()
+    main()

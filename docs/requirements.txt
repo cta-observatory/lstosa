@@ -1,4 +1,0 @@
-sphinx-automodapi
-sphinx-argparse
-sphinx-rtd-theme
-numpydoc
