@@ -45,7 +45,7 @@ setup(
     install_requires=[
         "lstchain==0.6.3",
         "matplotlib",
-        "numpy",
+        "numpy~=1.16",
         "pyyaml",
         "prov",
         "pydot",
