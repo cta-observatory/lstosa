@@ -30,7 +30,6 @@ from osa.utils.utils import is_day_closed
 from osa.veto.veto import getvetolist, getclosedlist
 
 __all__ = [
-    'sequencer',
     'single_process',
     'stereo_process',
     'update_sequence_status',

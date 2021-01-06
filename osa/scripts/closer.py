@@ -31,7 +31,6 @@ from osa.utils.utils import (
 )
 
 __all__ = [
-    "closer",
     "use_night_summary",
     "is_raw_data_available",
     "is_sequencer_successful",
