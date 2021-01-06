@@ -38,8 +38,11 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx_automodapi.automodapi',
     'sphinxarg.ext',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'autoapi.extension'
 ]
+
+autoapi_dirs = ['../osa']
 
 numpydoc_show_class_members = False
 
