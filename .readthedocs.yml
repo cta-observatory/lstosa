@@ -8,3 +8,5 @@ sphinx:
 conda:
   environment: environment.yml
 
+formats:
+  - pdf
