@@ -269,7 +269,7 @@ def produce_provenance():
 
         # make folder log/ if does not exist
         outpath = step_path / "log"
-        outpath.mkdir(exist_ok=True)
+        outpath.mkdir(parents=True, exist_ok=True)
 
         # define paths for prov products
         log_path = outpath / f"{grain}_{base_filename}.log"
