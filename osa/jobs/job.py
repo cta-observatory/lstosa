@@ -392,7 +392,7 @@ def submitjobs(sequence_list):
         commandargs = [command, "--parsable", env_nodisplay]
         if s.type == "CALI":
             commandargs.append(s.script)
-            if options.simulate or options.nocalib:
+            if options.simulate or options.nocalib or options.test:
                 log.debug("SIMULATE Launching scripts")
             else:
                 try:
@@ -464,7 +464,7 @@ def submitjobs(sequence_list):
             #        job_list.append(s.jobid)
             #        log.debug("{0} {1}".format(s.action, stringify(commandargs)))
             commandargs.append(s.script)
-            if options.simulate:
+            if options.simulate or options.test:
                 log.debug("SIMULATE Launching scripts")
 
             else:
