@@ -8,6 +8,8 @@ from osa.configs import config, options
 from osa.configs.config import cfg
 from osa.rawcopy.raw import getrawdir
 from osa.utils.iofile import appendtofile
+from osa.utils.logging import MyFormatter
+from osa.utils.standardhandle import output, gettag
 
 log = logging.getLogger(__name__)
 
@@ -37,12 +39,14 @@ def header(message):
     ----------
     message
     """
+    tag = gettag()
     framesize = size()
     if len(message) < framesize - 2:
         prettyframe = int((framesize - 2 - len(message)) / 2) * "="
     else:
         prettyframe = ""
-    log.info(f"{prettyframe} {message} {prettyframe}")
+    # FIXME: should be log.info but it does not work
+    output(tag, f"{prettyframe} {message} {prettyframe}")
 
 
 def rule():
