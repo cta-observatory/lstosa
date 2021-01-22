@@ -57,7 +57,7 @@ def main():
     sequencercliparsing()
 
     if options.verbose:
-        logging.root.setLevel(logging.DEBUG)
+        log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
 
