@@ -68,9 +68,9 @@ def getnightdirectory():
 
     if not exists(directory):
         if options.nightsummary and options.tel_id != "ST":
-            log.error(f"Night directory {directory} does not exists!")
+            log.error(f"Analysis directory {directory} does not exists!")
         elif options.simulate:
-            log.warning(f"Directory {directory} does not exists")
+            log.debug(f"SIMULATE the creation of the analysis directory.")
         else:
             make_directory(directory)
     log.debug(f"Analysis directory: {directory}")
@@ -423,3 +423,38 @@ def is_day_closed():
     if exists(flag_file):
         answer = True
     return answer
+
+
+def time_to_seconds(timestring):
+    """Transform HH:MM:SS time format to seconds.
+
+    Parameters
+    ----------
+    timestring: str
+        Time in format HH:MM:SS
+
+    Returns
+    -------
+    Seconds that correspond to HH:MM:SS
+
+    """
+    if timestring is None:
+        timestring = "00:00:00"
+    hours, minutes, seconds = timestring.split(":")
+    return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+
+
+def date_in_yymmdd(datestring):
+    """
+    Convert date string(YYYY_MM_DD) from the NightSummary into (YY_MM_DD) format.
+
+    Parameters
+    ----------
+    datestring: in format YYYY_MM_DD
+    """
+    date = list(datestring)
+    yy = "".join(date[2:4])
+    mm = "".join(date[4:6])
+    dd = "".join(date[6:8])
+    return yy, mm, dd
+
