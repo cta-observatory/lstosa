@@ -85,8 +85,8 @@ def read_nightsummary():
                 sys.exit(1)
         else:
             log.error("No night summary file specified")
-    log.debug(f"Night summary file path: {nightsummary_file}")
-    log.debug(f"Night summary:\n{stdout}")
+    log.debug(f"Night summary file path {nightsummary_file}")
+    log.debug(f"Content \n{stdout}")
     return stdout
 
 
