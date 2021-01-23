@@ -1,0 +1,23 @@
+.. _authors:
+
+Authors
+=======
+
+To see who contributed to *LSTOSA*, please visit the
+`GitLab contributors page <https://gitlab.cta-observatory.org/cta-array-elements/lst/analysis/lstosa/-/graphs/master>`__
+
+The following people have contributed commits to the LSTOSA repository (in alphabetical order):
+
+* Andrés Baquero, UCM, Spain
+* Daniel Morcuende, UCM, Spain
+* José Enrique Ruiz, IAA-CSIC, Spain
+* José Luis Contreras, UCM, Spain
+* Lab Saha, UCM, Spain
+
+We thank also Isidro Aguado (UCM, Spain) for his invaluable help and technical support.
+
+LSTOSA was started by Lab Saha and José Luis Contreras (Madrid, UCM) adapting the MAGIC On-site Analysis
+pipeline (MAGIC OSA) to the LST analysis pipeline. Since LSTOSA framework is heavily based on
+MAGIC OSA, a big portion of the credits goes to the authors of MAGIC OSA (Alejandro Lorca,
+José Luis Contreras, Raquel de los Reyes, Igor Oya, Daniel Nieto, S. Pardo, Konstancja Satalecka,
+David Fidalgo and Mireia Nievas).
