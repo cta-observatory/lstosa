@@ -3,8 +3,7 @@
 #SBATCH -A dpps                                                                                                                                                                                                                               
 #SBATCH -p short                                                                                                        
 #SBATCH --cpus-per-task=1                                                                                               
-#SBATCH --mem-per-cpu=2G                                                                                                
-#SBATCH -D=/fefs/aswg/data/real/OSA/DL1DataCheck_LongTerm                                                                                                
+#SBATCH --mem-per-cpu=4G                                                                                                
 #SBATCH -o slurm_longterm_datacheck_%j.out                                                                              
 #SBATCH -e slurm_longterm_datacheck_%j.err
 
@@ -23,6 +22,8 @@ if [[ ! "$WORK_DIR" || ! -d "$WORK_DIR" ]]; then
   exit 1
 fi
 
+# Commented ##SBATCH -D=/fefs/aswg/data/real/OSA/DL1DataCheck_LongTerm                                                                                                
+
 # Make sure tmp directory gets removed even if the script exits abnormally.
 trap "exit 1" HUP INT PIPE QUIT TERM
 trap 'rm -rf "$WORK_DIR"' EXIT
@@ -30,7 +31,7 @@ trap 'rm -rf "$WORK_DIR"' EXIT
 echo Start copy: `date +%FT%T`
 # Copy files month by month: muons files subrun-wise and dl1 datacheck run-wise
 # FIXME: loop over months or directories without having to assume any prior month list.
-for month in 201911 202001 202002 202006 202007 202008 202009 202010 202011
+for month in 201911 202001 202002 202006 202007 202008 202009 202010 202011 202012 202101
 do
     cp $DL1DIR/${month}*/v0.6.[13]_v05/datacheck_dl1_LST-1.Run?????.h5 $WORK_DIR/.
     cp $DL1DIR/${month}*/v0.6.[13]_v05/muons_LST-1.Run*.fits $WORK_DIR/.
@@ -45,7 +46,8 @@ cd $CURRENT_DIRECTORY
 # Copy outcome to final destination
 cp $WORK_DIR/longterm_dl1_check.* $OUTPUT_DIR/.
 
-# Copy to datacheck webserver
-scp $OUTPUT_DIR/longterm_dl1_check.{h5,html} datacheck:/home/www/html/datacheck/dl1/.
+# FIXME: For the moment the copy to datacheck webserver is not working within this script
+# It must be done separately.
+#scp $OUTPUT_DIR/longterm_dl1_check.{h5,html} datacheck:/home/www/html/datacheck/dl1/.
 
 exit 0

@@ -9,13 +9,13 @@ import subprocess
 import time
 from itertools import chain, islice, tee
 
-import numpy as np
+import pandas as pd
 
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.iofile import readfromfile, writetofile
 from osa.utils.standardhandle import stringify
-from osa.utils.utils import lstdate_to_dir
+from osa.utils.utils import lstdate_to_dir, date_in_yymmdd, time_to_seconds
 
 log = logging.getLogger(__name__)
 
@@ -282,8 +282,8 @@ def createjobtemplate(s, get_content=False):
     elif s.type == "STEREO":
         command = os.path.join(scriptsdir, "stereosequence.py")
 
-    # beware we want to change this in the future
-    commandargs = ["srun", "python", command]
+    commandargs = ["python", command]
+
     if options.verbose:
         commandargs.append("-v")
     if options.warning:
@@ -482,25 +482,30 @@ def submitjobs(sequence_list):
 
 
 def getqueuejoblist(sequence_list):
-    command = cfg.get("ENV", "SACCTBIN")
+    """
+    Fetch the information of jobs in the queue using the sacct SLURM command
+
+    Parameters
+    ----------
+    sequence_list
+
+    Returns
+    -------
+
+    """
     user = cfg.get("ENV", "USER")
     sacct_format = "--format=jobid%8,jobname%25,cputime,elapsed,state,exitcode"
-    commandargs = [command, "-u", user, sacct_format]
+    commandargs = ["sacct", "-u", user, sacct_format]
     queue_list = []
     try:
         sacct_output = subprocess.check_output(commandargs, universal_newlines=True)
     except subprocess.CalledProcessError as Error:
-        log.exception(f"Command '{stringify(commandargs)}' failed, {Error}", 2)
-    except OSError as ValueError:
-        log.exception(f"Command '{stringify(commandargs)}' failed, {ValueError}", ValueError)
+        log.exception(f"Command '{stringify(commandargs)}' failed, {Error}")
+    except OSError as Error:
+        log.exception(f"Command '{stringify(commandargs)}' failed, {Error}")
     else:
         queue_header = sacct_output.splitlines()[0].split()
-        queue_lines = (
-            sacct_output.replace("+", "")
-            .replace("sequence_", "")
-            .replace(".py", "")
-            .splitlines()[2:]
-        )
+        queue_lines = sacct_output.replace("+", "").replace("sequence_", "").replace(".py", "").splitlines()[2:]
         queue_sequences = [line.split() for line in queue_lines if "batch" not in line]
         queue_list = [dict(zip(queue_header, sequence)) for sequence in queue_sequences]
         setqueuevalues(queue_list, sequence_list)
@@ -508,124 +513,51 @@ def getqueuejoblist(sequence_list):
     return queue_list
 
 
-def previous_and_next(iterable):
-    prevs, items, nexts = tee(iterable, 3)
-    prevs = chain([None], prevs)
-    nexts = chain(islice(nexts, 1, None), [None])
-    return zip(prevs, items, nexts)
-
-
 def setqueuevalues(queue_list, sequence_list):
-    for s in sequence_list:
-        s.tries = 0
-        for previous, queue_item, nxt in previous_and_next(queue_list):
-            try:
-                if queue_item["JobName"] == "python" and s.jobname == previous["JobName"]:
-                    s.action = "Check"
-                    s.jobid = queue_item["JobID"]
-                    s.state = queue_item["State"]
-                    list_of_states = [
-                        "COMPLETED",
-                        "RUNNING",
-                        "PENDING",
-                        "FAILED",
-                        "CANCELLED+",
-                    ]
-                    if s.state in list_of_states:
-                        if s.tries == 0:
-                            s.cputime = queue_item["CPUTime"]
-                            s.walltime = queue_item["Elapsed"]
-                        else:
-                            try:
-                                s.cputime = avg_time_duration(s.cputime, queue_item["CPUTime"])
-                            except AttributeError as ErrorName:
-                                log.warning(ErrorName)
-                            try:
-                                s.walltime = avg_time_duration(s.cputime, queue_item["Elapsed"])
-                            except AttributeError as ErrorName:
-                                log.warning(ErrorName)
-                        if s.state in ["COMPLETED", "FAILED", "CANCELLED+"]:
-                            s.exit = queue_item["ExitCode"]
-
-                        if nxt is not None:
-                            if queue_item["JobID"] != nxt["JobID"]:
-                                s.tries += 1
-                        else:
-                            s.tries += 1  # Last item of the queue reached
-                    log.debug(
-                        f"Queue attributes: sequence {s.seq}, JobName {s.jobname}, "
-                        f"JobID {s.jobid}, State {s.state}, CPUTime {s.cputime}, Exit {s.exit} updated",
-                    )
-            except TypeError as err:
-                log.warning(f"Reached the end of queue: {err}")
-
-
-def sumtime(a, b):
-    """Beware of the strange format of timedelta:
-    http://docs.python.org/library/datetime.html?highlight=datetime#datetime.timedelta"""
-
-    a_hh, a_mm, a_ss = a.split(":")
-    b_hh, b_mm, b_ss = b.split(":")
-
-    # strange error: invalid literal for int() with base 10: '1 day, 0'
-    if " day, " in a_hh:
-        a_hh = int(a_hh.split(" day, ")[0]) * 24 + int(a_hh.split(" day, ")[1])
-    elif " days, " in a_hh:
-        a_hh = int(a_hh.split(" days, ")[0]) * 24 + int(a_hh.split(" days, ")[1])
-
-    ta = datetime.timedelta(0, int(a_ss), 0, 0, int(a_mm), int(a_hh), 0)
-    tb = datetime.timedelta(0, int(b_ss), 0, 0, int(b_mm), int(b_hh), 0)
-    tc = ta + tb
-    c = str(tc)
-    if len(c) == 7:
-        c = "0" + c
-    return c
-
-
-def avg_time_duration(a, b):
-
-    if a is None:
-        a = "00:00:00"
-    elif b is None:
-        b = "00:00:00"
-
-    a_hh, a_mm, a_ss = a.split(":")
-    b_hh, b_mm, b_ss = b.split(":")
-
-    a_seconds = int(a_hh) * 3600 + int(a_mm) * 60 + int(a_ss)
-    b_seconds = int(b_hh) * 3600 + int(b_mm) * 60 + int(b_ss)
-
-    if a != "00:00:00" and b != "00:00:00":
-        return time.strftime("%H:%M:%S", time.gmtime(np.mean((a_seconds, b_seconds))))
-    elif a is None and b is not None:
-        return b
-    elif b is None and a is not None:
-        return a
-    elif a is None:
-        return "00:00:00"
-    else:
-        return sumtime(a, b)
-
-
-def date_in_yymmdd(datestring):
-    """Convert date string(yyyy_mm_dd) from the NightSummary into
-    (yy_mm_dd) format. Depending on the time, +1 is added to date to
-    consider the convention of filenaming based on observation date.
+    """
+    Extract queue values and fetch them into the table of sequences
 
     Parameters
     ----------
-    datestring: in format yyyy_mm_dd
+    queue_list
+    sequence_list
     """
-    # date = datestring.split('-')
-    # da = [ch for ch in date[0]]
-    date = list(datestring)
-    yy = "".join(date[2:4])
-    mm = "".join(date[4:6])
-    dd = "".join(date[6:8])
-    # change the day
-    # time = timestring.split(':')
-    # if (int(time[0]) >= 17 and int(time[0]) <= 23):
-    #   dd = str(int(date[2]))
-    # else:
-    #   dd   = date[2]
-    return yy, mm, dd
+    # Create data frames for sequence list and queue array
+    sequences_df = pd.DataFrame([vars(s) for s in sequence_list])
+    df_queue = pd.DataFrame.from_dict(queue_list)
+    # Add column with elapsed seconds of the job run-time to be averaged
+    if "JobName" in df_queue.columns:
+        df_queue_filtered = df_queue[df_queue["JobName"].isin(sequences_df["jobname"])].copy()
+        df_queue_filtered["DeltaTime"] = df_queue_filtered["CPUTime"].apply(time_to_seconds)
+        for s in sequence_list:
+            df_jobname = df_queue_filtered[df_queue_filtered["JobName"] == s.jobname]
+            s.tries = len(df_jobname["JobID"].unique())
+            s.action = "Check"
+            try:
+                s.jobid = max(df_jobname["JobID"])  # Get latest JobID
+                df_jobid_filtered = df_jobname[df_jobname["JobID"] == s.jobid]
+                s.cputime = time.strftime("%H:%M:%S", time.gmtime(df_jobid_filtered["DeltaTime"].median()))
+                if (df_jobid_filtered.State.values == "COMPLETED").all():
+                    s.state = "COMPLETED"
+                    s.exit = df_jobid_filtered["ExitCode"].iloc[0]
+                elif (df_jobid_filtered.State.values == "PENDING").all():
+                    s.state = "PENDING"
+                    s.exit = None
+                elif (df_jobid_filtered.State.values == "FAILED").any():
+                    s.state = "FAILED"
+                    s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "FAILED"]["ExitCode"].iloc[0]
+                elif (df_jobid_filtered.State.values == "CANCELLED").any():
+                    s.state = "CANCELLED"
+                    s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "CANCELLED"]["ExitCode"].iloc[0]
+                else:
+                    s.state = "RUNNING"
+                    s.exit = None
+                log.debug(
+                    f"Queue attributes: sequence {s.seq}, JobName {s.jobname}, "
+                    f"JobID {s.jobid}, State {s.state}, CPUTime {s.cputime}, Exit {s.exit} updated"
+                )
+            except ValueError:
+                log.debug(f"Queue attributes for sequence {s.seq} not present in sacct output.")
+    else:
+        log.debug("No jobs reported in sacct queue.")
+

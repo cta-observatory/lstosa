@@ -1,3 +1,4 @@
+import os
 import logging
 from argparse import ArgumentParser
 from optparse import OptionParser
@@ -140,7 +141,7 @@ def closercliparsing():
     opts = closer_argparser().parse_args()
 
     # set global variables
-    options.configfile = opts.configfile
+    options.configfile = os.path.abspath(opts.configfile)
     options.stderr = opts.stderr
     options.stdout = opts.stdout
     options.date = opts.date
@@ -821,7 +822,7 @@ def provprocessparsing():
     options.run = opts.run
     options.date = opts.date
     options.prod_id = get_prod_id()
-    options.configfile = opts.configfile
+    options.configfile = os.path.abspath(opts.configfile)
     options.filter = opts.filter
     options.quit = opts.quit
     options.lstchain_version = get_lstchain_version()
