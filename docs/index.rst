@@ -30,6 +30,7 @@ prototype (LST-1).
    howtocontribute/index
    troubleshooting/index
    references
+   authors
 
 .. _lstosa_api_docs:
 
