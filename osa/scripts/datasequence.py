@@ -21,6 +21,12 @@ __all__ = ["datasequence", "r0_to_dl1", "dl1_to_dl2"]
 
 log = logging.getLogger(__name__)
 
+# Logging
+fmt = MyFormatter()
+handler = logging.StreamHandler()
+handler.setFormatter(fmt)
+logging.root.addHandler(handler)
+
 
 def datasequence(
     calibrationfile, pedestalfile, time_calibration, drivefile,
@@ -228,15 +234,10 @@ if __name__ == "__main__":
     (drs4_ped_file, calib_file, time_calib_file, drive_log_file,
      ucts_t0_dragon, dragon_counter0, ucts_t0_tib, tib_counter, run_number) = datasequencecliparsing()
 
-    # Logging
-    fmt = MyFormatter()
-    handler = logging.StreamHandler()
-    handler.setFormatter(fmt)
-    logging.root.addHandler(handler)
     if options.verbose:
         logging.root.setLevel(logging.DEBUG)
     else:
-        log.setLevel(logging.INFO)
+        logging.root.setLevel(logging.INFO)
 
     # run the routine
     rc = datasequence(

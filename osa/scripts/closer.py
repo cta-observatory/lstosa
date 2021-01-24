@@ -64,7 +64,7 @@ def main():
     if options.verbose:
         logging.root.setLevel(logging.DEBUG)
     else:
-        log.setLevel(logging.INFO)
+        logging.root.setLevel(logging.INFO)
 
     # initiating report
     tag = gettag()

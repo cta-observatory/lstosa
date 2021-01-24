@@ -57,9 +57,9 @@ def main():
     sequencercliparsing()
 
     if options.verbose:
-        log.setLevel(logging.DEBUG)
+        logging.root.setLevel(logging.DEBUG)
     else:
-        log.setLevel(logging.INFO)
+        logging.root.setLevel(logging.INFO)
 
     process_mode = None
     single_array = ["LST1", "LST2"]
