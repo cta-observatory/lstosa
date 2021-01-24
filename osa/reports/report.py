@@ -45,8 +45,7 @@ def header(message):
         prettyframe = int((framesize - 2 - len(message)) / 2) * "="
     else:
         prettyframe = ""
-    # FIXME: should be log.info but it does not work
-    output(tag, f"{prettyframe} {message} {prettyframe}")
+    log.info(f"{prettyframe} {message} {prettyframe}")
 
 
 def rule():

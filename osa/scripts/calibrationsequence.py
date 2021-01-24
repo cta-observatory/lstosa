@@ -21,7 +21,7 @@ from osa.utils.cliopts import calibrationsequencecliparsing
 from osa.utils.logging import MyFormatter
 from osa.utils.standardhandle import stringify
 
-__all__= [
+__all__ = [
     "calibrationsequence",
     "calibrate_charge",
     "calibrate_time",
@@ -29,6 +29,12 @@ __all__= [
 ]
 
 log = logging.getLogger(__name__)
+
+# Logging
+fmt = MyFormatter()
+handler = logging.StreamHandler()
+handler.setFormatter(fmt)
+logging.root.addHandler(handler)
 
 
 def calibrationsequence(pedestal_filename, calibration_filename, ped_run_number, cal_run_number):
@@ -157,7 +163,7 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file):
 
 
 def calibrate_charge(
-    run_ped, calibration_run, pedestal_file, calibration_output_file, history_file
+        run_ped, calibration_run, pedestal_file, calibration_output_file, history_file
 ):
     """
     Create a charge calibration file to transform from ADC counts to photo-electrons
@@ -348,15 +354,10 @@ if __name__ == "__main__":
     # Set the options through cli parsing
     pedoutfile, caloutfile, calib_run_number, ped_run_number = calibrationsequencecliparsing()
 
-    # Logging
-    fmt = MyFormatter()
-    handler = logging.StreamHandler()
-    handler.setFormatter(fmt)
-    logging.root.addHandler(handler)
     if options.verbose:
         logging.root.setLevel(logging.DEBUG)
     else:
-        log.setLevel(logging.INFO)
+        logging.root.setLevel(logging.INFO)
 
     # run the routine
     rc = calibrationsequence(pedoutfile, caloutfile, calib_run_number, ped_run_number)
