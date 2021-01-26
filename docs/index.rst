@@ -14,6 +14,7 @@ prototype (LST-1).
 * Docs: https://lstosa.readthedocs.io/
 * License: BSD-3
 * Python 3.7
+* Authors: Lab Saha, Daniel Morcuende, José Enrique Ruiz, José Luis Contreras, Andrés Baquero.
 
 
 .. _lstosa_guide:
