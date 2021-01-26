@@ -10,4 +10,4 @@ Publications
 
 ADASS XXX (2020):
  * Poster: https://adass2020.es/static/ftp/P8-138/P8-138.pdf
- * Proceedings: to be included whenever it get published.
+ * Proceedings: https://arxiv.org/abs/2101.09690
