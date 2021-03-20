@@ -205,7 +205,6 @@ def setsequencefilenames(s):
     s.script = os.path.join(options.directory, basename + script_suffix)
     s.veto = os.path.join(options.directory, basename + veto_suffix)
     s.history = os.path.join(options.directory, basename + history_suffix)
-    # calibfiles cannot be set here, since they require the runfromparent
 
 
 def setsequencecalibfilenames(sequence_list):
@@ -220,18 +219,18 @@ def setsequencecalibfilenames(sequence_list):
             ped_run_string = str(s.previousrun).zfill(5)
             pedfile = f"drs4_pedestal.Run{ped_run_string}.0000{pedestal_suffix}"
             nightdir = lstdate_to_dir(options.date)
-            yy, mm, dd = date_in_yymmdd(nightdir)
-            drivefile = f"drive_log_{yy}_{mm}_{dd}{drive_suffix}"
+            yy_mm_dd = date_in_yymmdd(nightdir)
+            drivefile = f"drive_log_{yy_mm_dd}{drive_suffix}"
         else:
             run_string = str(s.parent_list[0].run).zfill(5)
             ped_run_string = str(s.parent_list[0].previousrun).zfill(5)
             nightdir = lstdate_to_dir(options.date)
-            yy, mm, dd = date_in_yymmdd(nightdir)
+            yy_mm_dd = date_in_yymmdd(nightdir)
             if options.mode == "P":
                 calfile = f"calibration.Run{run_string}.0000{calib_suffix}"
                 timecalfile = f"time_calibration.Run{run_string}.0000{calib_suffix}"
                 pedfile = f"drs4_pedestal.Run{ped_run_string}.0000{pedestal_suffix}"
-                drivefile = f"drive_log_{yy}_{mm}_{dd}{drive_suffix}"
+                drivefile = f"drive_log_{yy_mm_dd}{drive_suffix}"
             elif options.mode in ["S", "T"]:
                 log.error("Mode not implemented yet. Try with 'P' mode instead")
         s.calibration = calfile

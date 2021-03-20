@@ -446,15 +446,21 @@ def time_to_seconds(timestring):
 
 def date_in_yymmdd(datestring):
     """
-    Convert date string(YYYY_MM_DD) from the NightSummary into (YY_MM_DD) format.
+    Convert date string YYYYMMDD into YY_MM_DD format to be used for
+    drive log file names.
 
     Parameters
     ----------
-    datestring: in format YYYY_MM_DD
+    datestring: in format YYYYMMDD
+
+    Returns
+    -------
+    yy_mm_dd: datestring in format YY_MM_DD
+
     """
     date = list(datestring)
     yy = "".join(date[2:4])
     mm = "".join(date[4:6])
     dd = "".join(date[6:8])
-    return yy, mm, dd
+    return f"{yy}_{mm}_{dd}"
 
