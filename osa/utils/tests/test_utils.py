@@ -44,3 +44,8 @@ def test_get_prod_id():
     from osa.utils.utils import get_prod_id
     prod_id = cfg.get(options.tel_id, "PROD-ID")
     assert get_prod_id() == prod_id
+
+
+def test_date_in_yymmdd():
+    from osa.utils.utils import date_in_yymmdd
+    assert date_in_yymmdd("20200113") == "20_01_13"
