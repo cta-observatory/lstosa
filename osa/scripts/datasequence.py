@@ -122,7 +122,6 @@ def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_su
 
     # Prepare and launch the actual lstchain script
     commandargs = [
-        "srun",
         command,
         "--input-file=" + datafile,
         "--output-dir=" + options.directory,
@@ -192,7 +191,6 @@ def dl1ab(run_str, historyfile):
     # Prepare and launch the actual lstchain script
     command = "lstchain_dl1ab"
     commandargs = [
-        "srun",
         command,
         "--input-file=" + input_dl1_datafile,
         "--output-file=" + output_dl1_datafile,
@@ -251,7 +249,6 @@ def dl1_datacheck(run_str, historyfile):
     # Prepare and launch the actual lstchain script
     command = "lstchain_check_dl1"
     commandargs = [
-        "srun",
         command,
         "--input-file=" + input_dl1_datafile,
         "--output-dir=" + options.directory,
