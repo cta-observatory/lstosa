@@ -94,9 +94,9 @@ def historylevel(historyfile, type):
                         log.debug(f"DL2 prod ID: {options.dl2_prod_id} not produced yet")
                 elif program == "drs4_pedestal":
                     level = 2 if exit_status == 0 else 3
-                elif program == "charge_calibration":
-                    level = 1 if exit_status == 0 else 2
                 elif program == "time_calibration":
+                    level = 1 if exit_status == 0 else 2
+                elif program == "charge_calibration":
                     level = 0 if exit_status == 0 else 1
                 else:
                     log.error(f"Programme name not identified {program}")
