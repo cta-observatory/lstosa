@@ -2,12 +2,10 @@
 Functions to handle the job submission using SLURM
 """
 
-import datetime
 import logging
 import os
 import subprocess
 import time
-from itertools import chain, islice, tee
 
 import pandas as pd
 
@@ -57,11 +55,11 @@ def historylevel(historyfile, type):
     -------
 
     """
-    level = 3
+    if type == "DATA":
+        level = 4
+    elif type == "CALIBRATION":
+        level = 3
     exit_status = 0
-    if type == "PEDESTAL":
-        # FIXME: Remove, it's deprecated
-        level -= 2
     if os.path.exists(historyfile):
         for line in readfromfile(historyfile).splitlines():
             # FIXME: create a dict with the program, exit status and prod id to take into account
@@ -73,20 +71,26 @@ def historylevel(historyfile, type):
                 exit_status = int(words[-1])
                 log.debug(f"{program}, finished with error {exit_status} and prod ID {prod_id}")
             except IndexError as err:
-                log.exception(f"Malformed history file {historyfile}, {err}", 3)
+                log.exception(f"Malformed history file {historyfile}, {err}")
             except ValueError as err:
-                log.exception(f"Malformed history file {historyfile}, {err}", 3)
+                log.exception(f"Malformed history file {historyfile}, {err}")
             else:
                 if program == cfg.get("LSTOSA", "R0-DL1"):
                     nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
+                    level = 3 if exit_status in nonfatalrcs else 4
+                if program == "lstchain_dl1ab":
+                    nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
                     level = 2 if exit_status in nonfatalrcs else 3
+                if program == "lstchain_check_dl1":
+                    nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
+                    level = 1 if exit_status in nonfatalrcs else 2
                 elif program == cfg.get("LSTOSA", "DL1-DL2"):
                     nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "DL1-DL2").split(",")]
                     if (exit_status in nonfatalrcs) and (prod_id == options.dl2_prod_id):
                         log.debug(f"DL2 prod ID: {options.dl2_prod_id} already produced")
                         level = 0
                     else:
-                        level = 2
+                        level = 1
                         log.debug(f"DL2 prod ID: {options.dl2_prod_id} not produced yet")
                 elif program == "drs4_pedestal":
                     level = 2 if exit_status == 0 else 3

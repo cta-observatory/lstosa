@@ -372,16 +372,7 @@ def datasequence_argparser():
     parser.add_argument("calib_file", help="Path of the calibration file")
     parser.add_argument("time_calib_file", help="Path of the time calibration file")
     parser.add_argument("drive_log_file", help="Path of drive log file with pointing information")
-    parser.add_argument("ucts_t0_dragon", help="UCTS timestamp in nsecs, unix format and TAI scale of the \
-                          first event of the run with valid timestamp")
-    parser.add_argument("dragon_counter0", help="Dragon counter (pps + 10MHz) in nsecs corresponding \
-                          to the first reliable UCTS of the run. To be provided \
-                          along with ucts_t0_dragon")
-    parser.add_argument("ucts_t0_tib", help="UCTS timestamp in nsecs, unix format and TAI scale of the \
-                          first event of the run with valid timestamp")
-    parser.add_argument("tib_counter", help="First valid TIB counter (pps + 10MHz) in nsecs corresponding \
-                          to the first reliable UCTS of the run when TIB is available. \
-                          To be provided along with ucts_t0_tib")
+    parser.add_argument("run_summary_file", help="Path of run summary file with time reference information")
     parser.add_argument("run_number", help="Number of the run to be processed")
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
     return parser
@@ -430,7 +421,7 @@ def datasequencecliparsing():
 
     return (
         opts.drs4_ped_file, opts.calib_file, opts.time_calib_file, opts.drive_log_file,
-        opts.ucts_t0_dragon, opts.dragon_counter0, opts.ucts_t0_tib, opts.tib_counter,
+        opts.run_summary_file,
         opts.run_number
     )
 
