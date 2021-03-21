@@ -42,7 +42,7 @@ def closer_argparser():
         "--config",
         action="store",
         dest="configfile",
-        default=None,
+        default="./cfg/sequencer.cfg",
         help="use specific config file [default cfg/sequencer.cfg]",
     )
     parser.add_argument(

@@ -41,16 +41,17 @@ class RunObj(Wobble):
 class SubrunObj(RunObj):
     def __init__(self):
         self.runobj = None
-        self.subrun_str = None
         self.subrun = None
         self.kind = None
         self.timestamp = None
         self.time = None
         self.date = None
-        self.ucts_t0_dragon = None
-        self.dragon_counter0 = None
-        self.ucts_t0_tib = None
-        self.tib_counter0 = None
+        self.ucts_timestamp = None                                                                                                                                                                                   
+        self.dragon_reference_time = None                                             
+        self.dragon_reference_module_id = None                                    
+        self.dragon_reference_module_index = None                           
+        self.dragon_reference_counter = None                                                                                                                                               
+        self.dragon_reference_source = None 
 
 
 class Sequence(RunObj):

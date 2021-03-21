@@ -13,7 +13,7 @@ from osa.configs.config import cfg
 from osa.configs.datamodel import SequenceData
 from osa.jobs.job import createjobtemplate
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
-from osa.nightsummary.nightsummary import read_nightsummary
+from osa.nightsummary.nightsummary import run_summary_table
 from osa.provenance.utils import get_log_config
 from osa.utils.cliopts import simprocparsing
 from osa.utils.logging import MyFormatter
@@ -120,10 +120,9 @@ def simulate_processing():
 
     options.mode = "P"
     options.simulate = True
-    night_content = read_nightsummary()
-    log.info(f"Night summary file content\n{night_content}")
+    summary_table = run_summary_table(options.date)
 
-    sub_run_list = extractsubruns(night_content)
+    sub_run_list = extractsubruns(summary_table)
     run_list = extractruns(sub_run_list)
     sequence_list = extractsequences(run_list)
 
