@@ -60,6 +60,7 @@ def historylevel(historyfile, type):
     level = 3
     exit_status = 0
     if type == "PEDESTAL":
+        # FIXME: Remove, it's deprecated
         level -= 2
     if os.path.exists(historyfile):
         for line in readfromfile(historyfile).splitlines():
@@ -102,7 +103,8 @@ def historylevel(historyfile, type):
 def preparejobs(sequence_list):
     for s in sequence_list:
         log.debug(f"Creating sequence.txt and sequence.py for sequence {s.seq}")
-        createsequencetxt(s, sequence_list)
+        # FIXME: creating txt should be deprecated at some point
+        # createsequencetxt(s, sequence_list)
         createjobtemplate(s)
 
 
@@ -132,18 +134,16 @@ def setrunfromparent(sequence_list):
 
 
 def createsequencetxt(s, sequence_list):
+    # Deprecated, right now we do not use this txt file. Everything is already
+    # present in the sequenceXX.py script
+
     text_suffix = cfg.get("LSTOSA", "TEXTSUFFIX")
     f = os.path.join(options.directory, f"sequence_{s.jobname}{text_suffix}")
     start = s.subrun_list[0].timestamp
     ped = ""
     cal = ""
     dat = ""
-    #    these fields are written on sequenceXX.py
-    #    ucts_t0_dragon = s.subrun_list[0].ucts_t0_dragon
-    #    dragon_counter0 = s.subrun_list[0].dragon_counter0
-    #    ucts_t0_tib = s.subrun_list[0].ucts_t0_tib
-    #    tib_counter0 = s.subrun_list[0].tib_counter0
-    if s.type == "CALI":
+    if s.type == "PEDCAL":
         ped = formatrunsubrun(s.previousrun, 1)
         cal = formatrunsubrun(s.run, 1)
     elif s.type == "DATA":
@@ -165,11 +165,6 @@ def createsequencetxt(s, sequence_list):
     content += f"PedRuns: {ped}\n"
     content += f"CalRuns: {cal}\n"
     content += f"DatRuns: {dat}\n"
-    #    these fields are written on sequenceXX.py
-    #    content += "ucts_t0_dragon: {0}\n".format(ucts_t0_dragon)
-    #    content += "dragon_counter0: {0}\n".format(dragon_counter0)
-    #    content += "ucts_t0_tib: {0}\n".format(ucts_t0_tib)
-    #    content += "tib_counter0: {0}\n".format(tib_counter0)
 
     if not options.simulate:
         writetofile(f, content)
@@ -269,12 +264,14 @@ def guesscorrectinputcard(s):
 def createjobtemplate(s, get_content=False):
     """This file contains instruction to be submitted to SLURM"""
 
+    nightdir = lstdate_to_dir(options.date)
     bindir = cfg.get("LSTOSA", "PYTHONDIR")
     scriptsdir = cfg.get("LSTOSA", "SCRIPTSDIR")
     drivedir = cfg.get("LST1", "DRIVEDIR")
+    run_summary_dir = cfg.get("LST1", "RUN_SUMMARY_DIR")
 
     command = None
-    if s.type == "CALI":
+    if s.type == "PEDCALIB":
         command = os.path.join(scriptsdir, "calibrationsequence.py")
     elif s.type == "DATA":
         command = os.path.join(scriptsdir, "datasequence.py")
@@ -292,14 +289,13 @@ def createjobtemplate(s, get_content=False):
         commandargs.append(os.path.join(bindir, guesscorrectinputcard(s)))
     if options.compressed:
         commandargs.append("-z")
-    # commandargs.append('--stderr=sequence_{0}_'.format(s.jobname) + "{0}.err'" + ".format(str(job_id))")
-    # commandargs.append('--stdout=sequence_{0}_'.format(s.jobname) + "{0}.out'" + ".format(str(job_id))")
+
     commandargs.append("-d")
     commandargs.append(options.date)
     commandargs.append("--prod-id")
     commandargs.append(options.prod_id)
 
-    if s.type == "CALI":
+    if s.type == "PEDCALIB":
         commandargs.append(s.pedestal)
         commandargs.append(s.calibration)
         ped_run_number = str(s.previousrun).zfill(5)
@@ -312,22 +308,15 @@ def createjobtemplate(s, get_content=False):
         commandargs.append(os.path.join(options.directory, s.pedestal))
         commandargs.append(os.path.join(options.directory, "time_" + s.calibration))
         commandargs.append(os.path.join(drivedir, s.drive))
-        # pedfile = s.pedestal
-        ucts_t0_dragon = s.subrun_list[0].ucts_t0_dragon
-        commandargs.append(ucts_t0_dragon)
-        dragon_counter0 = s.subrun_list[0].dragon_counter0
-        commandargs.append(dragon_counter0)
-        ucts_t0_tib = s.subrun_list[0].ucts_t0_tib
-        commandargs.append(ucts_t0_tib)
-        tib_counter0 = s.subrun_list[0].tib_counter0
-        commandargs.append(tib_counter0)
+        commandargs.append(os.path.join(run_summary_dir, f"RunSummary_{nightdir}.ecsv"))
 
-    # commandargs.append(str(s.run).zfill(5))
-    #   if s.type != 'STEREO':
-    #  commandargs.append(options.tel_id)
     for sub in s.subrun_list:
+        # FIXME: This is getting the last subrun starting from 0 
+        # We should get this parameter differently.
         n_subruns = int(sub.subrun)
 
+
+    # Build the content of the sequencerXX.py script
     content = "#!/bin/env python\n"
     # Set sbatch parameters
     content += "\n"
@@ -335,7 +324,7 @@ def createjobtemplate(s, get_content=False):
     if s.type == "DATA":
         content += f"#SBATCH --array=0-{int(n_subruns) - 1} \n"
     content += "#SBATCH --cpus-per-task=1 \n"
-    if s.type == "CALI":
+    if s.type == "PEDCALIB":
         content += f"#SBATCH -p {cfg.get('SBATCH', 'PARTITION-CALI')} \n"
         content += f"#SBATCH --mem-per-cpu={cfg.get('SBATCH', 'MEMSIZE-CALI')} \n"
     else:
@@ -389,7 +378,7 @@ def submitjobs(sequence_list):
     env_nodisplay = "--export=ALL,MPLBACKEND=Agg"
     for s in sequence_list:
         commandargs = [command, "--parsable", env_nodisplay]
-        if s.type == "CALI":
+        if s.type == "PEDCALIB":
             commandargs.append(s.script)
             if options.simulate or options.nocalib or options.test:
                 log.debug("SIMULATE Launching scripts")

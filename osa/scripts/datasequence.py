@@ -84,21 +84,11 @@ def datasequence(
 
 # FIXME: Parse all different arguments via config file or sequence_list.txt
 @trace
-def r0_to_dl1(
-    calibrationfile,
-    pedestalfile,
-    time_calibration,
-    drivefile,
-    ucts_t0_dragon,
-    dragon_counter0,
-    ucts_t0_tib,
-    tib_counter0,
-    run_str,
-    historyfile,
-):
+def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_summary_file, run_str, historyfile):
     """
-    Perform low and high-level calibration to raw camera images.
-    Apply image cleaning and obtain shower parameters.
+    Prepare and launch the actual lstchain script that is performing
+    the low and high-level calibration to raw camera images.
+    It also applies the image cleaning and obtains shower parameters.
 
     Parameters
     ----------
@@ -106,10 +96,8 @@ def r0_to_dl1(
     pedestalfile
     time_calibration
     drivefile
-    ucts_t0_dragon
-    dragon_counter0
-    ucts_t0_tib
-    tib_counter0
+    run_summary_file: str
+        Path to the run summary file
     run_str
     historyfile
 
@@ -130,6 +118,7 @@ def r0_to_dl1(
         f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "R0SUFFIX")}',
     )
 
+    # Prepare and launch the actual lstchain script
     commandargs = [
         command,
         "--input-file=" + datafile,
@@ -139,10 +128,7 @@ def r0_to_dl1(
         "--config=" + configfile,
         "--time-calibration-file=" + time_calibration,
         "--pointing-file=" + drivefile,
-        "--ucts-t0-dragon=" + ucts_t0_dragon,
-        "--dragon-counter0=" + dragon_counter0,
-        "--ucts-t0-tib=" + ucts_t0_tib,
-        "--tib-counter0=" + tib_counter0,
+        "--run-summary-path=" + run_summary_file,
     ]
 
     try:
@@ -174,9 +160,9 @@ def r0_to_dl1(
 @trace
 def dl1_to_dl2(run_str, historyfile):
     """
-    Apply already trained RFs models to DL1 files.
-    It identifies the primary particle, reconstructs the energy
-    and direction of the primary particle.
+    It prepares and execute the dl1 to dl2 lstchain scripts that applies
+    the already trained RFs models to DL1 files. It identifies the
+    primary particle, reconstructs its energy and direction.
 
     Parameters
     ----------
@@ -231,8 +217,7 @@ def dl1_to_dl2(run_str, historyfile):
 
 if __name__ == "__main__":
     # set the arguments and options through cli parsing
-    (drs4_ped_file, calib_file, time_calib_file, drive_log_file,
-     ucts_t0_dragon, dragon_counter0, ucts_t0_tib, tib_counter, run_number) = datasequencecliparsing()
+    drs4_ped_file, calib_file, time_calib_file, drive_log_file, run_summary_file, run_number = datasequencecliparsing()
 
     if options.verbose:
         logging.root.setLevel(logging.DEBUG)
@@ -240,8 +225,5 @@ if __name__ == "__main__":
         logging.root.setLevel(logging.INFO)
 
     # run the routine
-    rc = datasequence(
-        drs4_ped_file, calib_file, time_calib_file, drive_log_file,
-        ucts_t0_dragon, dragon_counter0, ucts_t0_tib, tib_counter, run_number
-    )
+    rc = datasequence(drs4_ped_file, calib_file, time_calib_file, drive_log_file, run_summary_file, run_number)
     sys.exit(rc)

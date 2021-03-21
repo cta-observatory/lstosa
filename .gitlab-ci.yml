@@ -7,20 +7,16 @@ stages:
 before_script:
   - apt-get update && apt-get install -y build-essential
   - source /opt/conda/etc/profile.d/conda.sh
-  - conda env create -f environment.yml
-  - conda activate osa
-  - conda develop .
+  - conda env create -n osa-ci -f environment.yml
+  - conda activate osa-ci
+  - pip install -e .
 
 testcode:
-    #  tags:
-    #    - kubernetes
   stage: test
   script:
-    - pytest
+    - pytest -v
 
 deploydocs:
-    #  tags:
-    #    - kubernetes
   stage: docs
   script:
     - cd docs && make clean html

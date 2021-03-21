@@ -5,14 +5,12 @@ Main LSTOSA script. It creates and execute the calibration sequence and
 prepares a SLURM job array which launches the data sequences for every subrun.
 """
 
+import logging
 import os
 from decimal import Decimal
 from glob import glob
 from os.path import join
 
-from osa.utils.logging import MyFormatter
-
-import logging
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.jobs.job import getqueuejoblist, preparejobs, preparestereojobs, submitjobs
@@ -22,9 +20,10 @@ from osa.nightsummary.extract import (
     extractsequencesstereo,
     extractsubruns,
 )
-from osa.nightsummary.nightsummary import read_nightsummary
+from osa.nightsummary.nightsummary import get_runsummary_file, run_summary_table
 from osa.reports.report import rule, start
 from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_needed
+from osa.utils.logging import MyFormatter
 from osa.utils.standardhandle import gettag
 from osa.utils.utils import is_day_closed
 from osa.veto.veto import getvetolist, getclosedlist
@@ -116,10 +115,10 @@ def single_process(telescope, process_mode):
             options.nightsummary = True
             options.simulate = True
             is_report_needed = False
-
+    
     # building the sequences
-    night = read_nightsummary()
-    subrun_list = extractsubruns(night)
+    summary_table = run_summary_table(options.date)
+    subrun_list = extractsubruns(summary_table)
     run_list = extractruns(subrun_list)
     # modifies run_list by adding the seq and parent info into runs
     sequence_list = extractsequences(run_list)
@@ -207,7 +206,7 @@ def update_sequence_status(seq_list):
         List of sequences of a given night corresponding to each run.
     """
     for seq in seq_list:
-        if seq.type == "CALI":
+        if seq.type == "PEDCALIB":
             seq.calibstatus = int(
                 Decimal(get_status_for_sequence(seq, "CALIB") * 100) / seq.subruns
             )
@@ -297,7 +296,7 @@ def reportsequences(seqlist):
             s.walltime,
             s.exit,
         ]
-        if s.type == "CALI":
+        if s.type == "PEDCALIB":
             # repeat None for every data level
             row_list.append(None)
             row_list.append(None)

@@ -4,15 +4,14 @@ Extract subrun, run, sequence list and build corresponding objects.
 import logging
 from datetime import datetime
 
+from astropy import units as u
+from astropy.table import Table
+from astropy.time import Time
+
 from osa.configs import options
-from osa.configs.datamodel import (
-    RunObj,
-    SequenceCalibration,
-    SequenceData,
-    SequenceStereo,
-    SubrunObj,
-)
-from osa.jobs.job import setsequencefilenames, setsequencecalibfilenames
+from osa.configs.datamodel import (RunObj, SequenceCalibration, SequenceData,
+                                   SequenceStereo, SubrunObj)
+from osa.jobs.job import setsequencecalibfilenames, setsequencefilenames
 from osa.utils.utils import lstdate_to_iso
 
 log = logging.getLogger(__name__)
@@ -27,12 +26,24 @@ __all__ = [
 ]
 
 
-def extractsubruns(nightsummary):
+def extractsubruns(summary_table):
     """
 
     Parameters
     ----------
-    nightsummary
+    nightsummary_file: str
+        File name of the run summary astropy Table containing the information run-wise.
+        Content of the table:
+          run_id, datatype: int64
+          n_subruns, datatype: int64
+          run_type, datatype: string
+          ucts_timestamp, datatype: int64
+          run_start, datatype: int64
+          dragon_reference_time, datatype: int64
+          dragon_reference_module_id, datatype: int16
+          dragon_reference_module_index, datatype: int16
+          dragon_reference_counter, datatype: uint64
+          dragon_reference_source, datatype: string
 
     Returns
     -------
@@ -41,45 +52,43 @@ def extractsubruns(nightsummary):
     """
     subrun_list = []
     run_to_obj = {}
-    if nightsummary:
-        for i in nightsummary.splitlines():
-            word = i.split()
-            current_run_str = word[0]
-            current_run = int(current_run_str.lstrip("0"))
-            sr = SubrunObj()
-            sr.subrun_str = word[1]
-            sr.subrun = int(sr.subrun_str.lstrip("0"))
-            # sr.kind = str(word[12])
-            sr.date = str(word[3])
-            sr.time = str(word[4])
-            sr.timestamp = datetime.strptime(str(word[3] + " " + word[4]), "%Y-%m-%d %H:%M:%S")
-            sr.ucts_t0_dragon = str(word[6])
-            sr.dragon_counter0 = str(word[7])
-            sr.ucts_t0_tib = str(word[9])
-            sr.tib_counter0 = str(word[10])
 
-            try:
-                # Build run object
-                sr.runobj = RunObj()
-                sr.runobj.run_str = current_run_str
-                sr.runobj.run = current_run
-                sr.runobj.type = str(word[2])
-                # sr.runobj.sourcewobble = str(word[5])
-                # sr.runobj.source, sep, sr.runobj.wobble = sr.runobj.sourcewobble.partition('-W')
-                if sr.runobj.wobble == "":
-                    sr.runobj.wobble = None
-                sr.runobj.telescope = options.tel_id
-                sr.runobj.night = lstdate_to_iso(options.date)
-                run_to_obj[sr.runobj.run] = sr.runobj
-            except KeyError as err:
-                log.warning(f"Key error, {err}")
-            except IndexError as err:
-                log.warning(f"Index error, {err}")
-            else:
-                sr.runobj.subrun_list.append(sr)
-                sr.runobj.subruns = len(sr.runobj.subrun_list)
-                subrun_list.append(sr)
-        log.debug("Subrun list extracted")
+    # FIXME: Directly build run object instead.
+
+    # Get information run-wise going through each row
+    for run_id in summary_table["run_id"]:
+        sr = SubrunObj()
+        run_info = summary_table.loc[run_id]
+        sr.subrun = run_info["n_subruns"]
+        sr.timestamp = Time(run_info["run_start"] * u.ns, format="unix").isot
+        sr.ucts_timestamp = run_info["ucts_timestamp"]
+        sr.dragon_reference_time = run_info["dragon_reference_time"]
+        sr.dragon_reference_module_id = run_info["dragon_reference_module_id"]
+        sr.dragon_reference_module_index = run_info["dragon_reference_module_index"]
+        sr.dragon_reference_counter = run_info["dragon_reference_counter"]
+        sr.dragon_reference_source = run_info["dragon_reference_source"]
+
+        try:
+            # Build run object
+            sr.runobj = RunObj()
+            sr.runobj.run_str = f"{run_info['run_id']:05d}"
+            # FIXME: Leave only .run attribute
+            sr.runobj.run = run_info["run_id"]
+            sr.runobj.type = run_info["run_type"]
+            sr.runobj.telescope = options.tel_id
+            sr.runobj.night = lstdate_to_iso(options.date)
+            run_to_obj[sr.runobj.run] = sr.runobj
+        except KeyError as err:
+            log.warning(f"Key error, {err}")
+        except IndexError as err:
+            log.warning(f"Index error, {err}")
+        else:
+            sr.runobj.subrun_list.append(sr)
+            sr.runobj.subruns = len(sr.runobj.subrun_list)
+            subrun_list.append(sr)
+
+    log.debug("Subrun list extracted")
+
     return subrun_list
 
 
@@ -149,11 +158,11 @@ def extractsequences(run_list):
             sources.append(currentsrc)
 
         if currenttype == "DRS4":
-            log.debug(f"Detected a new PED run {currentrun} for {currentsrc}")
+            log.debug(f"Detected a new DRS4 run {currentrun} for {currentsrc}")
             hasped = True
             run_list_sorted.append(r)
-        elif currenttype == "CALI":
-            log.debug(f"Detected a new CAL run {currentrun} for {currentsrc}")
+        elif currenttype == "PEDCALIB":
+            log.debug(f"Detected a new PEDCALIB run {currentrun} for {currentsrc}")
             hascal = True
             run_list_sorted.append(r)
 
@@ -168,7 +177,7 @@ def extractsequences(run_list):
                 # normal case, we have the PED, the SUB, then append the DATA
                 log.debug(f"Detected a new DATA run {currentrun} for {currentsrc}")
                 run_list_sorted.append(r)
-            elif currenttype == "CALI" and pending != []:
+            elif currenttype == "PEDCALIB" and pending != []:
                 # we just took the CAL, and we had the PED, so we can add the pending runs
                 log.debug("PED/CAL are now available, adding the runs in the pending queue")
                 for pr in pending:
@@ -210,7 +219,7 @@ def extractsequences(run_list):
                     whichreq = None
                 log.debug(f"replacing [{currentrun}, {currenttype}, {whichreq}]")
                 head[0] = [currentrun, currenttype, whichreq]
-            elif currenttype == "CALI" and previoustype == "DRS4":
+            elif currenttype == "PEDCALIB" and previoustype == "DRS4":
                 # add it too
                 log.debug(f"appending [{currentrun}, {currenttype}, {None}]")
                 head.append([currentrun, currenttype, None])
@@ -241,7 +250,7 @@ def extractsequences(run_list):
                     require[currentrun] = whichreq
         elif len(head) == 2:
             previoustype = head[1][1]
-            if currenttype == "DATA" and previoustype == "CALI":
+            if currenttype == "DATA" and previoustype == "PEDCALIB":
                 # it is the pedestal->calibration->data case, append, store, resize and replace
                 previousrun = head[1][0]
                 head.pop()
@@ -250,7 +259,7 @@ def extractsequences(run_list):
                 store.append(currentrun)
                 # this is different from currentrun since it marks parent sequence run
                 require[currentrun] = previousrun
-            elif currenttype == "DRS4" and previoustype == "CALI":
+            elif currenttype == "DRS4" and previoustype == "PEDCALIB":
                 # there was a problem with the previous calibration and shifters decide to give another try
                 head.pop()
                 log.debug(f"P->C->P, deleting and replacing [{currentrun}, {currenttype}, {None}]")
@@ -343,7 +352,7 @@ def generateworkflow(run_list, store, require):
                 setsequencefilenames(s)
                 if s not in sequence_list:
                     sequence_list.append(s)
-        elif r.type == "CALI":
+        elif r.type == "PEDCALIB":
             # calibration sequence are appended to the sequence list if they are parent from data sequences
             for k in iter(require):
                 if r.run == require[k]:

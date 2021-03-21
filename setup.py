@@ -16,7 +16,8 @@ entry_points = {
         "create_nightsummary = osa.scripts.create_nightsummary:main",
         "provprocess = osa.scripts.provprocess:main",
         "simulate_processing = osa.scripts.simulate_processing:main",
-]}
+    ]
+}
 
 extras_require = {
     "docs": [
@@ -41,7 +42,8 @@ setup(
     packages=find_packages(),
     extras_require=extras_require,
     install_requires=[
-        "lstchain==0.6.3",
+        "astropy~=4.2",
+        "lstchain==0.7.0",
         "matplotlib",
         "numpy",
         "pyyaml",

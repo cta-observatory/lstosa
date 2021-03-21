@@ -37,7 +37,7 @@ def test_get_lstchain_version():
     from osa.utils.utils import get_lstchain_version
     assert get_lstchain_version().startswith("v")
     # Last line is version specific, needs to be changed
-    assert get_lstchain_version() == "v0.6.3"
+    assert get_lstchain_version() == "v0.7.0"
 
 
 def test_get_prod_id():

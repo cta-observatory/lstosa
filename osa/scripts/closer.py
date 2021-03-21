@@ -3,19 +3,18 @@ End-of-Night script and functions. Check that everything has been processed,
 collect results and merge them if needed.
 """
 import logging
-import os.path
+import os
 import re
 import subprocess
 import sys
 from filecmp import cmp
 from glob import glob
-from os.path import basename, exists, isdir, islink, join
 
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.jobs.job import are_all_jobs_correctly_finished
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
-from osa.nightsummary.nightsummary import get_nightsummary_file, read_nightsummary
+from osa.nightsummary.nightsummary import get_runsummary_file, run_summary_table
 from osa.rawcopy.raw import are_rawfiles_transferred, get_check_rawdir
 from osa.reports.report import finished_assignments, finished_text, start
 from osa.utils.cliopts import closercliparsing
@@ -94,8 +93,8 @@ def main():
         elif is_raw_data_available() or use_night_summary():
             # proceed normally
             log.debug(f"Checking sequencer_tuple {sequencer_tuple}")
-            night_summary_output = read_nightsummary()
-            sequencer_tuple = is_finished_check(night_summary_output)
+            night_summary_table = run_summary_table(options.date)
+            sequencer_tuple = is_finished_check(night_summary_table)
 
             if is_sequencer_successful(sequencer_tuple):
                 # close automatically
@@ -119,8 +118,8 @@ def use_night_summary():
 
     answer = False
     if options.nightsummary:
-        night_file = get_nightsummary_file()
-        if exists(night_file):
+        night_summary_file = get_runsummary_file(options.date)
+        if os.path.exists(night_summary_file):
             answer = True
         else:
             log.info("Night Summary expected but it does not exists.")
@@ -137,7 +136,7 @@ def is_raw_data_available():
     if options.tel_id != "ST":
         # FIXME: adapt this function
         raw_dir = get_check_rawdir()
-        if isdir(raw_dir):
+        if os.path.isdir(raw_dir):
             answer = True
     else:
         answer = True
@@ -258,7 +257,7 @@ def post_process_files(seq_list):
         concept_set = []
 
     nightdir = lstdate_to_dir(options.date)
-    output_files = glob(join(options.directory, "*Run*"))
+    output_files = glob(os.path.join(options.directory, "*Run*"))
     output_files_set = set(output_files)
     for concept in concept_set:
         log.info(f"Processing {concept} files, {len(output_files_set)} files left")
@@ -269,33 +268,33 @@ def post_process_files(seq_list):
 
         # Create final destination directory for each data level
         if concept in ["DL1", "MUON", "DATACHECK"]:
-            dir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl1_prod_id)
+            dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl1_prod_id)
         elif concept == "DL2":
-            dir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id)
+            dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id)
         elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-            dir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id)
+            dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id)
 
         delete_set = set()
         log.debug(f"Checking if {concept} files need to be moved to {dir}")
         for file in output_files_set:
-            file_basename = basename(file)
+            file_basename = os.path.basename(file)
             pattern_found = re.search(f"^{pattern}", file_basename)
             if options.seqtoclose is not None:
                 seqtoclose_found = re.search(options.seqtoclose, file_basename)
                 if seqtoclose_found is None:
                     pattern_found = None
             if pattern_found is not None:
-                new_dst = join(dir, file_basename)
+                new_dst = os.path.join(dir, file_basename)
                 if not options.simulate:
                     make_directory(dir)
-                    if exists(new_dst):
-                        if islink(file):
+                    if os.path.exists(new_dst):
+                        if os.path.islink(file):
                             # delete because the link has been correctly copied
                             log.debug(f"Original file {file} is just a link")
                             if options.seqtoclose is None:
                                 log.debug(f"Deleting {file}")
                                 # unlink(file)
-                        elif exists(file) and cmp(file, new_dst):
+                        elif os.path.exists(file) and cmp(file, new_dst):
                             # delete
                             log.debug(f"Destination file exists and it is equal to {file}")
                             if options.seqtoclose is None:
@@ -317,10 +316,10 @@ def post_process_files(seq_list):
                                     # register and delete
                                     log.debug(f"Registering file {run_str_found}")
                                     register_run_concept_files(s.run_str, concept)
-                                    if options.seqtoclose is None and not exists(file):
+                                    if options.seqtoclose is None and not os.path.exists(file):
                                         log.debug("File does not exists")
 
-                            elif s.type in ["CALI", "DRS4"]:
+                            elif s.type in ["PEDCALIB", "DRS4"]:
                                 calib_run_str_found = re.search(str(s.run), file_basename)
                                 drs4_run_str_found = re.search(str(s.previousrun), file_basename)
 
@@ -328,14 +327,14 @@ def post_process_files(seq_list):
                                     # register and delete
                                     log.debug(f"Registering file {calib_run_str_found}")
                                     register_run_concept_files(str(s.run), concept)
-                                    if options.seqtoclose is None and not exists(file):
+                                    if options.seqtoclose is None and not os.path.exists(file):
                                         log.debug("File does not exists")
 
                                 if drs4_run_str_found is not None:
                                     # register and delete
                                     log.debug(f"Registering file {drs4_run_str_found}")
                                     register_run_concept_files(str(s.previousrun), concept)
-                                    if options.seqtoclose is None and not exists(file):
+                                    if options.seqtoclose is None and not os.path.exists(file):
                                         log.debug("File does not exists")
 
                 # FIXME: for the moment we do not want to close
@@ -366,12 +365,13 @@ def set_closed_with_file(ana_text):
     return is_closed
 
 
-def is_finished_check(nightsum):
+def is_finished_check(nightsummary):
     """
 
     Parameters
     ----------
-    nightsum
+    nightsummary: astropy.Table
+        Table containing the run information from a given date.
 
     Returns
     -------
@@ -380,13 +380,13 @@ def is_finished_check(nightsum):
     # we ought to implement a method of successful or unsuccessful finishing
     # and it is done looking at the files
     sequence_success = False
-    if nightsum == "":
+    if nightsummary == "":
         # empty file (no sensible data)
         sequence_success = True
         sequence_list = []
     else:
         # building the sequences (the same way than the sequencer)
-        subrun_list = extractsubruns(nightsum)
+        subrun_list = extractsubruns(nightsummary)
         run_list = extractruns(subrun_list)
         sequence_list = extractsequences(run_list)
         # adds the scripts to sequences
@@ -455,7 +455,7 @@ def merge_dl1datacheck(seq_list):
 
     log.debug("Merging dl1 datacheck files and producing PDFs")
     nightdir = lstdate_to_dir(options.date)
-    dl1_directory = join(cfg.get("LST1", "DL1DIR"), nightdir, options.prod_id)
+    dl1_directory = os.path.join(cfg.get("LST1", "DL1DIR"), nightdir, options.prod_id)
 
     for sequence in seq_list:
         if sequence.type == "DATA":

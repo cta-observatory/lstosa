@@ -1,4 +1,4 @@
-name: osa
+name: osa-dev
 channels:
   - default
   - cta-observatory
@@ -8,12 +8,12 @@ dependencies:
   - python=3.7
   - conda-build
   - pip
-  - ctapipe=0.8.0
+  - ctapipe~=0.10.5
   - prov
   - pyyaml
   - pydot
   - pydotplus
-  - gammapy>=0.17
+  - gammapy>=0.18
   - h5py
   - joblib
   # dev dependencies
@@ -25,9 +25,9 @@ dependencies:
   - sphinx_rtd_theme
   - sphinx-argparse
   - pip:
-      - lstchain
+      - lstchain==0.7.0
       - pytest_runner
       - pytest-ordering
-      - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.5.3
+      - ctapipe_io_lst~=0.9.0
       - sphinx-automodapi
       - sphinx-autoapi

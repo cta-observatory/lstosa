@@ -286,7 +286,7 @@ class Sequence(object):
         ):
             return True
         if (
-            self.dictSequence["Type"] == "CALI"
+            self.dictSequence["Type"] == "PEDCALIB"
             and self.dictSequence["Exit"] == "2:0"  # Leave until the calib sequence is implemented
             and self.dictSequence["DL1%"] == "None"
             and self.dictSequence["DATACHECK%"] == "None"
@@ -338,7 +338,7 @@ class Sequence(object):
         if self.dictSequence["Tel"] == "ST":
             log.debug("Cannot check for missing subruns in the middle for ST")
             return True
-        if self.dictSequence["Type"] == "CALI":
+        if self.dictSequence["Type"] == "PEDCALIB":
             log.debug("Cannot check for missing subruns in the middle for CALIBRATION")
             return True
         search_str = f"{analysis_path(self.dictSequence['Tel'])}/20*_{int(self.dictSequence['Run']):08d}.*_Y_*.root"

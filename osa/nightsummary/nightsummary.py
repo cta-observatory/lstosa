@@ -3,24 +3,25 @@ It reads the night summary file
 """
 
 import logging
+import os
 import subprocess
-import sys
-from os.path import exists, isfile, join
 
-from osa.configs import config, options
-from osa.rawcopy.raw import are_rawfiles_transferred, get_check_rawdir
-from osa.utils.iofile import readfromfile, writetofile
+from astropy.table import Table
+
+from osa.configs import options
+from osa.configs.config import cfg
+from osa.rawcopy.raw import are_rawfiles_transferred
 from osa.utils.standardhandle import stringify
-from osa.utils.utils import build_lstbasename
+from osa.utils.utils import lstdate_to_dir
 
-__all__ = ["build_external", "read_nightsummary", "get_nightsummary_file"]
+__all__ = ["build_external", "get_runsummary_file", "run_summary_table"]
 
 log = logging.getLogger(__name__)
 
 
 def build_external(command, rawdir):
-    """Calls the create nightsummary script.
-
+    """
+    Calls the create nightsummary script.
     This is usually the `create_nightsummary.py` file.
 
     Parameters
@@ -51,67 +52,58 @@ def build_external(command, rawdir):
     return stdout
 
 
-def read_nightsummary():
+def run_summary_table(date):
     """
-    Reads the nightsummary txt file. It either calls the create nightsummary
-    script or simply reads an existing nightsummary file.
+    Reads the run summary ECSV file containing an astropy Table with the following content.
+     - run_id, datatype: int64
+     - n_subruns, datatype: int64
+     - run_type, datatype: string
+     - ucts_timestamp, datatype: int64
+     - run_start, datatype: int64
+     - dragon_reference_time, datatype: int64
+     - dragon_reference_module_id, datatype: int16
+     - dragon_reference_module_index, datatype: int16
+     - dragon_reference_counter, datatype: uint64
+     - dragon_reference_source, datatype: string
+
+    It reads an existing nightsummary file.
 
     Returns
     -------
-    stdout : str
-        The content of the nightsummary txt file.
+    table : astropy.Table
+        Table with the content of the run summary ECSV file.
     """
 
-    nightsummary_file = get_nightsummary_file()
-    stdout = None
-    options.nightsummary = True
+    # options.nightsummary = True
     # when executing the closer, 'options.nightsummary' is always True
-    if not options.nightsummary:
-        rawdir = get_check_rawdir()
-        command = config.cfg.get("LSTOSA", "NIGHTSUMMARYSCRIPT")
-        log.debug("Executing command " + command + " " + rawdir)
-        stdout = build_external(command, rawdir)
-        if not options.simulate:
-            writetofile(nightsummary_file, stdout)
-    else:
-        if nightsummary_file:
-            if exists(nightsummary_file) and isfile(nightsummary_file):
-                try:
-                    stdout = readfromfile(nightsummary_file)
-                except IOError as err:
-                    log.exception(f"Problems with file {nightsummary_file}, {err}")
-            else:
-                log.error(f"File {nightsummary_file} does not exists")
-                sys.exit(1)
-        else:
-            log.error("No night summary file specified")
-    log.debug(f"Night summary file path {nightsummary_file}")
-    log.debug(f"Content \n{stdout}")
-    return stdout
+    # if not options.nightsummary:
+    #    # TODO: Run summary script should be launched here
+    #    rawdir = get_check_rawdir()
+    #    # TODO: Add this parameter to the cfg
+    #    command = config.cfg.get("lstchain", "run_summary_script")
+    #    log.debug("Executing command " + command)
+    #    if not options.simulate:
+    #        sp.run(command, rawdir)
+    # else:
+
+    nightsummary_file = get_runsummary_file(date)
+    log.debug(f"Run summary file {nightsummary_file}")
+    if not os.path.isfile(nightsummary_file):
+        raise IOError(f"Run summary file {nightsummary_file} not found")
+
+    table = Table.read(nightsummary_file)
+    table.add_index(["run_id"])
+    return table
 
 
-def get_nightsummary_file():
+def get_runsummary_file(date):
     """
-    Builds the file name of the night summary txt file.
+    Builds the file name of the run summary ECSV file.
 
     Returns
     -------
-    nightsummary_file : str
-        File name of the night summary txt file
+    runsummary_file : str
+        File name of the run summary ECSV file
     """
-    if options.tel_id == "LST1" or options.tel_id == "LST2":
-        nightsumprefix = config.cfg.get("LSTOSA", "NIGHTSUMMARYPREFIX")
-        nightsumsuffix = config.cfg.get("LSTOSA", "TEXTSUFFIX")
-        nightsumdir = config.cfg.get("LSTOSA", "NIGHTSUMDIR")
-        basename = build_lstbasename(nightsumprefix, nightsumsuffix)
-        nightsummary_file = join(nightsumdir, basename)
-        return nightsummary_file
-    # only the closer needs the night summary file in case of 'ST'.
-    # since ST has no night summary file, we give him the one from LST1
-    elif options.tel_id == "ST":
-        nightsumprefix = config.cfg.get("LSTOSA", "NIGHTSUMMARYPREFIX")
-        nightsumsuffix = config.cfg.get("LSTOSA", "TEXTSUFFIX")
-        basename = build_lstbasename(nightsumprefix, nightsumsuffix)
-        nightsummary_file = join(options.directory, basename)
-        return nightsummary_file.replace("ST", "LST1")
-    return None
+    nightdir = lstdate_to_dir(date)
+    return os.path.join(cfg.get("LST1", "RUN_SUMMARY_DIR"), f"RunSummary_{nightdir}.ecsv")
