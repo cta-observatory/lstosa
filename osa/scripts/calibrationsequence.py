@@ -208,7 +208,7 @@ def calibrate_charge(
     min_ff = 4000
     max_ff = 12000
     stat_events = 10000
-    time_file = path.join(options.directory, f"time_{output_file}")
+    time_file = path.join(options.directory, f"time_{calibration_output_file}")
     command = "lstchain_create_calibration_file"
 
     command_args = [
