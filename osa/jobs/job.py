@@ -306,6 +306,7 @@ def createjobtemplate(s, get_content=False):
         cal_run_number = str(s.run).zfill(5)
         commandargs.append(ped_run_number)
         commandargs.append(cal_run_number)
+        commandargs.append(os.path.join(run_summary_dir, f"RunSummary_{nightdir}.ecsv"))
 
     if s.type == "DATA":
         commandargs.append(os.path.join(options.directory, s.calibration))

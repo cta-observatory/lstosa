@@ -257,6 +257,7 @@ def calibrationsequence_argparser():
     parser.add_argument("caloutfile", help="Full path of the calibration file to be created")
     parser.add_argument("calib_run_number", help="Calibration run number")
     parser.add_argument("ped_run_number", help="DRS4 pedestal run number")
+    parser.add_argument("run_summary_file", help="Run summary file")
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
 
     return parser
@@ -286,7 +287,7 @@ def calibrationsequencecliparsing():
         options.calib_prod_id = get_calib_prod_id()
     else:
         options.calib_prod_id = options.prod_id
-    return opts.pedoutfile, opts.caloutfile, opts.calib_run_number, opts.ped_run_number
+    return opts.pedoutfile, opts.caloutfile, opts.calib_run_number, opts.ped_run_number, opts.run_summary_file
 
 
 def datasequence_argparser():
