@@ -115,6 +115,7 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000,
     calib_configfile = None
     output_file = path.join(options.directory, pedestal_output_file)
     command_args = [
+        "srun",
         cfg.get("PROGRAM", "PEDESTAL"),
         "--input-file=" + input_file,
         "--output-file=" + output_file,
@@ -152,7 +153,7 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000,
     if rc != 0:
         sys.exit(rc)
 
-    plot_file = path.join(options.directory, "log", f"drs4_pedestal.Run{run_ped:05d}.0000.pdf")
+    plot_file = path.join(options.directory, "log", f"drs4_pedestal.Run{run_ped}.0000.pdf")
     log.info(f"Producing plots in {plot_file}")
     drs4.plot_pedestals(
         input_file,
@@ -212,6 +213,7 @@ def calibrate_charge(
     command = "lstchain_create_calibration_file"
 
     command_args = [
+        "srun",
         command,
         "--input_file=" + calibration_run_file,
         "--output_file=" + output_file,
@@ -262,7 +264,7 @@ def calibrate_charge(
     plot_file = path.join(
         options.directory,
         "log",
-        f"calibration.Run{calibration_run:05d}.0000.pedestal.Run{run_ped:05d}.0000.pdf",
+        f"calibration.Run{calibration_run}.0000.pedestal.Run{run_ped}.0000.pdf",
     )
     calib.read_file(output_file, tel_id=1)
     log.info(f"Producing plots in {plot_file}")
@@ -297,6 +299,7 @@ def calibrate_time(calibration_run, pedestal_file, calibration_output_file, run_
 
     command = "lstchain_data_create_time_calibration_file"
     command_args = [
+        "srun",
         command,
         "--input-file=" + calibration_data_files,
         "--output-file=" + time_calibration_output_file,
