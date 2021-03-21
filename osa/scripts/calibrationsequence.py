@@ -118,7 +118,7 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000,
         cfg.get("PROGRAM", "PEDESTAL"),
         "--input-file=" + input_file,
         "--output-file=" + output_file,
-        "--max-events=" + max_events
+        f"--max-events={max_events}"
     ]
     command_concept = "drs4_pedestal"
 
