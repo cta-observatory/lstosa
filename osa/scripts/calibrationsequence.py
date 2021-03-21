@@ -65,7 +65,7 @@ def calibrationsequence(pedestal_filename, calibration_filename, ped_run_number,
         level -= 1
         log.info(f"Going to level {level}")
     if level == 2:
-        rc = calibrate_time(cal_run_number, pedestal_filename, calibration_filename, history_file, run_summary_file)
+        rc = calibrate_time(cal_run_number, pedestal_filename, calibration_filename, run_summary_file, history_file)
         level -= 1
         log.info(f"Going to level {level}")
     if level == 1:
