@@ -342,31 +342,35 @@ def createjobtemplate(s, get_content=False):
 
     content += "import subprocess \n"
     content += "import sys, os \n"
+    content += "import tempfile \n"
     content += "\n\n"
 
-    content += "subruns=os.getenv('SLURM_ARRAY_TASK_ID')\n"
-    content += "job_id=os.getenv('SLURM_JOB_ID')\n"
+    if not options.test:
+        content += "subruns = os.getenv('SLURM_ARRAY_TASK_ID')\n"
+        content += "job_id = os.getenv('SLURM_JOB_ID')\n"
+    else:
+        content += "subruns = 0\n"
 
-    content += "proc = subprocess.run([\n"
+    content += "with tempfile.TemporaryDirectory() as tmpdirname:\n"
+    content += "    os.environ['NUMBA_CACHE_DIR'] = tmpdirname\n"
+
+    content += "    proc = subprocess.run([\n"
     for i in commandargs:
-        content += f"    '{i}',\n"
+        content += f"        '{i}',\n"
     content += (
-        f"    '--stderr=log/sequence_{s.jobname}."
+        f"        '--stderr=log/sequence_{s.jobname}."
         + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)), \n"
     )
     content += (
-        f"    '--stdout=log/sequence_{s.jobname}."
+        f"        '--stdout=log/sequence_{s.jobname}."
         + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)), \n"
     )
     if s.type == "DATA":
         content += (
-            "    '{0}".format(str(s.run).zfill(5))
-            + ".{0}'"
-            + ".format(str(subruns).zfill(4))"
-            + ",\n"
+            "        '{0}".format(str(s.run).zfill(5)) + ".{0}'" + ".format(str(subruns).zfill(4))" + ",\n"
         )
-    content += f"    '{options.tel_id}'\n"
-    content += "    ])\n"
+    content += f"        '{options.tel_id}'\n"
+    content += "        ])\n"
 
     content += "sys.exit(proc.returncode)"
 
