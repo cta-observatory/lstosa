@@ -132,7 +132,7 @@ def single_process(telescope, process_mode):
     preparejobs(sequence_list)
 
     # if test in order to be able to run it locally
-    if not options.test and not options.simulate:
+    if not options.test:
         queue_list = getqueuejoblist(sequence_list)
     veto_list = getvetolist(sequence_list)
     closed_list = getclosedlist(sequence_list)
