@@ -18,7 +18,7 @@ from osa.utils.logging import MyFormatter
 from osa.utils.standardhandle import stringify
 from osa.utils.utils import lstdate_to_dir
 
-__all__ = ["datasequence", "r0_to_dl1", "dl1_to_dl2"]
+__all__ = ["datasequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
 
 log = logging.getLogger(__name__)
 
@@ -111,7 +111,6 @@ def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_su
     if options.simulate:
         return 0
 
-    configfile = cfg.get("LSTOSA", "CONFIGFILE")
     command = cfg.get("LSTOSA", "R0-DL1")
     nightdir = lstdate_to_dir(options.date)
     datafile = join(
@@ -127,7 +126,6 @@ def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_su
         "--output-dir=" + options.directory,
         "--pedestal-file=" + pedestalfile,
         "--calibration-file=" + calibrationfile,
-        "--config=" + configfile,
         "--time-calibration-file=" + time_calibration,
         "--pointing-file=" + drivefile,
         "--run-summary-path=" + run_summary,
