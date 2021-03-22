@@ -46,6 +46,7 @@ setup(
         "lstchain==0.7.0",
         "matplotlib",
         "numpy",
+        "pandas",
         "pyyaml",
         "prov",
         "pydot",
