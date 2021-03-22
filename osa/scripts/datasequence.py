@@ -72,11 +72,11 @@ def datasequence(
         log.debug(f"Going to level {level}")
     if level == 2:
         rc = dl1_datacheck(run_str, historyfile)
-        level -= 2
+        level -= 1
         log.debug(f"Going to level {level}")
     if level == 1:
         rc = dl1_to_dl2(run_str, historyfile)
-        level -= 2
+        level -= 1
         log.debug(f"Going to level {level}")
     if level == 0:
         log.debug(f"Job for sequence {run_str} finished without fatal errors")

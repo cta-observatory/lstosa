@@ -132,7 +132,7 @@ def single_process(telescope, process_mode):
     preparejobs(sequence_list)
 
     # if test in order to be able to run it locally
-    if not options.test:
+    if not options.test and not options.simulate:
         queue_list = getqueuejoblist(sequence_list)
     veto_list = getvetolist(sequence_list)
     closed_list = getclosedlist(sequence_list)
@@ -212,6 +212,7 @@ def update_sequence_status(seq_list):
             )
         elif seq.type == "DATA":
             seq.dl1status = int(Decimal(get_status_for_sequence(seq, "DL1") * 100) / seq.subruns)
+            seq.dl1abstatus = int(Decimal(get_status_for_sequence(seq, "DL1AB") * 100) / seq.subruns)
             seq.datacheckstatus = int(
                 Decimal(get_status_for_sequence(seq, "DATACHECK") * 100) / seq.subruns
             )
@@ -272,8 +273,9 @@ def reportsequences(seqlist):
     ]
     if options.tel_id in ["LST1", "LST2"]:
         header.append("DL1%")
-        header.append("DATACHECK%")
+        header.append("DL1AB%")
         header.append("MUONS%")
+        header.append("DATACHECK%")
         header.append("DL2%")
 
     matrix.append(header)
@@ -304,8 +306,9 @@ def reportsequences(seqlist):
             row_list.append(None)
         elif s.type == "DATA":
             row_list.append(s.dl1status)
-            row_list.append(s.datacheckstatus)
+            row_list.append(s.dl1abstatus)
             row_list.append(s.muonstatus)
+            row_list.append(s.datacheckstatus)
             row_list.append(s.dl2status)
         matrix.append(row_list)
     padding = int(cfg.get("OUTPUT", "PADDING"))

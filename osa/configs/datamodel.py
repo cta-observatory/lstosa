@@ -97,6 +97,7 @@ class SequenceData(Sequence):
         self.pedestal = None
         self.drive = None
         self.dl1status = None
+        self.dl1abstatus = None
         self.muonstatus = None
         self.datacheckstatus = None
         self.dl2status = None

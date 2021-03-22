@@ -548,6 +548,9 @@ def setqueuevalues(queue_list, sequence_list):
                 elif (df_jobid_filtered.State.values == "CANCELLED").any():
                     s.state = "CANCELLED"
                     s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "CANCELLED"]["ExitCode"].iloc[0]
+                elif (df_jobid_filtered.State.values == "TIMEOUT").any():
+                    s.state = "TIMEOUT"
+                    s.exit = "0:15"
                 else:
                     s.state = "RUNNING"
                     s.exit = None
