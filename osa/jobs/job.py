@@ -357,14 +357,13 @@ def createjobtemplate(s, get_content=False):
     content += "    proc = subprocess.run([\n"
     for i in commandargs:
         content += f"        '{i}',\n"
-    content += (
-        f"        '--stderr=log/sequence_{s.jobname}."
-        + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)), \n"
-    )
-    content += (
-        f"        '--stdout=log/sequence_{s.jobname}."
-        + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)), \n"
-    )
+    if not options.test:
+        content += (
+            f"        '--stderr=log/sequence_{s.jobname}." + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)), \n"
+        )
+        content += (
+            f"        '--stdout=log/sequence_{s.jobname}." + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)), \n"
+        )
     if s.type == "DATA":
         content += (
             "        '{0}".format(str(s.run).zfill(5)) + ".{0}'" + ".format(str(subruns).zfill(4))" + ",\n"
@@ -463,7 +462,10 @@ def submitjobs(sequence_list):
             commandargs.append(s.script)
             if options.simulate or options.test:
                 log.debug("SIMULATE Launching scripts")
-
+            elif options.test:
+                log.debug("Test launching datasequence scripts for first subrun without sbatch")
+                commandargs = ["python", s.script]
+                subprocess.check_output(commandargs)
             else:
                 try:
                     log.debug(f"Launching script {s.script}")
