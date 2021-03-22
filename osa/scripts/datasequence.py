@@ -192,7 +192,7 @@ def dl1ab(run_str, historyfile):
         command,
         "--input-file=" + input_dl1_datafile,
         "--output-file=" + output_dl1_datafile,
-        "--pedestal-cleaning=", "True"
+        "--pedestal-cleaning=True"
     ]
 
     try:
