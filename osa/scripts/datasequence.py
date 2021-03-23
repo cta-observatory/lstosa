@@ -175,6 +175,7 @@ def dl1ab(run_str, historyfile):
     # Create a new subdirectory for the dl1ab output
     dl1ab_subdirectory = os.path.join(options.directory, "dl1ab")
     os.makedirs(dl1ab_subdirectory, exist_ok=True)
+    config_file = cfg.get("LSTOSA", "CONFIGFILE")
 
     input_dl1_datafile = join(
         options.directory,
@@ -192,7 +193,8 @@ def dl1ab(run_str, historyfile):
         command,
         "--input-file=" + input_dl1_datafile,
         "--output-file=" + output_dl1_datafile,
-        "--pedestal-cleaning=True"
+        "--pedestal-cleaning=True",
+        "--config=" + config_file
     ]
 
     try:
