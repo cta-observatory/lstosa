@@ -242,7 +242,7 @@ def get_status_for_sequence(sequence, program):
         dl1ab_subdirectory = os.path.join(options.directory, "dl1ab" + "_" + options.dl1_prod_id)
         files = glob(join(dl1ab_subdirectory, f"{prefix}*{sequence.run}*{suffix}"))
 
-    if program == "DATACHECK":
+    elif program == "DATACHECK":
         # Search for files in the dl1ab subdirectory
         prefix = cfg.get("LSTOSA", program + "PREFIX")
         suffix = cfg.get("LSTOSA", program + "SUFFIX")

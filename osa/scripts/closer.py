@@ -305,7 +305,7 @@ def post_process_files(seq_list):
                                 log.debug(f"Deleting {file}")
                                 # unlink(file)
                         else:
-                            log.warning(
+                            log.debug(
                                 f"Original file {file} is not a link or is different than destination {new_dst}"
                             )
                     else:
