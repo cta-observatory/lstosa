@@ -212,7 +212,7 @@ def dl1ab(run_str, historyfile):
     else:
         history(
             run_str,
-            options.prod_id,  # TODO: consider only DL2 prod ID?
+            options.dl1_prod_id,
             command,
             basename(input_dl1_datafile),
             config_file,
@@ -248,6 +248,8 @@ def dl1_datacheck(run_str, historyfile):
         dl1ab_subdirectory,
         f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}',
     )
+    output_directory = os.path.join(options.directory, "datacheck" + "_" + options.dl1_prod_id)
+    os.makedirs(output_directory, exist_ok=True)
 
     # lstchain_check_dl1 --input-file dl1ab/dl1_LST-1.Run02008.0000.h5 --muons-dir ./ --omit-pdf --batch
 
@@ -256,7 +258,7 @@ def dl1_datacheck(run_str, historyfile):
     commandargs = [
         command,
         "--input-file=" + input_dl1_datafile,
-        "--output-dir=" + options.directory,
+        "--output-dir=" + output_directory,
         "--muons-dir=" + options.directory,
         "--omit-pdf",
         "--batch"
@@ -272,7 +274,7 @@ def dl1_datacheck(run_str, historyfile):
     else:
         history(
             run_str,
-            options.prod_id,  # TODO: consider only DL2 prod ID?
+            options.dl1_prod_id,
             command,
             basename(input_dl1_datafile),
             None,
