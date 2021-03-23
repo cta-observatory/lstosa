@@ -32,7 +32,7 @@ def run_program(*args):
 
 def test_sequencer():
     run_program(
-        "sequencer", "-c", "cfg/sequencer_test.cfg", "-d", "2020_01_17", "-s", "LST1"
+        "sequencer", "-c", "cfg/sequencer_test.cfg", "-d", "2020_01_17", "-t", "-s", "LST1"
     )
 
 

@@ -666,6 +666,23 @@ def sequencercliparsing():
     if not opts.mode:
         options.mode = "P"
 
+    options.prod_id = get_prod_id()
+
+    if cfg.get("LST1", "CALIB-PROD-ID") is not None:
+        options.calib_prod_id = get_calib_prod_id()
+    else:
+        options.calib_prod_id = options.prod_id
+
+    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+        options.dl1_prod_id = get_dl1_prod_id()
+    else:
+        options.dl1_prod_id = options.prod_id
+
+    if cfg.get("LST1", "DL2-PROD-ID") is not None:
+        options.dl2_prod_id = get_dl2_prod_id()
+    else:
+        options.dl2_prod_id = options.prod_id
+
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
 
