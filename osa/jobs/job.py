@@ -86,6 +86,7 @@ def historylevel(historyfile, type):
                     else:
                         level = 3
                         log.debug(f"DL1ab prod ID: {options.dl1_prod_id} not produced yet")
+                        break
                 if program == "lstchain_check_dl1":
                     nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
                     level = 1 if exit_status in nonfatalrcs else 2
