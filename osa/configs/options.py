@@ -19,6 +19,7 @@ noninteractive = None
 verbose = None
 warning = None
 nocheck = None
+nodl2 = None
 compressed = None
 lstchain_version = None
 prod_id = None

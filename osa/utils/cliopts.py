@@ -590,7 +590,14 @@ def sequencer_argparser():
         action="store_true",
         dest="nocalib",
         default=False,
-        help="Skip calibration sequence. Run only data sequences",
+        help="Skip calibration sequence. Run data sequences assuming calib "
+             "products already produced (default False)",
+    )
+    parser.add_argument(
+        "--nodl2",
+        action="store_true",
+        default=False,
+        help="Do not produce DL2 files (default False)",
     )
     parser.add_argument(
         "-v",
@@ -654,6 +661,7 @@ def sequencercliparsing():
     options.simulate = opts.simulate
     options.test = opts.test
     options.nocalib = opts.nocalib
+    options.nodl2 = opts.nodl2
     options.verbose = opts.verbose
     options.warning = opts.warning
     options.compressed = opts.compressed
