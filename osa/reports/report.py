@@ -8,8 +8,7 @@ from osa.configs import config, options
 from osa.configs.config import cfg
 from osa.rawcopy.raw import getrawdir
 from osa.utils.iofile import appendtofile
-from osa.utils.logging import MyFormatter
-from osa.utils.standardhandle import output, gettag
+from osa.utils.standardhandle import gettag
 
 log = logging.getLogger(__name__)
 
