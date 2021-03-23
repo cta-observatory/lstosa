@@ -47,6 +47,9 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
             if prefix == "dl1_LST-1" and suffix == ".h5":
                 log.debug(f"Keeping DL1 symlink in {inputf}")
                 os.symlink(outputf, inputf)
+            if prefix == "muons_LST-1" and suffix == ".fits":
+                log.debug(f"Keeping muons file symlink in {inputf}")
+                os.symlink(outputf, inputf)
             # for the moment we are not interested in calculating the hash md5
             # md5sum = get_md5sum_and_copy(inputf, outputf)
             # log.debug("Resulting md5sum={0}".format(md5sum))
