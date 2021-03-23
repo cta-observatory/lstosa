@@ -80,7 +80,7 @@ def historylevel(historyfile, type):
                     level = 3 if exit_status in nonfatalrcs else 4
                 if program == "lstchain_dl1ab":
                     nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
-                    if (exit_status in nonfatalrcs) and (prod_id == options.dl2_prod_id):
+                    if (exit_status in nonfatalrcs) and (prod_id == options.dl1_prod_id):
                         log.debug(f"DL1ab prod ID: {options.dl1_prod_id} already produced")
                         level = 2
                     else:
