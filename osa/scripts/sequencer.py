@@ -237,7 +237,7 @@ def get_status_for_sequence(sequence, program):
     """
     if program == "DL1AB":
         prefix = cfg.get("LSTOSA", "DL1PREFIX")
-        suffix = cfg.get("LSTOSA", "DL1PREFIX")
+        suffix = cfg.get("LSTOSA", "DL1SUFFIX")
         # Search for files in the dl1ab subdirectory
         files = glob(join(options.directory, "dl1ab", f"{prefix}*{sequence.run}*{suffix}"))
 
