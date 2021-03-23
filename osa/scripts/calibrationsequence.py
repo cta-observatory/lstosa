@@ -178,6 +178,8 @@ def calibrate_charge(
     pedestal_file
     calibration_output_file
     history_file
+    run_summary: str
+        Path name of the run summary file
 
     Returns
     -------
@@ -200,7 +202,9 @@ def calibrate_charge(
         sys.exit(1)
 
     calib_configfile = cfg.get("LSTOSA", "CALIBCONFIGFILE")
-    output_file = path.join(options.directory, calibration_output_file)
+    drs4_pedestal_path = path.join(options.directory, pedestal_file)
+    calib_output_file = path.join(options.directory, calibration_output_file)
+    time_file = path.join(options.directory, f"time_{calibration_output_file}")
     log_output_file = path.join(
         options.directory, "log", f"calibration.Run{calibration_run}.0000.log"
     )
@@ -208,20 +212,20 @@ def calibrate_charge(
     min_ff = 4000
     max_ff = 12000
     stat_events = 10000
-    time_file = path.join(options.directory, f"time_{calibration_output_file}")
+
     command = "lstchain_create_calibration_file"
 
     command_args = [
         command,
         "--input_file=" + calibration_run_file,
-        "--output_file=" + output_file,
+        "--output_file=" + calib_output_file,
         f"--EventSource.max_events={max_events}",
         f"--EventSource.default_trigger_type=tib",
         f"--EventSource.min_flatfield_adc={min_ff}",
         f"--EventSource.max_flatfield_adc={max_ff}",
         "--LSTEventSource.EventTimeCalculator.run_summary_path=" + run_summary,
         "--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path=" + time_file,
-        "--LSTEventSource.LSTR0Corrections.drs4_pedestal_path=" + pedestal_file,
+        "--LSTEventSource.LSTR0Corrections.drs4_pedestal_path=" + drs4_pedestal_path,
         f"--FlatFieldCalculator.sample_size={stat_events}",
         f"--PedestalCalculator.sample_size={stat_events}",
         "--log-file=" + log_output_file,
@@ -264,7 +268,7 @@ def calibrate_charge(
         "log",
         f"calibration.Run{calibration_run}.0000.pedestal.Run{run_ped}.0000.pdf",
     )
-    calib.read_file(output_file, tel_id=1)
+    calib.read_file(calib_output_file, tel_id=1)
     log.info(f"Producing plots in {plot_file}")
     calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, calibration_run, plot_file)
     plt.close("all")
