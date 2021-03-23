@@ -20,7 +20,7 @@ from osa.nightsummary.extract import (
     extractsequencesstereo,
     extractsubruns,
 )
-from osa.nightsummary.nightsummary import get_runsummary_file, run_summary_table
+from osa.nightsummary.nightsummary import run_summary_table
 from osa.reports.report import rule, start
 from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_needed
 from osa.utils.logging import MyFormatter
@@ -228,16 +228,23 @@ def get_status_for_sequence(sequence, program):
     ----------
     sequence
     program : str
-        Options: 'CALIB', 'DL1', 'DATACHECK', 'MUON' or 'DL2'
+        Options: 'CALIB', 'DL1', 'DL1AB', 'DATACHECK', 'MUON' or 'DL2'
 
     Returns
     -------
     number_of_files : int
 
     """
-    prefix = cfg.get("LSTOSA", program + "PREFIX")
-    suffix = cfg.get("LSTOSA", program + "SUFFIX")
-    files = glob(join(options.directory, f"{prefix}*{sequence.run}*{suffix}"))
+    if program is "DL1AB":
+        prefix = cfg.get("LSTOSA", "DL1PREFIX")
+        suffix = cfg.get("LSTOSA", "DL1PREFIX")
+        # Search for files in the dl1ab subdirectory
+        files = glob(join(options.directory, "dl1ab", f"{prefix}*{sequence.run}*{suffix}"))
+
+    else:
+        prefix = cfg.get("LSTOSA", program + "PREFIX")
+        suffix = cfg.get("LSTOSA", program + "SUFFIX")
+        files = glob(join(options.directory, f"{prefix}*{sequence.run}*{suffix}"))
     number_of_files = len(files)
     log.debug(f"Found {number_of_files} {program} files for sequence name {sequence.jobname}")
     return number_of_files
@@ -273,8 +280,8 @@ def reportsequences(seqlist):
     ]
     if options.tel_id in ["LST1", "LST2"]:
         header.append("DL1%")
-        header.append("DL1AB%")
         header.append("MUONS%")
+        header.append("DL1AB%")
         header.append("DATACHECK%")
         header.append("DL2%")
 
@@ -298,16 +305,17 @@ def reportsequences(seqlist):
             s.walltime,
             s.exit,
         ]
-        if s.type == "PEDCALIB":
+        if s.type in ["DRS4", "PEDCALIB"]:
             # repeat None for every data level
+            row_list.append(None)
             row_list.append(None)
             row_list.append(None)
             row_list.append(None)
             row_list.append(None)
         elif s.type == "DATA":
             row_list.append(s.dl1status)
-            row_list.append(s.dl1abstatus)
             row_list.append(s.muonstatus)
+            row_list.append(s.dl1abstatus)
             row_list.append(s.datacheckstatus)
             row_list.append(s.dl2status)
         matrix.append(row_list)
