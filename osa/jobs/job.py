@@ -78,7 +78,7 @@ def historylevel(historyfile, type):
                 if program == cfg.get("LSTOSA", "R0-DL1"):
                     nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
                     level = 3 if exit_status in nonfatalrcs else 4
-                if program == "lstchain_dl1ab":
+                elif program == "lstchain_dl1ab":
                     nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
                     if (exit_status in nonfatalrcs) and (prod_id == options.dl1_prod_id):
                         log.debug(f"DL1ab prod ID: {options.dl1_prod_id} already produced")
@@ -87,7 +87,7 @@ def historylevel(historyfile, type):
                         level = 3
                         log.debug(f"DL1ab prod ID: {options.dl1_prod_id} not produced yet")
                         break
-                if program == "lstchain_check_dl1":
+                elif program == "lstchain_check_dl1":
                     nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
                     level = 1 if exit_status in nonfatalrcs else 2
                 elif program == cfg.get("LSTOSA", "DL1-DL2"):
