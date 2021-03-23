@@ -369,6 +369,12 @@ def datasequence_argparser():
         dest="prod_id",
         help="Set the prod ID to define data directories",
     )
+    parser.add_argument(
+        "--nodl2",
+        action="store_true",
+        default=False,
+        help="Do not produce DL2 files (default False)",
+    )
     parser.add_argument("drs4_ped_file", help="Path of the DRS4 pedestal file")
     parser.add_argument("calib_file", help="Path of the calibration file")
     parser.add_argument("time_calib_file", help="Path of the time calibration file")
@@ -395,6 +401,7 @@ def datasequencecliparsing():
     options.compressed = opts.compressed
     options.simulate = opts.simulate
     options.prod_id = opts.prod_id
+    options.nodl2 = opts.nodl2
     options.tel_id = opts.tel_id
 
     log.debug(f"The options and arguments are {opts}")
