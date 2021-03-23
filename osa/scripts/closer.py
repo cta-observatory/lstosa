@@ -9,6 +9,7 @@ import subprocess
 import sys
 from filecmp import cmp
 from glob import glob
+import shutil
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -246,6 +247,7 @@ def post_process_files(seq_list):
     if options.tel_id == "LST1":
         concept_set = [
             "DL1",
+            "DL1AB",
             "DL2",
             "MUON",
             "DATACHECK",
@@ -253,8 +255,10 @@ def post_process_files(seq_list):
             "CALIB",
             "TIMECALIB",
         ]
-    elif options.tel_id == "ST":
-        concept_set = []
+
+    # TODO: Move dl1ab files to running_analysis
+    # dl1ab_files = glob(os.path.join(options.directory, "dl1ab", "*Run*"))
+    # shutil.move(dl1ab_files)
 
     nightdir = lstdate_to_dir(options.date)
     output_files = glob(os.path.join(options.directory, "*Run*"))
