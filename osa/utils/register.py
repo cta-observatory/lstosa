@@ -106,21 +106,30 @@ def register_run_concept_files(run_string, concept):
     run_string
     concept
     """
-    inputdir = options.directory
+
     nightdir = lstdate_to_dir(options.date)
     if concept == "DL2":
+        inputdir = options.directory
         outputdir = join(
             cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id
         )
     elif concept in ["DL1", "MUON"]:
+        inputdir = options.directory
         outputdir = join(
             cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id
         )
-    elif concept in ["DL1AB", "DATACHECK"]:
+    elif concept == "DL1AB":
+        inputdir = join(options.directory, "dl1ab" + "_" + options.dl1_prod_id)
+        outputdir = join(
+            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl1_prod_id
+        )
+    elif concept == "DATACHECK":
+        inputdir = join(options.directory, "datacheck" + "_" + options.dl1_prod_id)
         outputdir = join(
             cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl1_prod_id
         )
     elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
+        inputdir = options.directory
         outputdir = join(
                 cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id
         )
