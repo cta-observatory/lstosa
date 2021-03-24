@@ -292,6 +292,7 @@ def post_process_files(seq_list):
                     pattern_found = None
             if pattern_found is not None:
                 new_dst = os.path.join(dir, file_basename)
+                log.debug(f"New file path {new_dst}")
                 if not options.simulate:
                     make_directory(dir)
                     if os.path.exists(new_dst):
