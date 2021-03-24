@@ -10,6 +10,7 @@ import sys
 from filecmp import cmp
 from glob import glob
 import shutil
+from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -261,7 +262,7 @@ def post_process_files(seq_list):
     # shutil.move(dl1ab_files)
 
     nightdir = lstdate_to_dir(options.date)
-    output_files = glob(os.path.join(options.directory, "*Run*"))
+    output_files = Path(options.directory).rglob("*Run*")
     output_files_set = set(output_files)
     for concept in concept_set:
         log.info(f"Processing {concept} files, {len(output_files_set)} files left")
