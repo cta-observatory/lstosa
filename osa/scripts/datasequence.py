@@ -251,8 +251,6 @@ def dl1_datacheck(run_str, historyfile):
     output_directory = os.path.join(options.directory, "datacheck" + "_" + options.dl1_prod_id)
     os.makedirs(output_directory, exist_ok=True)
 
-    # lstchain_check_dl1 --input-file dl1ab/dl1_LST-1.Run02008.0000.h5 --muons-dir ./ --omit-pdf --batch
-
     # Prepare and launch the actual lstchain script
     command = "lstchain_check_dl1"
     commandargs = [
