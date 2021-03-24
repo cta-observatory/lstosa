@@ -8,6 +8,7 @@ from os.path import basename, exists, join
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.utils import lstdate_to_dir
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
     prefix: prefix of the data file
     type : type of run for DB purposes
     """
-    file_list = glob(join(inputdir, f"{prefix}*{run_str}*{suffix}"))
+    file_list = Path(inputdir).rglob(f"{prefix}*{run_str}*{suffix}")
     log.debug(f"File list is {file_list}")
     # hostname = gethostname()
     # the default subrun index for most of the files
