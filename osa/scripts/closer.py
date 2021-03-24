@@ -271,8 +271,10 @@ def post_process_files(seq_list):
             pattern = cfg.get("LSTOSA", concept + "PATTERN")
 
         # Create final destination directory for each data level
-        if concept in ["DL1", "MUON", "DATACHECK"]:
-            dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl1_prod_id)
+        if concept in ["DL1", "MUON"]:
+            dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id)
+        elif concept in ["DL1AB", "DATACHECK"]:
+            dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl1_prod_id)
         elif concept == "DL2":
             dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id)
         elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:

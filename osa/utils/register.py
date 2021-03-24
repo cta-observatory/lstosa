@@ -111,9 +111,13 @@ def register_run_concept_files(run_string, concept):
         outputdir = join(
             cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id
         )
-    elif concept in ["DL1", "DATACHECK", "MUON"]:
+    elif concept in ["DL1", "MUON"]:
         outputdir = join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl1_prod_id
+            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id
+        )
+    elif concept in ["DL1AB", "DATACHECK"]:
+        outputdir = join(
+            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl1_prod_id
         )
     elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
         outputdir = join(
