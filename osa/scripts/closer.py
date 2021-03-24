@@ -264,6 +264,7 @@ def post_process_files(seq_list):
     nightdir = lstdate_to_dir(options.date)
     output_files = Path(options.directory).rglob("*Run*")
     output_files_set = set(output_files)
+    log.debug(output_files_set)
     for concept in concept_set:
         log.info(f"Processing {concept} files, {len(output_files_set)} files left")
         if cfg.get("LSTOSA", concept + "PREFIX"):
