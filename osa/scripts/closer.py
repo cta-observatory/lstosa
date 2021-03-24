@@ -461,7 +461,7 @@ def merge_dl1datacheck(seq_list):
 
     log.debug("Merging dl1 datacheck files and producing PDFs")
     nightdir = lstdate_to_dir(options.date)
-    dl1_directory = os.path.join(cfg.get("LST1", "DL1DIR"), nightdir, options.prod_id)
+    dl1_directory = os.path.join(cfg.get("LST1", "DL1DIR"), nightdir, options.prod_id, options.dl1_prod_id)
 
     for sequence in seq_list:
         if sequence.type == "DATA":
