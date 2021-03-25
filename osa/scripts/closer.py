@@ -11,6 +11,7 @@ from filecmp import cmp
 from glob import glob
 import shutil
 from pathlib import Path
+from osa.utils.standardhandle import stringify
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -247,7 +248,6 @@ def post_process_files(seq_list):
     concept_set = []
     if options.tel_id == "LST1":
         concept_set = [
-            "DL1",
             "DL1AB",
             "DL2",
             "MUON",
@@ -272,7 +272,7 @@ def post_process_files(seq_list):
             sys.exit(1)
 
         # Create final destination directory for each data level
-        if concept in ["DL1", "MUON"]:
+        if concept in ["MUON"]:
             dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id)
         elif concept in ["DL1AB", "DATACHECK"]:
             dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl1_prod_id)
@@ -287,9 +287,9 @@ def post_process_files(seq_list):
             file = str(file_path)
             file_basename = os.path.basename(file)
             if concept == "DL1AB":
-                pattern_found = re.search(f"^{pattern}", file)
+                pattern_found = re.search(f"*{pattern}*", file)
             else:
-                pattern_found = re.search(f"^{pattern}", file)
+                pattern_found = re.search(f"*{pattern}*", file)
 
             if options.seqtoclose is not None:
                 seqtoclose_found = re.search(options.seqtoclose, file)
@@ -468,13 +468,16 @@ def merge_dl1datacheck(seq_list):
 
     log.debug("Merging dl1 datacheck files and producing PDFs")
     nightdir = lstdate_to_dir(options.date)
-    dl1_directory = os.path.join(cfg.get("LST1", "DL1DIR"), nightdir, options.prod_id, options.dl1_prod_id)
+    # Inside DL1 directory there are different subdirectories for each cleaning level.
+    # Muons fits files are in the base dl1 directory whereas the dl1 and datacheck files
+    # are in the corresponding subdirectory for each cleaning level.
+    dl1_base_directory = os.path.join(cfg.get("LST1", "DL1DIR"), nightdir, options.prod_id)
+    dl1_prod_id_directory = os.path.join(dl1_base_directory, options.dl1_prod_id)
 
     for sequence in seq_list:
         if sequence.type == "DATA":
             cmd = [
                 "sbatch",
-                "--parsable",
                 "-D",
                 options.directory,
                 "-o",
@@ -482,8 +485,9 @@ def merge_dl1datacheck(seq_list):
                 "-e",
                 f"log/slurm_mergedl1datacheck_{str(sequence.run).zfill(5)}_%j.err",
                 "lstchain_check_dl1",
-                f"--input-file={dl1_directory}/datacheck_dl1_LST-1.Run0{sequence.run}.*.h5",
-                f"--output-dir={dl1_directory}",
+                f"--input-file={dl1_prod_id_directory}/datacheck_dl1_LST-1.Run0{sequence.run}.*.h5",
+                f"--output-dir={dl1_prod_id_directory}",
+                f"--muons-dir={dl1_base_directory}"
             ]
             if not options.simulate:
                 try:
@@ -491,22 +495,26 @@ def merge_dl1datacheck(seq_list):
                 except subprocess.CalledProcessError as err:
                     log.exception(f"Not able to merge DL1 datacheck: {err}")
                 # TODO implement an automatic scp to www datacheck,
-                # right after the production of the PDF files
+                # right after the production of the PDF files.
+                # Right now there is no connection opened from cps
+                # to the datacheck webserver. Hence it has to be done without
+                # slurm and after assuring that the files are already produced.
             else:
                 log.debug("Simulate launching scripts")
-            log.debug(cmd)
+            log.debug(f"{stringify(cmd)}")
 
 
 def extract_provenance(seq_list):
     """
-    Extract provenance run-wise from the prov.log file
+    Extract provenance run wise from the prov.log file
+    where it was stored sub-run wise
 
     Parameters
     ----------
     seq_list: list of sequence objects
         List of Sequence Objects
     """
-    log.debug("Extract provenance run-wise")
+    log.debug("Extract provenance run wise")
 
     nightdir = lstdate_to_dir(options.date)
 
@@ -529,7 +537,7 @@ def extract_provenance(seq_list):
                 subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
             else:
                 log.debug("Simulate launching scripts")
-            log.debug(cmd)
+            log.debug(f"{stringify(cmd)}")
 
 
 if __name__ == "__main__":
