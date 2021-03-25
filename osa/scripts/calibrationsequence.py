@@ -305,7 +305,7 @@ def calibrate_time(calibration_run, pedestal_file, calibration_output_file, run_
         "--input-file=" + calibration_data_files,
         "--output-file=" + time_calibration_output_file,
         "--pedestal-file=" + pedestal_file,
-        # "--config=" + calib_configfile,
+        "--config=" + calib_configfile,
         "--run-summary-path=" + run_summary
     ]
     command_concept = "time_calibration"
