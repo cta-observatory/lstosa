@@ -276,7 +276,7 @@ def calibrate_charge(
     return rc
 
 
-def calibrate_time(calibration_run, pedestal_file, calibration_output_file, run_summary, history_file):
+def calibrate_time(calibration_run, pedestal_file, calibration_output_file, run_summary, history_file, subrun=0):
     """
     Create a time calibration file
 
@@ -286,25 +286,38 @@ def calibrate_time(calibration_run, pedestal_file, calibration_output_file, run_
     pedestal_file
     calibration_output_file
     history_file
+    subrun
 
     Returns
     -------
     Return code
 
     """
-    calibration_data_files = (
-        f'{cfg.get("LST1", "RAWDIR")}/*/'
-        f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{calibration_run}.*{cfg.get("LSTOSA", "R0SUFFIX")}'
-    )
+    rawdata_path = Path(cfg.get("LST1", "RAWDIR"))
+    # Get raw data run regardless when was taken
+    run_calib_file_list = [
+        file
+        for file in rawdata_path.rglob(
+            f'*/{cfg.get("LSTOSA", "R0PREFIX")}.Run{calibration_run}.{subrun:04d}.fits.fz'
+        )
+    ]
+
+    if run_calib_file_list:
+        calibration_data_file = str(run_calib_file_list[0])
+    else:
+        log.error(f"Files corresponding to calibration run {calibration_run} not found")
+        sys.exit(1)
+
     calib_configfile = cfg.get("LSTOSA", "CALIBCONFIGFILE")
     time_calibration_output_file = path.join(options.directory, f"time_{calibration_output_file}")
+    pedestal_file_path = path.join(options.directory, pedestal_file)
 
     command = "lstchain_data_create_time_calibration_file"
     command_args = [
         command,
-        "--input-file=" + calibration_data_files,
+        "--input-file=" + calibration_data_file,
         "--output-file=" + time_calibration_output_file,
-        "--pedestal-file=" + pedestal_file,
+        "--pedestal-file=" + pedestal_file_path,
         "--config=" + calib_configfile,
         "--run-summary-path=" + run_summary
     ]
