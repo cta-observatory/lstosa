@@ -287,9 +287,9 @@ def post_process_files(seq_list):
             file = str(file_path)
             file_basename = os.path.basename(file)
             if concept == "DL1AB":
-                pattern_found = re.search(f"*{pattern}*", file)
+                pattern_found = re.search(pattern, file)
             else:
-                pattern_found = re.search(f"*{pattern}*", file)
+                pattern_found = re.search(pattern, file)
 
             if options.seqtoclose is not None:
                 seqtoclose_found = re.search(options.seqtoclose, file)
