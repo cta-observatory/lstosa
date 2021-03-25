@@ -287,7 +287,7 @@ def post_process_files(seq_list):
             file = str(file_path)
             file_basename = os.path.basename(file)
             if concept == "DL1AB":
-                pattern_found = re.search(pattern, file)
+                pattern_found = re.search(r'dl1ab(?:.*)/dl1*', file)
             else:
                 pattern_found = re.search(pattern, file)
 
