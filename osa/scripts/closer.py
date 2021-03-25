@@ -283,7 +283,8 @@ def post_process_files(seq_list):
 
         delete_set = set()
         log.debug(f"Checking if {concept} files need to be moved to {dir}")
-        for file in output_files_set:
+        for file_path in output_files_set:
+            file = str(file_path)
             file_basename = os.path.basename(file)
             if concept == "DL1AB":
                 pattern_found = re.search(f"^{pattern}", file)
