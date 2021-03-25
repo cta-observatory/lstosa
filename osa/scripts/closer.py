@@ -257,19 +257,19 @@ def post_process_files(seq_list):
             "TIMECALIB",
         ]
 
-    # TODO: Move dl1ab files to running_analysis
-    # dl1ab_files = glob(os.path.join(options.directory, "dl1ab", "*Run*"))
-    # shutil.move(dl1ab_files)
-
     nightdir = lstdate_to_dir(options.date)
     output_files = Path(options.directory).rglob("*Run*")
     output_files_set = set(output_files)
+
+    # TODO: use instead the lstchain.paths.DL1_RE, DC_DL1_RE, etc
+
     for concept in concept_set:
         log.info(f"Processing {concept} files, {len(output_files_set)} files left")
-        if cfg.get("LSTOSA", concept + "PREFIX"):
+        try:
             pattern = cfg.get("LSTOSA", concept + "PREFIX")
-        else:
-            pattern = cfg.get("LSTOSA", concept + "PATTERN")
+        except KeyError as error:
+            log.error(f"No prefix found for {concept}. Please add it to the cfg: {error}")
+            sys.exit(1)
 
         # Create final destination directory for each data level
         if concept in ["DL1", "MUON"]:
@@ -285,13 +285,17 @@ def post_process_files(seq_list):
         log.debug(f"Checking if {concept} files need to be moved to {dir}")
         for file in output_files_set:
             file_basename = os.path.basename(file)
-            pattern_found = re.search(f"^{pattern}", file_basename)
+            if concept == "DL1AB":
+                pattern_found = re.search(f"^{pattern}", file)
+            else:
+                pattern_found = re.search(f"^{pattern}", file)
+
             if options.seqtoclose is not None:
-                seqtoclose_found = re.search(options.seqtoclose, file_basename)
+                seqtoclose_found = re.search(options.seqtoclose, file)
                 if seqtoclose_found is None:
                     pattern_found = None
             if pattern_found is not None:
-                new_dst = os.path.join(dir, file_basename)
+                new_dst = os.path.join(dir, file)
                 log.debug(f"New file path {new_dst}")
                 if not options.simulate:
                     make_directory(dir)
@@ -318,7 +322,7 @@ def post_process_files(seq_list):
                             log.debug(f"Looking for {s}")
 
                             if s.type == "DATA":
-                                run_str_found = re.search(s.run_str, file_basename)
+                                run_str_found = re.search(s.run_str, file)
 
                                 if run_str_found is not None:
                                     # register and delete
@@ -328,8 +332,8 @@ def post_process_files(seq_list):
                                         log.debug("File does not exists")
 
                             elif s.type in ["PEDCALIB", "DRS4"]:
-                                calib_run_str_found = re.search(str(s.run), file_basename)
-                                drs4_run_str_found = re.search(str(s.previousrun), file_basename)
+                                calib_run_str_found = re.search(str(s.run), file)
+                                drs4_run_str_found = re.search(str(s.previousrun), file)
 
                                 if calib_run_str_found is not None:
                                     # register and delete
