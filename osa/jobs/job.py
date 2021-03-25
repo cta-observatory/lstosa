@@ -299,7 +299,7 @@ def createjobtemplate(s, get_content=False):
         commandargs.append(os.path.join(bindir, guesscorrectinputcard(s)))
     if options.compressed:
         commandargs.append("-z")
-    if options.nodl2:
+    if s.type == "DATA" and options.nodl2:
         commandargs.append("--nodl2")
 
     commandargs.append("-d")
