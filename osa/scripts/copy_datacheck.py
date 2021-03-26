@@ -39,9 +39,7 @@ def main():
     if is_merge_process_finished():
         # Check if files exists in local disk
         nightdir = lstdate_to_dir(options.date)
-        analysis_log_dir = (
-            Path(cfg.get("LST1", "ANALYSISDIR")) / nightdir / options.prod_id / "log"
-        )
+        analysis_log_dir = Path(cfg.get("LST1", "ANALYSISDIR")) / nightdir / options.prod_id / "log"
         dl1_dir = Path(cfg.get("LST1", "DL1DIR")) / nightdir / options.prod_id
 
         drs4_pdf = [file for file in analysis_log_dir.glob("drs4*.pdf")]
@@ -101,9 +99,7 @@ def copy_files(host, datedir, files):
             subprocess.run(cmd)
 
         elif "calibration" in str(pdf_file):
-            destination_dir = (
-                datacheck_basedir / "enf_calibration" / options.prod_id / datedir
-            )
+            destination_dir = datacheck_basedir / "enf_calibration" / options.prod_id / datedir
             cmd = ["scp", pdf_file, f"{host}:{destination_dir}/."]
             subprocess.run(cmd)
 
