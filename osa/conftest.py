@@ -16,7 +16,17 @@ def temp_dir():
 
 
 @pytest.fixture(scope="session")
-def sequence_list(temp_dir):
+def run_summary():
+    """
+    Creates a sequence list from a run summary file
+    """
+    # building the sequences
+    options.date = "20200117"
+    return run_summary_table(options.date)
+
+
+@pytest.fixture(scope="session")
+def sequence_list(temp_dir, run_summary):
     """
     Creates a sequence list from a run summary file
     """
@@ -24,8 +34,8 @@ def sequence_list(temp_dir):
     options.directory = temp_dir
     options.date = "20200117"
     options.simulate = True
-    summary = run_summary_table(options.date)
-    subrun_list = extractsubruns(summary)
+
+    subrun_list = extractsubruns(run_summary)
     run_list = extractruns(subrun_list)
     # modifies run_list by adding the seq and parent info into runs
     seq_list = extractsequences(run_list)
