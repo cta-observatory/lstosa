@@ -23,6 +23,5 @@ conda develop .
 
 ### Further information
 
- - Docs: https://lstosa.readthedocs.io/ 
-   - Status ![build status](https://gitlab.cta-observatory.org/cta-array-elements/lst/analysis/lstosa/badges/master/pipeline.svg)
- - Check also the Wiki for more information
+ - Docs: https://lstosa.readthedocs.io/
+ - Check also the Wiki for more information (might be outdated)
