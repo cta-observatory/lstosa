@@ -28,3 +28,18 @@ def test_historylevel():
     level, rc = historylevel(datasequence_history_file, "DATA")
     assert level == 1
     assert rc == 0
+
+
+def test_createjobtemplate(sequence_list):
+    from osa.jobs.job import createjobtemplate
+
+    options.simulate = True
+    for sequence in sequence_list:
+        createjobtemplate(sequence)
+
+
+def test_preparejobs(sequence_list):
+    from osa.jobs.job import preparejobs
+
+    options.simulate = True
+    preparejobs(sequence_list)
