@@ -112,13 +112,14 @@ def finished_assignments(sequence_list):
     rawnum = 0
     if options.tel_id == "LST1":
         concept_set = [
-            "DL1",
-            "DL2",
-            "MUON",
-            "DATACHECK",
             "PEDESTAL",
             "CALIB",
             "TIMECALIB",
+            "DL1",
+            "DL1AB"
+            "MUON",
+            "DATACHECK",
+            "DL2"
         ]
         rawdir = getrawdir()
         if sequence_list is not None:
