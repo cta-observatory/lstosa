@@ -26,15 +26,15 @@ from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_need
 from osa.utils.logging import MyFormatter
 from osa.utils.standardhandle import gettag
 from osa.utils.utils import is_day_closed
-from osa.veto.veto import getvetolist, getclosedlist
+from osa.veto.veto import getclosedlist, getvetolist
 
 __all__ = [
-    'single_process',
-    'stereo_process',
-    'update_sequence_status',
-    'get_status_for_sequence',
-    'prettyoutputmatrix',
-    'reportsequences'
+    "single_process",
+    "stereo_process",
+    "update_sequence_status",
+    "get_status_for_sequence",
+    "prettyoutputmatrix",
+    "reportsequences",
 ]
 
 log = logging.getLogger(__name__)
@@ -115,7 +115,7 @@ def single_process(telescope, process_mode):
             options.nightsummary = True
             options.simulate = True
             is_report_needed = False
-    
+
     # building the sequences
     summary_table = run_summary_table(options.date)
     subrun_list = extractsubruns(summary_table)
@@ -212,7 +212,9 @@ def update_sequence_status(seq_list):
             )
         elif seq.type == "DATA":
             seq.dl1status = int(Decimal(get_status_for_sequence(seq, "DL1") * 100) / seq.subruns)
-            seq.dl1abstatus = int(Decimal(get_status_for_sequence(seq, "DL1AB") * 100) / seq.subruns)
+            seq.dl1abstatus = int(
+                Decimal(get_status_for_sequence(seq, "DL1AB") * 100) / seq.subruns
+            )
             seq.datacheckstatus = int(
                 Decimal(get_status_for_sequence(seq, "DATACHECK") * 100) / seq.subruns
             )
@@ -246,7 +248,9 @@ def get_status_for_sequence(sequence, program):
         # Search for files in the dl1ab subdirectory
         prefix = cfg.get("LSTOSA", program + "PREFIX")
         suffix = cfg.get("LSTOSA", program + "SUFFIX")
-        datacheck_subdirectory = os.path.join(options.directory, "datacheck" + "_" + options.dl1_prod_id)
+        datacheck_subdirectory = os.path.join(
+            options.directory, "datacheck" + "_" + options.dl1_prod_id
+        )
         files = glob(join(datacheck_subdirectory, f"{prefix}*{sequence.run}*{suffix}"))
 
     else:
