@@ -8,22 +8,20 @@ import re
 import subprocess
 import sys
 from filecmp import cmp
-from glob import glob
-import shutil
 from pathlib import Path
-from osa.utils.standardhandle import stringify
 
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.jobs.job import are_all_jobs_correctly_finished
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import get_runsummary_file, run_summary_table
-from osa.rawcopy.raw import are_rawfiles_transferred, get_check_rawdir
+from osa.rawcopy.raw import get_check_rawdir
 from osa.reports.report import finished_assignments, finished_text, start
 from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import MyFormatter
 from osa.utils.register import register_run_concept_files
 from osa.utils.standardhandle import gettag
+from osa.utils.standardhandle import stringify
 from osa.utils.utils import (
     getlockfile,
     is_day_closed,

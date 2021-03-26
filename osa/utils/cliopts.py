@@ -131,6 +131,12 @@ def closer_argparser():
         dest="seqtoclose",
         help="If you only want to close a certain sequence",
     )
+    parser.add_argument(
+        "--nodl2",
+        action="store_true",
+        default=False,
+        help="Do not produce DL2 files (default False)",
+    )
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
 
     return parser
@@ -154,6 +160,7 @@ def closercliparsing():
     options.reason = opts.reason
     options.seqtoclose = opts.seqtoclose
     options.tel_id = opts.tel_id
+    options.nodl2 = opts.nodl2
 
     log.debug(f"the options are {opts}")
 
