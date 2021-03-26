@@ -69,7 +69,9 @@ def read_args():
         except:
             # cannot generate nightsummary
             print(Usage())
-            sys.stderr.write(f"ERROR [{sys.argv[0]}]: Cannot find Nightsummary / RAW_dir. ({', '.join(sys.argv[1:])})\n")
+            sys.stderr.write(
+                f"ERROR [{sys.argv[0]}]: Cannot find Nightsummary / RAW_dir. ({', '.join(sys.argv[1:])})\n"
+            )
             sys.stderr.flush()
             sys.exit(1)
     else:
@@ -98,7 +100,9 @@ class Report:
         rep_path = rep_path.replace("_TEL_", TEL)
 
         # fill datetime
-        rep_path = rep_path.replace("_DATETIME_", basename[0:4] + "_" + basename[4:6] + "_" + basename[6:8])
+        rep_path = rep_path.replace(
+            "_DATETIME_", basename[0:4] + "_" + basename[4:6] + "_" + basename[6:8]
+        )
 
         # run report content
         self.run_rep_content = []
@@ -130,7 +134,9 @@ class Report:
             # (keep the last one if there are multiple choices)
             # print(" ".join([run.lstrip("0"),subrun.lstrip("0"),rtype]))
             check = " ".join([run.lstrip("0"), subrun.lstrip("0"), rtype])
-            selected_line = [ln.strip("\n") for ln in self.run_rep_content if check in ln][-1].split(" ")
+            selected_line = [ln.strip("\n") for ln in self.run_rep_content if check in ln][
+                -1
+            ].split(" ")
 
             self.zd = selected_line[9]
             self.az = selected_line[10]
@@ -183,7 +189,9 @@ class Report:
             rep_path = rep_path.replace("_TEL_", "LST2")
 
         # fill datetime
-        rep_path = rep_path.replace("_DATETIME_", basename[0:4] + "_" + basename[4:6] + "_" + basename[6:8])
+        rep_path = rep_path.replace(
+            "_DATETIME_", basename[0:4] + "_" + basename[4:6] + "_" + basename[6:8]
+        )
 
         self.rep_file = rep_path + basename.split(".raw")[0] + ".rep"
         if os.path.isfile(self.rep_file):
@@ -209,11 +217,39 @@ class Report:
             self.zd = -1
         else:
             # extract values
-            self.ra = drive_entry[18] + drive_entry[19] + ":" + drive_entry[20] + ":" + drive_entry[21][1:]
-            self.dec = drive_entry[22] + drive_entry[23] + ":" + drive_entry[24] + ":" + drive_entry[25][1:]
-            self.tcul = drive_entry[26] + drive_entry[27] + ":" + drive_entry[28] + ":" + drive_entry[29][1:]
+            self.ra = (
+                drive_entry[18]
+                + drive_entry[19]
+                + ":"
+                + drive_entry[20]
+                + ":"
+                + drive_entry[21][1:]
+            )
+            self.dec = (
+                drive_entry[22]
+                + drive_entry[23]
+                + ":"
+                + drive_entry[24]
+                + ":"
+                + drive_entry[25][1:]
+            )
+            self.tcul = (
+                drive_entry[26]
+                + drive_entry[27]
+                + ":"
+                + drive_entry[28]
+                + ":"
+                + drive_entry[29][1:]
+            )
             self.mjd = float(drive_entry[30])
-            self.zd = drive_entry[31] + drive_entry[32] + ":" + drive_entry[33] + ":" + drive_entry[33][1:]
+            self.zd = (
+                drive_entry[31]
+                + drive_entry[32]
+                + ":"
+                + drive_entry[33]
+                + ":"
+                + drive_entry[33][1:]
+            )
 
     def get_cc_report(self):
         try:
@@ -260,7 +296,9 @@ def main():
     istherearawgz = False
 
     if len(files) == 0:
-        sys.stderr.write(f"ERROR [{sys.argv[0]}]: No files with extension ({', '.join(suffix)}) found in directory {daqdir}\n")
+        sys.stderr.write(
+            f"ERROR [{sys.argv[0]}]: No files with extension ({', '.join(suffix)}) found in directory {daqdir}\n"
+        )
         sys.stderr.flush()
         sys.exit(1)
 
@@ -272,7 +310,9 @@ def main():
                 istherearawgz = True
 
             if istherearaw == True and istherearawgz == True:
-                sys.stderr.write(f"ERROR [{sys.argv[0]}]:Files with both extensions ({', '.join(suffix)}) found!\n")
+                sys.stderr.write(
+                    f"ERROR [{sys.argv[0]}]:Files with both extensions ({', '.join(suffix)}) found!\n"
+                )
                 sys.stderr.flush()
                 sys.exit(1)
 
