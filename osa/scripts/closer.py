@@ -132,8 +132,10 @@ def use_night_summary():
 
 
 def is_raw_data_available():
-    """Get the rawdir and check existence.
-    This means the raw directory could be empty !"""
+    """
+    Get the rawdir and check existence.
+    This means the raw directory could be empty!
+    """
 
     answer = False
     if options.tel_id != "ST":
@@ -285,7 +287,6 @@ def post_process_files(seq_list):
         log.debug(f"Checking if {concept} files need to be moved to {dir}")
         for file_path in output_files_set:
             file = str(file_path)
-            file_basename = os.path.basename(file)
             if concept == "DL1AB":
                 pattern_found = re.search(r'dl1ab(?:.*)/dl1*', file)
             else:
@@ -351,7 +352,7 @@ def post_process_files(seq_list):
                                     if options.seqtoclose is None and not os.path.exists(file):
                                         log.debug("File does not exists")
 
-                # FIXME: for the moment we do not want to close
+                # FIXME: for the moment we do not want to close to allow further reprocessings
                 # setclosedfilename(s)
                 # createclosed(s.closed)
                 delete_set.add(file)
@@ -394,28 +395,28 @@ def is_finished_check(nightsummary):
     # we ought to implement a method of successful or unsuccessful finishing
     # and it is done looking at the files
     sequence_success = False
-    if nightsummary == "":
-        # empty file (no sensible data)
-        sequence_success = True
-        sequence_list = []
-    else:
+    if nightsummary is not None:
         # building the sequences (the same way than the sequencer)
         subrun_list = extractsubruns(nightsummary)
         run_list = extractruns(subrun_list)
         sequence_list = extractsequences(run_list)
-        # adds the scripts to sequences
-        # job.preparejobs(sequence_list, run_list, subrun_list)
-        # FIXME: How can we check that all files are there?
-        if are_rawfiles_transferred():
-            log.debug(f"Are files transferred? {sequence_list}")
-            if are_all_jobs_correctly_finished(sequence_list):
-                sequence_success = True
-            else:
-                log.info(
-                    "All raw files are transferred but the jobs did not correctly/yet finish",
-                )
-        else:
-            log.info("More raw files are expected to appear")
+
+        # TODO: lines below could be used when sequencer is launched during datataking
+        #       for the moment they are not useful
+        # if are_rawfiles_transferred():
+        #     log.debug(f"Are files transferred? {sequence_list}")
+        #     if are_all_jobs_correctly_finished(sequence_list):
+        #         sequence_success = True
+        #     else:
+        #         log.info(
+        #             "All raw files are transferred but the jobs did not correctly/yet finish",
+        #         )
+        # else:
+        #     log.info("More raw files are expected to appear")
+    else:
+        # empty file (no sensible data)
+        sequence_success = True
+        sequence_list = []
     return [sequence_success, sequence_list]
 
 
