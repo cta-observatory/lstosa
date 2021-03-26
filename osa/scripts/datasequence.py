@@ -29,9 +29,7 @@ handler.setFormatter(fmt)
 logging.root.addHandler(handler)
 
 
-def datasequence(
-    calibrationfile, pedestalfile, time_calibration, drivefile, run_summary, run_str
-):
+def datasequence(calibrationfile, pedestalfile, time_calibration, drivefile, run_summary, run_str):
     """
     Performs all the steps to process a whole run
 
@@ -89,7 +87,9 @@ def datasequence(
 
 # FIXME: Parse all different arguments via config file or sequence_list.txt
 @trace
-def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_summary, run_str, historyfile):
+def r0_to_dl1(
+    calibrationfile, pedestalfile, time_calibration, drivefile, run_summary, run_str, historyfile
+):
     """
     Prepare and launch the actual lstchain script that is performing
     the low and high-level calibration to raw camera images.
@@ -199,7 +199,7 @@ def dl1ab(run_str, historyfile):
         "--input-file=" + input_dl1_datafile,
         "--output-file=" + output_dl1_datafile,
         "--pedestal-cleaning=True",
-        "--config=" + config_file
+        "--config=" + config_file,
     ]
 
     try:
@@ -259,7 +259,7 @@ def dl1_datacheck(run_str, historyfile):
         "--output-dir=" + output_directory,
         "--muons-dir=" + options.directory,
         "--omit-pdf",
-        "--batch"
+        "--batch",
     ]
 
     try:
@@ -342,7 +342,14 @@ def dl1_to_dl2(run_str, historyfile):
 
 if __name__ == "__main__":
     # set the arguments and options through cli parsing
-    drs4_ped_file, calib_file, time_calib_file, drive_log_file, run_summary_file, run_number = datasequencecliparsing()
+    (
+        drs4_ped_file,
+        calib_file,
+        time_calib_file,
+        drive_log_file,
+        run_summary_file,
+        run_number,
+    ) = datasequencecliparsing()
 
     if options.verbose:
         logging.root.setLevel(logging.DEBUG)
@@ -350,5 +357,7 @@ if __name__ == "__main__":
         logging.root.setLevel(logging.INFO)
 
     # run the routine
-    rc = datasequence(drs4_ped_file, calib_file, time_calib_file, drive_log_file, run_summary_file, run_number)
+    rc = datasequence(
+        drs4_ped_file, calib_file, time_calib_file, drive_log_file, run_summary_file, run_number
+    )
     sys.exit(rc)
