@@ -405,14 +405,16 @@ def is_finished_check(nightsummary):
         #       for the moment they are not useful
         # if are_rawfiles_transferred():
         #     log.debug(f"Are files transferred? {sequence_list}")
+        # else:
+        #     log.info("More raw files are expected to appear")
+
         if are_all_jobs_correctly_finished(sequence_list):
             sequence_success = True
         else:
             log.info(
                 "All raw files are transferred but the jobs did not correctly/yet finish",
             )
-        # else:
-        #     log.info("More raw files are expected to appear")
+
     else:
         # empty file (no sensible data)
         sequence_success = True
