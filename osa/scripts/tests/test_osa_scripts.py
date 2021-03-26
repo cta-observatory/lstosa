@@ -21,7 +21,7 @@ def test_all_help(script):
 
 
 def run_program(*args):
-    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding='utf-8')
+    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8")
 
     if result.returncode != 0:
         raise ValueError(
@@ -31,15 +31,11 @@ def run_program(*args):
 
 
 def test_sequencer():
-    run_program(
-        "sequencer", "-c", "cfg/sequencer_test.cfg", "-d", "2020_01_17", "-t", "-s", "LST1"
-    )
+    run_program("sequencer", "-c", "cfg/sequencer_test.cfg", "-d", "2020_01_17", "-t", "-s", "LST1")
 
 
 def test_closer():
-    run_program(
-        "closer", "-c", "cfg/sequencer_test.cfg", "-y", "-s", "-d", "2020_01_17", "LST1"
-    )
+    run_program("closer", "-c", "cfg/sequencer_test.cfg", "-y", "-s", "-d", "2020_01_17", "LST1")
 
 
 def test_datasequence(temp_dir):
@@ -55,15 +51,20 @@ def test_datasequence(temp_dir):
     analysis_dir.mkdir(parents=True, exist_ok=True)
 
     run_program(
-        "python", "osa/scripts/datasequence.py",
-        "-c", "cfg/sequencer_test.cfg",
-        "-d", "2020_01_17", "-s",
-        "--prod-id", prod_id,
+        "python",
+        "osa/scripts/datasequence.py",
+        "-c",
+        "cfg/sequencer_test.cfg",
+        "-d",
+        "2020_01_17",
+        "-s",
+        "--prod-id",
+        prod_id,
         drs4_file,
         calib_file,
         timecalib_file,
         drive_file,
         runsummary_file,
         run_number,
-        "LST1"
+        "LST1",
     )
