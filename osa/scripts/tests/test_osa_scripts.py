@@ -68,3 +68,10 @@ def test_datasequence(temp_dir):
         run_number,
         "LST1",
     )
+
+
+def test_is_sequencer_successful(run_summary):
+    from osa.scripts.closer import is_sequencer_successful, is_finished_check
+
+    seq_tuple = is_finished_check(run_summary)
+    assert is_sequencer_successful(seq_tuple) is True
