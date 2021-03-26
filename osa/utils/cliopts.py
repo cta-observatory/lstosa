@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 from argparse import ArgumentParser
 from optparse import OptionParser
 
@@ -29,7 +29,7 @@ __all__ = [
     "set_default_date_if_needed",
     "set_default_directory_if_needed",
     "simprocparsing",
-    "stereosequencecliparsing"
+    "stereosequencecliparsing",
 ]
 
 log = logging.getLogger(__name__)
@@ -131,6 +131,12 @@ def closer_argparser():
         dest="seqtoclose",
         help="If you only want to close a certain sequence",
     )
+    parser.add_argument(
+        "--nodl2",
+        action="store_true",
+        default=False,
+        help="Do not produce DL2 files (default False)",
+    )
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
 
     return parser
@@ -154,6 +160,7 @@ def closercliparsing():
     options.reason = opts.reason
     options.seqtoclose = opts.seqtoclose
     options.tel_id = opts.tel_id
+    options.nodl2 = opts.nodl2
 
     log.debug(f"the options are {opts}")
 
@@ -257,6 +264,7 @@ def calibrationsequence_argparser():
     parser.add_argument("caloutfile", help="Full path of the calibration file to be created")
     parser.add_argument("calib_run_number", help="Calibration run number")
     parser.add_argument("ped_run_number", help="DRS4 pedestal run number")
+    parser.add_argument("run_summary_file", help="Run summary file")
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
 
     return parser
@@ -286,7 +294,13 @@ def calibrationsequencecliparsing():
         options.calib_prod_id = get_calib_prod_id()
     else:
         options.calib_prod_id = options.prod_id
-    return opts.pedoutfile, opts.caloutfile, opts.calib_run_number, opts.ped_run_number
+    return (
+        opts.pedoutfile,
+        opts.caloutfile,
+        opts.calib_run_number,
+        opts.ped_run_number,
+        opts.run_summary_file,
+    )
 
 
 def datasequence_argparser():
@@ -368,20 +382,19 @@ def datasequence_argparser():
         dest="prod_id",
         help="Set the prod ID to define data directories",
     )
+    parser.add_argument(
+        "--nodl2",
+        action="store_true",
+        default=False,
+        help="Do not produce DL2 files (default False)",
+    )
     parser.add_argument("drs4_ped_file", help="Path of the DRS4 pedestal file")
     parser.add_argument("calib_file", help="Path of the calibration file")
     parser.add_argument("time_calib_file", help="Path of the time calibration file")
     parser.add_argument("drive_log_file", help="Path of drive log file with pointing information")
-    parser.add_argument("ucts_t0_dragon", help="UCTS timestamp in nsecs, unix format and TAI scale of the \
-                          first event of the run with valid timestamp")
-    parser.add_argument("dragon_counter0", help="Dragon counter (pps + 10MHz) in nsecs corresponding \
-                          to the first reliable UCTS of the run. To be provided \
-                          along with ucts_t0_dragon")
-    parser.add_argument("ucts_t0_tib", help="UCTS timestamp in nsecs, unix format and TAI scale of the \
-                          first event of the run with valid timestamp")
-    parser.add_argument("tib_counter", help="First valid TIB counter (pps + 10MHz) in nsecs corresponding \
-                          to the first reliable UCTS of the run when TIB is available. \
-                          To be provided along with ucts_t0_tib")
+    parser.add_argument(
+        "run_summary_file", help="Path of run summary file with time reference information"
+    )
     parser.add_argument("run_number", help="Number of the run to be processed")
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
     return parser
@@ -403,6 +416,7 @@ def datasequencecliparsing():
     options.compressed = opts.compressed
     options.simulate = opts.simulate
     options.prod_id = opts.prod_id
+    options.nodl2 = opts.nodl2
     options.tel_id = opts.tel_id
 
     log.debug(f"The options and arguments are {opts}")
@@ -429,9 +443,12 @@ def datasequencecliparsing():
     options.lstchain_version = get_lstchain_version()
 
     return (
-        opts.drs4_ped_file, opts.calib_file, opts.time_calib_file, opts.drive_log_file,
-        opts.ucts_t0_dragon, opts.dragon_counter0, opts.ucts_t0_tib, opts.tib_counter,
-        opts.run_number
+        opts.drs4_ped_file,
+        opts.calib_file,
+        opts.time_calib_file,
+        opts.drive_log_file,
+        opts.run_summary_file,
+        opts.run_number,
     )
 
 
@@ -598,7 +615,14 @@ def sequencer_argparser():
         action="store_true",
         dest="nocalib",
         default=False,
-        help="Skip calibration sequence. Run only data sequences",
+        help="Skip calibration sequence. Run data sequences assuming calib "
+        "products already produced (default False)",
+    )
+    parser.add_argument(
+        "--nodl2",
+        action="store_true",
+        default=False,
+        help="Do not produce DL2 files (default False)",
     )
     parser.add_argument(
         "-v",
@@ -662,6 +686,7 @@ def sequencercliparsing():
     options.simulate = opts.simulate
     options.test = opts.test
     options.nocalib = opts.nocalib
+    options.nodl2 = opts.nodl2
     options.verbose = opts.verbose
     options.warning = opts.warning
     options.compressed = opts.compressed
@@ -673,6 +698,23 @@ def sequencercliparsing():
     # set the default value for mode
     if not opts.mode:
         options.mode = "P"
+
+    options.prod_id = get_prod_id()
+
+    if cfg.get("LST1", "CALIB-PROD-ID") is not None:
+        options.calib_prod_id = get_calib_prod_id()
+    else:
+        options.calib_prod_id = options.prod_id
+
+    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+        options.dl1_prod_id = get_dl1_prod_id()
+    else:
+        options.dl1_prod_id = options.prod_id
+
+    if cfg.get("LST1", "DL2-PROD-ID") is not None:
+        options.dl2_prod_id = get_dl2_prod_id()
+    else:
+        options.dl2_prod_id = options.prod_id
 
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
@@ -848,7 +890,9 @@ def simproc_argparser():
         default="cfg/sequencer.cfg",
         help="use specific config file [default cfg/sequencer.cfg]",
     )
-    parser.add_argument("-p", action="store_true", dest="provenance", help="produce provenance files")
+    parser.add_argument(
+        "-p", action="store_true", dest="provenance", help="produce provenance files"
+    )
     parser.add_argument(
         "--force",
         action="store_true",

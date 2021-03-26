@@ -1,6 +1,6 @@
+import glob
 import logging
 import os
-import glob
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -15,7 +15,7 @@ __all__ = [
     "getclosedlist",
     "setvetoaction",
     "setclosedaction",
-    "updatevetos"
+    "updatevetos",
 ]
 
 
@@ -67,7 +67,9 @@ def getvetolist(sequence_list):
 
     """
     updatevetos(sequence_list)
-    veto_ls = glob.glob(os.path.join(options.directory, "*{0}".format(cfg.get("LSTOSA", "VETOSUFFIX"))))
+    veto_ls = glob.glob(
+        os.path.join(options.directory, "*{0}".format(cfg.get("LSTOSA", "VETOSUFFIX")))
+    )
     veto_list = []
     for i in veto_ls:
         # we extract the job name
@@ -183,7 +185,9 @@ def getclosedlist(sequence_list):
     -------
 
     """
-    closed_ls = glob.glob(os.path.join(options.directory, "*{0}".format(cfg.get("LSTOSA", "CLOSEDSUFFIX"))))
+    closed_ls = glob.glob(
+        os.path.join(options.directory, "*{0}".format(cfg.get("LSTOSA", "CLOSEDSUFFIX")))
+    )
     closed_list = []
     for i in closed_ls:
         # we extract the job name

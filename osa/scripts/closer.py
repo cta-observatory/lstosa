@@ -8,26 +8,20 @@ import re
 import subprocess
 import sys
 from filecmp import cmp
-from glob import glob
+from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.jobs.job import are_all_jobs_correctly_finished
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import get_runsummary_file, run_summary_table
-from osa.rawcopy.raw import are_rawfiles_transferred, get_check_rawdir
+from osa.rawcopy.raw import get_check_rawdir
 from osa.reports.report import finished_assignments, finished_text, start
 from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import MyFormatter
 from osa.utils.register import register_run_concept_files
-from osa.utils.standardhandle import gettag
-from osa.utils.utils import (
-    getlockfile,
-    is_day_closed,
-    is_defined,
-    lstdate_to_dir,
-    make_directory,
-)
+from osa.utils.standardhandle import gettag, stringify
+from osa.utils.utils import getlockfile, is_day_closed, is_defined, lstdate_to_dir, make_directory
 
 __all__ = [
     "use_night_summary",
@@ -42,7 +36,7 @@ __all__ = [
     "is_finished_check",
     "extract_provenance",
     "merge_dl1datacheck",
-    "set_closed_with_file"
+    "set_closed_with_file",
 ]
 
 log = logging.getLogger(__name__)
@@ -129,8 +123,10 @@ def use_night_summary():
 
 
 def is_raw_data_available():
-    """Get the rawdir and check existence.
-    This means the raw directory could be empty !"""
+    """
+    Get the rawdir and check existence.
+    This means the raw directory could be empty!
+    """
 
     answer = False
     if options.tel_id != "ST":
@@ -245,7 +241,7 @@ def post_process_files(seq_list):
     concept_set = []
     if options.tel_id == "LST1":
         concept_set = [
-            "DL1",
+            "DL1AB",
             "DL2",
             "MUON",
             "DATACHECK",
@@ -253,38 +249,57 @@ def post_process_files(seq_list):
             "CALIB",
             "TIMECALIB",
         ]
-    elif options.tel_id == "ST":
-        concept_set = []
 
     nightdir = lstdate_to_dir(options.date)
-    output_files = glob(os.path.join(options.directory, "*Run*"))
+    output_files = Path(options.directory).rglob("*Run*")
     output_files_set = set(output_files)
+
+    # TODO: use instead the lstchain.paths.DL1_RE, DC_DL1_RE, etc
+
     for concept in concept_set:
         log.info(f"Processing {concept} files, {len(output_files_set)} files left")
-        if cfg.get("LSTOSA", concept + "PREFIX"):
+        try:
             pattern = cfg.get("LSTOSA", concept + "PREFIX")
-        else:
-            pattern = cfg.get("LSTOSA", concept + "PATTERN")
+        except KeyError as error:
+            log.error(f"No prefix found for {concept}. Please add it to the cfg: {error}")
+            sys.exit(1)
 
         # Create final destination directory for each data level
-        if concept in ["DL1", "MUON", "DATACHECK"]:
-            dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl1_prod_id)
+        if concept in ["MUON"]:
+            dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id)
+        elif concept in ["DL1AB", "DATACHECK"]:
+            dir = os.path.join(
+                cfg.get(options.tel_id, concept + "DIR"),
+                nightdir,
+                options.prod_id,
+                options.dl1_prod_id,
+            )
         elif concept == "DL2":
-            dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id)
+            dir = os.path.join(
+                cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id
+            )
         elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-            dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id)
+            dir = os.path.join(
+                cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id
+            )
 
         delete_set = set()
         log.debug(f"Checking if {concept} files need to be moved to {dir}")
-        for file in output_files_set:
-            file_basename = os.path.basename(file)
-            pattern_found = re.search(f"^{pattern}", file_basename)
+        for file_path in output_files_set:
+            file = str(file_path)
+            if concept == "DL1AB":
+                pattern_found = re.search(r"dl1ab(?:.*)/dl1*", file)
+            else:
+                pattern_found = re.search(pattern, file)
+            log.debug(f"Pattern {concept} found, {pattern_found}")
+
             if options.seqtoclose is not None:
-                seqtoclose_found = re.search(options.seqtoclose, file_basename)
+                seqtoclose_found = re.search(options.seqtoclose, file)
                 if seqtoclose_found is None:
                     pattern_found = None
             if pattern_found is not None:
-                new_dst = os.path.join(dir, file_basename)
+                new_dst = os.path.join(dir, file)
+                log.debug(f"New file path {new_dst}")
                 if not options.simulate:
                     make_directory(dir)
                     if os.path.exists(new_dst):
@@ -301,7 +316,7 @@ def post_process_files(seq_list):
                                 log.debug(f"Deleting {file}")
                                 # unlink(file)
                         else:
-                            log.warning(
+                            log.debug(
                                 f"Original file {file} is not a link or is different than destination {new_dst}"
                             )
                     else:
@@ -310,7 +325,7 @@ def post_process_files(seq_list):
                             log.debug(f"Looking for {s}")
 
                             if s.type == "DATA":
-                                run_str_found = re.search(s.run_str, file_basename)
+                                run_str_found = re.search(s.run_str, file)
 
                                 if run_str_found is not None:
                                     # register and delete
@@ -320,8 +335,8 @@ def post_process_files(seq_list):
                                         log.debug("File does not exists")
 
                             elif s.type in ["PEDCALIB", "DRS4"]:
-                                calib_run_str_found = re.search(str(s.run), file_basename)
-                                drs4_run_str_found = re.search(str(s.previousrun), file_basename)
+                                calib_run_str_found = re.search(str(s.run), file)
+                                drs4_run_str_found = re.search(str(s.previousrun), file)
 
                                 if calib_run_str_found is not None:
                                     # register and delete
@@ -337,7 +352,7 @@ def post_process_files(seq_list):
                                     if options.seqtoclose is None and not os.path.exists(file):
                                         log.debug("File does not exists")
 
-                # FIXME: for the moment we do not want to close
+                # FIXME: for the moment we do not want to close to allow further reprocessings
                 # setclosedfilename(s)
                 # createclosed(s.closed)
                 delete_set.add(file)
@@ -380,28 +395,28 @@ def is_finished_check(nightsummary):
     # we ought to implement a method of successful or unsuccessful finishing
     # and it is done looking at the files
     sequence_success = False
-    if nightsummary == "":
-        # empty file (no sensible data)
-        sequence_success = True
-        sequence_list = []
-    else:
+    if nightsummary is not None:
         # building the sequences (the same way than the sequencer)
         subrun_list = extractsubruns(nightsummary)
         run_list = extractruns(subrun_list)
         sequence_list = extractsequences(run_list)
-        # adds the scripts to sequences
-        # job.preparejobs(sequence_list, run_list, subrun_list)
-        # FIXME: How can we check that all files are there?
-        if are_rawfiles_transferred():
-            log.debug(f"Are files transferred? {sequence_list}")
-            if are_all_jobs_correctly_finished(sequence_list):
-                sequence_success = True
-            else:
-                log.info(
-                    "All raw files are transferred but the jobs did not correctly/yet finish",
-                )
+
+        # TODO: lines below could be used when sequencer is launched during datataking
+        #       for the moment they are not useful
+        # if are_rawfiles_transferred():
+        #     log.debug(f"Are files transferred? {sequence_list}")
+        if are_all_jobs_correctly_finished(sequence_list):
+            sequence_success = True
         else:
-            log.info("More raw files are expected to appear")
+            log.info(
+                "All raw files are transferred but the jobs did not correctly/yet finish",
+            )
+        # else:
+        #     log.info("More raw files are expected to appear")
+    else:
+        # empty file (no sensible data)
+        sequence_success = True
+        sequence_list = []
     return [sequence_success, sequence_list]
 
 
@@ -455,13 +470,16 @@ def merge_dl1datacheck(seq_list):
 
     log.debug("Merging dl1 datacheck files and producing PDFs")
     nightdir = lstdate_to_dir(options.date)
-    dl1_directory = os.path.join(cfg.get("LST1", "DL1DIR"), nightdir, options.prod_id)
+    # Inside DL1 directory there are different subdirectories for each cleaning level.
+    # Muons fits files are in the base dl1 directory whereas the dl1 and datacheck files
+    # are in the corresponding subdirectory for each cleaning level.
+    dl1_base_directory = os.path.join(cfg.get("LST1", "DL1DIR"), nightdir, options.prod_id)
+    dl1_prod_id_directory = os.path.join(dl1_base_directory, options.dl1_prod_id)
 
     for sequence in seq_list:
         if sequence.type == "DATA":
             cmd = [
                 "sbatch",
-                "--parsable",
                 "-D",
                 options.directory,
                 "-o",
@@ -469,8 +487,9 @@ def merge_dl1datacheck(seq_list):
                 "-e",
                 f"log/slurm_mergedl1datacheck_{str(sequence.run).zfill(5)}_%j.err",
                 "lstchain_check_dl1",
-                f"--input-file={dl1_directory}/datacheck_dl1_LST-1.Run0{sequence.run}.*.h5",
-                f"--output-dir={dl1_directory}",
+                f"--input-file={dl1_prod_id_directory}/datacheck_dl1_LST-1.Run0{sequence.run}.*.h5",
+                f"--output-dir={dl1_prod_id_directory}",
+                f"--muons-dir={dl1_base_directory}",
             ]
             if not options.simulate:
                 try:
@@ -478,22 +497,26 @@ def merge_dl1datacheck(seq_list):
                 except subprocess.CalledProcessError as err:
                     log.exception(f"Not able to merge DL1 datacheck: {err}")
                 # TODO implement an automatic scp to www datacheck,
-                # right after the production of the PDF files
+                # right after the production of the PDF files.
+                # Right now there is no connection opened from cps
+                # to the datacheck webserver. Hence it has to be done without
+                # slurm and after assuring that the files are already produced.
             else:
                 log.debug("Simulate launching scripts")
-            log.debug(cmd)
+            log.debug(f"{stringify(cmd)}")
 
 
 def extract_provenance(seq_list):
     """
-    Extract provenance run-wise from the prov.log file
+    Extract provenance run wise from the prov.log file
+    where it was stored sub-run wise
 
     Parameters
     ----------
     seq_list: list of sequence objects
         List of Sequence Objects
     """
-    log.debug("Extract provenance run-wise")
+    log.debug("Extract provenance run wise")
 
     nightdir = lstdate_to_dir(options.date)
 
@@ -516,7 +539,7 @@ def extract_provenance(seq_list):
                 subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
             else:
                 log.debug("Simulate launching scripts")
-            log.debug(cmd)
+            log.debug(f"{stringify(cmd)}")
 
 
 if __name__ == "__main__":

@@ -2,12 +2,12 @@
 Functions to handle the job submission using SLURM
 """
 
-import datetime
 import logging
 import os
 import subprocess
+import sys
 import time
-from itertools import chain, islice, tee
+from glob import glob
 
 import pandas as pd
 
@@ -15,7 +15,7 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.iofile import readfromfile, writetofile
 from osa.utils.standardhandle import stringify
-from osa.utils.utils import lstdate_to_dir, date_in_yymmdd, time_to_seconds
+from osa.utils.utils import date_in_yymmdd, lstdate_to_dir, time_to_seconds
 
 log = logging.getLogger(__name__)
 
@@ -32,36 +32,63 @@ def are_all_jobs_correctly_finished(seqlist):
 
     """
     flag = True
-    for s in seqlist:
-        out, rc = historylevel(s.history, s.type)
-        if out == 0:
-            log.debug(f"Job {s.seq} correctly finished")
-            continue
-        else:
-            log.debug(f"Job {s.seq} not correctly/completely finished [{out}]")
-            flag = False
+    for s in seqlist:  # Run wise
+        history_files_list = glob(rf"{options.directory}/*{s.run}*.history")  # Subrun wise
+        for history_file in history_files_list:
+            # TODO: s.history should be SubRunObj attribute not RunObj
+            # s.history only working for CALIBRATION sequence (run-wise), since it is
+            # looking for .../sequence_LST1_04180.history files
+            # we need to check all the subrun wise history files
+            # .../sequence_LST1_04180.XXXX.history
+            out, rc = historylevel(history_file, s.type)
+            if out == 0:
+                log.debug(f"Job {s.seq} ({s.type}) correctly finished")
+                continue
+            elif out == 1 and options.nodl2:
+                log.debug(
+                    f"Job {s.seq} ({s.type}) correctly finished up to DL1ab, but noDL2 option selected"
+                )
+                continue
+            else:
+                log.debug(
+                    f"Job {s.seq} (run {s.run}) not correctly/completely finished [level {out}]"
+                )
+                flag = False
     return flag
 
 
-def historylevel(historyfile, type):
+def historylevel(historyfile, data_type):
     """
     Returns the level from which the analysis should begin and
-    the rc of the last executable given a certain history file
+    the rc of the last executable given a certain history file.
+    For CALIBRATION sequences:
+        - DRS4->time calib is level 3->2
+        - time calib->charge calib is level 2->1
+        - charge calib 1->0 (sequence completed)
+    For DATA sequences:
+        - R0->DL1 is level 4->3
+        - DL1->DL1AB is level 3->2
+        - DATACHECK is level 2->1
+        - DL1->DL2 is level 1->0 (sequence completed)
 
     Parameters
     ----------
     historyfile
-    type
+    data_type: str
+        Either 'DATA' or 'CALIBRATION'
 
     Returns
     -------
 
     """
-    level = 3
+    if data_type == "DATA":
+        level = 4
+    elif data_type == "CALIBRATION":
+        level = 3
+    else:
+        log.error("Type not expected")
+        sys.exit(1)
     exit_status = 0
-    if type == "PEDESTAL":
-        # FIXME: Remove, it's deprecated
-        level -= 2
     if os.path.exists(historyfile):
         for line in readfromfile(historyfile).splitlines():
             # FIXME: create a dict with the program, exit status and prod id to take into account
@@ -73,26 +100,38 @@ def historylevel(historyfile, type):
                 exit_status = int(words[-1])
                 log.debug(f"{program}, finished with error {exit_status} and prod ID {prod_id}")
             except IndexError as err:
-                log.exception(f"Malformed history file {historyfile}, {err}", 3)
+                log.exception(f"Malformed history file {historyfile}, {err}")
             except ValueError as err:
-                log.exception(f"Malformed history file {historyfile}, {err}", 3)
+                log.exception(f"Malformed history file {historyfile}, {err}")
             else:
                 if program == cfg.get("LSTOSA", "R0-DL1"):
                     nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
-                    level = 2 if exit_status in nonfatalrcs else 3
+                    level = 3 if exit_status in nonfatalrcs else 4
+                elif program == "lstchain_dl1ab":
+                    nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
+                    if (exit_status in nonfatalrcs) and (prod_id == options.dl1_prod_id):
+                        log.debug(f"DL1ab prod ID: {options.dl1_prod_id} already produced")
+                        level = 2
+                    else:
+                        level = 3
+                        log.debug(f"DL1ab prod ID: {options.dl1_prod_id} not produced yet")
+                        break
+                elif program == "lstchain_check_dl1":
+                    nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
+                    level = 1 if exit_status in nonfatalrcs else 2
                 elif program == cfg.get("LSTOSA", "DL1-DL2"):
                     nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "DL1-DL2").split(",")]
                     if (exit_status in nonfatalrcs) and (prod_id == options.dl2_prod_id):
                         log.debug(f"DL2 prod ID: {options.dl2_prod_id} already produced")
                         level = 0
                     else:
-                        level = 2
+                        level = 1
                         log.debug(f"DL2 prod ID: {options.dl2_prod_id} not produced yet")
                 elif program == "drs4_pedestal":
                     level = 2 if exit_status == 0 else 3
-                elif program == "charge_calibration":
-                    level = 1 if exit_status == 0 else 2
                 elif program == "time_calibration":
+                    level = 1 if exit_status == 0 else 2
+                elif program == "charge_calibration":
                     level = 0 if exit_status == 0 else 1
                 else:
                     log.error(f"Programme name not identified {program}")
@@ -289,6 +328,8 @@ def createjobtemplate(s, get_content=False):
         commandargs.append(os.path.join(bindir, guesscorrectinputcard(s)))
     if options.compressed:
         commandargs.append("-z")
+    if s.type == "DATA" and options.nodl2:
+        commandargs.append("--nodl2")
 
     commandargs.append("-d")
     commandargs.append(options.date)
@@ -302,6 +343,7 @@ def createjobtemplate(s, get_content=False):
         cal_run_number = str(s.run).zfill(5)
         commandargs.append(ped_run_number)
         commandargs.append(cal_run_number)
+        commandargs.append(os.path.join(run_summary_dir, f"RunSummary_{nightdir}.ecsv"))
 
     if s.type == "DATA":
         commandargs.append(os.path.join(options.directory, s.calibration))
@@ -311,10 +353,9 @@ def createjobtemplate(s, get_content=False):
         commandargs.append(os.path.join(run_summary_dir, f"RunSummary_{nightdir}.ecsv"))
 
     for sub in s.subrun_list:
-        # FIXME: This is getting the last subrun starting from 0 
+        # FIXME: This is getting the last subrun starting from 0
         # We should get this parameter differently.
         n_subruns = int(sub.subrun)
-
 
     # Build the content of the sequencerXX.py script
     content = "#!/bin/env python\n"
@@ -337,31 +378,39 @@ def createjobtemplate(s, get_content=False):
 
     content += "import subprocess \n"
     content += "import sys, os \n"
+    content += "import tempfile \n"
     content += "\n\n"
 
-    content += "subruns=os.getenv('SLURM_ARRAY_TASK_ID')\n"
-    content += "job_id=os.getenv('SLURM_JOB_ID')\n"
+    if not options.test:
+        content += "subruns = os.getenv('SLURM_ARRAY_TASK_ID')\n"
+        content += "job_id = os.getenv('SLURM_JOB_ID')\n"
+    else:
+        content += "subruns = 0\n"
 
-    content += "proc = subprocess.run([\n"
+    content += "with tempfile.TemporaryDirectory() as tmpdirname:\n"
+    content += "    os.environ['NUMBA_CACHE_DIR'] = tmpdirname\n"
+
+    content += "    proc = subprocess.run([\n"
     for i in commandargs:
-        content += f"    '{i}',\n"
-    content += (
-        f"    '--stderr=log/sequence_{s.jobname}."
-        + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)), \n"
-    )
-    content += (
-        f"    '--stdout=log/sequence_{s.jobname}."
-        + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)), \n"
-    )
+        content += f"        '{i}',\n"
+    if not options.test:
+        content += (
+            f"        '--stderr=log/sequence_{s.jobname}."
+            + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)), \n"
+        )
+        content += (
+            f"        '--stdout=log/sequence_{s.jobname}."
+            + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)), \n"
+        )
     if s.type == "DATA":
         content += (
-            "    '{0}".format(str(s.run).zfill(5))
+            "        '{0}".format(str(s.run).zfill(5))
             + ".{0}'"
             + ".format(str(subruns).zfill(4))"
             + ",\n"
         )
-    content += f"    '{options.tel_id}'\n"
-    content += "    ])\n"
+    content += f"        '{options.tel_id}'\n"
+    content += "        ])\n"
 
     content += "sys.exit(proc.returncode)"
 
@@ -452,9 +501,12 @@ def submitjobs(sequence_list):
             #        job_list.append(s.jobid)
             #        log.debug("{0} {1}".format(s.action, stringify(commandargs)))
             commandargs.append(s.script)
-            if options.simulate or options.test:
+            if options.simulate:
                 log.debug("SIMULATE Launching scripts")
-
+            elif options.test:
+                log.debug("Test launching datasequence scripts for first subrun without sbatch")
+                commandargs = ["python", s.script]
+                subprocess.check_output(commandargs)
             else:
                 try:
                     log.debug(f"Launching script {s.script}")
@@ -493,7 +545,12 @@ def getqueuejoblist(sequence_list):
         log.exception(f"Command '{stringify(commandargs)}' failed, {Error}")
     else:
         queue_header = sacct_output.splitlines()[0].split()
-        queue_lines = sacct_output.replace("+", "").replace("sequence_", "").replace(".py", "").splitlines()[2:]
+        queue_lines = (
+            sacct_output.replace("+", "")
+            .replace("sequence_", "")
+            .replace(".py", "")
+            .splitlines()[2:]
+        )
         queue_sequences = [line.split() for line in queue_lines if "batch" not in line]
         queue_list = [dict(zip(queue_header, sequence)) for sequence in queue_sequences]
         setqueuevalues(queue_list, sequence_list)
@@ -524,7 +581,9 @@ def setqueuevalues(queue_list, sequence_list):
             try:
                 s.jobid = max(df_jobname["JobID"])  # Get latest JobID
                 df_jobid_filtered = df_jobname[df_jobname["JobID"] == s.jobid]
-                s.cputime = time.strftime("%H:%M:%S", time.gmtime(df_jobid_filtered["DeltaTime"].median()))
+                s.cputime = time.strftime(
+                    "%H:%M:%S", time.gmtime(df_jobid_filtered["DeltaTime"].median())
+                )
                 if (df_jobid_filtered.State.values == "COMPLETED").all():
                     s.state = "COMPLETED"
                     s.exit = df_jobid_filtered["ExitCode"].iloc[0]
@@ -533,10 +592,17 @@ def setqueuevalues(queue_list, sequence_list):
                     s.exit = None
                 elif (df_jobid_filtered.State.values == "FAILED").any():
                     s.state = "FAILED"
-                    s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "FAILED"]["ExitCode"].iloc[0]
+                    s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "FAILED"][
+                        "ExitCode"
+                    ].iloc[0]
                 elif (df_jobid_filtered.State.values == "CANCELLED").any():
                     s.state = "CANCELLED"
-                    s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "CANCELLED"]["ExitCode"].iloc[0]
+                    s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "CANCELLED"][
+                        "ExitCode"
+                    ].iloc[0]
+                elif (df_jobid_filtered.State.values == "TIMEOUT").any():
+                    s.state = "TIMEOUT"
+                    s.exit = "0:15"
                 else:
                     s.state = "RUNNING"
                     s.exit = None
@@ -548,4 +614,3 @@ def setqueuevalues(queue_list, sequence_list):
                 log.debug(f"Queue attributes for sequence {s.seq} not present in sacct output.")
     else:
         log.debug("No jobs reported in sacct queue.")
-

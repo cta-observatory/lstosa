@@ -463,4 +463,3 @@ def date_in_yymmdd(datestring):
     mm = "".join(date[4:6])
     dd = "".join(date[6:8])
     return f"{yy}_{mm}_{dd}"
-

@@ -20,21 +20,21 @@ from osa.nightsummary.extract import (
     extractsequencesstereo,
     extractsubruns,
 )
-from osa.nightsummary.nightsummary import get_runsummary_file, run_summary_table
+from osa.nightsummary.nightsummary import run_summary_table
 from osa.reports.report import rule, start
 from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_needed
 from osa.utils.logging import MyFormatter
 from osa.utils.standardhandle import gettag
 from osa.utils.utils import is_day_closed
-from osa.veto.veto import getvetolist, getclosedlist
+from osa.veto.veto import getclosedlist, getvetolist
 
 __all__ = [
-    'single_process',
-    'stereo_process',
-    'update_sequence_status',
-    'get_status_for_sequence',
-    'prettyoutputmatrix',
-    'reportsequences'
+    "single_process",
+    "stereo_process",
+    "update_sequence_status",
+    "get_status_for_sequence",
+    "prettyoutputmatrix",
+    "reportsequences",
 ]
 
 log = logging.getLogger(__name__)
@@ -115,7 +115,7 @@ def single_process(telescope, process_mode):
             options.nightsummary = True
             options.simulate = True
             is_report_needed = False
-    
+
     # building the sequences
     summary_table = run_summary_table(options.date)
     subrun_list = extractsubruns(summary_table)
@@ -212,6 +212,9 @@ def update_sequence_status(seq_list):
             )
         elif seq.type == "DATA":
             seq.dl1status = int(Decimal(get_status_for_sequence(seq, "DL1") * 100) / seq.subruns)
+            seq.dl1abstatus = int(
+                Decimal(get_status_for_sequence(seq, "DL1AB") * 100) / seq.subruns
+            )
             seq.datacheckstatus = int(
                 Decimal(get_status_for_sequence(seq, "DATACHECK") * 100) / seq.subruns
             )
@@ -227,16 +230,33 @@ def get_status_for_sequence(sequence, program):
     ----------
     sequence
     program : str
-        Options: 'CALIB', 'DL1', 'DATACHECK', 'MUON' or 'DL2'
+        Options: 'CALIB', 'DL1', 'DL1AB', 'DATACHECK', 'MUON' or 'DL2'
 
     Returns
     -------
     number_of_files : int
 
     """
-    prefix = cfg.get("LSTOSA", program + "PREFIX")
-    suffix = cfg.get("LSTOSA", program + "SUFFIX")
-    files = glob(join(options.directory, f"{prefix}*{sequence.run}*{suffix}"))
+    if program == "DL1AB":
+        # Search for files in the dl1ab subdirectory
+        prefix = cfg.get("LSTOSA", "DL1PREFIX")
+        suffix = cfg.get("LSTOSA", "DL1SUFFIX")
+        dl1ab_subdirectory = os.path.join(options.directory, "dl1ab" + "_" + options.dl1_prod_id)
+        files = glob(join(dl1ab_subdirectory, f"{prefix}*{sequence.run}*{suffix}"))
+
+    elif program == "DATACHECK":
+        # Search for files in the dl1ab subdirectory
+        prefix = cfg.get("LSTOSA", program + "PREFIX")
+        suffix = cfg.get("LSTOSA", program + "SUFFIX")
+        datacheck_subdirectory = os.path.join(
+            options.directory, "datacheck" + "_" + options.dl1_prod_id
+        )
+        files = glob(join(datacheck_subdirectory, f"{prefix}*{sequence.run}*{suffix}"))
+
+    else:
+        prefix = cfg.get("LSTOSA", program + "PREFIX")
+        suffix = cfg.get("LSTOSA", program + "SUFFIX")
+        files = glob(join(options.directory, f"{prefix}*{sequence.run}*{suffix}"))
     number_of_files = len(files)
     log.debug(f"Found {number_of_files} {program} files for sequence name {sequence.jobname}")
     return number_of_files
@@ -272,8 +292,9 @@ def reportsequences(seqlist):
     ]
     if options.tel_id in ["LST1", "LST2"]:
         header.append("DL1%")
-        header.append("DATACHECK%")
         header.append("MUONS%")
+        header.append("DL1AB%")
+        header.append("DATACHECK%")
         header.append("DL2%")
 
     matrix.append(header)
@@ -296,16 +317,18 @@ def reportsequences(seqlist):
             s.walltime,
             s.exit,
         ]
-        if s.type == "PEDCALIB":
+        if s.type in ["DRS4", "PEDCALIB"]:
             # repeat None for every data level
+            row_list.append(None)
             row_list.append(None)
             row_list.append(None)
             row_list.append(None)
             row_list.append(None)
         elif s.type == "DATA":
             row_list.append(s.dl1status)
-            row_list.append(s.datacheckstatus)
             row_list.append(s.muonstatus)
+            row_list.append(s.dl1abstatus)
+            row_list.append(s.datacheckstatus)
             row_list.append(s.dl2status)
         matrix.append(row_list)
     padding = int(cfg.get("OUTPUT", "PADDING"))

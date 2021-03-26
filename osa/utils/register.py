@@ -4,6 +4,7 @@ import shutil
 from filecmp import cmp
 from glob import glob
 from os.path import basename, exists, join
+from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -24,7 +25,7 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
     prefix: prefix of the data file
     type : type of run for DB purposes
     """
-    file_list = glob(join(inputdir, f"{prefix}*{run_str}*{suffix}"))
+    file_list = Path(inputdir).rglob(f"{prefix}*{run_str}*{suffix}")
     log.debug(f"File list is {file_list}")
     # hostname = gethostname()
     # the default subrun index for most of the files
@@ -46,6 +47,9 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
             shutil.move(inputf, outputf)
             if prefix == "dl1_LST-1" and suffix == ".h5":
                 log.debug(f"Keeping DL1 symlink in {inputf}")
+                os.symlink(outputf, inputf)
+            if prefix == "muons_LST-1" and suffix == ".fits":
+                log.debug(f"Keeping muons file symlink in {inputf}")
                 os.symlink(outputf, inputf)
             # for the moment we are not interested in calculating the hash md5
             # md5sum = get_md5sum_and_copy(inputf, outputf)
@@ -102,20 +106,27 @@ def register_run_concept_files(run_string, concept):
     run_string
     concept
     """
-    inputdir = options.directory
+
     nightdir = lstdate_to_dir(options.date)
     if concept == "DL2":
+        inputdir = options.directory
+        outputdir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id)
+    elif concept in ["DL1", "MUON"]:
+        inputdir = options.directory
+        outputdir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id)
+    elif concept == "DL1AB":
+        inputdir = join(options.directory, "dl1ab" + "_" + options.dl1_prod_id)
         outputdir = join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id
+            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl1_prod_id
         )
-    elif concept in ["DL1", "DATACHECK", "MUON"]:
+    elif concept == "DATACHECK":
+        inputdir = join(options.directory, "datacheck" + "_" + options.dl1_prod_id)
         outputdir = join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl1_prod_id
+            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl1_prod_id
         )
     elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-        outputdir = join(
-                cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id
-        )
+        inputdir = options.directory
+        outputdir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id)
     type = cfg.get("LSTOSA", concept + "TYPE")
     prefix = cfg.get("LSTOSA", concept + "PREFIX")
     suffix = cfg.get("LSTOSA", concept + "SUFFIX")

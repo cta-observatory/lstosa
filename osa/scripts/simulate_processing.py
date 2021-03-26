@@ -24,7 +24,7 @@ __all__ = [
     "do_setup",
     "simulate_processing",
     "simulate_subrun_processing",
-    "tear_down"
+    "tear_down",
 ]
 
 CONFIG_FLAGS = {

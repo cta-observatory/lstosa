@@ -5,7 +5,6 @@ Custom formatter for the different logging levels.
 
 import logging
 
-
 DEFAULT_LOGGING_FORMAT = (
     "%(asctime)s %(levelname)s [%(name)s] (%(module)s.%(funcName)s): %(message)s"
 )
@@ -15,11 +14,12 @@ class MyFormatter(logging.Formatter):
     """
     Customize formatter of info logging level.
     """
+
     default_fmt = DEFAULT_LOGGING_FORMAT
     info_fmt = "%(message)s"
 
     def __init__(self):
-        super().__init__(fmt="%(levelname)d: %(message)s", datefmt=None, style='%')
+        super().__init__(fmt="%(levelname)d: %(message)s", datefmt=None, style="%")
 
     def format(self, record):
         """

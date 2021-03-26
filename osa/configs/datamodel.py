@@ -46,12 +46,12 @@ class SubrunObj(RunObj):
         self.timestamp = None
         self.time = None
         self.date = None
-        self.ucts_timestamp = None                                                                                                                                                                                   
-        self.dragon_reference_time = None                                             
-        self.dragon_reference_module_id = None                                    
-        self.dragon_reference_module_index = None                           
-        self.dragon_reference_counter = None                                                                                                                                               
-        self.dragon_reference_source = None 
+        self.ucts_timestamp = None
+        self.dragon_reference_time = None
+        self.dragon_reference_module_id = None
+        self.dragon_reference_module_index = None
+        self.dragon_reference_counter = None
+        self.dragon_reference_source = None
 
 
 class Sequence(RunObj):
@@ -97,6 +97,7 @@ class SequenceData(Sequence):
         self.pedestal = None
         self.drive = None
         self.dl1status = None
+        self.dl1abstatus = None
         self.muonstatus = None
         self.datacheckstatus = None
         self.dl2status = None

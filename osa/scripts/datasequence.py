@@ -3,6 +3,7 @@ Script that is called from the batch system to process a run
 """
 
 import logging
+import os
 import subprocess
 import sys
 from os.path import basename, join
@@ -17,7 +18,7 @@ from osa.utils.logging import MyFormatter
 from osa.utils.standardhandle import stringify
 from osa.utils.utils import lstdate_to_dir
 
-__all__ = ["datasequence", "r0_to_dl1", "dl1_to_dl2"]
+__all__ = ["datasequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
 
 log = logging.getLogger(__name__)
 
@@ -28,11 +29,7 @@ handler.setFormatter(fmt)
 logging.root.addHandler(handler)
 
 
-def datasequence(
-    calibrationfile, pedestalfile, time_calibration, drivefile,
-    ucts_t0_dragon, dragon_counter0, ucts_t0_tib, tib_counter0,
-    run_str
-):
+def datasequence(calibrationfile, pedestalfile, time_calibration, drivefile, run_summary, run_str):
     """
     Performs all the steps to process a whole run
 
@@ -42,10 +39,7 @@ def datasequence(
     pedestalfile
     time_calibration
     drivefile
-    ucts_t0_dragon
-    dragon_counter0
-    ucts_t0_tib
-    tib_counter0
+    run_summary
     run_str
 
     Returns
@@ -55,27 +49,36 @@ def datasequence(
     historysuffix = cfg.get("LSTOSA", "HISTORYSUFFIX")
     sequenceprebuild = join(options.directory, f"sequence_{options.tel_id}_{run_str}")
     historyfile = sequenceprebuild + historysuffix
-    level, rc = (3, 0) if options.simulate else historylevel(historyfile, "DATA")
+    level, rc = (4, 0) if options.simulate else historylevel(historyfile, "DATA")
     log.debug(f"Going to level {level}")
 
-    if level == 3:
+    if level == 4:
         rc = r0_to_dl1(
             calibrationfile,
             pedestalfile,
             time_calibration,
             drivefile,
-            ucts_t0_dragon,
-            dragon_counter0,
-            ucts_t0_tib,
-            tib_counter0,
+            run_summary,
             run_str,
             historyfile,
         )
         level -= 1
         log.debug(f"Going to level {level}")
+    if level == 3:
+        rc = dl1ab(run_str, historyfile)
+        level -= 1
+        log.debug(f"Going to level {level}")
     if level == 2:
+        rc = dl1_datacheck(run_str, historyfile)
+        if options.nodl2:
+            level = 0
+            log.debug(f"No DL2 are going to be produced. Going to level {level}")
+        else:
+            level -= 1
+            log.debug(f"Going to level {level}")
+    if level == 1:
         rc = dl1_to_dl2(run_str, historyfile)
-        level -= 2
+        level -= 1
         log.debug(f"Going to level {level}")
     if level == 0:
         log.debug(f"Job for sequence {run_str} finished without fatal errors")
@@ -84,7 +87,9 @@ def datasequence(
 
 # FIXME: Parse all different arguments via config file or sequence_list.txt
 @trace
-def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_summary_file, run_str, historyfile):
+def r0_to_dl1(
+    calibrationfile, pedestalfile, time_calibration, drivefile, run_summary, run_str, historyfile
+):
     """
     Prepare and launch the actual lstchain script that is performing
     the low and high-level calibration to raw camera images.
@@ -96,9 +101,10 @@ def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_su
     pedestalfile
     time_calibration
     drivefile
-    run_summary_file: str
+    run_summary: str
         Path to the run summary file
-    run_str
+    run_str: str
+        XXXXX.XXXX (run_number.subrun_number)
     historyfile
 
     Returns
@@ -109,7 +115,6 @@ def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_su
     if options.simulate:
         return 0
 
-    configfile = cfg.get("LSTOSA", "CONFIGFILE")
     command = cfg.get("LSTOSA", "R0-DL1")
     nightdir = lstdate_to_dir(options.date)
     datafile = join(
@@ -125,10 +130,9 @@ def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_su
         "--output-dir=" + options.directory,
         "--pedestal-file=" + pedestalfile,
         "--calibration-file=" + calibrationfile,
-        "--config=" + configfile,
         "--time-calibration-file=" + time_calibration,
         "--pointing-file=" + drivefile,
-        "--run-summary-path=" + run_summary_file,
+        "--run-summary-path=" + run_summary,
     ]
 
     try:
@@ -148,11 +152,134 @@ def r0_to_dl1(calibrationfile, pedestalfile, time_calibration, drivefile, run_su
             rc,
             historyfile,
         )
-        try:
-            nonfatalrcs = [int(k) for k in cfg.get('NONFATALRCS', 'R0-DL1').split(",")]
-        except:
-            nonfatalrcs = [0]
-        if rc not in nonfatalrcs:
+        if rc != 0:
+            sys.exit(rc)
+        return rc
+
+
+def dl1ab(run_str, historyfile):
+    """
+    Prepare and launch the actual lstchain script that is performing
+    the the image cleaning considering the interleaved pedestal information
+    and obtains shower parameters. It keeps the shower images.
+
+    Parameters
+    ----------
+    run_str
+    historyfile
+
+    Returns
+    -------
+    rc
+    """
+
+    if options.simulate:
+        return 0
+
+    # Create a new subdirectory for the dl1ab output
+    # TODO: create and option directory dl1ab
+    dl1ab_subdirectory = os.path.join(options.directory, "dl1ab" + "_" + options.dl1_prod_id)
+    os.makedirs(dl1ab_subdirectory, exist_ok=True)
+    config_file = cfg.get("LSTOSA", "CONFIGFILE")
+
+    input_dl1_datafile = join(
+        options.directory,
+        f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}',
+    )
+
+    output_dl1_datafile = join(
+        dl1ab_subdirectory,
+        f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}',
+    )
+
+    # Prepare and launch the actual lstchain script
+    command = "lstchain_dl1ab"
+    commandargs = [
+        command,
+        "--input-file=" + input_dl1_datafile,
+        "--output-file=" + output_dl1_datafile,
+        "--pedestal-cleaning=True",
+        "--config=" + config_file,
+    ]
+
+    try:
+        log.debug(f"Executing {stringify(commandargs)}")
+        rc = subprocess.call(commandargs)
+    except subprocess.CalledProcessError as error:
+        log.exception(f"Subprocess error: {error}")
+    except OSError as error:
+        log.exception(f"Command {stringify(commandargs)} failed, {error}")
+    else:
+        history(
+            run_str,
+            options.dl1_prod_id,
+            command,
+            basename(input_dl1_datafile),
+            config_file,
+            rc,
+            historyfile,
+        )
+        if rc != 0:
+            sys.exit(rc)
+        return rc
+
+
+def dl1_datacheck(run_str, historyfile):
+    """
+    Run datacheck script
+
+    Parameters
+    ----------
+    run_str
+    historyfile
+
+    Returns
+    -------
+    rc
+    """
+
+    if options.simulate:
+        return 0
+
+    # Create a new subdirectory for the dl1ab output
+    dl1ab_subdirectory = os.path.join(options.directory, "dl1ab" + "_" + options.dl1_prod_id)
+
+    input_dl1_datafile = join(
+        dl1ab_subdirectory,
+        f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}',
+    )
+    output_directory = os.path.join(options.directory, "datacheck" + "_" + options.dl1_prod_id)
+    os.makedirs(output_directory, exist_ok=True)
+
+    # Prepare and launch the actual lstchain script
+    command = "lstchain_check_dl1"
+    commandargs = [
+        command,
+        "--input-file=" + input_dl1_datafile,
+        "--output-dir=" + output_directory,
+        "--muons-dir=" + options.directory,
+        "--omit-pdf",
+        "--batch",
+    ]
+
+    try:
+        log.debug(f"Executing {stringify(commandargs)}")
+        rc = subprocess.call(commandargs)
+    except subprocess.CalledProcessError as error:
+        log.exception(f"Subprocess error: {error}")
+    except OSError as error:
+        log.exception(f"Command {stringify(commandargs)} failed, {error}")
+    else:
+        history(
+            run_str,
+            options.dl1_prod_id,
+            command,
+            basename(input_dl1_datafile),
+            None,
+            rc,
+            historyfile,
+        )
+        if rc != 0:
             sys.exit(rc)
         return rc
 
@@ -173,11 +300,13 @@ def dl1_to_dl2(run_str, historyfile):
     if options.simulate:
         return 0
 
+    dl1ab_subdirectory = os.path.join(options.directory, "dl1ab" + "_" + options.dl1_prod_id)
+
     configfile = cfg.get("LSTOSA", "DL2CONFIGFILE")
     rf_models_directory = cfg.get("LSTOSA", "RF-MODELS-DIR")
     command = cfg.get("LSTOSA", "DL1-DL2")  # FIXME  change LSTOSA by lstchain
     datafile = join(
-        options.directory,
+        dl1ab_subdirectory,
         f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}',
     )
 
@@ -206,18 +335,21 @@ def dl1_to_dl2(run_str, historyfile):
             rc,
             historyfile,
         )
-        try:
-            nonfatalrcs = [int(k) for k in cfg.get('NONFATALRCS', 'DL1-DL2').split(",")]
-        except:
-            nonfatalrcs = [0]
-        if rc not in nonfatalrcs:
+        if rc != 0:
             sys.exit(rc)
         return rc
 
 
 if __name__ == "__main__":
     # set the arguments and options through cli parsing
-    drs4_ped_file, calib_file, time_calib_file, drive_log_file, run_summary_file, run_number = datasequencecliparsing()
+    (
+        drs4_ped_file,
+        calib_file,
+        time_calib_file,
+        drive_log_file,
+        run_summary_file,
+        run_number,
+    ) = datasequencecliparsing()
 
     if options.verbose:
         logging.root.setLevel(logging.DEBUG)
@@ -225,5 +357,7 @@ if __name__ == "__main__":
         logging.root.setLevel(logging.INFO)
 
     # run the routine
-    rc = datasequence(drs4_ped_file, calib_file, time_calib_file, drive_log_file, run_summary_file, run_number)
+    rc = datasequence(
+        drs4_ped_file, calib_file, time_calib_file, drive_log_file, run_summary_file, run_number
+    )
     sys.exit(rc)

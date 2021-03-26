@@ -8,8 +8,7 @@ from osa.configs import config, options
 from osa.configs.config import cfg
 from osa.rawcopy.raw import getrawdir
 from osa.utils.iofile import appendtofile
-from osa.utils.logging import MyFormatter
-from osa.utils.standardhandle import output, gettag
+from osa.utils.standardhandle import gettag
 
 log = logging.getLogger(__name__)
 
@@ -112,15 +111,7 @@ def finished_assignments(sequence_list):
     disk_space_GB = 0
     rawnum = 0
     if options.tel_id == "LST1":
-        concept_set = [
-            "DL1",
-            "DL2",
-            "MUON",
-            "DATACHECK",
-            "PEDESTAL",
-            "CALIB",
-            "TIMECALIB",
-        ]
+        concept_set = ["PEDESTAL", "CALIB", "TIMECALIB", "DL1", "DL1AB", "MUON", "DATACHECK", "DL2"]
         rawdir = getrawdir()
         if sequence_list is not None:
             for s in sequence_list:

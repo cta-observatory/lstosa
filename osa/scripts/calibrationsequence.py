@@ -37,7 +37,9 @@ handler.setFormatter(fmt)
 logging.root.addHandler(handler)
 
 
-def calibrationsequence(pedestal_filename, calibration_filename, ped_run_number, cal_run_number):
+def calibrationsequence(
+    pedestal_filename, calibration_filename, ped_run_number, cal_run_number, run_summary_file
+):
     """
     Handle the three steps for creating the calibration products:
     DRS4 pedestal, charge calibration and time calibration files
@@ -48,6 +50,7 @@ def calibrationsequence(pedestal_filename, calibration_filename, ped_run_number,
     calibration_filename
     ped_run_number
     cal_run_number
+    run_summary_file
 
     Returns
     -------
@@ -64,17 +67,20 @@ def calibrationsequence(pedestal_filename, calibration_filename, ped_run_number,
         level -= 1
         log.info(f"Going to level {level}")
     if level == 2:
+        rc = calibrate_time(
+            cal_run_number, pedestal_filename, calibration_filename, run_summary_file, history_file
+        )
+        level -= 1
+        log.info(f"Going to level {level}")
+    if level == 1:
         rc = calibrate_charge(
             ped_run_number,
             cal_run_number,
             pedestal_filename,
             calibration_filename,
+            run_summary_file,
             history_file,
         )
-        level -= 1
-        log.info(f"Going to level {level}")
-    if level == 1:
-        rc = calibrate_time(cal_run_number, pedestal_filename, calibration_filename, history_file)
         level -= 1
         log.info(f"Going to level {level}")
     if level == 0:
@@ -82,7 +88,7 @@ def calibrationsequence(pedestal_filename, calibration_filename, ped_run_number,
     return rc
 
 
-def drs4_pedestal(run_ped, pedestal_output_file, history_file):
+def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000, tel_id=1):
     """
     Create a DRS4 pedestal file
 
@@ -91,6 +97,8 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file):
     run_ped
     pedestal_output_file
     history_file
+    max_events
+    tel_id
 
     Returns
     -------
@@ -114,6 +122,7 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file):
         cfg.get("PROGRAM", "PEDESTAL"),
         "--input-file=" + input_file,
         "--output-file=" + output_file,
+        f"--max-events={max_events}",
     ]
     command_concept = "drs4_pedestal"
 
@@ -149,21 +158,14 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file):
 
     plot_file = path.join(options.directory, "log", f"drs4_pedestal.Run{run_ped}.0000.pdf")
     log.info(f"Producing plots in {plot_file}")
-    drs4.plot_pedestals(
-        input_file,
-        output_file,
-        run_ped,
-        plot_file,
-        tel_id=1,
-        offset_value=300,
-    )
+    drs4.plot_pedestals(input_file, output_file, run_ped, plot_file)
     plt.close("all")
 
     return rc
 
 
 def calibrate_charge(
-        run_ped, calibration_run, pedestal_file, calibration_output_file, history_file
+    run_ped, calibration_run, pedestal_file, calibration_output_file, run_summary, history_file
 ):
     """
     Create a charge calibration file to transform from ADC counts to photo-electrons
@@ -175,6 +177,8 @@ def calibrate_charge(
     pedestal_file
     calibration_output_file
     history_file
+    run_summary: str
+        Path name of the run summary file
 
     Returns
     -------
@@ -197,17 +201,34 @@ def calibrate_charge(
         sys.exit(1)
 
     calib_configfile = cfg.get("LSTOSA", "CALIBCONFIGFILE")
-    output_file = path.join(options.directory, calibration_output_file)
+    drs4_pedestal_path = path.join(options.directory, pedestal_file)
+    calib_output_file = path.join(options.directory, calibration_output_file)
+    time_file = path.join(options.directory, f"time_{calibration_output_file}")
     log_output_file = path.join(
         options.directory, "log", f"calibration.Run{calibration_run}.0000.log"
     )
+    max_events = 1000000
+    min_ff = 4000
+    max_ff = 12000
+    stat_events = 10000
+
+    command = "lstchain_create_calibration_file"
+
     command_args = [
-        cfg.get("PROGRAM", "CALIBRATION"),
+        command,
         "--input_file=" + calibration_run_file,
-        "--output_file=" + output_file,
-        "--pedestal_file=" + pedestal_file,
+        "--output_file=" + calib_output_file,
+        f"--EventSource.max_events={max_events}",
+        f"--EventSource.default_trigger_type=tib",
+        f"--EventSource.min_flatfield_adc={min_ff}",
+        f"--EventSource.max_flatfield_adc={max_ff}",
+        "--LSTEventSource.EventTimeCalculator.run_summary_path=" + run_summary,
+        "--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path=" + time_file,
+        "--LSTEventSource.LSTR0Corrections.drs4_pedestal_path=" + drs4_pedestal_path,
+        f"--FlatFieldCalculator.sample_size={stat_events}",
+        f"--PedestalCalculator.sample_size={stat_events}",
+        "--log-file=" + log_output_file,
         "--config=" + calib_configfile,
-        "--log_file=" + log_output_file,
     ]
     command_concept = "charge_calibration"
 
@@ -246,7 +267,7 @@ def calibrate_charge(
         "log",
         f"calibration.Run{calibration_run}.0000.pedestal.Run{run_ped}.0000.pdf",
     )
-    calib.read_file(output_file, tel_id=1)
+    calib.read_file(calib_output_file, tel_id=1)
     log.info(f"Producing plots in {plot_file}")
     calib.plot_all(calib.ped_data, calib.ff_data, calib.calib_data, calibration_run, plot_file)
     plt.close("all")
@@ -254,7 +275,9 @@ def calibrate_charge(
     return rc
 
 
-def calibrate_time(calibration_run, pedestal_file, calibration_output_file, history_file):
+def calibrate_time(
+    calibration_run, pedestal_file, calibration_output_file, run_summary, history_file, subrun=0
+):
     """
     Create a time calibration file
 
@@ -264,24 +287,40 @@ def calibrate_time(calibration_run, pedestal_file, calibration_output_file, hist
     pedestal_file
     calibration_output_file
     history_file
+    subrun
 
     Returns
     -------
     Return code
 
     """
-    calibration_data_files = (
-        f'{cfg.get("LST1", "RAWDIR")}/*/'
-        f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{calibration_run}.*{cfg.get("LSTOSA", "R0SUFFIX")}'
-    )
+    rawdata_path = Path(cfg.get("LST1", "RAWDIR"))
+    # Get raw data run regardless when was taken
+    run_calib_file_list = [
+        file
+        for file in rawdata_path.rglob(
+            f'*/{cfg.get("LSTOSA", "R0PREFIX")}.Run{calibration_run}.{subrun:04d}.fits.fz'
+        )
+    ]
+
+    if run_calib_file_list:
+        calibration_data_file = str(run_calib_file_list[0])
+    else:
+        log.error(f"Files corresponding to calibration run {calibration_run} not found")
+        sys.exit(1)
+
     calib_configfile = cfg.get("LSTOSA", "CALIBCONFIGFILE")
     time_calibration_output_file = path.join(options.directory, f"time_{calibration_output_file}")
+    pedestal_file_path = path.join(options.directory, pedestal_file)
+
+    command = "lstchain_data_create_time_calibration_file"
     command_args = [
-        cfg.get("PROGRAM", "TIME_CALIBRATION"),
-        "--input-file=" + calibration_data_files,
+        command,
+        "--input-file=" + calibration_data_file,
         "--output-file=" + time_calibration_output_file,
-        "--pedestal-file=" + pedestal_file,
+        "--pedestal-file=" + pedestal_file_path,
         "--config=" + calib_configfile,
+        "--run-summary-path=" + run_summary,
     ]
     command_concept = "time_calibration"
 
@@ -317,6 +356,7 @@ def calibrate_time(calibration_run, pedestal_file, calibration_output_file, hist
             "Not able to create time calibration file. Creating a link "
             "to default calibration time file corresponding to run 1625"
         )
+        # FIXME: take latest available time calibration file (eg from day before)
         def_time_calib_run = cfg.get("LSTOSA", "DEFAULT-TIME-CALIB-RUN")
         calibpath = Path(cfg.get("LST1", "CALIBDIR"))
         outputf = time_calibration_output_file
@@ -352,7 +392,13 @@ def calibrate_time(calibration_run, pedestal_file, calibration_output_file, hist
 
 if __name__ == "__main__":
     # Set the options through cli parsing
-    pedoutfile, caloutfile, calib_run_number, ped_run_number = calibrationsequencecliparsing()
+    (
+        pedoutfile,
+        caloutfile,
+        calib_run_number,
+        ped_run_number,
+        run_summary,
+    ) = calibrationsequencecliparsing()
 
     if options.verbose:
         logging.root.setLevel(logging.DEBUG)
@@ -360,5 +406,5 @@ if __name__ == "__main__":
         logging.root.setLevel(logging.INFO)
 
     # run the routine
-    rc = calibrationsequence(pedoutfile, caloutfile, calib_run_number, ped_run_number)
+    rc = calibrationsequence(pedoutfile, caloutfile, calib_run_number, ped_run_number, run_summary)
     sys.exit(rc)

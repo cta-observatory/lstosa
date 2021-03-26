@@ -13,10 +13,7 @@ def r0_to_dl1(
     pedestalfile,
     time_calibration,
     drivefile,
-    ucts_t0_dragon,
-    dragon_counter0,
-    ucts_t0_tib,
-    tib_counter0,
+    runsummary,
     run_str,
     historyfile,
 ):
@@ -54,12 +51,9 @@ def make_args_r0_to_dl1():
         "drs4_pedestal.Run02005.0000.fits",
         "time_calibration",
         "drivefile",
-        "ucts_t0_dragon",
-        "dragon_counter0",
-        "ucts_t0_tib",
-        "tib_counter0",
+        "RunSummary_20200101.ecsv",
         "02006.0002",
-        "/fefs/aswg/data/real/running_analysis/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt",
+        "/fefs/aswg/data/real/running_analysis/20200218/v0.4.3_v00/sequence_LST1_02006.0000.history",
     )
 
 
@@ -67,7 +61,7 @@ def make_args_dl1_to_dl2():
 
     return (
         "02006.0002",
-        "/fefs/aswg/data/real/running_analysis/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt",
+        "/fefs/aswg/data/real/running_analysis/20200218/v0.4.3_v00/sequence_LST1_02006.0000.history",
     )
 
 
@@ -84,7 +78,7 @@ def test_trace_r0_to_dl2(tmp_path):
     options.calib_prod_id = "v0.6.3_v05"
     options.dl2_prod_id = "v0.6.3_v05"
     options.prod_id = "v0.6.3_v05"
- 
+
     # track prov
     r0_to_dl1(*args_dl1)
     dl1_to_dl2(*args_dl2)
