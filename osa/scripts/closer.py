@@ -20,15 +20,8 @@ from osa.reports.report import finished_assignments, finished_text, start
 from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import MyFormatter
 from osa.utils.register import register_run_concept_files
-from osa.utils.standardhandle import gettag
-from osa.utils.standardhandle import stringify
-from osa.utils.utils import (
-    getlockfile,
-    is_day_closed,
-    is_defined,
-    lstdate_to_dir,
-    make_directory,
-)
+from osa.utils.standardhandle import gettag, stringify
+from osa.utils.utils import getlockfile, is_day_closed, is_defined, lstdate_to_dir, make_directory
 
 __all__ = [
     "use_night_summary",
@@ -43,7 +36,7 @@ __all__ = [
     "is_finished_check",
     "extract_provenance",
     "merge_dl1datacheck",
-    "set_closed_with_file"
+    "set_closed_with_file",
 ]
 
 log = logging.getLogger(__name__)
@@ -275,18 +268,27 @@ def post_process_files(seq_list):
         if concept in ["MUON"]:
             dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id)
         elif concept in ["DL1AB", "DATACHECK"]:
-            dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl1_prod_id)
+            dir = os.path.join(
+                cfg.get(options.tel_id, concept + "DIR"),
+                nightdir,
+                options.prod_id,
+                options.dl1_prod_id,
+            )
         elif concept == "DL2":
-            dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id)
+            dir = os.path.join(
+                cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id
+            )
         elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-            dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id)
+            dir = os.path.join(
+                cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id
+            )
 
         delete_set = set()
         log.debug(f"Checking if {concept} files need to be moved to {dir}")
         for file_path in output_files_set:
             file = str(file_path)
             if concept == "DL1AB":
-                pattern_found = re.search(r'dl1ab(?:.*)/dl1*', file)
+                pattern_found = re.search(r"dl1ab(?:.*)/dl1*", file)
             else:
                 pattern_found = re.search(pattern, file)
             log.debug(f"Pattern {concept} found, {pattern_found}")
@@ -487,7 +489,7 @@ def merge_dl1datacheck(seq_list):
                 "lstchain_check_dl1",
                 f"--input-file={dl1_prod_id_directory}/datacheck_dl1_LST-1.Run0{sequence.run}.*.h5",
                 f"--output-dir={dl1_prod_id_directory}",
-                f"--muons-dir={dl1_base_directory}"
+                f"--muons-dir={dl1_base_directory}",
             ]
             if not options.simulate:
                 try:
