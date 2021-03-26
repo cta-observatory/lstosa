@@ -1,6 +1,6 @@
 import re
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("osa/version.py") as f:
     __version__ = re.search('^__version__ = "(.*)"$', f.read()).group(1)
@@ -25,14 +25,9 @@ extras_require = {
         "sphinx_rtd_theme",
         "sphinx_automodapi",
         "sphinx_argparse",
-        "sphinx-autoapi"
+        "sphinx-autoapi",
     ],
-    "tests": [
-        "pytest",
-        "pytest-cov",
-        "pytest-runner",
-        "pytest-order"
-    ],
+    "tests": ["pytest", "pytest-cov", "pytest-runner", "pytest-order"],
 }
 
 extras_require["all"] = list(set(extras_require["tests"] + extras_require["docs"]))
@@ -50,7 +45,7 @@ setup(
         "pyyaml",
         "prov",
         "pydot",
-        "pydotplus"
+        "pydotplus",
     ],
-    entry_points=entry_points
+    entry_points=entry_points,
 )
