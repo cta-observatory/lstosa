@@ -61,7 +61,7 @@ def historylevel(historyfile, data_type):
     """
     Returns the level from which the analysis should begin and
     the rc of the last executable given a certain history file.
-    For CALIBRATION sequences:
+    For PEDCALIB sequences:
      - DRS4->time calib is level 3->2
      - time calib->charge calib is level 2->1
      - charge calib 1->0 (sequence completed)
@@ -83,10 +83,10 @@ def historylevel(historyfile, data_type):
     """
     if data_type == "DATA":
         level = 4
-    elif data_type == "CALIBRATION":
+    elif data_type == "PEDCALIB":
         level = 3
     else:
-        log.error("Type not expected")
+        log.error("Type {data_type} not expected")
         sys.exit(1)
     exit_status = 0
     if os.path.exists(historyfile):

@@ -18,6 +18,13 @@ def test_historylevel():
     assert level == 0
     assert rc == 0
 
-    level, rc = historylevel(calibration_history_file, "CALIBRATION")
+    level, rc = historylevel(calibration_history_file, "PEDCALIB")
     assert level == 0
+    assert rc == 0
+
+    options.dl1_prod_id = "tailcut84"
+    options.dl2_prod_id = "model2"
+
+    level, rc = historylevel(datasequence_history_file, "DATA")
+    assert level == 1
     assert rc == 0
