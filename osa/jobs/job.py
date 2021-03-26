@@ -33,10 +33,10 @@ def are_all_jobs_correctly_finished(seqlist):
     for s in seqlist:
         out, rc = historylevel(s.history, s.type)
         if out == 0:
-            log.debug(f"Job {s.seq} correctly finished")
+            log.debug(f"Job {s.seq} ({s.type}) correctly finished")
             continue
         else:
-            log.debug(f"Job {s.seq} not correctly/completely finished [{out}]")
+            log.debug(f"Job {s.seq}, subrun {s.jobname} ({s.run}) not correctly/completely finished [level {out}]")
             flag = False
     return flag
 
@@ -44,7 +44,16 @@ def are_all_jobs_correctly_finished(seqlist):
 def historylevel(historyfile, type):
     """
     Returns the level from which the analysis should begin and
-    the rc of the last executable given a certain history file
+    the rc of the last executable given a certain history file.
+    For CALIBRATION sequences:
+        - DRS4->time calib is level 3->2
+        - time calib->charge calib is level 2->1
+        - charge calib 1->0 (sequence completed)
+    For DATA sequences:
+        - R0->DL1 is level 4->3
+        - DL1->DL1AB is level 3->2
+        - DATACHECK is level 2->1
+        - DL1->DL2 is level 1->0 (sequence completed)
 
     Parameters
     ----------
