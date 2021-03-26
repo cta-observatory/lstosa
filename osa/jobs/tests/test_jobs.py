@@ -1,11 +1,11 @@
 import os
 from pathlib import Path
+
 from osa.configs import options
 
-
-test_data = Path(os.getenv('OSA_TEST_DATA', 'extra'))
-datasequence_history_file = test_data / 'history_files/sequence_LST1_04185.0010.history'
-calibration_history_file = test_data / 'history_files/sequence_LST1_04183.history'
+test_data = Path(os.getenv("OSA_TEST_DATA", "extra"))
+datasequence_history_file = test_data / "history_files/sequence_LST1_04185.0010.history"
+calibration_history_file = test_data / "history_files/sequence_LST1_04183.history"
 
 
 def test_historylevel():

@@ -111,16 +111,7 @@ def finished_assignments(sequence_list):
     disk_space_GB = 0
     rawnum = 0
     if options.tel_id == "LST1":
-        concept_set = [
-            "PEDESTAL",
-            "CALIB",
-            "TIMECALIB",
-            "DL1",
-            "DL1AB",
-            "MUON",
-            "DATACHECK",
-            "DL2"
-        ]
+        concept_set = ["PEDESTAL", "CALIB", "TIMECALIB", "DL1", "DL1AB", "MUON", "DATACHECK", "DL2"]
         rawdir = getrawdir()
         if sequence_list is not None:
             for s in sequence_list:

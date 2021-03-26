@@ -15,7 +15,7 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.iofile import readfromfile, writetofile
 from osa.utils.standardhandle import stringify
-from osa.utils.utils import lstdate_to_dir, date_in_yymmdd, time_to_seconds
+from osa.utils.utils import date_in_yymmdd, lstdate_to_dir, time_to_seconds
 
 log = logging.getLogger(__name__)
 
@@ -45,10 +45,14 @@ def are_all_jobs_correctly_finished(seqlist):
                 log.debug(f"Job {s.seq} ({s.type}) correctly finished")
                 continue
             elif out == 1 and options.nodl2:
-                log.debug(f"Job {s.seq} ({s.type}) correctly finished up to DL1ab, but noDL2 option selected")
+                log.debug(
+                    f"Job {s.seq} ({s.type}) correctly finished up to DL1ab, but noDL2 option selected"
+                )
                 continue
             else:
-                log.debug(f"Job {s.seq} (run {s.run}) not correctly/completely finished [level {out}]")
+                log.debug(
+                    f"Job {s.seq} (run {s.run}) not correctly/completely finished [level {out}]"
+                )
                 flag = False
     return flag
 
@@ -349,7 +353,7 @@ def createjobtemplate(s, get_content=False):
         commandargs.append(os.path.join(run_summary_dir, f"RunSummary_{nightdir}.ecsv"))
 
     for sub in s.subrun_list:
-        # FIXME: This is getting the last subrun starting from 0 
+        # FIXME: This is getting the last subrun starting from 0
         # We should get this parameter differently.
         n_subruns = int(sub.subrun)
 
@@ -391,14 +395,19 @@ def createjobtemplate(s, get_content=False):
         content += f"        '{i}',\n"
     if not options.test:
         content += (
-            f"        '--stderr=log/sequence_{s.jobname}." + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)), \n"
+            f"        '--stderr=log/sequence_{s.jobname}."
+            + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)), \n"
         )
         content += (
-            f"        '--stdout=log/sequence_{s.jobname}." + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)), \n"
+            f"        '--stdout=log/sequence_{s.jobname}."
+            + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)), \n"
         )
     if s.type == "DATA":
         content += (
-            "        '{0}".format(str(s.run).zfill(5)) + ".{0}'" + ".format(str(subruns).zfill(4))" + ",\n"
+            "        '{0}".format(str(s.run).zfill(5))
+            + ".{0}'"
+            + ".format(str(subruns).zfill(4))"
+            + ",\n"
         )
     content += f"        '{options.tel_id}'\n"
     content += "        ])\n"
@@ -536,7 +545,12 @@ def getqueuejoblist(sequence_list):
         log.exception(f"Command '{stringify(commandargs)}' failed, {Error}")
     else:
         queue_header = sacct_output.splitlines()[0].split()
-        queue_lines = sacct_output.replace("+", "").replace("sequence_", "").replace(".py", "").splitlines()[2:]
+        queue_lines = (
+            sacct_output.replace("+", "")
+            .replace("sequence_", "")
+            .replace(".py", "")
+            .splitlines()[2:]
+        )
         queue_sequences = [line.split() for line in queue_lines if "batch" not in line]
         queue_list = [dict(zip(queue_header, sequence)) for sequence in queue_sequences]
         setqueuevalues(queue_list, sequence_list)
@@ -567,7 +581,9 @@ def setqueuevalues(queue_list, sequence_list):
             try:
                 s.jobid = max(df_jobname["JobID"])  # Get latest JobID
                 df_jobid_filtered = df_jobname[df_jobname["JobID"] == s.jobid]
-                s.cputime = time.strftime("%H:%M:%S", time.gmtime(df_jobid_filtered["DeltaTime"].median()))
+                s.cputime = time.strftime(
+                    "%H:%M:%S", time.gmtime(df_jobid_filtered["DeltaTime"].median())
+                )
                 if (df_jobid_filtered.State.values == "COMPLETED").all():
                     s.state = "COMPLETED"
                     s.exit = df_jobid_filtered["ExitCode"].iloc[0]
@@ -576,10 +592,14 @@ def setqueuevalues(queue_list, sequence_list):
                     s.exit = None
                 elif (df_jobid_filtered.State.values == "FAILED").any():
                     s.state = "FAILED"
-                    s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "FAILED"]["ExitCode"].iloc[0]
+                    s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "FAILED"][
+                        "ExitCode"
+                    ].iloc[0]
                 elif (df_jobid_filtered.State.values == "CANCELLED").any():
                     s.state = "CANCELLED"
-                    s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "CANCELLED"]["ExitCode"].iloc[0]
+                    s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "CANCELLED"][
+                        "ExitCode"
+                    ].iloc[0]
                 elif (df_jobid_filtered.State.values == "TIMEOUT").any():
                     s.state = "TIMEOUT"
                     s.exit = "0:15"
@@ -594,4 +614,3 @@ def setqueuevalues(queue_list, sequence_list):
                 log.debug(f"Queue attributes for sequence {s.seq} not present in sacct output.")
     else:
         log.debug("No jobs reported in sacct queue.")
-
