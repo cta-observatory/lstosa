@@ -13,16 +13,11 @@ import yaml
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.provenance.capture import get_activity_id, get_file_hash
-from osa.provenance.io import provlist2provdoc, provdoc2json, provdoc2graph, read_prov
+from osa.provenance.io import provdoc2graph, provdoc2json, provlist2provdoc, read_prov
 from osa.provenance.utils import get_log_config
 from osa.utils.cliopts import provprocessparsing
 
-__all__ = [
-    "copy_used_file",
-    "parse_lines_log",
-    "parse_lines_run",
-    "produce_provenance"
-]
+__all__ = ["copy_used_file", "parse_lines_log", "parse_lines_run", "produce_provenance"]
 
 log = logging.getLogger(__name__)
 
