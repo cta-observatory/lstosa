@@ -78,7 +78,7 @@ def test_trace_r0_to_dl2(tmp_path):
     options.calib_prod_id = "v0.6.3_v05"
     options.dl2_prod_id = "v0.6.3_v05"
     options.prod_id = "v0.6.3_v05"
- 
+
     # track prov
     r0_to_dl1(*args_dl1)
     dl1_to_dl2(*args_dl2)

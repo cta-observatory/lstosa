@@ -2,13 +2,13 @@
 Utility functions for OSA pipeline provenance
 """
 import logging
+import os
 import re
 import sys
 from pathlib import Path
-import os
 
-from osa.configs.config import cfg
 from osa.configs import options
+from osa.configs.config import cfg
 from osa.utils.utils import lstdate_to_dir
 
 __all__ = ["parse_variables", "get_log_config"]
@@ -59,17 +59,21 @@ def parse_variables(class_instance):
         calibration_path = Path(calib_dir) / nightdir / options.calib_prod_id
         class_instance.CoefficientsCalibrationFile = str(calibration_path / calibration_filename)
         class_instance.PedestalFile = str(calibration_path / pedestal_filename)
-        class_instance.TimeCalibrationFile = str(calibration_path / timecalibration_filename) 
+        class_instance.TimeCalibrationFile = str(calibration_path / timecalibration_filename)
         class_instance.PointingFile = class_instance.args[3]
         class_instance.ObservationRun = class_instance.args[5].split(".")[0]
         class_instance.ObservationSubRun = class_instance.args[5].split(".")[0]
-        class_instance.ObservationDate = re.findall(r"running_analysis/(\d{8})/", class_instance.args[6])[0]
+        class_instance.ObservationDate = re.findall(
+            r"running_analysis/(\d{8})/", class_instance.args[6]
+        )[0]
         class_instance.SoftwareVersion = options.lstchain_version
         class_instance.ProdID = options.prod_id
         class_instance.CalibrationRun = re.findall(r"Run(\d{5}).", class_instance.args[0])[0]
         class_instance.PedestalRun = re.findall(r"Run(\d{5}).", class_instance.args[1])[0]
         outdir_dl1 = running_analysis_dir.replace("running_analysis", "DL1")
-        class_instance.DL1SubrunDataset = f"{outdir_dl1}{dl1_prefix}.Run{class_instance.args[5]}{h5}"
+        class_instance.DL1SubrunDataset = (
+            f"{outdir_dl1}{dl1_prefix}.Run{class_instance.args[5]}{h5}"
+        )
         # /fefs/aswg/data/real/R0/20200218/LST1.1.Run02006.0001.fits.fz
         class_instance.R0SubrunDataset = f"{rawdir}/{class_instance.ObservationDate}/{r0_prefix}.Run{class_instance.args[5]}{fits}{fz}"
         class_instance.session_name = class_instance.ObservationRun
@@ -82,7 +86,9 @@ def parse_variables(class_instance):
         class_instance.AnalysisConfigFile = configfile
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
         class_instance.ObservationSubRun = class_instance.args[0].split(".")[1]
-        class_instance.ObservationDate = re.findall(r"running_analysis/(\d{8})/", class_instance.args[1])[0]
+        class_instance.ObservationDate = re.findall(
+            r"running_analysis/(\d{8})/", class_instance.args[1]
+        )[0]
         class_instance.SoftwareVersion = options.lstchain_version
         class_instance.DL1ProdID = options.prod_id
         class_instance.DL2ProdID = options.dl2_prod_id
@@ -92,10 +98,14 @@ def parse_variables(class_instance):
         running_analysis_dir = re.findall(r"(.*)sequence", class_instance.args[1])[0]
         # /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.0001.h5
         outdir_dl2 = Path(dl2_dir) / nightdir / options.dl2_prod_id
-        class_instance.DL2SubrunDataset = f"{outdir_dl2}/{dl2_prefix}.Run{class_instance.args[0]}{h5}"
+        class_instance.DL2SubrunDataset = (
+            f"{outdir_dl2}/{dl2_prefix}.Run{class_instance.args[0]}{h5}"
+        )
         # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5
         outdir_dl1 = running_analysis_dir.replace("running_analysis", "DL1")
-        class_instance.DL1SubrunDataset = f"{outdir_dl1}{dl1_prefix}.Run{class_instance.args[0]}{h5}"
+        class_instance.DL1SubrunDataset = (
+            f"{outdir_dl1}{dl1_prefix}.Run{class_instance.args[0]}{h5}"
+        )
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile
 

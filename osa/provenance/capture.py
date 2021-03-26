@@ -263,7 +263,9 @@ def get_nested_value(nested, branch):
                     leaf_kwargs[k] = v.replace('"', "")
                 elif arg:
                     leaf_args.append(arg.replace('"', ""))
-            val = getattr(nested, leaf_func, lambda *args, **kwargs: None)(*leaf_args, **leaf_kwargs)
+            val = getattr(nested, leaf_func, lambda *args, **kwargs: None)(
+                *leaf_args, **leaf_kwargs
+            )
         else:  # leaf is an attribute
             val = getattr(nested, leaf, None)
     else:
@@ -388,10 +390,7 @@ def log_start_activity(activity, activity_id, session_id, start):
 def log_finish_activity(activity_id, end):
     """Log end of an activity."""
 
-    log_record = {
-        "activity_id": activity_id,
-        "endTime": end
-    }
+    log_record = {"activity_id": activity_id, "endTime": end}
     log_prov_info(log_record)
 
 
@@ -404,10 +403,7 @@ def get_derivation_records(class_instance, activity):
         value = get_nested_value(class_instance, var)
         new_id = get_entity_id(value, item)
         if new_id != entity_id:
-            log_record = {
-                "entity_id": new_id,
-                "progenitor_id": entity_id
-            }
+            log_record = {"entity_id": new_id, "progenitor_id": entity_id}
             records.append(log_record)
             traced_entities[var] = (new_id, item)
             logger.warning(f"Derivation detected in {activity} for {var}. ID: {new_id}")
@@ -427,10 +423,7 @@ def get_parameters_records(class_instance, activity, activity_id):
                 if parameter_value:
                     parameters[parameter["name"]] = parameter_value
         if parameters:
-            log_record = {
-                "activity_id": activity_id,
-                "parameters": parameters
-            }
+            log_record = {"activity_id": activity_id, "parameters": parameters}
             records.append(log_record)
     return records
 
