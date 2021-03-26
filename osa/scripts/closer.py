@@ -290,6 +290,7 @@ def post_process_files(seq_list):
                 pattern_found = re.search(r'dl1ab(?:.*)/dl1*', file)
             else:
                 pattern_found = re.search(pattern, file)
+            log.debug(f"Pattern {concept} found, {pattern_found}")
 
             if options.seqtoclose is not None:
                 seqtoclose_found = re.search(options.seqtoclose, file)
