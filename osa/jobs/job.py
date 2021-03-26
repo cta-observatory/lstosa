@@ -61,15 +61,15 @@ def historylevel(historyfile, data_type):
     """
     Returns the level from which the analysis should begin and
     the rc of the last executable given a certain history file.
-    For CALIBRATION sequences:
-        - DRS4->time calib is level 3->2
-        - time calib->charge calib is level 2->1
-        - charge calib 1->0 (sequence completed)
+    For PEDCALIB sequences:
+     - DRS4->time calib is level 3->2
+     - time calib->charge calib is level 2->1
+     - charge calib 1->0 (sequence completed)
     For DATA sequences:
-        - R0->DL1 is level 4->3
-        - DL1->DL1AB is level 3->2
-        - DATACHECK is level 2->1
-        - DL1->DL2 is level 1->0 (sequence completed)
+     - R0->DL1 is level 4->3
+     - DL1->DL1AB is level 3->2
+     - DATACHECK is level 2->1
+     - DL1->DL2 is level 1->0 (sequence completed)
 
     Parameters
     ----------
@@ -83,10 +83,10 @@ def historylevel(historyfile, data_type):
     """
     if data_type == "DATA":
         level = 4
-    elif data_type == "CALIBRATION":
+    elif data_type == "PEDCALIB":
         level = 3
     else:
-        log.error("Type not expected")
+        log.error("Type {data_type} not expected")
         sys.exit(1)
     exit_status = 0
     if os.path.exists(historyfile):
@@ -150,12 +150,6 @@ def preparejobs(sequence_list):
 def preparestereojobs(sequence_list):
     for s in sequence_list:
         log.debug(f"Creating sequence.py for sequence {s.seq}")
-        createjobtemplate(s)
-
-
-def preparedailyjobs(sequence_list):
-    for s in sequence_list:
-        log.debug(f"Creating sequence.sh for source {s.name}")
         createjobtemplate(s)
 
 

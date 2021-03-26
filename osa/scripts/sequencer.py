@@ -180,7 +180,6 @@ def stereo_process(telescope, s1_list, s2_list):
     # writeworkflow(sequence_list)
     # adds the scripts
     preparestereojobs(sequence_list)
-    # preparedailyjobs(dailysrc_list)
     queue_list = getqueuejoblist(sequence_list)
     veto_list = getvetolist(sequence_list)
     closed_list = getclosedlist(sequence_list)

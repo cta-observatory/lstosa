@@ -60,7 +60,7 @@ def calibrationsequence(
     history_file = path.join(
         options.directory, f"sequence_{options.tel_id}_{cal_run_number}.history"
     )
-    level, rc = historylevel(history_file, "CALIBRATION")
+    level, rc = historylevel(history_file, "PEDCALIB")
     log.info(f"Going to level {level}")
     if level == 3:
         rc = drs4_pedestal(ped_run_number, pedestal_filename, history_file)

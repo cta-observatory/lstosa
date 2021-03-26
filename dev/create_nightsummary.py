@@ -364,7 +364,7 @@ def main():
         if run_type == "D":
             run_type = "DATA"
         elif run_type == "C":
-            run_type = "CALIBRATION"
+            run_type = "PEDCALIB"
         elif run_type == "P":
             run_type = "PEDESTAL"
         else:
@@ -451,10 +451,10 @@ def main():
             previous_run_type = sortedsummary[i - 1][3]
 
             # CALIBRATION->DATA,DATA,DATA ... PEDESTAL -!-> DATA
-            if previous_run_type not in ["CALIBRATION", "DATA"]:
+            if previous_run_type not in ["PEDCALIB", "DATA"]:
                 msg_part1 = f"WARNING [{sys.argv[0]}]: Previous run.subrun {previous_run_number}.{previous_subrun_number} "
                 msg_part2 = f"type {previous_run_type} not expected for "
-                msg_part3 = f"current {run_number}.{subrun_number} (expected DATA or CALIBRATION)\n"
+                msg_part3 = f"current {run_number}.{subrun_number} (expected DATA or PEDCALIB)\n"
                 sys.stderr.write(msg_part1 + msg_part2 + msg_part3)
                 sys.stderr.flush()
 
