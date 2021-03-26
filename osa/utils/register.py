@@ -4,11 +4,11 @@ import shutil
 from filecmp import cmp
 from glob import glob
 from os.path import basename, exists, join
+from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.utils import lstdate_to_dir
-from pathlib import Path
 
 log = logging.getLogger(__name__)
 
@@ -110,14 +110,10 @@ def register_run_concept_files(run_string, concept):
     nightdir = lstdate_to_dir(options.date)
     if concept == "DL2":
         inputdir = options.directory
-        outputdir = join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id
-        )
+        outputdir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id)
     elif concept in ["DL1", "MUON"]:
         inputdir = options.directory
-        outputdir = join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id
-        )
+        outputdir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id)
     elif concept == "DL1AB":
         inputdir = join(options.directory, "dl1ab" + "_" + options.dl1_prod_id)
         outputdir = join(
@@ -130,9 +126,7 @@ def register_run_concept_files(run_string, concept):
         )
     elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
         inputdir = options.directory
-        outputdir = join(
-                cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id
-        )
+        outputdir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id)
     type = cfg.get("LSTOSA", concept + "TYPE")
     prefix = cfg.get("LSTOSA", concept + "PREFIX")
     suffix = cfg.get("LSTOSA", concept + "SUFFIX")
