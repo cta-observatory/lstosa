@@ -153,12 +153,6 @@ def preparestereojobs(sequence_list):
         createjobtemplate(s)
 
 
-def preparedailyjobs(sequence_list):
-    for s in sequence_list:
-        log.debug(f"Creating sequence.sh for source {s.name}")
-        createjobtemplate(s)
-
-
 def setrunfromparent(sequence_list):
     # this is a dictionary, seq -> parent's run number
     dictionary = {}
