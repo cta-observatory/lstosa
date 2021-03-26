@@ -1,0 +1,4 @@
+04185.0010 lstchain_data_r0_to_dl1 v0.7.0 Thu Mar 25 12:53:40 UTC 2021 calibration.Run04183.0000.hdf5 drs4_pedestal.Run04179.0000.fits 0
+04185.0010 lstchain_dl1ab tailcut84 Thu Mar 25 13:06:09 UTC 2021 dl1_LST-1.Run04185.0010.h5 lstchain_standard_config_tailcut84.json 0
+04185.0010 lstchain_check_dl1 tailcut84 Thu Mar 25 13:07:02 UTC 2021 dl1_LST-1.Run04185.0010.h5 None 0
+04185.0010 lstchain_dl1_to_dl2 model1 Thu Mar 25 13:07:02 UTC 2021 dl1_LST-1.Run04185.0010.h5 None 0

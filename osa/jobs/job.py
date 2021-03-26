@@ -5,6 +5,7 @@ Functions to handle the job submission using SLURM
 import logging
 import os
 import subprocess
+import sys
 import time
 from glob import glob
 
@@ -34,7 +35,6 @@ def are_all_jobs_correctly_finished(seqlist):
     for s in seqlist:  # Run wise
         history_files_list = glob(rf"{options.directory}/*{s.run}*.history")  # Subrun wise
         for history_file in history_files_list:
-            log.debug(history_file)
             # TODO: s.history should be SubRunObj attribute not RunObj
             # s.history only working for CALIBRATION sequence (run-wise), since it is
             # looking for .../sequence_LST1_04180.history files
@@ -44,13 +44,16 @@ def are_all_jobs_correctly_finished(seqlist):
             if out == 0:
                 log.debug(f"Job {s.seq} ({s.type}) correctly finished")
                 continue
+            elif out == 1 and options.nodl2:
+                log.debug(f"Job {s.seq} ({s.type}) correctly finished up to DL1ab, but noDL2 option selected")
+                continue
             else:
                 log.debug(f"Job {s.seq} (run {s.run}) not correctly/completely finished [level {out}]")
                 flag = False
     return flag
 
 
-def historylevel(historyfile, type):
+def historylevel(historyfile, data_type):
     """
     Returns the level from which the analysis should begin and
     the rc of the last executable given a certain history file.
@@ -67,16 +70,20 @@ def historylevel(historyfile, type):
     Parameters
     ----------
     historyfile
-    type
+    data_type: str
+        Either 'DATA' or 'CALIBRATION'
 
     Returns
     -------
 
     """
-    if type == "DATA":
+    if data_type == "DATA":
         level = 4
-    elif type == "CALIBRATION":
+    elif data_type == "CALIBRATION":
         level = 3
+    else:
+        log.error("Type not expected")
+        sys.exit(1)
     exit_status = 0
     if os.path.exists(historyfile):
         for line in readfromfile(historyfile).splitlines():
