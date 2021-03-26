@@ -31,12 +31,13 @@ def are_all_jobs_correctly_finished(seqlist):
     """
     flag = True
     for s in seqlist:
+        log.debug(s.history)
         out, rc = historylevel(s.history, s.type)
         if out == 0:
             log.debug(f"Job {s.seq} ({s.type}) correctly finished")
             continue
         else:
-            log.debug(f"Job {s.seq}, subrun {s.jobname} ({s.run}) not correctly/completely finished [level {out}]")
+            log.debug(f"Job {s.seq} (run {s.run}) not correctly/completely finished [level {out}]")
             flag = False
     return flag
 
