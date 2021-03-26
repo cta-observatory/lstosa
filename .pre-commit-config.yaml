@@ -4,7 +4,4 @@ repos:
     hooks:
     - id: black
       language_version: python3.6
--   repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.8.0
-    hooks:
-    - id: isort
+
