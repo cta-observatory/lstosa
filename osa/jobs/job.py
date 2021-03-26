@@ -62,14 +62,14 @@ def historylevel(historyfile, data_type):
     Returns the level from which the analysis should begin and
     the rc of the last executable given a certain history file.
     For CALIBRATION sequences:
-        - DRS4->time calib is level 3->2
-        - time calib->charge calib is level 2->1
-        - charge calib 1->0 (sequence completed)
+     - DRS4->time calib is level 3->2
+     - time calib->charge calib is level 2->1
+     - charge calib 1->0 (sequence completed)
     For DATA sequences:
-        - R0->DL1 is level 4->3
-        - DL1->DL1AB is level 3->2
-        - DATACHECK is level 2->1
-        - DL1->DL2 is level 1->0 (sequence completed)
+     - R0->DL1 is level 4->3
+     - DL1->DL1AB is level 3->2
+     - DATACHECK is level 2->1
+     - DL1->DL2 is level 1->0 (sequence completed)
 
     Parameters
     ----------
