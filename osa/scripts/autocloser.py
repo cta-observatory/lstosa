@@ -33,18 +33,47 @@ def valid_date(s):
 
 
 def argument_parser():
-    parser = argparse.ArgumentParser(description="This script is an automatic error handler and closer for LSTOSA.")
+    parser = argparse.ArgumentParser(
+        description="This script is an automatic error handler and closer for LSTOSA."
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Turn on verbose mode")
-    parser.add_argument("-t", "--test", action="store_true", help="Test mode with example sequences, only works locally")
-    parser.add_argument("-s", "--simulate", action="store_true", help="Create nothing, only simulate closer (safe mode)")
+    parser.add_argument(
+        "-t",
+        "--test",
+        action="store_true",
+        help="Test mode with example sequences, only works locally",
+    )
+    parser.add_argument(
+        "-s",
+        "--simulate",
+        action="store_true",
+        help="Create nothing, only simulate closer (safe mode)",
+    )
     parser.add_argument("--ignorecronlock", action="store_true", help='Ignore "cron.lock"')
-    parser.add_argument("-i", "--onlyIncidences", action="store_true", help="Writing down only incidences, not closing")
+    parser.add_argument(
+        "-i",
+        "--onlyIncidences",
+        action="store_true",
+        help="Writing down only incidences, not closing",
+    )
     parser.add_argument("-d", "--date", help="Date - format YYYY_MM_DD", type=valid_date)
-    parser.add_argument("-f", "--force", action="store_true", help="Force the autocloser to close the day")
-    parser.add_argument("-e", "--equal", action="store_true", help="Skip check for equal amount of sequences")
-    parser.add_argument("-w", "--woIncidences", action="store_true", help="Close without writing down incidences.")
+    parser.add_argument(
+        "-f", "--force", action="store_true", help="Force the autocloser to close the day"
+    )
+    parser.add_argument(
+        "-e", "--equal", action="store_true", help="Skip check for equal amount of sequences"
+    )
+    parser.add_argument(
+        "-w", "--woIncidences", action="store_true", help="Close without writing down incidences."
+    )
     parser.add_argument("-r", "--runwise", action="store_true", help="Close the day run-wise.")
-    parser.add_argument("-c", "--config-file", dest="osa_config_file", default="cfg/sequencer.cfg", help="OSA config file.")
+    parser.add_argument(
+        "-c",
+        "--config-file",
+        dest="osa_config_file",
+        default="cfg/sequencer.cfg",
+        help="OSA config file.",
+    )
     parser.add_argument("-l", "--log", default="", help="Write log to a file.")
     parser.add_argument("tel", nargs="*", default="LST1", choices=["LST1", "LST2", "ST"])
     return parser
@@ -110,13 +139,17 @@ class Telescope(object):
             log.warning(f"{self.telescope} is already closed! Ignoring {self.telescope}")
             return
         if not os.path.exists(analysis_path(self.telescope)):
-            log.warning(f"'Analysis' folder does not exist for {self.telescope}! Ignoring {self.telescope}")
+            log.warning(
+                f"'Analysis' folder does not exist for {self.telescope}! Ignoring {self.telescope}"
+            )
             return
         if not self.lockAutomaticSequencer() and not args.ignorecronlock:
             log.warning(f"{self.telescope} already locked! Ignoring {self.telescope}")
             return
         if not self.simulate_sequencer():
-            log.warning(f"Simulation of the sequencer failed for {self.telescope}! Ignoring {self.telescope}")
+            log.warning(
+                f"Simulation of the sequencer failed for {self.telescope}! Ignoring {self.telescope}"
+            )
             return
         self.parse_sequencer()
         if not self.build_Sequences():
@@ -170,7 +203,9 @@ class Telescope(object):
                 self.telescope,
             ]
             log.debug(f"Executing {' '.join(seqArgs)}")
-            seqr = subprocess.Popen(seqArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+            seqr = subprocess.Popen(
+                seqArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
+            )
             self.stdout, self.stderr = seqr.communicate()
             log.info(self.stdout)
             if seqr.returncode != 0:
@@ -210,9 +245,24 @@ class Telescope(object):
     def close(self):
         log.info("Closing...")
         if args.simulate:
-            closerArgs = ["closer", "-s", "-v", "-y", "-d", f"{year:04}_{month:02}_{day:02}", self.telescope]
+            closerArgs = [
+                "closer",
+                "-s",
+                "-v",
+                "-y",
+                "-d",
+                f"{year:04}_{month:02}_{day:02}",
+                self.telescope,
+            ]
         else:
-            closerArgs = ["closer", "-v", "-y", "-d", f"{year:04}_{month:02}_{day:02}", self.telescope]
+            closerArgs = [
+                "closer",
+                "-v",
+                "-y",
+                "-d",
+                f"{year:04}_{month:02}_{day:02}",
+                self.telescope,
+            ]
 
         if args.test:
             self.closed = True
@@ -342,7 +392,9 @@ class Sequence(object):
             log.debug("Cannot check for missing subruns in the middle for CALIBRATION")
             return True
         search_str = f"{analysis_path(self.dictSequence['Tel'])}/20*_{int(self.dictSequence['Run']):08d}.*_Y_*.root"
-        subrun_nrs = sorted([int(os.path.basename(f).split(".")[1][0:3]) for f in glob.glob(search_str)])
+        subrun_nrs = sorted(
+            [int(os.path.basename(f).split(".")[1][0:3]) for f in glob.glob(search_str)]
+        )
         for i, x in enumerate(subrun_nrs, 1):
             if i != x:
                 return False
@@ -517,13 +569,17 @@ def understand_mono_sequence(tel, seq):
     """
     if seq.is_error2noint():
         log.info("Updating incidences: run calibrated w/o interleaved ped/cal")
-        tel.incidence.add_incidence("error2noint", f"{seq.dictSequence['Run']}({seq.dictSequence['Subruns']})")
+        tel.incidence.add_incidence(
+            "error2noint", f"{seq.dictSequence['Run']}({seq.dictSequence['Subruns']})"
+        )
 
     # maybe this check is obsolete since we introduced error2noint
     if seq.is_error2():
         seq.understood = True
         log.info("Updating incidences: short runs")
-        tel.incidence.add_incidence("error2", f"{seq.dictSequence['Run']}({seq.dictSequence['Subruns']})")
+        tel.incidence.add_incidence(
+            "error2", f"{seq.dictSequence['Run']}({seq.dictSequence['Subruns']})"
+        )
         seq.discarded = True
         log.info("Discarding this sequence from OSA")
         seq.readyToClose = True
@@ -533,7 +589,9 @@ def understand_mono_sequence(tel, seq):
         seq.understood = True
         if not tel.problem.recoverReport(seq.dictSequence["Run"]):
             # send email that i could not recover report files!
-            log.warning(f"Failed to recover at least one missing report file for sequence {seq.dictSequence['Run']}")
+            log.warning(
+                f"Failed to recover at least one missing report file for sequence {seq.dictSequence['Run']}"
+            )
         if tel.problem.recoveredReports:
             log.info(f"Updating incidences: Reports recovered for {tel.problem.recoveredReports}")
             tel.incidence.add_incidence("recReps", tel.problem.recoveredReports)
@@ -550,7 +608,9 @@ def understand_stereo_sequence(tel, seq):
     if seq.is_error3() and tel.problem.is_too_few_star_events(seq.dictSequence["Run"]):
         seq.understood = True
         log.info("Updating incidences: empty superstar file")
-        tel.incidence.add_incidence("error3", f"{seq.dictSequence['Run']}({seq.dictSequence['Subruns']})")
+        tel.incidence.add_incidence(
+            "error3", f"{seq.dictSequence['Run']}({seq.dictSequence['Subruns']})"
+        )
         seq.readyToClose = True
         return True
 
@@ -678,7 +738,9 @@ if __name__ == "__main__":
         log.debug("Closing run-wise")
 
     if args.onlyIncidences and args.force:
-        log.error("The command line arguments 'onlyIncidences' and 'force' are incompatible with each other")
+        log.error(
+            "The command line arguments 'onlyIncidences' and 'force' are incompatible with each other"
+        )
         exit(1)
 
     if args.date:
