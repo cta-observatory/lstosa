@@ -116,7 +116,7 @@ def finished_assignments(sequence_list):
             "CALIB",
             "TIMECALIB",
             "DL1",
-            "DL1AB"
+            "DL1AB",
             "MUON",
             "DATACHECK",
             "DL2"
