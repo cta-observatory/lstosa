@@ -47,6 +47,6 @@ setup(
         "pydot",
         "pydotplus",
     ],
-    python_requires="==3.7",
+    python_requires="~=3.7",
     entry_points=entry_points,
 )
