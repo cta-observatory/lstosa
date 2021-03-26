@@ -37,7 +37,9 @@ handler.setFormatter(fmt)
 logging.root.addHandler(handler)
 
 
-def calibrationsequence(pedestal_filename, calibration_filename, ped_run_number, cal_run_number, run_summary_file):
+def calibrationsequence(
+    pedestal_filename, calibration_filename, ped_run_number, cal_run_number, run_summary_file
+):
     """
     Handle the three steps for creating the calibration products:
     DRS4 pedestal, charge calibration and time calibration files
@@ -65,7 +67,9 @@ def calibrationsequence(pedestal_filename, calibration_filename, ped_run_number,
         level -= 1
         log.info(f"Going to level {level}")
     if level == 2:
-        rc = calibrate_time(cal_run_number, pedestal_filename, calibration_filename, run_summary_file, history_file)
+        rc = calibrate_time(
+            cal_run_number, pedestal_filename, calibration_filename, run_summary_file, history_file
+        )
         level -= 1
         log.info(f"Going to level {level}")
     if level == 1:
@@ -118,7 +122,7 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000,
         cfg.get("PROGRAM", "PEDESTAL"),
         "--input-file=" + input_file,
         "--output-file=" + output_file,
-        f"--max-events={max_events}"
+        f"--max-events={max_events}",
     ]
     command_concept = "drs4_pedestal"
 
@@ -154,19 +158,14 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000,
 
     plot_file = path.join(options.directory, "log", f"drs4_pedestal.Run{run_ped}.0000.pdf")
     log.info(f"Producing plots in {plot_file}")
-    drs4.plot_pedestals(
-        input_file,
-        output_file,
-        run_ped,
-        plot_file
-    )
+    drs4.plot_pedestals(input_file, output_file, run_ped, plot_file)
     plt.close("all")
 
     return rc
 
 
 def calibrate_charge(
-        run_ped, calibration_run, pedestal_file, calibration_output_file, run_summary, history_file
+    run_ped, calibration_run, pedestal_file, calibration_output_file, run_summary, history_file
 ):
     """
     Create a charge calibration file to transform from ADC counts to photo-electrons
@@ -229,7 +228,7 @@ def calibrate_charge(
         f"--FlatFieldCalculator.sample_size={stat_events}",
         f"--PedestalCalculator.sample_size={stat_events}",
         "--log-file=" + log_output_file,
-        "--config=" + calib_configfile
+        "--config=" + calib_configfile,
     ]
     command_concept = "charge_calibration"
 
@@ -276,7 +275,9 @@ def calibrate_charge(
     return rc
 
 
-def calibrate_time(calibration_run, pedestal_file, calibration_output_file, run_summary, history_file, subrun=0):
+def calibrate_time(
+    calibration_run, pedestal_file, calibration_output_file, run_summary, history_file, subrun=0
+):
     """
     Create a time calibration file
 
@@ -319,7 +320,7 @@ def calibrate_time(calibration_run, pedestal_file, calibration_output_file, run_
         "--output-file=" + time_calibration_output_file,
         "--pedestal-file=" + pedestal_file_path,
         "--config=" + calib_configfile,
-        "--run-summary-path=" + run_summary
+        "--run-summary-path=" + run_summary,
     ]
     command_concept = "time_calibration"
 
@@ -391,7 +392,13 @@ def calibrate_time(calibration_run, pedestal_file, calibration_output_file, run_
 
 if __name__ == "__main__":
     # Set the options through cli parsing
-    pedoutfile, caloutfile, calib_run_number, ped_run_number, run_summary = calibrationsequencecliparsing()
+    (
+        pedoutfile,
+        caloutfile,
+        calib_run_number,
+        ped_run_number,
+        run_summary,
+    ) = calibrationsequencecliparsing()
 
     if options.verbose:
         logging.root.setLevel(logging.DEBUG)
