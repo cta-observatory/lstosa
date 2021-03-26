@@ -6,6 +6,7 @@ import logging
 import os
 import subprocess
 import time
+from glob import glob
 
 import pandas as pd
 
@@ -30,15 +31,22 @@ def are_all_jobs_correctly_finished(seqlist):
 
     """
     flag = True
-    for s in seqlist:
-        log.debug(s.history)
-        out, rc = historylevel(s.history, s.type)
-        if out == 0:
-            log.debug(f"Job {s.seq} ({s.type}) correctly finished")
-            continue
-        else:
-            log.debug(f"Job {s.seq} (run {s.run}) not correctly/completely finished [level {out}]")
-            flag = False
+    for s in seqlist:  # Run wise
+        history_files_list = glob(rf"{options.directory}/*{s.run}*.history")  # Subrun wise
+        for history_file in history_files_list:
+            log.debug(history_file)
+            # TODO: s.history should be SubRunObj attribute not RunObj
+            # s.history only working for CALIBRATION sequence (run-wise), since it is
+            # looking for .../sequence_LST1_04180.history files
+            # we need to check all the subrun wise history files
+            # .../sequence_LST1_04180.XXXX.history
+            out, rc = historylevel(history_file, s.type)
+            if out == 0:
+                log.debug(f"Job {s.seq} ({s.type}) correctly finished")
+                continue
+            else:
+                log.debug(f"Job {s.seq} (run {s.run}) not correctly/completely finished [level {out}]")
+                flag = False
     return flag
 
 
