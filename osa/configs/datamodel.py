@@ -46,12 +46,12 @@ class SubrunObj(RunObj):
         self.timestamp = None
         self.time = None
         self.date = None
-        self.ucts_timestamp = None                                                                                                                                                                                   
-        self.dragon_reference_time = None                                             
-        self.dragon_reference_module_id = None                                    
-        self.dragon_reference_module_index = None                           
-        self.dragon_reference_counter = None                                                                                                                                               
-        self.dragon_reference_source = None 
+        self.ucts_timestamp = None
+        self.dragon_reference_time = None
+        self.dragon_reference_module_id = None
+        self.dragon_reference_module_index = None
+        self.dragon_reference_counter = None
+        self.dragon_reference_source = None
 
 
 class Sequence(RunObj):
