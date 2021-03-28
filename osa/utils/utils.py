@@ -4,8 +4,9 @@ Functions to deal with dates, directories and prod IDs
 
 import hashlib
 import logging
+import os
 from datetime import datetime, timedelta
-from os import getpid, makedirs, readlink, symlink
+from os import getpid, readlink, symlink
 from os.path import dirname, exists, isdir, isfile, islink, join, split
 from socket import gethostname
 
@@ -72,7 +73,7 @@ def getnightdirectory():
         elif options.simulate:
             log.debug(f"SIMULATE the creation of the analysis directory.")
         else:
-            make_directory(directory)
+            os.makedirs(directory, exist_ok=True)
     log.debug(f"Analysis directory: {directory}")
     return directory
 
@@ -84,12 +85,9 @@ def get_lstchain_version():
     -------
 
     """
-    import warnings
+    from lstchain import __version__
 
-    warnings.simplefilter(action="ignore", category=FutureWarning)
-    from lstchain.version import get_version
-
-    options.lstchain_version = "v" + get_version()
+    options.lstchain_version = "v" + __version__
     return options.lstchain_version
 
 
@@ -165,34 +163,6 @@ def get_dl2_prod_id():
     return options.dl2_prod_id
 
 
-def make_directory(dir):
-    """
-
-    Parameters
-    ----------
-    dir
-
-    Returns
-    -------
-
-    """
-    if exists(dir):
-        if not isdir(dir):
-            # oups!! a file instead of a dir?
-            log.error(f"{dir} exists but is not a directory")
-        else:
-            # it is a directory, OK, we could check for access.
-            return False
-    else:
-        try:
-            makedirs(dir)
-        except IOError as error:
-            log.exception(f"Problems creating {dir}, {error}")
-        else:
-            log.debug(f"Created {dir}")
-            return True
-
-
 def createlock(lockfile, content):
     """
 
@@ -216,7 +186,7 @@ def createlock(lockfile, content):
             log.error(f"Lock by a previous process {hostpid}, exiting!\n")
         else:
             if not exists(dir):
-                make_directory(dir)
+                os.makedirs(dir, exist_ok=True)
                 log.debug(f"Creating parent directory {dir} for lock file")
             if isdir(dir):
                 pid = str(getpid())
@@ -394,7 +364,7 @@ def get_md5sum_and_copy(inputf, outputf):
     """
     md5 = hashlib.md5()
     outputdir = dirname(outputf)
-    make_directory(outputdir)
+    os.makedirs(outputdir, exist_ok=True)
     # in case of being a link we just move it
     if islink(inputf):
         linkto = readlink(inputf)
