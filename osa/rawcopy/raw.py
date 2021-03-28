@@ -1,4 +1,5 @@
 import logging
+import sys
 from glob import glob
 from os.path import exists, join
 
@@ -41,10 +42,8 @@ def get_check_rawdir():
     log.debug(f"Trying raw directory: {rawdir}")
 
     if not exists(rawdir):
-        # the most sensible thing to do is to quit succesfully after a warning
-        # log.warning(f"rawdir set to . because {rawdir} does not exists!")
-        # rawdir = os.getcwd()
         log.error(f"Raw directory {rawdir} does not exist")
+        sys.exit(1)
     else:
         # check that it contains at least one raw or compressed-raw file and set compression flag
         list = glob(join(rawdir, "*" + rawsuffix))
