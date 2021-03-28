@@ -5,10 +5,10 @@ It reads the night summary file
 import logging
 import os
 import subprocess
+import sys
 
 from astropy.table import Table
 
-from osa.configs import options
 from osa.configs.config import cfg
 from osa.rawcopy.raw import are_rawfiles_transferred
 from osa.utils.standardhandle import stringify
@@ -87,9 +87,10 @@ def run_summary_table(date):
     # else:
 
     nightsummary_file = get_runsummary_file(date)
-    log.debug(f"Run summary file {nightsummary_file}")
+    log.debug(f"Trying run summary file path {nightsummary_file}")
     if not os.path.isfile(nightsummary_file):
-        raise IOError(f"Run summary file {nightsummary_file} not found")
+        log.error(f"Run summary file {nightsummary_file} not found")
+        sys.exit(1)
 
     table = Table.read(nightsummary_file)
     table.add_index(["run_id"])
