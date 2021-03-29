@@ -87,6 +87,14 @@ def closer_argparser():
         help="do not run, just show what would happen",
     )
     parser.add_argument(
+        "-t",
+        "--test",
+        action="store_true",
+        dest="test",
+        default=False,
+        help="Avoiding interaction with SLURM",
+    )
+    parser.add_argument(
         "-y",
         "--yes",
         action="store_true",
@@ -155,6 +163,7 @@ def closercliparsing():
     options.nightsummary = opts.nightsum
     options.noninteractive = opts.noninteractive
     options.simulate = opts.simulate
+    options.test = opts.test
     options.verbose = opts.verbose
     options.warning = opts.warning
     options.reason = opts.reason
