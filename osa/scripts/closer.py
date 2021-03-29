@@ -316,8 +316,8 @@ def register_found_pattern(filepath, seq_list, concept, destination_path, delete
     # For the moment we do not want to close to allow further reprocessings
     # setclosedfilename(s)
     # createclosed(s.closed)
-    delete_set.add(file)
-    log.debug(delete_set)
+    delete_set.add(filepath)
+    log.debug(f"Len delete set: {len(delete_set)}")
     return delete_set
 
 
