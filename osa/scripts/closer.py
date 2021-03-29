@@ -241,9 +241,8 @@ def post_process_files(seq_list):
 
     output_files_set = set(Path(options.directory).rglob("*Run*"))
 
-    log.debug(output_files_set)
-
-    DL1_RE = re.compile(fr"{options.dl1_prod_id}(?:.*)/dl1(?:.*).(?:h5|hdf5|hdf)")
+    DL1_RE = re.compile(fr"{options.directory}/dl1(?:.*).(?:h5|hdf5|hdf)")
+    DL1AB_RE = re.compile(fr"{options.dl1_prod_id}(?:.*)/dl1(?:.*).(?:h5|hdf5|hdf)")
     DL2_RE = re.compile(r"dl2(?:.*).(?:h5|hdf5|hdf)")
     MUONS_RE = re.compile(r"muons(?:.*).fits")
     DATACHECK_RE = re.compile(r"datacheck_dl1(?:.*).(?:h5|hdf5|hdf)")
@@ -253,7 +252,7 @@ def post_process_files(seq_list):
 
     pattern_files = dict(
         [
-            ("DL1", DL1_RE),
+            ("DL1AB", DL1AB_RE),
             ("DL2", DL2_RE),
             ("MUON", MUONS_RE),
             ("DATACHECK", DATACHECK_RE),
@@ -276,6 +275,14 @@ def post_process_files(seq_list):
                 log.debug(f"Pattern {concept} found, {pattern_found} in {file}")
                 registered_file = register_found_pattern(file_path, seq_list, concept, dst_path)
                 output_files_set.remove(registered_file)
+
+    # Finally remove original DL1 files leaving only the DL1AB with images
+    for file in output_files_set:
+        log.debug(f"Deleting original DL1 files pre DL1AB")
+        # if not options.simulate:
+        pattern_found = DL1_RE.search(file)
+        if pattern_found:
+            log.debug(f"Deleting {file}")
 
 
 def register_found_pattern(file_path, seq_list, concept, destination_path):
@@ -378,7 +385,7 @@ def create_destination_dir(concept):
         directory = os.path.join(
             cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id
         )
-    elif concept in ["DL1", "DATACHECK"]:
+    elif concept in ["DL1AB", "DATACHECK"]:
         directory = os.path.join(
             cfg.get(options.tel_id, concept + "DIR"),
             nightdir,
