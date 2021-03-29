@@ -269,7 +269,7 @@ def post_process_files(seq_list):
         dst_path = create_destination_dir(concept)
 
         log.debug(f"Checking if {concept} files need to be moved to {dst_path}")
-        for file_path in output_files_set:
+        for file_path in output_files_set.copy():
             file = str(file_path)
             pattern_found = pattern_re.search(file)
             if pattern_found:
