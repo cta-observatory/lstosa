@@ -237,7 +237,6 @@ def post_process_files(seq_list):
     ----------
     seq_list: list of sequences
     """
-    concept_set = []
 
     output_files_set = set(Path(options.directory).rglob("*Run*"))
 
@@ -277,13 +276,13 @@ def post_process_files(seq_list):
                 output_files_set.remove(registered_file)
 
     # Finally remove original DL1 files leaving only the DL1AB with images
-    for file in output_files_set.copy():
-        log.debug(f"Deleting original DL1 files pre DL1AB")
-        # if not options.simulate:
-        pattern_found = DL1_RE.search(str(file))
-        if pattern_found:
-            log.debug(f"Deleting {str(file)}")
-            output_files_set.remove(file)
+    log.debug(f"Deleting original DL1 files pre DL1AB")
+    if not options.simulate and not options.test:
+        for file in output_files_set.copy():
+            pattern_found = DL1_RE.search(str(file))
+            if pattern_found:
+                os.remove(file)
+                output_files_set.remove(file)
 
     log.debug(
         f"Output files left in running_analysis: {len(output_files_set)}. Files {output_files_set}"
@@ -325,7 +324,7 @@ def register_found_pattern(file_path, seq_list, concept, destination_path):
             log.debug(f"Destination file {new_dst} does not exists")
             register_non_existing_file(str(file_path), concept, seq_list)
 
-    # For the moment we do not want to close to allow further reprocessings
+    # For the moment we do not want to close to allow further reprocessing
     # setclosedfilename(s)
     # createclosed(s.closed)
     # Return filepath already registered to be deleted from the set of all files
