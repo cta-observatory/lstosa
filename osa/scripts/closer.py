@@ -21,7 +21,7 @@ from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import MyFormatter
 from osa.utils.register import register_run_concept_files
 from osa.utils.standardhandle import gettag, stringify
-from osa.utils.utils import getlockfile, is_day_closed, is_defined, lstdate_to_dir, make_directory
+from osa.utils.utils import getlockfile, is_day_closed, is_defined, lstdate_to_dir
 
 __all__ = [
     "use_night_summary",
@@ -237,126 +237,170 @@ def post_process_files(seq_list):
     ----------
     seq_list: list of sequences
     """
-
     concept_set = []
-    if options.tel_id == "LST1":
-        concept_set = [
-            "DL1AB",
-            "DL2",
-            "MUON",
-            "DATACHECK",
-            "PEDESTAL",
-            "CALIB",
-            "TIMECALIB",
+
+    output_files_set = set(Path(options.directory).rglob("*Run*"))
+
+    DL1_RE = re.compile(fr"{options.dl1_prod_id}(?:.*)/dl1(?:.*).(?:h5|hdf5|hdf)")
+    DL2_RE = re.compile(r"dl2(?:.*).(?:h5|hdf5|hdf)")
+    MUONS_RE = re.compile(r"muons(?:.*).fits")
+    DATACHECK_RE = re.compile(r"datacheck_dl1(?:.*).(?:h5|hdf5|hdf)")
+    CALIB_RE = re.compile(r"/calibration(?:.*).(?:h5|hdf5|hdf)")
+    TIMECALIB_RE = re.compile(r"/time_calibration(?:.*).(?:h5|hdf5|hdf)")
+    PEDESTAL_RE = re.compile(r"drs4(?:.*).fits")
+
+    pattern_files = dict(
+        [
+            ("DL1", DL1_RE),
+            ("DL2", DL2_RE),
+            ("MUON", MUONS_RE),
+            ("DATACHECK", DATACHECK_RE),
+            ("PEDESTAL", PEDESTAL_RE),
+            ("CALIB", CALIB_RE),
+            ("TIMECALIB", TIMECALIB_RE),
         ]
+    )
 
-    nightdir = lstdate_to_dir(options.date)
-    output_files = Path(options.directory).rglob("*Run*")
-    output_files_set = set(output_files)
+    delete_set = set()
+    for concept, pattern_re in pattern_files.items():
+        log.debug(f"Processing {concept} files, {len(output_files_set)} files left")
 
-    # TODO: use instead the lstchain.paths.DL1_RE, DC_DL1_RE, etc
+        dst_path = create_destination_dir(concept)
 
-    for concept in concept_set:
-        log.info(f"Processing {concept} files, {len(output_files_set)} files left")
-        try:
-            pattern = cfg.get("LSTOSA", concept + "PREFIX")
-        except KeyError as error:
-            log.error(f"No prefix found for {concept}. Please add it to the cfg: {error}")
-            sys.exit(1)
-
-        # Create final destination directory for each data level
-        if concept in ["MUON"]:
-            dir = os.path.join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id)
-        elif concept in ["DL1AB", "DATACHECK"]:
-            dir = os.path.join(
-                cfg.get(options.tel_id, concept + "DIR"),
-                nightdir,
-                options.prod_id,
-                options.dl1_prod_id,
-            )
-        elif concept == "DL2":
-            dir = os.path.join(
-                cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id
-            )
-        elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-            dir = os.path.join(
-                cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id
-            )
-
-        delete_set = set()
-        log.debug(f"Checking if {concept} files need to be moved to {dir}")
+        log.debug(f"Checking if {concept} files need to be moved to {dst_path}")
         for file_path in output_files_set:
             file = str(file_path)
-            if concept == "DL1AB":
-                pattern_found = re.search(r"dl1ab(?:.*)/dl1*", file)
+            pattern_found = pattern_re.search(file)
+            if pattern_found:
+                log.debug(f"Pattern {concept} found, {pattern_found}")
+                register_found_pattern(file, seq_list, concept, delete_set)
             else:
-                pattern_found = re.search(pattern, file)
-            log.debug(f"Pattern {concept} found, {pattern_found}")
+                log.debug("Pattern not found")
+            output_files_set -= delete_set
 
-            if options.seqtoclose is not None:
-                seqtoclose_found = re.search(options.seqtoclose, file)
-                if seqtoclose_found is None:
-                    pattern_found = None
-            if pattern_found is not None:
-                new_dst = os.path.join(dir, file)
-                log.debug(f"New file path {new_dst}")
-                if not options.simulate:
-                    make_directory(dir)
-                    if os.path.exists(new_dst):
-                        if os.path.islink(file):
-                            # delete because the link has been correctly copied
-                            log.debug(f"Original file {file} is just a link")
-                            if options.seqtoclose is None:
-                                log.debug(f"Deleting {file}")
-                                # unlink(file)
-                        elif os.path.exists(file) and cmp(file, new_dst):
-                            # delete
-                            log.debug(f"Destination file exists and it is equal to {file}")
-                            if options.seqtoclose is None:
-                                log.debug(f"Deleting {file}")
-                                # unlink(file)
-                        else:
-                            log.debug(
-                                f"Original file {file} is not a link or is different than destination {new_dst}"
-                            )
-                    else:
-                        log.debug(f"Destination file {new_dst} does not exists")
-                        for s in seq_list:
-                            log.debug(f"Looking for {s}")
 
-                            if s.type == "DATA":
-                                run_str_found = re.search(s.run_str, file)
+def register_found_pattern(filepath, seq_list, concept, delete_set):
+    """
 
-                                if run_str_found is not None:
-                                    # register and delete
-                                    log.debug(f"Registering file {run_str_found}")
-                                    register_run_concept_files(s.run_str, concept)
-                                    if options.seqtoclose is None and not os.path.exists(file):
-                                        log.debug("File does not exists")
+    Parameters
+    ----------
+    filepath
+    seq_list
+    concept
+    delete_set
+    """
+    file = os.path.basename(filepath)
+    new_dst = os.path.join(dir, file)
+    log.debug(f"New file path {new_dst}")
+    if not options.simulate:
+        if os.path.exists(new_dst):
+            if os.path.islink(file):
+                # delete because the link has been correctly copied
+                log.debug(f"Original file {file} is just a link")
+                if options.seqtoclose is None:
+                    log.debug(f"Deleting {file}")
+                    # unlink(file)
+            elif os.path.exists(file) and cmp(file, new_dst):
+                # delete
+                log.debug(f"Destination file exists and it is equal to {file}")
+                if options.seqtoclose is None:
+                    log.debug(f"Deleting original{file}. Not activated yet.")
+                    # unlink(file)
+            else:
+                log.debug(
+                    f"Original file {file} is not a link or is different than destination {new_dst}"
+                )
+        else:
+            log.debug(f"Destination file {new_dst} does not exists")
+            register_non_existing_file(filepath, concept, seq_list)
 
-                            elif s.type in ["PEDCALIB", "DRS4"]:
-                                calib_run_str_found = re.search(str(s.run), file)
-                                drs4_run_str_found = re.search(str(s.previousrun), file)
+    # For the moment we do not want to close to allow further reprocessings
+    # setclosedfilename(s)
+    # createclosed(s.closed)
+    delete_set.add(file)
 
-                                if calib_run_str_found is not None:
-                                    # register and delete
-                                    log.debug(f"Registering file {calib_run_str_found}")
-                                    register_run_concept_files(str(s.run), concept)
-                                    if options.seqtoclose is None and not os.path.exists(file):
-                                        log.debug("File does not exists")
 
-                                if drs4_run_str_found is not None:
-                                    # register and delete
-                                    log.debug(f"Registering file {drs4_run_str_found}")
-                                    register_run_concept_files(str(s.previousrun), concept)
-                                    if options.seqtoclose is None and not os.path.exists(file):
-                                        log.debug("File does not exists")
+def register_non_existing_file(filepath, concept, seq_list):
+    """
 
-                # FIXME: for the moment we do not want to close to allow further reprocessings
-                # setclosedfilename(s)
-                # createclosed(s.closed)
-                delete_set.add(file)
-        output_files_set -= delete_set
+    Parameters
+    ----------
+    filepath
+    concept
+    seq_list
+    """
+    for s in seq_list:
+        log.debug(f"Looking for {s}")
+
+        if s.type == "DATA":
+            run_str_found = re.search(s.run_str, filepath)
+
+            if run_str_found is not None:
+                # register and delete
+                log.debug(f"Registering file {run_str_found}")
+                register_run_concept_files(s.run_str, concept)
+                if options.seqtoclose is None and not os.path.exists(filepath):
+                    log.debug("File does not exists")
+
+        elif s.type in ["PEDCALIB", "DRS4"]:
+            calib_run_str_found = re.search(str(s.run), filepath)
+            drs4_run_str_found = re.search(str(s.previousrun), filepath)
+
+            if calib_run_str_found is not None:
+                # register and delete
+                log.debug(f"Registering file {calib_run_str_found}")
+                register_run_concept_files(str(s.run), concept)
+                if options.seqtoclose is None and not os.path.exists(filepath):
+                    log.debug("File does not exists")
+
+            if drs4_run_str_found is not None:
+                # register and delete
+                log.debug(f"Registering file {drs4_run_str_found}")
+                register_run_concept_files(str(s.previousrun), concept)
+                if options.seqtoclose is None and not os.path.exists(filepath):
+                    log.debug("File does not exists")
+
+
+def create_destination_dir(concept):
+    """
+    Create final destination directory for each data level
+
+    Parameters
+    ----------
+    concept : str
+        Expected: MUON, DL1, DATACHECK, DL2, PEDESTAL, CALIB, TIMECALIB
+
+    """
+    nightdir = lstdate_to_dir(options.date)
+
+    if concept == "MUON":
+        directory = os.path.join(
+            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id
+        )
+    elif concept in ["DL1", "DATACHECK"]:
+        directory = os.path.join(
+            cfg.get(options.tel_id, concept + "DIR"),
+            nightdir,
+            options.prod_id,
+            options.dl1_prod_id,
+        )
+    elif concept == "DL2":
+        directory = os.path.join(
+            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id
+        )
+    elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
+        directory = os.path.join(
+            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id
+        )
+    else:
+        log.warning(f"Concept {concept} not known")
+
+    if not options.simulate:
+        log.debug(f"Destination directory created for {concept}: {directory}")
+        os.makedirs(directory, exist_ok=True)
+    else:
+        log.debug(f"SIMULATING creation of final directory for {concept}")
+    return directory
 
 
 def set_closed_with_file(ana_text):
@@ -493,16 +537,21 @@ def merge_dl1datacheck(seq_list):
                 f"--output-dir={dl1_prod_id_directory}",
                 f"--muons-dir={dl1_base_directory}",
             ]
-            if not options.simulate:
+            if not options.simulate and not options.test:
                 try:
-                    subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
-                except subprocess.CalledProcessError as err:
-                    log.exception(f"Not able to merge DL1 datacheck: {err}")
+                    process = subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+                except (subprocess.CalledProcessError, RuntimeError) as err:
+                    log.exception(f"Not able to run DL1 datacheck: {err}")
+                else:
+                    if process.returncode != 0:
+                        sys.exit(process.returncode)
+
                 # TODO implement an automatic scp to www datacheck,
                 # right after the production of the PDF files.
                 # Right now there is no connection opened from cps
                 # to the datacheck webserver. Hence it has to be done without
                 # slurm and after assuring that the files are already produced.
+
             else:
                 log.debug("Simulate launching scripts")
             log.debug(f"{stringify(cmd)}")
@@ -537,8 +586,14 @@ def extract_provenance(seq_list):
                 nightdir,
                 options.prod_id,
             ]
-            if not options.simulate:
-                subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+            if not options.simulate and not options.test:
+                try:
+                    process = subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+                except (subprocess.CalledProcessError, RuntimeError) as err:
+                    log.exception(f"Not able to run DL1 datacheck: {err}")
+                else:
+                    if process.returncode != 0:
+                        sys.exit(process.returncode)
             else:
                 log.debug("Simulate launching scripts")
             log.debug(f"{stringify(cmd)}")
