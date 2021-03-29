@@ -111,7 +111,7 @@ def copy_files(host, datedir, files):
 
 def is_merge_process_finished():
     # TODO: still not implemented
-    #  check that no lstchain_check_dl1 is still running
+    #  check that no lstchain_check_dl1 is still running and pdf files already exist
     return True
 
 

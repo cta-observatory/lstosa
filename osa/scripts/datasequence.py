@@ -178,7 +178,7 @@ def dl1ab(run_str, historyfile):
 
     # Create a new subdirectory for the dl1ab output
     # TODO: create and option directory dl1ab
-    dl1ab_subdirectory = os.path.join(options.directory, "dl1ab" + "_" + options.dl1_prod_id)
+    dl1ab_subdirectory = os.path.join(options.directory, options.dl1_prod_id)
     os.makedirs(dl1ab_subdirectory, exist_ok=True)
     config_file = cfg.get("LSTOSA", "CONFIGFILE")
 
@@ -242,13 +242,13 @@ def dl1_datacheck(run_str, historyfile):
         return 0
 
     # Create a new subdirectory for the dl1ab output
-    dl1ab_subdirectory = os.path.join(options.directory, "dl1ab" + "_" + options.dl1_prod_id)
+    dl1ab_subdirectory = os.path.join(options.directory, options.dl1_prod_id)
 
     input_dl1_datafile = join(
         dl1ab_subdirectory,
         f'{cfg.get("LSTOSA", "DL1PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "DL1SUFFIX")}',
     )
-    output_directory = os.path.join(options.directory, "datacheck" + "_" + options.dl1_prod_id)
+    output_directory = os.path.join(options.directory, options.dl1_prod_id)
     os.makedirs(output_directory, exist_ok=True)
 
     # Prepare and launch the actual lstchain script
@@ -300,7 +300,7 @@ def dl1_to_dl2(run_str, historyfile):
     if options.simulate:
         return 0
 
-    dl1ab_subdirectory = os.path.join(options.directory, "dl1ab" + "_" + options.dl1_prod_id)
+    dl1ab_subdirectory = os.path.join(options.directory, options.dl1_prod_id)
 
     configfile = cfg.get("LSTOSA", "DL2CONFIGFILE")
     rf_models_directory = cfg.get("LSTOSA", "RF-MODELS-DIR")
