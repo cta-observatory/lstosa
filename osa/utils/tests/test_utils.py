@@ -3,6 +3,7 @@ import os
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.utils.utils import lstdate_to_dir
 
 options.date = "2020_01_02"
 options.tel_id = "LST1"
@@ -55,3 +56,38 @@ def test_date_in_yymmdd():
     from osa.utils.utils import date_in_yymmdd
 
     assert date_in_yymmdd("20200113") == "20_01_13"
+
+
+def test_destination_dir():
+    from osa.utils.utils import destination_dir
+
+    options.date = "2020_01_17"
+    datedir = lstdate_to_dir(options.date)
+    options.dl1_prod_id = cfg.get("LST1", "DL1-PROD-ID")
+    options.dl2_prod_id = cfg.get("LST1", "DL2-PROD-ID")
+    options.prod_id = cfg.get("LST1", "PROD-ID")
+    basedir = cfg.get("LST1", "DIR")
+
+    data_types = {
+        "DL1AB": f"DL1",
+        "DATACHECK": f"DL1",
+        "PEDESTAL": "calibration",
+        "CALIB": "calibration",
+        "TIMECALIB": "calibration",
+        "MUON": "DL1",
+        "DL2": "DL2",
+    }
+
+    for concept, dst in data_types.items():
+        directory = destination_dir(concept, create_dir=False)
+        if concept in ["DL1AB", "DATACHECK"]:
+            expected_directory = os.path.join(
+                basedir, dst, datedir, options.prod_id, options.dl1_prod_id
+            )
+        elif concept == "DL2":
+            expected_directory = os.path.join(
+                basedir, dst, datedir, options.prod_id, options.dl2_prod_id
+            )
+        else:
+            expected_directory = os.path.join(basedir, dst, datedir, options.prod_id)
+        assert directory == expected_directory

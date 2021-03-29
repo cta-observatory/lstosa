@@ -376,6 +376,8 @@ def createjobtemplate(s, get_content=False):
     content += "\n\n"
 
     if not options.test:
+        # export CTAPIPE_SVC_PATH=/fefs/aswg/data/servive
+        content += "os.environ['CTAPIPE_SVC_PATH'] = '/fefs/aswg/data/service'\n"
         content += "subruns = os.getenv('SLURM_ARRAY_TASK_ID')\n"
         content += "job_id = os.getenv('SLURM_JOB_ID')\n"
     else:
@@ -419,6 +421,7 @@ def submitjobs(sequence_list):
     job_list = []
     command = cfg.get("ENV", "SBATCHBIN")
     env_nodisplay = "--export=ALL,MPLBACKEND=Agg"
+
     for s in sequence_list:
         commandargs = [command, "--parsable", env_nodisplay]
         if s.type == "PEDCALIB":

@@ -433,3 +433,49 @@ def date_in_yymmdd(datestring):
     mm = "".join(date[4:6])
     dd = "".join(date[6:8])
     return f"{yy}_{mm}_{dd}"
+
+
+def destination_dir(concept, create_dir=True):
+    """
+    Create final destination directory for each data level.
+    See Also osa.utils.register_run_concept_files
+
+    Parameters
+    ----------
+    concept : str
+        Expected: MUON, DL1AB, DATACHECK, DL2, PEDESTAL, CALIB, TIMECALIB
+    create_dir : bool
+        Set it to True (default) if you want to create the directory.
+        Otherwise it just return the path
+
+    """
+    nightdir = lstdate_to_dir(options.date)
+
+    if concept == "MUON":
+        directory = os.path.join(
+            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id
+        )
+    elif concept in ["DL1AB", "DATACHECK"]:
+        directory = os.path.join(
+            cfg.get(options.tel_id, concept + "DIR"),
+            nightdir,
+            options.prod_id,
+            options.dl1_prod_id,
+        )
+    elif concept == "DL2":
+        directory = os.path.join(
+            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl2_prod_id
+        )
+    elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
+        directory = os.path.join(
+            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id
+        )
+    else:
+        log.warning(f"Concept {concept} not known")
+
+    if not options.simulate and create_dir:
+        log.debug(f"Destination directory created for {concept}: {directory}")
+        os.makedirs(directory, exist_ok=True)
+    else:
+        log.debug(f"SIMULATING creation of final directory for {concept}")
+    return directory

@@ -21,7 +21,7 @@ from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import MyFormatter
 from osa.utils.register import register_run_concept_files
 from osa.utils.standardhandle import gettag, stringify
-from osa.utils.utils import getlockfile, is_day_closed, is_defined, lstdate_to_dir
+from osa.utils.utils import getlockfile, is_day_closed, is_defined, lstdate_to_dir, destination_dir
 
 __all__ = [
     "use_night_summary",
@@ -267,7 +267,7 @@ def post_process_files(seq_list):
     for concept, pattern_re in pattern_files.items():
         log.debug(f"Processing {concept} files, {len(output_files_set)} files left")
 
-        dst_path = create_destination_dir(concept)
+        dst_path = destination_dir(concept)
 
         log.debug(f"Checking if {concept} files need to be moved to {dst_path}")
         for file_path in output_files_set.copy():
@@ -287,9 +287,7 @@ def post_process_files(seq_list):
                 os.remove(file)
                 output_files_set.remove(file)
 
-    log.debug(
-        f"Output files left in running_analysis: {len(output_files_set)}. Files {output_files_set}"
-    )
+    log.debug(f"Output files left in running_analysis: {len(output_files_set)}")
 
 
 def register_found_pattern(file_path, seq_list, concept, destination_path):
@@ -374,48 +372,6 @@ def register_non_existing_file(file_path_str, concept, seq_list):
                 register_run_concept_files(str(s.previousrun), concept)
                 if options.seqtoclose is None and not os.path.exists(file_path_str):
                     log.debug("File does not exists")
-
-
-def create_destination_dir(concept):
-    """
-    Create final destination directory for each data level
-
-    Parameters
-    ----------
-    concept : str
-        Expected: MUON, DL1AB, DATACHECK, DL2, PEDESTAL, CALIB, TIMECALIB
-
-    """
-    nightdir = lstdate_to_dir(options.date)
-
-    if concept == "MUON":
-        directory = os.path.join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id
-        )
-    elif concept in ["DL1AB", "DATACHECK"]:
-        directory = os.path.join(
-            cfg.get(options.tel_id, concept + "DIR"),
-            nightdir,
-            options.prod_id,
-            options.dl1_prod_id,
-        )
-    elif concept == "DL2":
-        directory = os.path.join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id
-        )
-    elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-        directory = os.path.join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id
-        )
-    else:
-        log.warning(f"Concept {concept} not known")
-
-    if not options.simulate:
-        log.debug(f"Destination directory created for {concept}: {directory}")
-        os.makedirs(directory, exist_ok=True)
-    else:
-        log.debug(f"SIMULATING creation of final directory for {concept}")
-    return directory
 
 
 def set_closed_with_file(ana_text):

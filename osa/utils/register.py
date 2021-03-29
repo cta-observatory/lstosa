@@ -2,13 +2,12 @@ import logging
 import os
 import shutil
 from filecmp import cmp
-from glob import glob
 from os.path import basename, exists, join
 from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.utils import lstdate_to_dir
+from osa.utils.utils import destination_dir
 
 log = logging.getLogger(__name__)
 
@@ -52,6 +51,8 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
             if prefix == "dl1_LST-1" and suffix == ".h5":
                 file_basename = os.path.basename(inputf)
                 dl1_filepath = os.path.join(options.directory, file_basename)
+                # Remove the original DL1 files pre DL1ab stage and keep only symlinks
+                os.remove(dl1_filepath)
                 os.symlink(outputf, dl1_filepath)
             if prefix == "muons_LST-1" and suffix == ".fits":
                 os.symlink(outputf, inputf)
@@ -104,7 +105,9 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
 
 
 def register_run_concept_files(run_string, concept):
-    """Prepare files to be moved to final destination directories
+    """
+    Prepare files to be moved to final destination directories
+    from the running_analysis original directory.
 
     Parameters
     ----------
@@ -112,23 +115,19 @@ def register_run_concept_files(run_string, concept):
     concept
     """
 
-    nightdir = lstdate_to_dir(options.date)
-    if concept == "DL2":
+    if concept in ["MUON", "DL2", "PEDESTAL", "CALIB", "TIMECALIB"]:
         inputdir = options.directory
-        outputdir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.dl2_prod_id)
-    elif concept in ["DL1", "MUON"]:
-        inputdir = options.directory
-        outputdir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id)
+
     elif concept in ["DL1AB", "DATACHECK"]:
         inputdir = join(options.directory, options.dl1_prod_id)
-        outputdir = join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl1_prod_id
-        )
-    elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-        inputdir = options.directory
-        outputdir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id)
+
+    outputdir = destination_dir(concept, create_dir=False)
     type = cfg.get("LSTOSA", concept + "TYPE")
     prefix = cfg.get("LSTOSA", concept + "PREFIX")
     suffix = cfg.get("LSTOSA", concept + "SUFFIX")
     log.debug(f"Registering {type} file for {prefix}*{run_string}*{suffix}")
-    register_files(type, run_string, inputdir, prefix, suffix, outputdir)
+
+    if concept in ["DL1AB", "DATACHECK", "PEDESTAL", "CALIB", "TIMECALIB", "MUON", "DL2"]:
+        register_files(type, run_string, inputdir, prefix, suffix, outputdir)
+    else:
+        log.warning(f"Concept {concept} not known")
