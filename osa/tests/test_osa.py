@@ -13,8 +13,9 @@ def test_check_test_files(test_data):
     """
     Function to clean the test files created by the previous test
     """
-    assert os.path.exists(test_data[0])  # Directory
-    assert os.path.exists(test_data[1])  # Directory
+    assert os.path.exists(test_data[0])  # Analysis directory
+    assert os.path.exists(test_data[1])  # DL1 file
+    assert os.path.exists(test_data[2])  # Raw directory
 
 
 @pytest.mark.last
