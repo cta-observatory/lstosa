@@ -289,7 +289,7 @@ def register_found_pattern(filepath, seq_list, concept, destination_path):
     destination_path
     current_delete_set
     """
-    current_delete_set = set()
+    delete_set = set()
     file = os.path.basename(filepath)
     new_dst = os.path.join(destination_path, file)
     log.debug(f"New file path {new_dst}")
@@ -318,9 +318,9 @@ def register_found_pattern(filepath, seq_list, concept, destination_path):
     # For the moment we do not want to close to allow further reprocessings
     # setclosedfilename(s)
     # createclosed(s.closed)
-    current_delete_set.add(filepath)
-    log.debug(f"Len delete set: {len(current_delete_set)}")
-    return current_delete_set
+    delete_set.add(filepath)
+    log.debug(f"Delete set: {delete_set}")
+    return delete_set
 
 
 def register_non_existing_file(filepath, concept, seq_list):
