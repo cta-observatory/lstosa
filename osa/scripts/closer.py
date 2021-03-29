@@ -241,6 +241,8 @@ def post_process_files(seq_list):
 
     output_files_set = set(Path(options.directory).rglob("*Run*"))
 
+    log.debug(output_files_set)
+
     DL1_RE = re.compile(fr"{options.dl1_prod_id}(?:.*)/dl1(?:.*).(?:h5|hdf5|hdf)")
     DL2_RE = re.compile(r"dl2(?:.*).(?:h5|hdf5|hdf)")
     MUONS_RE = re.compile(r"muons(?:.*).fits")
@@ -261,7 +263,6 @@ def post_process_files(seq_list):
         ]
     )
 
-    delete_set = set()
     for concept, pattern_re in pattern_files.items():
         log.debug(f"Processing {concept} files, {len(output_files_set)} files left")
 
@@ -277,7 +278,7 @@ def post_process_files(seq_list):
                 output_files_set -= delete_set
 
 
-def register_found_pattern(filepath, seq_list, concept, destination_path, delete_set):
+def register_found_pattern(filepath, seq_list, concept, destination_path):
     """
 
     Parameters
@@ -286,8 +287,9 @@ def register_found_pattern(filepath, seq_list, concept, destination_path, delete
     seq_list
     concept
     destination_path
-    delete_set
+    current_delete_set
     """
+    current_delete_set = set()
     file = os.path.basename(filepath)
     new_dst = os.path.join(destination_path, file)
     log.debug(f"New file path {new_dst}")
@@ -316,9 +318,9 @@ def register_found_pattern(filepath, seq_list, concept, destination_path, delete
     # For the moment we do not want to close to allow further reprocessings
     # setclosedfilename(s)
     # createclosed(s.closed)
-    delete_set.add(filepath)
-    log.debug(f"Len delete set: {len(delete_set)}")
-    return delete_set
+    current_delete_set.add(filepath)
+    log.debug(f"Len delete set: {len(current_delete_set)}")
+    return current_delete_set
 
 
 def register_non_existing_file(filepath, concept, seq_list):
