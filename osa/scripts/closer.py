@@ -295,11 +295,10 @@ def register_found_pattern(file_path, seq_list, concept, destination_path):
 
     Parameters
     ----------
-    filepath
+    file_path: pathlib.Path
     seq_list
     concept
     destination_path
-    current_delete_set
     """
     file = os.path.basename(file_path)
     new_dst = os.path.join(destination_path, file)
@@ -324,7 +323,7 @@ def register_found_pattern(file_path, seq_list, concept, destination_path):
                 )
         else:
             log.debug(f"Destination file {new_dst} does not exists")
-            register_non_existing_file(file_path, concept, seq_list)
+            register_non_existing_file(str(file_path), concept, seq_list)
 
     # For the moment we do not want to close to allow further reprocessings
     # setclosedfilename(s)
@@ -333,44 +332,45 @@ def register_found_pattern(file_path, seq_list, concept, destination_path):
     return file_path
 
 
-def register_non_existing_file(filepath, concept, seq_list):
+def register_non_existing_file(file_path_str, concept, seq_list):
     """
 
     Parameters
     ----------
-    filepath
+    file_path_str: str
     concept
     seq_list
     """
+
     for s in seq_list:
         log.debug(f"Looking for {s}")
 
         if s.type == "DATA":
-            run_str_found = re.search(s.run_str, filepath)
+            run_str_found = re.search(s.run_str, file_path_str)
 
             if run_str_found is not None:
                 # register and delete
                 log.debug(f"Registering file {run_str_found}")
                 register_run_concept_files(s.run_str, concept)
-                if options.seqtoclose is None and not os.path.exists(filepath):
+                if options.seqtoclose is None and not os.path.exists(file_path_str):
                     log.debug("File does not exists")
 
         elif s.type in ["PEDCALIB", "DRS4"]:
-            calib_run_str_found = re.search(str(s.run), filepath)
-            drs4_run_str_found = re.search(str(s.previousrun), filepath)
+            calib_run_str_found = re.search(str(s.run), file_path_str)
+            drs4_run_str_found = re.search(str(s.previousrun), file_path_str)
 
             if calib_run_str_found is not None:
                 # register and delete
                 log.debug(f"Registering file {calib_run_str_found}")
                 register_run_concept_files(str(s.run), concept)
-                if options.seqtoclose is None and not os.path.exists(filepath):
+                if options.seqtoclose is None and not os.path.exists(file_path_str):
                     log.debug("File does not exists")
 
             if drs4_run_str_found is not None:
                 # register and delete
                 log.debug(f"Registering file {drs4_run_str_found}")
                 register_run_concept_files(str(s.previousrun), concept)
-                if options.seqtoclose is None and not os.path.exists(filepath):
+                if options.seqtoclose is None and not os.path.exists(file_path_str):
                     log.debug("File does not exists")
 
 
