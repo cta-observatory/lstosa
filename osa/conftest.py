@@ -26,10 +26,12 @@ def test_data():
     prod_id = "v0.1.0_01"
     dl1_prod_id = "tailcut84"
 
+    raw_dir = os.path.join(test_dir, "R0", date)
     running_analysis = os.path.join(test_dir, "running_analysis", date, prod_id)
     dl1ab_directory = os.path.join(running_analysis, dl1_prod_id)
 
     os.makedirs(test_dir, exist_ok=True)
+    os.makedirs(raw_dir, exist_ok=True)
     os.makedirs(running_analysis, exist_ok=True)
     os.makedirs(dl1ab_directory, exist_ok=True)
 
@@ -45,7 +47,7 @@ def test_data():
         prefix="time_calibration_", suffix=".hdf5", dir=running_analysis
     )
 
-    return test_dir, dl1_file
+    return test_dir, dl1_file, raw_dir
 
 
 @pytest.fixture(scope="session")
