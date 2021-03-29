@@ -321,6 +321,7 @@ def register_found_pattern(filepath, seq_list, concept, destination_path, delete
     # setclosedfilename(s)
     # createclosed(s.closed)
     delete_set.add(file)
+    log.debug(delete_set)
     return delete_set
 
 
