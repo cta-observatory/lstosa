@@ -1,3 +1,4 @@
+import os
 import subprocess as sp
 
 import pytest
@@ -31,13 +32,19 @@ def run_program(*args):
 
 
 def test_sequencer():
-    run_program("sequencer", "-c", "cfg/sequencer_test.cfg", "-d", "2020_01_17", "-t", "-s", "LST1")
+    run_program(
+        "sequencer", "-c", "cfg/sequencer_test.cfg", "-d", "2020_01_17", "-v", "-t", "-s", "LST1"
+    )
 
 
 def test_closer():
     run_program(
-        "closer", "-c", "cfg/sequencer_test.cfg", "-y", "-v", "-s", "-d", "2020_01_17", "LST1"
+        "closer", "-c", "cfg/sequencer_test.cfg", "-y", "-v", "-t", "-d", "2020_01_17", "LST1"
     )
+    # Check that files have been moved to their final destinations
+    assert os.path.exists("./testfiles/DL1/20200117/v0.1.0_v01/tailcut84")
+    assert os.path.exists("./testfiles/DL2/20200117/v0.1.0_v01")
+    assert os.path.exists("./testfiles/calibration/20200117/v01")
 
 
 def test_datasequence(temp_dir):
@@ -74,8 +81,6 @@ def test_datasequence(temp_dir):
 def test_calibrationsequence(temp_dir):
     drs4_file = "drs4_pedestal.Run00001.0000.fits"
     calib_file = "calibration.Run00002.0000.hdf5"
-    timecalib_file = "time_calibration.Run00002.0000.hdf5"
-    drive_file = "drive_log_20200117.txt"
     runsummary_file = "RunSummary_20200117.ecsv"
     prod_id = "v0.1.0"
     drs4_run_number = "00003"
