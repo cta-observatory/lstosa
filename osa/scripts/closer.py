@@ -285,7 +285,9 @@ def post_process_files(seq_list):
             log.debug(f"Deleting {str(file)}")
             output_files_set.remove(file)
 
-    log.debug(f"Output files left in running_analysis: {len(output_files_set)}")
+    log.debug(
+        f"Output files left in running_analysis: {len(output_files_set)}. Files {output_files_set}"
+    )
 
 
 def register_found_pattern(file_path, seq_list, concept, destination_path):
