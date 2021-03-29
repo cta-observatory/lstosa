@@ -283,7 +283,7 @@ def post_process_files(seq_list):
         pattern_found = DL1_RE.search(str(file))
         if pattern_found:
             log.debug(f"Deleting {str(file)}")
-            output_files_set.remove(str(file))
+            output_files_set.remove(file)
 
     log.debug(f"Output files left in running_analysis: {len(output_files_set)}")
 
