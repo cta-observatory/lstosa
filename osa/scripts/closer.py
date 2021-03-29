@@ -274,11 +274,11 @@ def post_process_files(seq_list):
             pattern_found = pattern_re.search(file)
             if pattern_found:
                 log.debug(f"Pattern {concept} found, {pattern_found} in {file}")
-                delete_set = register_found_pattern(file, seq_list, concept, dst_path)
-                output_files_set.remove(delete_set)
+                registered_file = register_found_pattern(file_path, seq_list, concept, dst_path)
+                output_files_set.remove(registered_file)
 
 
-def register_found_pattern(filepath, seq_list, concept, destination_path):
+def register_found_pattern(file_path, seq_list, concept, destination_path):
     """
 
     Parameters
@@ -289,8 +289,7 @@ def register_found_pattern(filepath, seq_list, concept, destination_path):
     destination_path
     current_delete_set
     """
-    delete_set = set()
-    file = os.path.basename(filepath)
+    file = os.path.basename(file_path)
     new_dst = os.path.join(destination_path, file)
     log.debug(f"New file path {new_dst}")
     if not options.simulate:
@@ -313,13 +312,13 @@ def register_found_pattern(filepath, seq_list, concept, destination_path):
                 )
         else:
             log.debug(f"Destination file {new_dst} does not exists")
-            register_non_existing_file(filepath, concept, seq_list)
+            register_non_existing_file(file_path, concept, seq_list)
 
     # For the moment we do not want to close to allow further reprocessings
     # setclosedfilename(s)
     # createclosed(s.closed)
     # Return filepath already registered to be deleted from the set of all files
-    return filepath
+    return file_path
 
 
 def register_non_existing_file(filepath, concept, seq_list):
