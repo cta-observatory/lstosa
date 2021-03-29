@@ -46,8 +46,10 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
             log.debug(f"Moving file {outputf}")
             shutil.move(inputf, outputf)
             if prefix == "dl1_LST-1" and suffix == ".h5":
-                log.debug(f"Keeping DL1 symlink in {inputf}")
-                os.symlink(outputf, inputf)
+                file_basename = os.path.basename(inputf)
+                dl1_filepath = os.path.join(options.directory, file_basename)
+                log.debug(f"Keeping DL1 symlink in {dl1_filepath}")
+                os.symlink(outputf, dl1_filepath)
             if prefix == "muons_LST-1" and suffix == ".fits":
                 log.debug(f"Keeping muons file symlink in {inputf}")
                 os.symlink(outputf, inputf)
@@ -114,12 +116,7 @@ def register_run_concept_files(run_string, concept):
     elif concept in ["DL1", "MUON"]:
         inputdir = options.directory
         outputdir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id)
-    elif concept == "DL1AB":
-        inputdir = join(options.directory, options.dl1_prod_id)
-        outputdir = join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl1_prod_id
-        )
-    elif concept == "DATACHECK":
+    elif concept in ["DL1AB", "DATACHECK"]:
         inputdir = join(options.directory, options.dl1_prod_id)
         outputdir = join(
             cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl1_prod_id
