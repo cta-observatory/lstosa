@@ -40,17 +40,22 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
         outputf = join(outputdir, basename(inputf))
         if exists(outputf) and cmp(inputf, outputf):
             # do nothing than acknowledging
-            log.debug(f"Destination file {outputf} exists and it is identical to input")
+            log.debug(
+                f"Nothing to do. Destination file {outputf} exists and it is identical to input"
+            )
         else:
             # there is no output file or it is different
             log.debug(f"Moving file {outputf}")
             shutil.move(inputf, outputf)
+
+            # Keeping DL1 and muons symlink in running_analysis
             if prefix == "dl1_LST-1" and suffix == ".h5":
-                log.debug(f"Keeping DL1 symlink in {inputf}")
-                os.symlink(outputf, inputf)
+                file_basename = os.path.basename(inputf)
+                dl1_filepath = os.path.join(options.directory, file_basename)
+                os.symlink(outputf, dl1_filepath)
             if prefix == "muons_LST-1" and suffix == ".fits":
-                log.debug(f"Keeping muons file symlink in {inputf}")
                 os.symlink(outputf, inputf)
+
             # for the moment we are not interested in calculating the hash md5
             # md5sum = get_md5sum_and_copy(inputf, outputf)
             # log.debug("Resulting md5sum={0}".format(md5sum))
@@ -114,13 +119,8 @@ def register_run_concept_files(run_string, concept):
     elif concept in ["DL1", "MUON"]:
         inputdir = options.directory
         outputdir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id)
-    elif concept == "DL1AB":
-        inputdir = join(options.directory, "dl1ab" + "_" + options.dl1_prod_id)
-        outputdir = join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl1_prod_id
-        )
-    elif concept == "DATACHECK":
-        inputdir = join(options.directory, "datacheck" + "_" + options.dl1_prod_id)
+    elif concept in ["DL1AB", "DATACHECK"]:
+        inputdir = join(options.directory, options.dl1_prod_id)
         outputdir = join(
             cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl1_prod_id
         )

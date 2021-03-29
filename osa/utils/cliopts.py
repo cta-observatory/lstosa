@@ -87,6 +87,14 @@ def closer_argparser():
         help="do not run, just show what would happen",
     )
     parser.add_argument(
+        "-t",
+        "--test",
+        action="store_true",
+        dest="test",
+        default=False,
+        help="Avoiding interaction with SLURM",
+    )
+    parser.add_argument(
         "-y",
         "--yes",
         action="store_true",
@@ -155,6 +163,7 @@ def closercliparsing():
     options.nightsummary = opts.nightsum
     options.noninteractive = opts.noninteractive
     options.simulate = opts.simulate
+    options.test = opts.test
     options.verbose = opts.verbose
     options.warning = opts.warning
     options.reason = opts.reason
@@ -260,6 +269,14 @@ def calibrationsequence_argparser():
         dest="prod_id",
         help="Set the prod ID to define data directories",
     )
+    parser.add_argument(
+        "-s",
+        "--simulate",
+        action="store_true",
+        dest="simulate",
+        default=False,
+        help="do not submit sequences as jobs",
+    )
     parser.add_argument("pedoutfile", help="Full path of the DRS4 pedestal file to be created")
     parser.add_argument("caloutfile", help="Full path of the calibration file to be created")
     parser.add_argument("calib_run_number", help="Calibration run number")
@@ -284,6 +301,7 @@ def calibrationsequencecliparsing():
     options.compressed = opts.compressed
     options.prod_id = opts.prod_id
     options.tel_id = opts.tel_id
+    options.simulate = opts.simulate
 
     log.debug(f"the options and arguments are {opts}")
 

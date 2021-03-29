@@ -50,7 +50,7 @@ def are_all_jobs_correctly_finished(seqlist):
                 )
                 continue
             else:
-                log.debug(
+                log.warning(
                     f"Job {s.seq} (run {s.run}) not correctly/completely finished [level {out}]"
                 )
                 flag = False

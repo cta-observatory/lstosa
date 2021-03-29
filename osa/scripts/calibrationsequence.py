@@ -60,7 +60,8 @@ def calibrationsequence(
     history_file = path.join(
         options.directory, f"sequence_{options.tel_id}_{cal_run_number}.history"
     )
-    level, rc = historylevel(history_file, "PEDCALIB")
+    level, rc = (3, 0) if options.simulate else historylevel(history_file, "PEDCALIB")
+
     log.info(f"Going to level {level}")
     if level == 3:
         rc = drs4_pedestal(ped_run_number, pedestal_filename, history_file)
@@ -105,6 +106,9 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000,
     Return code
 
     """
+    if options.simulate:
+        return 0
+
     rawdata_path = Path(cfg.get("LST1", "RAWDIR"))
     # Get raw data run regardless when was taken
     run_drs4_file_list = [
@@ -185,6 +189,8 @@ def calibrate_charge(
     Return code
 
     """
+    if options.simulate:
+        return 0
 
     rawdata_path = Path(cfg.get("LST1", "RAWDIR"))
     # Get raw data run regardless when was taken
@@ -294,6 +300,9 @@ def calibrate_time(
     Return code
 
     """
+    if options.simulate:
+        return 0
+
     rawdata_path = Path(cfg.get("LST1", "RAWDIR"))
     # Get raw data run regardless when was taken
     run_calib_file_list = [
