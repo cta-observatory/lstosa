@@ -380,7 +380,7 @@ def create_destination_dir(concept):
     Parameters
     ----------
     concept : str
-        Expected: MUON, DL1, DATACHECK, DL2, PEDESTAL, CALIB, TIMECALIB
+        Expected: MUON, DL1AB, DATACHECK, DL2, PEDESTAL, CALIB, TIMECALIB
 
     """
     nightdir = lstdate_to_dir(options.date)
