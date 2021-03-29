@@ -274,7 +274,7 @@ def post_process_files(seq_list):
             pattern_found = pattern_re.search(file)
             if pattern_found:
                 log.debug(f"Pattern {concept} found, {pattern_found} in {file}")
-                delete_set = register_found_pattern(file, seq_list, concept, dst_path, delete_set)
+                delete_set = register_found_pattern(file, seq_list, concept, dst_path)
                 output_files_set -= delete_set
 
 
