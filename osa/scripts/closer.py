@@ -99,6 +99,7 @@ def main():
                 ask_for_closing()
         else:
             log.error("Never thought about this possibility, please check the code")
+            sys.exit(-1)
 
         post_process(sequencer_tuple)
 
