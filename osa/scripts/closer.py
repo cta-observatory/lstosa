@@ -273,13 +273,15 @@ def post_process_files(seq_list):
             pattern_found = pattern_re.search(file)
             if pattern_found:
                 log.debug(f"Pattern {concept} found, {pattern_found} in {file}")
-                new_delete_set = register_found_pattern(file, seq_list, concept, delete_set)
+                new_delete_set = register_found_pattern(
+                    file, seq_list, concept, dst_path, delete_set
+                )
                 output_files_set -= new_delete_set
             else:
                 log.debug("Pattern not found")
 
 
-def register_found_pattern(filepath, seq_list, concept, delete_set):
+def register_found_pattern(filepath, seq_list, concept, destination_path, delete_set):
     """
 
     Parameters
@@ -287,10 +289,11 @@ def register_found_pattern(filepath, seq_list, concept, delete_set):
     filepath
     seq_list
     concept
+    destination_path
     delete_set
     """
     file = os.path.basename(filepath)
-    new_dst = os.path.join(dir, file)
+    new_dst = os.path.join(destination_path, file)
     log.debug(f"New file path {new_dst}")
     if not options.simulate:
         if os.path.exists(new_dst):
