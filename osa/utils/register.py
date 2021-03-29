@@ -115,12 +115,12 @@ def register_run_concept_files(run_string, concept):
         inputdir = options.directory
         outputdir = join(cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id)
     elif concept == "DL1AB":
-        inputdir = join(options.directory, "dl1ab" + "_" + options.dl1_prod_id)
+        inputdir = join(options.directory, options.dl1_prod_id)
         outputdir = join(
             cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl1_prod_id
         )
     elif concept == "DATACHECK":
-        inputdir = join(options.directory, "datacheck" + "_" + options.dl1_prod_id)
+        inputdir = join(options.directory, options.dl1_prod_id)
         outputdir = join(
             cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl1_prod_id
         )
