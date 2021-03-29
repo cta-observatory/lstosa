@@ -37,10 +37,11 @@ def test_sequencer():
     )
 
 
-def test_closer():
+def test_closer(test_data):
     run_program(
         "closer", "-c", "cfg/sequencer_test.cfg", "-y", "-v", "-t", "-d", "2020_01_17", "LST1"
     )
+    assert os.path.exists(test_data[0])
     # Check that files have been moved to their final destinations
     assert os.path.exists("./testfiles/DL1/20200117/v0.1.0_v01/tailcut84")
     assert os.path.exists("./testfiles/DL2/20200117/v0.1.0_v01")
