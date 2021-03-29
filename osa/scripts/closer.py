@@ -280,9 +280,9 @@ def post_process_files(seq_list):
     for file in output_files_set:
         log.debug(f"Deleting original DL1 files pre DL1AB")
         # if not options.simulate:
-        pattern_found = DL1_RE.search(file)
+        pattern_found = DL1_RE.search(str(file))
         if pattern_found:
-            log.debug(f"Deleting {file}")
+            log.debug(f"Deleting {str(file)}")
 
 
 def register_found_pattern(file_path, seq_list, concept, destination_path):
