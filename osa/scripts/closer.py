@@ -193,7 +193,9 @@ def ask_for_closing():
                 answer_check = True
                 if answer_user == "n" or answer_user == "N":
                     # the user does not want to close
-                    log.info(f"Day {options.date} for {options.tel_id} will remain open")
+                    log.info(
+                        f"Day {options.date} for {options.tel_id} will remain open unless closing is forced"
+                    )
                     sys.exit(0)
                 elif answer_user == "y" or answer_user == "Y":
                     continue
