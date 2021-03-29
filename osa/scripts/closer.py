@@ -274,9 +274,9 @@ def post_process_files(seq_list):
             if pattern_found:
                 log.debug(f"Pattern {concept} found, {pattern_found} in {file}")
                 new_delete_set = register_found_pattern(file, seq_list, concept, delete_set)
+                output_files_set -= new_delete_set
             else:
                 log.debug("Pattern not found")
-            output_files_set -= new_delete_set
 
 
 def register_found_pattern(filepath, seq_list, concept, delete_set):
