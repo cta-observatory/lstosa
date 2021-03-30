@@ -278,17 +278,6 @@ def post_process_files(seq_list):
                 registered_file = register_found_pattern(file_path, seq_list, concept, dst_path)
                 output_files_set.remove(registered_file)
 
-    # Finally remove original DL1 files leaving only the DL1AB with images
-    log.debug(f"Deleting original DL1 files pre DL1AB")
-    if not options.simulate and not options.test:
-        for file in output_files_set.copy():
-            pattern_found = DL1_RE.search(str(file))
-            if pattern_found:
-                os.remove(file)
-                output_files_set.remove(file)
-
-    log.debug(f"Output files left in running_analysis: {len(output_files_set)}")
-
 
 def register_found_pattern(file_path, seq_list, concept, destination_path):
     """
