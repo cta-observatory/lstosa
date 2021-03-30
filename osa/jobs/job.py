@@ -62,7 +62,7 @@ def are_all_jobs_correctly_finished(seqlist):
 def historylevel(historyfile, data_type):
     """
     Returns the level from which the analysis should begin and
-    the rc of the last execuTABle given a certain history file.
+    the rc of the last executable given a certain history file.
     For PEDCALIB sequences:
      - DRS4->time calib is level 3->2
      - time calib->charge calib is level 2->1
@@ -240,12 +240,12 @@ def createjobtemplate(s, get_content=False):
     # TODO: refactor this function creating wrappers that handle slurm part
 
     nightdir = lstdate_to_dir(options.date)
-    lstosadir = cfg.get("LSTOSA", "LSTOSA_DIR")
     scriptsdir = cfg.get("LSTOSA", "SCRIPTSDIR")
     drivedir = cfg.get("LST1", "DRIVEDIR")
     run_summary_dir = cfg.get("LST1", "RUN_SUMMARY_DIR")
 
     command = None
+    # FIXME: make these scripts executable
     if s.type == "PEDCALIB":
         command = os.path.join(scriptsdir, "calibrationsequence.py")
     elif s.type == "DATA":
@@ -288,10 +288,9 @@ def createjobtemplate(s, get_content=False):
         commandargs.append(os.path.join(drivedir, s.drive))
         commandargs.append(os.path.join(run_summary_dir, f"RunSummary_{nightdir}.ecsv"))
 
-    for sub in s.subrun_list:
-        # FIXME: This is getting the last subrun starting from 0
-        # We should get this parameter differently.
-        n_subruns = int(sub.subrun)
+    # Get the number of subruns by looking at the last subrun
+    # number of the subrun list for a given sequence
+    n_subruns = s.subrun_list[-1].subrun
 
     # Build the content of the sequencerXX.py script
     content = "#!/bin/env python\n"
