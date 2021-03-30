@@ -9,7 +9,6 @@ dependencies:
   - conda-build
   - pip
   - ctapipe~=0.10.5
-  - ctapipe-extra
   - prov
   - pyyaml
   - pydot
@@ -27,7 +26,7 @@ dependencies:
   - sphinx_rtd_theme
   - sphinx-argparse
   - pip:
-      - lstchain==0.7.0
+      - lstchain~=0.7.0
       - pytest_runner
       - pytest-ordering
       - ctapipe_io_lst~=0.9.0
