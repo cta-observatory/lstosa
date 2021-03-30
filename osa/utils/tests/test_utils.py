@@ -5,7 +5,7 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.utils import lstdate_to_dir
 
-options.date = "2020_01_02"
+options.date = "2020_01_17"
 options.tel_id = "LST1"
 options.prod_id = "v0.1.0_v01"
 
