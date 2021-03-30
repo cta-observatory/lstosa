@@ -52,8 +52,13 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
                 file_basename = os.path.basename(inputf)
                 dl1_filepath = os.path.join(options.directory, file_basename)
                 # Remove the original DL1 files pre DL1ab stage and keep only symlinks
-                os.remove(dl1_filepath)
-                os.symlink(outputf, dl1_filepath)
+                if os.path.isfile(dl1_filepath) and not os.path.islink(dl1_filepath):
+                    os.remove(dl1_filepath)
+                if os.path.islink(dl1_filepath):
+                    # Link already produced
+                    pass
+                else:
+                    os.symlink(outputf, dl1_filepath)
             if prefix == "muons_LST-1" and suffix == ".fits":
                 os.symlink(outputf, inputf)
 
