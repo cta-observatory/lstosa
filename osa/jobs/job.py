@@ -19,6 +19,8 @@ from osa.utils.utils import date_in_yymmdd, lstdate_to_dir, time_to_seconds
 
 log = logging.getLogger(__name__)
 
+TAB = "\t".expandtabs(4)
+
 
 def are_all_jobs_correctly_finished(seqlist):
     """
@@ -60,7 +62,7 @@ def are_all_jobs_correctly_finished(seqlist):
 def historylevel(historyfile, data_type):
     """
     Returns the level from which the analysis should begin and
-    the rc of the last executable given a certain history file.
+    the rc of the last execuTABle given a certain history file.
     For PEDCALIB sequences:
      - DRS4->time calib is level 3->2
      - time calib->charge calib is level 2->1
@@ -141,9 +143,6 @@ def historylevel(historyfile, data_type):
 
 def preparejobs(sequence_list):
     for s in sequence_list:
-        log.debug(f"Creating sequence.txt and sequence.py for sequence {s.seq}")
-        # FIXME: creating txt should be deprecated at some point
-        # createsequencetxt(s, sequence_list)
         createjobtemplate(s)
 
 
@@ -164,64 +163,6 @@ def setrunfromparent(sequence_list):
                     dictionary[s1.parent] = s2.run
                     break
     return dictionary
-
-
-def createsequencetxt(s, sequence_list):
-    # Deprecated, right now we do not use this txt file. Everything is already
-    # present in the sequenceXX.py script
-
-    text_suffix = cfg.get("LSTOSA", "TEXTSUFFIX")
-    f = os.path.join(options.directory, f"sequence_{s.jobname}{text_suffix}")
-    start = s.subrun_list[0].timestamp
-    ped = ""
-    cal = ""
-    dat = ""
-    if s.type == "PEDCAL":
-        ped = formatrunsubrun(s.previousrun, 1)
-        cal = formatrunsubrun(s.run, 1)
-    elif s.type == "DATA":
-        ped = formatrunsubrun(s.parent_list[0].previousrun, 1)
-        cal = formatrunsubrun(s.parent_list[0].run, 1)
-        for sub in s.subrun_list:
-            dat += formatrunsubrun(s.run, sub.subrun) + " "
-
-    content = "# Sequence number (identifier)\n"
-    content += f"Sequence: {s.run}\n"
-    content += "# Date of sunrise of the observation night\n"
-    content += f"Night: {s.night}\n"
-    content += "# Start time of the sequence (first data run)\n"
-    content += f"Start: {start}\n"
-    content += "# Source name of all runs of sequence\n"
-    content += f"Source: {s.sourcewobble}\n"
-    content += f"Telescope: {options.tel_id.lstrip('M1')}\n"
-    content += "\n"
-    content += f"PedRuns: {ped}\n"
-    content += f"CalRuns: {cal}\n"
-    content += f"DatRuns: {dat}\n"
-
-    if not options.simulate:
-        writetofile(f, content)
-    else:
-        log.debug(f"SIMULATE Creating sequence txt {f}")
-
-
-def formatrunsubrun(run, subrun):
-    """
-    It needs 5 digits for the runs and 4 digits for the subruns
-
-    Parameters
-    ----------
-    run
-    subrun
-
-    Returns
-    -------
-
-    """
-    if not run:
-        run = 5 * "0"
-    s = str(subrun).zfill(4)
-    return f"{run}.{s}"
 
 
 def setsequencefilenames(s):
@@ -291,14 +232,15 @@ def guesscorrectinputcard(s):
     # if input_card_str != "":
     #     return join(bindir, 'cfg', f'osa{input_card_str}.cfg')
 
-    return options.configfile
+    return os.path.abspath(options.configfile)
 
 
 def createjobtemplate(s, get_content=False):
     """This file contains instruction to be submitted to SLURM"""
+    # TODO: refactor this function creating wrappers that handle slurm part
 
     nightdir = lstdate_to_dir(options.date)
-    bindir = cfg.get("LSTOSA", "PYTHONDIR")
+    lstosadir = cfg.get("LSTOSA", "LSTOSA_DIR")
     scriptsdir = cfg.get("LSTOSA", "SCRIPTSDIR")
     drivedir = cfg.get("LST1", "DRIVEDIR")
     run_summary_dir = cfg.get("LST1", "RUN_SUMMARY_DIR")
@@ -319,7 +261,7 @@ def createjobtemplate(s, get_content=False):
         commandargs.append("-w")
     if options.configfile:
         commandargs.append("-c")
-        commandargs.append(os.path.join(bindir, guesscorrectinputcard(s)))
+        commandargs.append(guesscorrectinputcard(s))
     if options.compressed:
         commandargs.append("-z")
     if s.type == "DATA" and options.nodl2:
@@ -366,47 +308,60 @@ def createjobtemplate(s, get_content=False):
         content += f"#SBATCH -p {cfg.get('SBATCH', 'PARTITION-DATA')} \n"
         content += f"#SBATCH --mem-per-cpu={cfg.get('SBATCH', 'MEMSIZE-DATA')} \n"
     content += f"#SBATCH -D {options.directory} \n"
-    content += f"#SBATCH -o log/slurm_{str(s.run).zfill(5)}.%4a_%A.out \n"
-    content += f"#SBATCH -e log/slurm_{str(s.run).zfill(5)}.%4a_%A.err \n"
+    content += f"#SBATCH -o log/slurm_{s.run:05d}.%4a_%A.out \n"
+    content += f"#SBATCH -e log/slurm_{s.run:05d}.%4a_%A.err \n"
     content += "\n"
 
     content += "import subprocess \n"
     content += "import sys, os \n"
     content += "import tempfile \n"
-    content += "\n\n"
+    content += "\n" * 2
 
     if not options.test:
-        # export CTAPIPE_SVC_PATH=/fefs/aswg/data/servive
-        content += "os.environ['CTAPIPE_SVC_PATH'] = '/fefs/aswg/data/service'\n"
+        # Exporting some cache directories
+        ctapipe_cache = cfg.get("CACHE", "CTAPIPE_CACHE")
+        ctapipe_svc_path = cfg.get("CACHE", "CTAPIPE_SVC_PATH")
+        mpl_config_path = cfg.get("CACHE", "MPLCONFIGDIR")
+
+        content += f"os.environ['CTAPIPE_CACHE'] = {ctapipe_cache}\n"
+        content += f"os.environ['CTAPIPE_SVC_PATH'] = {ctapipe_svc_path}\n"
+        content += f"os.environ['MPLCONFIGDIR'] = {mpl_config_path}\n"
+        content += "\n"
+
+        # Use the SLURM env variables
         content += "subruns = os.getenv('SLURM_ARRAY_TASK_ID')\n"
         content += "job_id = os.getenv('SLURM_JOB_ID')\n"
     else:
+        # Just process the first subrun without SLURM
         content += "subruns = 0\n"
 
-    content += "with tempfile.TemporaryDirectory() as tmpdirname:\n"
-    content += "    os.environ['NUMBA_CACHE_DIR'] = tmpdirname\n"
+    content += "\n"
 
-    content += "    proc = subprocess.run([\n"
+    content += "with tempfile.TemporaryDirectory() as tmpdirname:\n"
+    content += TAB + "os.environ['NUMBA_CACHE_DIR'] = tmpdirname\n"
+
+    content += TAB + "proc = subprocess.run([\n"
     for i in commandargs:
-        content += f"        '{i}',\n"
+        content += TAB * 2 + f"'{i}',\n"
     if not options.test:
         content += (
-            f"        '--stderr=log/sequence_{s.jobname}."
+            TAB * 2
+            + f"'--stderr=log/sequence_{s.jobname}."
             + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)), \n"
         )
         content += (
-            f"        '--stdout=log/sequence_{s.jobname}."
+            TAB * 2
+            + f"'--stdout=log/sequence_{s.jobname}."
             + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)), \n"
         )
     if s.type == "DATA":
         content += (
-            "        '{0}".format(str(s.run).zfill(5))
-            + ".{0}'"
-            + ".format(str(subruns).zfill(4))"
-            + ",\n"
+            TAB * 2 + "'{0}".format(str(s.run).zfill(5)) + ".{0}'.format(str(subruns).zfill(4)), \n"
         )
-    content += f"        '{options.tel_id}'\n"
-    content += "        ])\n"
+    content += TAB * 2 + f"'{options.tel_id}'\n"
+    content += TAB * 2 + f"])\n"
+
+    content += "\n"
 
     content += "sys.exit(proc.returncode)"
 
@@ -444,8 +399,8 @@ def submitjobs(sequence_list):
             # FIXME here s.jobid has not been redefined se it keeps the one from previous time sequencer was launched
         # Introduce the job dependencies after calibration sequence
         if len(s.parent_list) != 0 and s.type == "DATA":
-            log.debug("Adding dependencies to job submission")
-            if not options.simulate and not options.nocalib:
+            if not options.simulate and not options.nocalib and not options.test:
+                log.debug("Adding dependencies to job submission")
                 depend_string = f"--dependency=afterok:{parent_jobid}"
                 commandargs.append(depend_string)
             # Old MAGIC style:
