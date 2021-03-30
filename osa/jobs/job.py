@@ -322,9 +322,15 @@ def createjobtemplate(s, get_content=False):
         ctapipe_svc_path = cfg.get("CACHE", "CTAPIPE_SVC_PATH")
         mpl_config_path = cfg.get("CACHE", "MPLCONFIGDIR")
 
-        content += f"os.environ['CTAPIPE_CACHE'] = '{ctapipe_cache}'\n"
-        content += f"os.environ['CTAPIPE_SVC_PATH'] = '{ctapipe_svc_path}'\n"
-        content += f"os.environ['MPLCONFIGDIR'] = '{mpl_config_path}'\n"
+        if ctapipe_cache:
+            content += f"os.environ['CTAPIPE_CACHE'] = '{ctapipe_cache}'\n"
+
+        if ctapipe_svc_path:
+            content += f"os.environ['CTAPIPE_SVC_PATH'] = '{ctapipe_svc_path}'\n"
+
+        if mpl_config_path:
+            content += f"os.environ['MPLCONFIGDIR'] = '{mpl_config_path}'\n"
+
         content += "\n"
 
         # Use the SLURM env variables
