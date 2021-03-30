@@ -18,6 +18,12 @@ conda env create -f environment.yml
 conda activate osa
 ```
 
+In case you want to install the lstchain master version instead of a fixed tag you can run with the `osa` environment activated:
+
+```
+pip install git+https://github.com/cta-observatory/cta-lstchain
+```
+
 * To update the environment (provided dependencies get updated) use:
 ```
 conda env update -n osa -f environment.yml
