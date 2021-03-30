@@ -8,6 +8,8 @@ from osa.configs import options
 from osa.nightsummary.extract import extractruns, extractsubruns, extractsequences
 from osa.nightsummary.nightsummary import run_summary_table
 
+options.date = "2020_01_17"
+
 
 @pytest.fixture(scope="session")
 def temp_dir():
@@ -23,7 +25,7 @@ def test_data():
     """
     test_dir = "testfiles"
     date = "20200117"
-    prod_id = "v0.1.0_01"
+    prod_id = "v0.1.0_v01"
     dl1_prod_id = "tailcut84"
 
     raw_dir = os.path.join(test_dir, "R0", date)
@@ -47,7 +49,7 @@ def test_data():
         prefix="time_calibration_", suffix=".hdf5", dir=running_analysis
     )
 
-    return test_dir, dl1_file, raw_dir
+    return test_dir, dl1_file, raw_dir, running_analysis
 
 
 @pytest.fixture(scope="session")
@@ -56,18 +58,16 @@ def run_summary():
     Creates a sequence list from a run summary file
     """
     # building the sequences
-    options.date = "20200117"
     return run_summary_table(options.date)
 
 
 @pytest.fixture(scope="session")
-def sequence_list(temp_dir, run_summary):
+def sequence_list(test_data, run_summary):
     """
     Creates a sequence list from a run summary file
     """
     # building the sequences
-    options.directory = temp_dir
-    options.date = "20200117"
+    options.directory = test_data[3]
     options.simulate = True
 
     subrun_list = extractsubruns(run_summary)
