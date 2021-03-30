@@ -9,8 +9,13 @@ from astropy.table import Table
 from astropy.time import Time
 
 from osa.configs import options
-from osa.configs.datamodel import (RunObj, SequenceCalibration, SequenceData,
-                                   SequenceStereo, SubrunObj)
+from osa.configs.datamodel import (
+    RunObj,
+    SequenceCalibration,
+    SequenceData,
+    SequenceStereo,
+    SubrunObj,
+)
 from osa.jobs.job import setsequencecalibfilenames, setsequencefilenames
 from osa.utils.utils import lstdate_to_iso
 
@@ -294,7 +299,7 @@ def extractsequencesstereo(s1_list, s2_list):
                 if s2.type == "DATA" and s2.run == s1.run:
                     ss = SequenceStereo(s1, s2)
                     ss.seq = len(ss_list)
-                    ss.jobname = f"{ss.telescope}_{str(ss.run).zfill(5)}"
+                    ss.jobname = f"{ss.telescope}_{ss.run:05d}"
                     setsequencefilenames(ss)
                     ss_list.append(ss)
                     break
@@ -348,7 +353,7 @@ def generateworkflow(run_list, store, require):
                         break
 
                 s.previousrun = previousrun
-                s.jobname = f"{r.telescope}_{str(r.run).zfill(5)}"
+                s.jobname = f"{r.telescope}_{r.run:05d}"
                 setsequencefilenames(s)
                 if s not in sequence_list:
                     sequence_list.append(s)
