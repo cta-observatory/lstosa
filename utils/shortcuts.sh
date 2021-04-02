@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 #
-# Define Yesterday (NGHT0) and today (NIGHT1)
+# Define yesterday (NIGHT0) and today (NIGHT1)
 #
 NIGHT0=$(date +"%Y%m%d" -d "yesterday")
 NIGHT1=$(date +"%Y%m%d")
@@ -17,13 +17,11 @@ export cali=$real/calibration
 #
 #-Concrete yesterday and today directories
 #
-#export dl1y="$dl1/$NIGHT0"
-#export dl1t="$dl1/$NIGHT1"
-#export ray="$ra/$NIGHT0"
-#export rat="$ra/$NIGHT0"
-#export dl2y="$dl2/$NIGHT0"
-#export dl2t="$del2/$NIGHT1"
-#export caliy="$cali/$NIGHT0"
-#export calit="$cali/$NIGHT1"
-
-
+export dl1y="$dl1/$NIGHT0"
+export dl1t="$dl1/$NIGHT1"
+export ray="$ra/$NIGHT0"
+export rat="$ra/$NIGHT0"
+export dl2y="$dl2/$NIGHT0"
+export dl2t="$dl2/$NIGHT1"
+export caliy="$cali/$NIGHT0"
+export calit="$cali/$NIGHT1"
