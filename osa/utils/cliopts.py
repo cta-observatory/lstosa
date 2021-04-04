@@ -984,6 +984,11 @@ def copy_datacheck_parsing():
     options.directory = set_default_directory_if_needed()
     options.prod_id = get_prod_id()
 
+    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+        options.dl1_prod_id = get_dl1_prod_id()
+    else:
+        options.dl1_prod_id = options.prod_id
+
 
 def set_default_date_if_needed():
     if is_defined(options.date):
