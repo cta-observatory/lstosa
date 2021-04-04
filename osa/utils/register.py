@@ -112,7 +112,8 @@ def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
 def register_run_concept_files(run_string, concept):
     """
     Prepare files to be moved to final destination directories
-    from the running_analysis original directory.
+    from the running_analysis original directory. DL1ab, datacheck
+    and DL2 are firstly stored in the corresponding subdirectory.
 
     Parameters
     ----------
@@ -120,8 +121,11 @@ def register_run_concept_files(run_string, concept):
     concept
     """
 
-    if concept in ["MUON", "DL2", "PEDESTAL", "CALIB", "TIMECALIB"]:
+    if concept in ["MUON", "PEDESTAL", "CALIB", "TIMECALIB"]:
         inputdir = options.directory
+
+    elif concept == "DL2":
+        inputdir = join(options.directory, options.dl2_prod_id)
 
     elif concept in ["DL1AB", "DATACHECK"]:
         inputdir = join(options.directory, options.dl1_prod_id)

@@ -246,7 +246,7 @@ def post_process_files(seq_list):
 
     DL1_RE = re.compile(fr"{options.directory}/dl1(?:.*).(?:h5|hdf5|hdf)")
     DL1AB_RE = re.compile(fr"{options.dl1_prod_id}(?:.*)/dl1(?:.*).(?:h5|hdf5|hdf)")
-    DL2_RE = re.compile(r"dl2(?:.*).(?:h5|hdf5|hdf)")
+    DL2_RE = re.compile(fr"{options.dl2_prod_id}(?:.*)/dl2(?:.*).(?:h5|hdf5|hdf)")
     MUONS_RE = re.compile(r"muons(?:.*).fits")
     DATACHECK_RE = re.compile(r"datacheck_dl1(?:.*).(?:h5|hdf5|hdf)")
     CALIB_RE = re.compile(r"/calibration(?:.*).(?:h5|hdf5|hdf)")
