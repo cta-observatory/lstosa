@@ -50,7 +50,7 @@ def datasequence(calibrationfile, pedestalfile, time_calibration, drivefile, run
     sequenceprebuild = join(options.directory, f"sequence_{options.tel_id}_{run_str}")
     historyfile = sequenceprebuild + historysuffix
     level, rc = (4, 0) if options.simulate else historylevel(historyfile, "DATA")
-    log.debug(f"Going to level {level}")
+    log.info(f"Going to level {level}")
 
     if level == 4:
         rc = r0_to_dl1(
@@ -63,25 +63,33 @@ def datasequence(calibrationfile, pedestalfile, time_calibration, drivefile, run
             historyfile,
         )
         level -= 1
-        log.debug(f"Going to level {level}")
+        log.info(f"Going to level {level}")
+
     if level == 3:
         rc = dl1ab(run_str, historyfile)
-        level -= 1
-        log.debug(f"Going to level {level}")
+        if cfg.getboolean("lstchain", "store_image_dl1ab"):
+            level -= 1
+            log.info(f"Going to level {level}")
+        else:
+            level -= 2
+            log.info(f"No images stored in dl1ab. Producing DL2. Going to level {level}")
+
     if level == 2:
         rc = dl1_datacheck(run_str, historyfile)
         if options.nodl2:
             level = 0
-            log.debug(f"No DL2 are going to be produced. Going to level {level}")
+            log.info(f"No DL2 are going to be produced. Going to level {level}")
         else:
             level -= 1
-            log.debug(f"Going to level {level}")
+            log.info(f"Going to level {level}")
+
     if level == 1:
         rc = dl1_to_dl2(run_str, historyfile)
         level -= 1
-        log.debug(f"Going to level {level}")
+        log.info(f"Going to level {level}")
+
     if level == 0:
-        log.debug(f"Job for sequence {run_str} finished without fatal errors")
+        log.info(f"Job for sequence {run_str} finished without fatal errors")
     return rc
 
 
@@ -136,7 +144,7 @@ def r0_to_dl1(
     ]
 
     try:
-        log.debug(f"Executing {stringify(commandargs)}")
+        log.info(f"Executing {stringify(commandargs)}")
         rc = subprocess.call(commandargs)
     except subprocess.CalledProcessError as error:
         log.exception(f"Subprocess error: {error}")
@@ -194,16 +202,27 @@ def dl1ab(run_str, historyfile):
 
     # Prepare and launch the actual lstchain script
     command = "lstchain_dl1ab"
-    commandargs = [
-        command,
-        "--input-file=" + input_dl1_datafile,
-        "--output-file=" + output_dl1_datafile,
-        "--pedestal-cleaning=True",
-        "--config=" + config_file,
-    ]
+
+    if cfg.getboolean("lstchain", "store_image_dl1ab"):
+        commandargs = [
+            command,
+            "--input-file=" + input_dl1_datafile,
+            "--output-file=" + output_dl1_datafile,
+            "--pedestal-cleaning=True",
+            "--config=" + config_file,
+        ]
+    else:
+        commandargs = [
+            command,
+            "--input-file=" + input_dl1_datafile,
+            "--output-file=" + output_dl1_datafile,
+            "--pedestal-cleaning=True",
+            "--no-image=True",
+            "--config=" + config_file,
+        ]
 
     try:
-        log.debug(f"Executing {stringify(commandargs)}")
+        log.info(f"Executing {stringify(commandargs)}")
         rc = subprocess.call(commandargs)
     except subprocess.CalledProcessError as error:
         log.exception(f"Subprocess error: {error}")
@@ -263,7 +282,7 @@ def dl1_datacheck(run_str, historyfile):
     ]
 
     try:
-        log.debug(f"Executing {stringify(commandargs)}")
+        log.info(f"Executing {stringify(commandargs)}")
         rc = subprocess.call(commandargs)
     except subprocess.CalledProcessError as error:
         log.exception(f"Subprocess error: {error}")
@@ -319,7 +338,7 @@ def dl1_to_dl2(run_str, historyfile):
     ]
 
     try:
-        log.debug(f"Executing {stringify(commandargs)}")
+        log.info(f"Executing {stringify(commandargs)}")
         rc = subprocess.call(commandargs)
     except subprocess.CalledProcessError as error:
         log.exception(f"Subprocess error: {error}")
