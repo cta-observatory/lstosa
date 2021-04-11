@@ -320,6 +320,7 @@ def dl1_to_dl2(run_str, historyfile):
         return 0
 
     dl1ab_subdirectory = os.path.join(options.directory, options.dl1_prod_id)
+    dl2_subdirectory = os.path.join(options.directory, options.dl2_prod_id)
 
     configfile = cfg.get("LSTOSA", "DL2CONFIGFILE")
     rf_models_directory = cfg.get("LSTOSA", "RF-MODELS-DIR")
@@ -332,7 +333,7 @@ def dl1_to_dl2(run_str, historyfile):
     commandargs = [
         command,
         "--input-file=" + datafile,
-        "--output-dir=" + options.directory,
+        "--output-dir=" + dl2_subdirectory,
         "--path-models=" + rf_models_directory,
         "--config=" + configfile,
     ]
