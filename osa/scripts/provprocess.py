@@ -254,9 +254,9 @@ def produce_provenance():
         processed_lines = []
         # derive destination folder
         if fold == pathDL2:
-            step_path = Path(fold) / options.date / options.dl2_prod_id
+            step_path = Path(fold) / options.date / options.prod_id / options.dl2_prod_id
         else:
-            step_path = Path(fold) / options.date / options.prod_id
+            step_path = Path(fold) / options.date / options.prod_id / options.dl1_prod_id
 
         # check destination folder exists
         if not step_path.exists():
