@@ -9,6 +9,7 @@ dependencies:
   - conda-build
   - pip
   - ctapipe~=0.10.5
+  - protozfits=2.0
   - prov
   - pyyaml
   - pydot
