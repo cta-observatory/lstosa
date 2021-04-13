@@ -361,10 +361,7 @@ def calibrate_time(
         )
 
     if rc == 1:
-        log.warning(
-            "Not able to create time calibration file. Creating a link "
-            "to default calibration time file corresponding to run 1625"
-        )
+        log.warning("Not able to create time calibration file." "Trying to use an existing file")
         # FIXME: take latest available time calibration file (eg from day before)
         def_time_calib_run = cfg.get("LSTOSA", "DEFAULT-TIME-CALIB-RUN")
         calibpath = Path(cfg.get("LST1", "CALIBDIR"))
@@ -377,8 +374,8 @@ def calibrate_time(
         ]
         if file_list:
             log.info(
-                "Creating a symlink to the default calibration"
-                "time file corresponding to run 1625"
+                f"Creating a symlink to an already produce time calibration "
+                f"file corresponding to run {def_time_calib_run}"
             )
             inputf = file_list[0]
             os.symlink(inputf, outputf)
