@@ -361,7 +361,7 @@ def calibrate_time(
         )
 
     if rc == 1:
-        log.warning("Not able to create time calibration file." "Trying to use an existing file")
+        log.warning("Not able to create time calibration file. Trying to use an existing file")
         # FIXME: take latest available time calibration file (eg from day before)
         def_time_calib_run = cfg.get("LSTOSA", "DEFAULT-TIME-CALIB-RUN")
         calibpath = Path(cfg.get("LST1", "CALIBDIR"))
