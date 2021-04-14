@@ -243,6 +243,13 @@ def get_status_for_sequence(sequence, program):
         dl1ab_subdirectory = os.path.join(options.directory, options.dl1_prod_id)
         files = glob(join(dl1ab_subdirectory, f"{prefix}*{sequence.run}*{suffix}"))
 
+    elif program == "DL2":
+        # Search for files in the dl1ab subdirectory
+        prefix = cfg.get("LSTOSA", "DL2PREFIX")
+        suffix = cfg.get("LSTOSA", "DL2SUFFIX")
+        dl1ab_subdirectory = os.path.join(options.directory, options.dl2_prod_id)
+        files = glob(join(dl1ab_subdirectory, f"{prefix}*{sequence.run}*{suffix}"))
+
     elif program == "DATACHECK":
         # Search for files in the dl1ab subdirectory
         prefix = cfg.get("LSTOSA", program + "PREFIX")
@@ -254,6 +261,7 @@ def get_status_for_sequence(sequence, program):
         prefix = cfg.get("LSTOSA", program + "PREFIX")
         suffix = cfg.get("LSTOSA", program + "SUFFIX")
         files = glob(join(options.directory, f"{prefix}*{sequence.run}*{suffix}"))
+
     number_of_files = len(files)
     log.debug(f"Found {number_of_files} {program} files for sequence name {sequence.jobname}")
     return number_of_files
