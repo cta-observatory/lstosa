@@ -193,8 +193,7 @@ class Telescope(object):
             self.read_file()
         else:
             seqArgs = [
-                "python",
-                "sequencer.py",
+                "sequencer",
                 "-s",
                 "-c",
                 f"{args.osa_config_file}",
