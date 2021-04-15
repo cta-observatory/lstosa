@@ -316,8 +316,8 @@ class Sequence(object):
     def is_100(self):
         if (
             self.dictSequence["Tel"] != "ST"
+            and self.dictSequence["DL1%"] == "100"
             and self.dictSequence["DL1AB%"] == "100"
-            and self.dictSequence["DATACHECK%"] == "100"
             and self.dictSequence["MUONS%"] == "100"
             and self.dictSequence["DL2%"] == "100"
         ):
@@ -344,41 +344,8 @@ class Sequence(object):
             and self.dictSequence["State"] == "COMPLETED"
         ):
             return True
-        # if (
-        #         self.dictSequence["Type"] == "STEREO"
-        #         and self.dictSequence["Exit"] == "0"
-        #         and self.is_100()
-        #         and self.dictSequence["State"] == "C"
-        #         and int(self.dictSequence["Subruns"]) > 0
-        # ):
-        #    return True
-        return False
 
-    # def is_error2(self):
-    #     log.debug("Check for 'short runs'")
-    #     if (
-    #             self.dictSequence["Type"] == "DATA"
-    #             and (self.dictSequence["Exit"] == "2" or self.dictSequence["Exit"] == "222")
-    #             and self.dictSequence["_Y_%"] == "100"
-    #             and self.dictSequence["_D_%"] == "0"
-    #             and self.dictSequence["_I_%"] == "0"
-    #             and self.dictSequence["State"] == "C"
-    #             and int(self.dictSequence["Subruns"]) < min_subruns_per_run
-    #     ):
-    #         return True
-    #     return False
-    #
-    # def is_error2noint(self):
-    #     log.debug("Check if runs were calibrated with no or few interleaved ped/cal events")
-    #     historyFile = f"{analysis_path(self.dictSequence['Tel'])}/sequence_{self.dictSequence['Tel']}_0{self.dictSequence['Run']}.history"
-    #     with open(historyFile, "r") as f:
-    #         for line in f:
-    #             try:
-    #                 if line.split()[1] == "sorcerer" and int(line.split()[10]) == 2:
-    #                     return True
-    #             except IndexError:
-    #                 continue
-    #     return False
+        return False
 
     def has_all_subruns(self):
         import glob
@@ -390,6 +357,7 @@ class Sequence(object):
         if self.dictSequence["Type"] == "PEDCALIB":
             log.debug("Cannot check for missing subruns in the middle for CALIBRATION")
             return True
+        # FIXME: adapt to LST
         search_str = f"{analysis_path(self.dictSequence['Tel'])}/20*_{int(self.dictSequence['Run']):08d}.*_Y_*.root"
         subrun_nrs = sorted(
             [int(os.path.basename(f).split(".")[1][0:3]) for f in glob.glob(search_str)]

@@ -591,7 +591,7 @@ def merge_dl2(sequence_list):
                 f"--pattern={dl2_pattern}",
             ]
 
-            if not options.simulate:
+            if not options.simulate and not options.test:
                 subprocess.run(cmd)
 
             else:
