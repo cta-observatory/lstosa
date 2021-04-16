@@ -1,0 +1,11 @@
+h1, p {font-family: Sans-Serif}
+table{border-collapse:collapse; width:130ex; padding:5px;}
+table, td, th {border:1px solid blue; font-family: Monospace; padding:3px;}
+td {}
+.leftbold{text-align:left; font-weight: bold;}
+.left{text-align:left;}
+.center{text-align:center;}
+.right{text-align:right;}
+.date{text-align:left; width:13ex;}
+th {background-color:blue; color:white;}
+tr:hover{background-color:yellow;}
