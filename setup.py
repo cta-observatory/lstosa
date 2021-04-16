@@ -38,7 +38,7 @@ setup(
     extras_require=extras_require,
     install_requires=[
         "astropy~=4.2",
-        "lstchain~=0.7.2",
+        "lstchain~=0.7.3",
         "matplotlib",
         "numpy",
         "pandas",
