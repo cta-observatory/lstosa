@@ -37,6 +37,7 @@ __all__ = [
     "extract_provenance",
     "merge_dl1datacheck",
     "set_closed_with_file",
+    "merge_dl2",
 ]
 
 log = logging.getLogger(__name__)
@@ -226,6 +227,9 @@ def post_process(seq_tuple):
 
     # Extract the provenance info
     extract_provenance(seq_list)
+
+    # Merge DL2 files runwise
+    merge_dl2(seq_list)
 
     if options.seqtoclose is None:
         return set_closed_with_file(analysis_text)
@@ -558,6 +562,42 @@ def extract_provenance(seq_list):
             else:
                 log.debug("Simulate launching scripts")
             log.debug(f"{stringify(cmd)}")
+
+
+def merge_dl2(sequence_list):
+    """Merge DL2 h5 files run-wise"""
+
+    log.info("Looping over the sequences and merging the dl2 files")
+
+    dl2_dir = destination_dir("DL2", create_dir=False)
+    dl2_pattern = "dl2*.h5"
+
+    for sequence in sequence_list:
+        if sequence.type == "DATA":
+            dl2_merged_file = os.path.join(dl2_dir, f"dl2_LST-1.Run{sequence.run:05d}.h5")
+
+            cmd = [
+                "sbatch",
+                "-D",
+                options.directory,
+                "-o",
+                f"log/slurm_merge_dl2_{sequence.run:05d}_%j.log",
+                f"lstchain_merge_hdf5_files",
+                f"--input-dir={dl2_dir}",
+                f"--output-file={dl2_merged_file}",
+                "--no-image=True",
+                "--smart=False",
+                f"--run-number={sequence.run}",
+                f"--pattern={dl2_pattern}",
+            ]
+
+            if not options.simulate and not options.test:
+                subprocess.run(cmd)
+
+            else:
+                log.debug("Simulate launching scripts")
+
+            log.debug(f"Executing {stringify(cmd)}")
 
 
 if __name__ == "__main__":
