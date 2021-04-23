@@ -1,7 +1,7 @@
 import datetime
 from pathlib import Path
 import subprocess as sp
-from sys import exit
+import sys
 import argparse
 from osa.configs import options
 
@@ -14,6 +14,7 @@ def valid_date(s):
         raise argparse.ArgumentTypeError(msg)
 
 
+# FIXME: unify with sequencer cli parsing?
 def argument_parser():
     parser = argparse.ArgumentParser(
         description="Script to make an xhtml from LSTOSA sequencer output"
@@ -31,9 +32,10 @@ def argument_parser():
 
 
 def matrixtohtmltable(matrix, column_class, header, footer):
-    """header and footer are simple simple bool in order to build first line
-    and last line with outside the body with th, td.
-    column_class is a css class to align columns."""
+    """
+    Header and footer are simple simple bool in order to build first and last line
+    with outside the body with th, td. Column_class is a css class to align columns.
+    """
 
     is_tbody_open = False
     is_tbody_closed = False
@@ -83,7 +85,6 @@ def webtail():
 
 
 def main():
-    # Find out which telescopes were active last night
     args = argument_parser().parse_args()
     if args.date:
         year = args.date.year
@@ -100,18 +101,21 @@ def main():
     run_summary_directory = Path("/fefs/aswg/data/real/monitoring/RunSummary")
     run_summary_file = run_summary_directory / f"RunSummary_{strdate}.ecsv"
 
+    # FIXME: Parse this via command line as done in the sequencer.
+    #        It has to somehow identify if data was taken and update the web.
+    #        Otherwise the web does not needs to be updated.
     telescope = "LST1"
 
     if not run_summary_file.is_file():
         print(f"No RunSummary file found for {strdate}")
-        exit(-1)
+        sys.exit(1)
 
     # Print the output into a web page
     webhead(
-        '<title>OSA Sequencer in La Palma Cluster</title><link href="osa.css" rel="stylesheet" type="text/css" /><style>table{width:152ex;}</style>'
+        '<title>OSA Sequencer in the LST onsite IT center</title><link href="osa.css" rel="stylesheet" type="text/css" /><style>table{width:152ex;}</style>'
     )
 
-    print("<h1>LSTOSA Sequencer in the LST-IT Cluster</h1>")
+    print("<h1>OSA sequencer in the LST onsite IT center</h1>")
 
     # Print the matrix
     column_class = [
@@ -144,32 +148,26 @@ def main():
         "-c",
         args.osa_config_file,
         "-s",
-        "-t",
         "-d",
         options.date,
         telescope,
     ]
+
     try:
         output = sp.run(commandargs, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8")
     except sp.CalledProcessError:
         # Sorry, it does not work (day closed, asked with wrong parameters ...)
         print(f"Command with the following args {commandargs} failed, {output.returncode}")
-        exit(-1)
+        sys.exit(1)
     else:
-        """The output is something like this:
-        =========================== Starting sequencer.py at 2021-04-16 10:53:09 UTC for LST, Telescope: LST1, Night: 2020_01_17 ===========================
-        Tel   Seq  Parent  Type      Run   Subruns  Source  Wobble  Action  Tries  JobID  State  Host  CPU_time  Walltime  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%
-        LST1    0  None    PEDCALIB  1805  5        None    None    None    None   None   None   None  None      None      None  None  None    None    None        None
-        LST1    1       0  DATA      1807  19       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0
-        LST1    2       0  DATA      1808  35       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0
-
-        So we have to proceed to strip newlines and fit it into a table:
-        """
-
         print(
-            f'<p>Sequencer at {datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC Telescopes found: {telescope}</p>'
+            f'<p>Sequencer at {datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC. '
+            f'Telescopes found: {telescope}</p>'
         )
+
+        # Strip newlines and fit it into a table:
         lines = output.stdout.splitlines()
+
         if len(lines) > 1:
             matrix = []
             for l in lines:
@@ -180,6 +178,7 @@ def main():
 
             matrixtohtmltable(matrix, column_class, True, False)
         else:
+            # Show just plain text
             print(f"<pre>{output.stdout}</pre>")
 
     # Print the closing html
