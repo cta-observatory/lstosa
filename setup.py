@@ -16,6 +16,7 @@ entry_points = {
         "create_nightsummary = osa.scripts.create_nightsummary:main",
         "provprocess = osa.scripts.provprocess:main",
         "simulate_processing = osa.scripts.simulate_processing:main",
+        "sequencer_webmaker = osa.scripts.sequencer_webmaker:main",
     ]
 }
 
