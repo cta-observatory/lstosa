@@ -9,7 +9,7 @@ ALL_SCRIPTS = [
     # "autocloser",
     # "calibrationsequence",
     "copy_datacheck",
-    # "datasequence",
+    "datasequence",
     # "provprocess",
     # "simulate_processing",
 ]

@@ -29,23 +29,22 @@ handler.setFormatter(fmt)
 logging.root.addHandler(handler)
 
 
-def datasequence(calibrationfile, pedestalfile, time_calibration, drivefile, run_summary, run_str):
-    """
-    Performs all the steps to process a whole run
+def main():
+    """Performs all the steps to process an entire run."""
+    (
+        drs4_file,
+        calib_file,
+        time_calib_file,
+        drive_file,
+        run_summary,
+        run_str,
+    ) = datasequencecliparsing()
 
-    Parameters
-    ----------
-    calibrationfile
-    pedestalfile
-    time_calibration
-    drivefile
-    run_summary
-    run_str
+    if options.verbose:
+        logging.root.setLevel(logging.DEBUG)
+    else:
+        logging.root.setLevel(logging.INFO)
 
-    Returns
-    -------
-
-    """
     historysuffix = cfg.get("LSTOSA", "HISTORYSUFFIX")
     sequenceprebuild = join(options.directory, f"sequence_{options.tel_id}_{run_str}")
     historyfile = sequenceprebuild + historysuffix
@@ -53,16 +52,17 @@ def datasequence(calibrationfile, pedestalfile, time_calibration, drivefile, run
     log.info(f"Going to level {level}")
 
     if level == 4:
-        rc = r0_to_dl1(
-            calibrationfile,
-            pedestalfile,
-            time_calibration,
-            drivefile,
+        rc = stage1_process(
+            calib_file,
+            drs4_file,
+            time_calib_file,
+            drive_file,
             run_summary,
             run_str,
             historyfile,
         )
-        level -= 1
+        # level -= 1
+        level = 0
         log.info(f"Going to level {level}")
 
     if level == 3:
@@ -90,13 +90,14 @@ def datasequence(calibrationfile, pedestalfile, time_calibration, drivefile, run
 
     if level == 0:
         log.info(f"Job for sequence {run_str} finished without fatal errors")
-    return rc
+
+    sys.exit(rc)
 
 
 # FIXME: Parse all different arguments via config file or sequence_list.txt
 @trace
 def r0_to_dl1(
-    calibrationfile, pedestalfile, time_calibration, drivefile, run_summary, run_str, historyfile
+    calib_file, drs4_file, time_calib_file, drive_file, run_summary, run_str, historyfile
 ):
     """
     Prepare and launch the actual lstchain script that is performing
@@ -105,10 +106,10 @@ def r0_to_dl1(
 
     Parameters
     ----------
-    calibrationfile
-    pedestalfile
-    time_calibration
-    drivefile
+    calib_file
+    drs4_file
+    time_calib_file
+    drive_file
     run_summary: str
         Path to the run summary file
     run_str: str
@@ -136,10 +137,10 @@ def r0_to_dl1(
         command,
         "--input-file=" + datafile,
         "--output-dir=" + options.directory,
-        "--pedestal-file=" + pedestalfile,
-        "--calibration-file=" + calibrationfile,
-        "--time-calibration-file=" + time_calibration,
-        "--pointing-file=" + drivefile,
+        "--pedestal-file=" + drs4_file,
+        "--calibration-file=" + calib_file,
+        "--time-calibration-file=" + time_calib_file,
+        "--pointing-file=" + drive_file,
         "--run-summary-path=" + run_summary,
     ]
 
@@ -155,8 +156,80 @@ def r0_to_dl1(
             run_str,
             options.prod_id,  # TODO: consider only DL2 prod ID?
             command,
-            basename(calibrationfile),
-            basename(pedestalfile),
+            basename(calib_file),
+            basename(drs4_file),
+            rc,
+            historyfile,
+        )
+        if rc != 0:
+            sys.exit(rc)
+        return rc
+
+
+def stage1_process(
+    calib_file, drs4_file, time_calib_file, drive_file, run_summary, run_str, historyfile
+):
+    """
+    Prepare and launch the `ctapipe-stage1` Tool that performs
+    the low and high-level calibration to raw camera images.
+    It also applies the image cleaning and obtains shower parameters.
+
+    Parameters
+    ----------
+    calib_file
+    drs4_file
+    time_calib_file
+    drive_file
+    run_summary: str
+        Path to the run summary file
+    run_str: str
+        XXXXX.XXXX (run_number.subrun_number)
+    historyfile
+
+    Returns
+    -------
+    rc
+    """
+
+    if options.simulate:
+        return 0
+
+    nightdir = lstdate_to_dir(options.date)
+    input_file = join(
+        cfg.get("LST1", "RAWDIR"),
+        nightdir,
+        f'{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_str}{cfg.get("LSTOSA", "R0SUFFIX")}',
+    )
+    output_file = join(options.directory, f"LST-1.Run{run_str}.dl1.h5")
+
+    command = cfg.get("LSTOSA", "STAGE1")
+    commandargs = [
+        command,
+        "--input=" + input_file,
+        "--output=" + output_file,
+        "--LSTEventSource.LSTR0Corrections.drs4_pedestal_path=" + drs4_file,
+        "--LSTEventSource.LSTR0Corrections.drs4_time_calib_file_path=" + time_calib_file,
+        "--LSTEventSource.LSTR0Corrections.calibration_path=" + calib_file,
+        "--PointingSource.drive_report_path=" + drive_file,
+        "--LSTEventSource.EventTimeCalculator.run_summary_path" + run_summary,
+        "--write-images",
+        "--write-parameters",
+    ]
+
+    try:
+        log.info(f"Executing {stringify(commandargs)}")
+        rc = subprocess.call(commandargs)
+    except subprocess.CalledProcessError as error:
+        log.exception(f"Subprocess error: {error}")
+    except OSError as error:
+        log.exception(f"Command {stringify(commandargs)} failed, {error}")
+    else:
+        history(
+            run_str,
+            options.prod_id,  # TODO: consider only DL2 prod ID?
+            command,
+            basename(calib_file),
+            basename(drs4_file),
             rc,
             historyfile,
         )
@@ -361,23 +434,4 @@ def dl1_to_dl2(run_str, historyfile):
 
 
 if __name__ == "__main__":
-    # set the arguments and options through cli parsing
-    (
-        drs4_ped_file,
-        calib_file,
-        time_calib_file,
-        drive_log_file,
-        run_summary_file,
-        run_number,
-    ) = datasequencecliparsing()
-
-    if options.verbose:
-        logging.root.setLevel(logging.DEBUG)
-    else:
-        logging.root.setLevel(logging.INFO)
-
-    # run the routine
-    rc = datasequence(
-        drs4_ped_file, calib_file, time_calib_file, drive_log_file, run_summary_file, run_number
-    )
-    sys.exit(rc)
+    main()
