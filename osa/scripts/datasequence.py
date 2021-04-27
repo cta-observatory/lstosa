@@ -33,7 +33,7 @@ def main():
     """Performs all the steps to process an entire run."""
     args = datasequencecliparsing()
 
-    drs4_file = args.drs4_ped_file
+    drs4_file = args.drs4_pedestal_file
     time_calib_file = args.time_calib_file
     calib_file = args.calib_file
     drive_file = args.drive_log_file
