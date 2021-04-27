@@ -31,14 +31,14 @@ logging.root.addHandler(handler)
 
 def main():
     """Performs all the steps to process an entire run."""
-    (
-        drs4_file,
-        calib_file,
-        time_calib_file,
-        drive_file,
-        run_summary,
-        run_str,
-    ) = datasequencecliparsing()
+    args = datasequencecliparsing()
+
+    drs4_file = args.drs4_ped_file
+    calib_file = args.calib_file
+    time_calib_file = args.time_calib_file
+    drive_file = args.drive_log_file
+    run_summary = args.run_summary_file
+    run_str = args.run_number
 
     if options.verbose:
         logging.root.setLevel(logging.DEBUG)
@@ -212,9 +212,9 @@ def stage1_process(
         command,
         "--input=" + input_file,
         "--output=" + output_file,
-        "--LSTEventSource.LSTR0Corrections.drs4_pedestal_path=" + drs4_file,
-        "--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path=" + time_calib_file,
-        "--LSTEventSource.LSTR0Corrections.calibration_path=" + calib_file,
+        "--LSTR0Corrections.drs4_pedestal_path=" + drs4_file,
+        "--LSTR0Corrections.drs4_time_calibration_path=" + time_calib_file,
+        "--LSTR0Corrections.calibration_path=" + calib_file,
         "--PointingSource.drive_report_path=" + drive_file,
         "--EventTimeCalculator.run_summary_path=" + run_summary,
         "--write-images",

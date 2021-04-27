@@ -413,7 +413,10 @@ def datasequence_argparser():
     parser.add_argument(
         "run_summary_file", help="Path of run summary file with time reference information"
     )
-    parser.add_argument("run_number", help="Number of the run to be processed")
+    parser.add_argument(
+        "run_number",
+        help="Number of the run to be processed with the format RRRRR.SSSS (run.subrun)",
+    )
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
     return parser
 
@@ -460,14 +463,7 @@ def datasequencecliparsing():
 
     options.lstchain_version = get_lstchain_version()
 
-    return (
-        opts.drs4_ped_file,
-        opts.calib_file,
-        opts.time_calib_file,
-        opts.drive_log_file,
-        opts.run_summary_file,
-        opts.run_number,
-    )
+    return opts
 
 
 def stereosequencecliparsing():
