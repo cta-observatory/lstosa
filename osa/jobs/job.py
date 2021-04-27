@@ -365,9 +365,10 @@ def createjobtemplate(s, get_content=False):
             + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)), \n"
         )
     if s.type == "DATA":
-        content += TAB * 2 + "--run-number, \n"
         content += (
-            TAB * 2 + "'{0}".format(str(s.run).zfill(5)) + ".{0}'.format(str(subruns).zfill(4)), \n"
+            TAB * 2
+            + "'--run-number={0}".format(str(s.run).zfill(5))
+            + ".{0}'.format(str(subruns).zfill(4)), \n"
         )
     content += TAB * 2 + f"'{options.tel_id}'\n"
     content += TAB + f"])\n"
