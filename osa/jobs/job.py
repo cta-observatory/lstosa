@@ -282,10 +282,15 @@ def createjobtemplate(s, get_content=False):
         commandargs.append(os.path.join(run_summary_dir, f"RunSummary_{nightdir}.ecsv"))
 
     if s.type == "DATA":
-        commandargs.append(os.path.join(options.directory, s.calibration))
+        commandargs.append("--drs4-pedestal-file")
         commandargs.append(os.path.join(options.directory, s.pedestal))
+        commandargs.append("--time-calib-file")
         commandargs.append(os.path.join(options.directory, "time_" + s.calibration))
+        commandargs.append("--calib-file")
+        commandargs.append(os.path.join(options.directory, s.calibration))
+        commandargs.append("--drive-log-file")
         commandargs.append(os.path.join(drivedir, s.drive))
+        commandargs.append("--run-summary-file")
         commandargs.append(os.path.join(run_summary_dir, f"RunSummary_{nightdir}.ecsv"))
 
     # Get the number of subruns by looking at the last subrun

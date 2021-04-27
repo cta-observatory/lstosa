@@ -406,15 +406,23 @@ def datasequence_argparser():
         default=False,
         help="Do not produce DL2 files (default False)",
     )
-    parser.add_argument("drs4_ped_file", help="Path of the DRS4 pedestal file")
-    parser.add_argument("time_calib_file", help="Path of the DRS4 time calibration file")
-    parser.add_argument("calib_file", help="Path of the calibration file")
-    parser.add_argument("drive_log_file", help="Path of drive log file with pointing information")
     parser.add_argument(
-        "run_summary_file", help="Path of run summary file with time reference information"
+        "--drs4-pedestal-file", help="Path of the DRS4 pedestal file", required=True
     )
     parser.add_argument(
-        "run_number",
+        "--time-calib-file", help="Path of the DRS4 time calibration file", required=True
+    )
+    parser.add_argument("--calib-file", help="Path of the calibration file", required=True)
+    parser.add_argument(
+        "--drive-log-file", help="Path of drive log file with pointing information", required=True
+    )
+    parser.add_argument(
+        "--run-summary-file",
+        help="Path of run summary file with time reference information",
+        required=True,
+    )
+    parser.add_argument(
+        "--run-number",
         help="Number of the run to be processed with the format RRRRR.SSSS (run.subrun)",
     )
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
