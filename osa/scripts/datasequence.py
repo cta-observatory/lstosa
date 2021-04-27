@@ -45,6 +45,11 @@ def main():
     else:
         logging.root.setLevel(logging.INFO)
 
+    analysis_steps = cfg.items("analysis_steps")
+    highest_level = len(analysis_steps)
+    for key, step in analysis_steps:
+        print(key, step)
+
     historysuffix = cfg.get("LSTOSA", "HISTORYSUFFIX")
     sequenceprebuild = join(options.directory, f"sequence_{options.tel_id}_{run_str}")
     historyfile = sequenceprebuild + historysuffix
@@ -211,7 +216,7 @@ def stage1_process(
         "--LSTEventSource.LSTR0Corrections.drs4_time_calib_file_path=" + time_calib_file,
         "--LSTEventSource.LSTR0Corrections.calibration_path=" + calib_file,
         "--PointingSource.drive_report_path=" + drive_file,
-        "--LSTEventSource.EventTimeCalculator.run_summary_path" + run_summary,
+        "--EventTimeCalculator.run_summary_path=" + run_summary,
         "--write-images",
         "--write-parameters",
     ]
