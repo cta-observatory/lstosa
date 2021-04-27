@@ -407,8 +407,8 @@ def datasequence_argparser():
         help="Do not produce DL2 files (default False)",
     )
     parser.add_argument("drs4_ped_file", help="Path of the DRS4 pedestal file")
+    parser.add_argument("time_calib_file", help="Path of the DRS4 time calibration file")
     parser.add_argument("calib_file", help="Path of the calibration file")
-    parser.add_argument("time_calib_file", help="Path of the time calibration file")
     parser.add_argument("drive_log_file", help="Path of drive log file with pointing information")
     parser.add_argument(
         "run_summary_file", help="Path of run summary file with time reference information"

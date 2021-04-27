@@ -34,8 +34,8 @@ def main():
     args = datasequencecliparsing()
 
     drs4_file = args.drs4_ped_file
-    calib_file = args.calib_file
     time_calib_file = args.time_calib_file
+    calib_file = args.calib_file
     drive_file = args.drive_log_file
     run_summary = args.run_summary_file
     run_str = args.run_number
