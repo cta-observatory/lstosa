@@ -422,8 +422,9 @@ def datasequence_argparser():
         required=True,
     )
     parser.add_argument(
-        "run-number",
+        "--run-number",
         help="Number of the run to be processed with the format RRRRR.SSSS (run.subrun)",
+        required=True,
     )
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
     return parser
