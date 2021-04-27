@@ -18,7 +18,7 @@ from osa.utils.logging import MyFormatter
 from osa.utils.standardhandle import stringify
 from osa.utils.utils import lstdate_to_dir
 
-__all__ = ["datasequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
+__all__ = ["r0_to_dl1", "stage1_process", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
 
 log = logging.getLogger(__name__)
 
