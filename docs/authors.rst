@@ -12,6 +12,7 @@ To see who contributed to LSTOSA repository, please visit the
 * José Enrique Ruiz, IAA-CSIC, Spain
 * José Luis Contreras, UCM, Spain
 * Lab Saha, UCM, Spain
+* Maria Láinez, UCM, Spain
 
 We thank also Isidro Aguado (UCM, Spain) for his invaluable help and technical support.
 
