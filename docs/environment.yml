@@ -1,8 +1,0 @@
-channels:
-  - conda-forge
-dependencies:
-  - python==3.7
-  - numpy
-  - pip
-  - pip:
-    - git+git://github.com/cta-observatory/ctapipe_io_lst@v0.5.3
