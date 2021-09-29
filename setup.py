@@ -48,6 +48,12 @@ setup(
         "pydot",
         "pydotplus",
     ],
+    package_data={
+        'osa': [
+            'provenance/config/definition.yaml',
+            'provenance/config/logger.yaml',
+        ],
+    },
     python_requires="~=3.7",
     entry_points=entry_points,
 )
