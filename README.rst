@@ -7,10 +7,9 @@ lstosa |docs|
   :alt: Documentation Status
 
 
-On-Site analysis pipeline of the the Large Size Telescope prototype of CTA_ (the Cherenkov Telescope Array)
+On-Site analysis pipeline of the the Large Size Telescope prototype of CTA_ (Cherenkov Telescope Array).
 
-This is code is a prototype data processing framework and is under development. It is not recommended for data production use unless you are an
-expert or developer.
+This code is a prototype data processing framework under development.
 
 * Code: https://github.com/gae-ucm/lstosa
 * Docs: https://lstosa.readthedocs.io/
