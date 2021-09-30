@@ -12,7 +12,7 @@ On-Site analysis pipeline of the the Large Size Telescope prototype of CTA_ (the
 This is code is a prototype data processing framework and is under development. It is not recommended for data production use unless you are an
 expert or developer.
 
-* Code: https://github.com/morcuended/lstosa-test
+* Code: https://github.com/gae-ucm/lstosa
 * Docs: https://lstosa.readthedocs.io/
 * License: BSD-3-Clause_
 
@@ -26,7 +26,7 @@ Installation
 
 .. code-block:: bash
 
-   git clone git@github.com:morcuended/lstosa.git
+   git clone git@github.com:gae-ucm/lstosa.git
    cd lstosa
    conda env create -n osa -f environment.yml
    conda activate osa
