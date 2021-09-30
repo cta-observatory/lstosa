@@ -1,6 +1,7 @@
+import datetime
 import logging
 import os
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 from optparse import OptionParser
 
 from osa.configs import options
@@ -988,6 +989,30 @@ def copy_datacheck_parsing():
         options.dl1_prod_id = get_dl1_prod_id()
     else:
         options.dl1_prod_id = options.prod_id
+
+
+def valid_date(s):
+    try:
+        return datetime.datetime.strptime(s, "%Y_%m_%d")
+    except ValueError:
+        msg = f"Not a valid date: '{s}'."
+        raise ArgumentTypeError(msg)
+
+
+def sequencer_webmaker_argparser():
+    parser = ArgumentParser(description="Script to make an xhtml from LSTOSA sequencer output")
+    parser.add_argument("-d", "--date", help="Date - format YYYY_MM_DD", type=valid_date)
+    parser.add_argument(
+        "-c",
+        "--config-file",
+        dest="osa_config_file",
+        default="cfg/sequencer.cfg",
+        help="OSA config file.",
+    )
+    options.tel_id = "LST1"
+    options.prod_id = get_prod_id()
+
+    return parser
 
 
 def set_default_date_if_needed():

@@ -534,35 +534,18 @@ def understand_mono_sequence(tel, seq):
     -------
 
     """
-    if seq.is_error2noint():
-        log.info("Updating incidences: run calibrated w/o interleaved ped/cal")
-        tel.incidence.add_incidence(
-            "error2noint", f"{seq.dictSequence['Run']}({seq.dictSequence['Subruns']})"
-        )
 
-    # maybe this check is obsolete since we introduced error2noint
-    if seq.is_error2():
-        seq.understood = True
-        log.info("Updating incidences: short runs")
-        tel.incidence.add_incidence(
-            "error2", f"{seq.dictSequence['Run']}({seq.dictSequence['Subruns']})"
-        )
-        seq.discarded = True
-        log.info("Discarding this sequence from OSA")
-        seq.readyToClose = True
-        return True
-
-    if seq.is_missingReport():
-        seq.understood = True
-        if not tel.problem.recoverReport(seq.dictSequence["Run"]):
-            # send email that i could not recover report files!
-            log.warning(
-                f"Failed to recover at least one missing report file for sequence {seq.dictSequence['Run']}"
-            )
-        if tel.problem.recoveredReports:
-            log.info(f"Updating incidences: Reports recovered for {tel.problem.recoveredReports}")
-            tel.incidence.add_incidence("recReps", tel.problem.recoveredReports)
-        return True
+    #if seq.is_missingReport():
+    #    seq.understood = True
+    #    if not tel.problem.recoverReport(seq.dictSequence["Run"]):
+    #        # send email that i could not recover report files!
+    #        log.warning(
+    #            f"Failed to recover at least one missing report file for sequence {seq.dictSequence['Run']}"
+    #        )
+    #    if tel.problem.recoveredReports:
+    #        log.info(f"Updating incidences: Reports recovered for {tel.problem.recoveredReports}")
+    #        tel.incidence.add_incidence("recReps", tel.problem.recoveredReports)
+    #    return True
 
     return False
 
@@ -742,12 +725,6 @@ if __name__ == "__main__":
 
         if not telescopes[tel].incidence.check_previous_incidences(tel):
             log.debug("No previous incidences found")
-
-        # if len(telescopes[tel].incidence.incidencesDict["error23"]) > max_broken_report_lines_per_telescope:
-        #     log.warning("Too many broken report lines! Something is wrong!")
-        #     # interrupt unless closing is forced
-        #     if not args.force:
-        #         continue
 
         # loop over sequences
         for seq in telescopes[tel]:

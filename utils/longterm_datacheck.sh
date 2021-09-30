@@ -1,15 +1,16 @@
 #!/bin/bash
 
-#SBATCH -A dpps                                                                                                                                                                                                                               
-#SBATCH -p short                                                                                                        
-#SBATCH --cpus-per-task=1                                                                                               
-#SBATCH --mem-per-cpu=4G                                                                                                
-#SBATCH -o slurm_longterm_datacheck_%j.out                                                                              
-#SBATCH -e slurm_longterm_datacheck_%j.err
+#SBATCH -A dpps                                                                                                                                        
+#SBATCH -p long                           
+#SBATCH --cpus-per-task=16                                                
+#SBATCH --mem-per-cpu=4G                                                 
+#SBATCH -D /fefs/aswg/data/real/OSA/DL1DataCheck_LongTerm                                            
+#SBATCH -o log/slurm_longterm_datacheck_%j.out                           
+#SBATCH -e log/slurm_longterm_datacheck_%j.err
 
 # Usage: $sbatch longterm_datacheck.sh
 
-OUTPUT_DIR="/fefs/aswg/data/real/OSA/DL1DataCheck_LongTerm"
+OUTPUT_DIR="/fefs/aswg/data/real/OSA/DL1DataCheck_LongTerm/v0.7"
 mkdir -p $OUTPUT_DIR
 WORK_DIR="/tmp/OSA/${SLURM_JOBID}"
 mkdir -p $WORK_DIR
@@ -25,7 +26,6 @@ if [[ ! "$WORK_DIR" || ! -d "$WORK_DIR" ]]; then
   exit 1
 fi
 
-# Commented ##SBATCH -D=/fefs/aswg/data/real/OSA/DL1DataCheck_LongTerm                                                                                                
 
 # Make sure tmp directory gets removed even if the script exits abnormally.
 trap "exit 1" HUP INT PIPE QUIT TERM
@@ -34,10 +34,11 @@ trap 'rm -rf "$WORK_DIR"' EXIT
 echo Start copy: `date +%FT%T`
 # Copy files month by month: muons files subrun-wise and dl1 datacheck run-wise
 # FIXME: loop over months or directories without having to assume any prior month list.
-for month in 201911 202001 202002 202006 202007 202008 202009 202010 202011 202012 202101 202102 202103 202104
+#for month in 201911 202001 202002 202006 202007 202008 202009 202010 202011 202012 202101 202102 202103 202104 202105
+for month in 202007 202008 202009 202010 202011 202012 202101 202102 202103 202104 202105 202106 202107 202108 202109 202110
 do
-    cp $DL1DIR/${month}*/$prod_id/$dl1_prod_id/datacheck_dl1_LST-1.Run?????.h5 $WORK_DIR/.
-    cp $DL1DIR/${month}*/$prod_id/muons_LST-1.Run*.fits $WORK_DIR/.
+    cp $DL1DIR/${month}*/v0.7.{1,3}/$dl1_prod_id/datacheck_dl1_LST-1.Run?????.h5 $WORK_DIR/.
+    cp $DL1DIR/${month}*/v0.7.{1,3}/muons_LST-1.Run*.fits $WORK_DIR/.
 done
 echo End copy: `date +%FT%T`
 
@@ -47,7 +48,8 @@ srun python /fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/script
 
 cd $CURRENT_DIRECTORY
 # Copy outcome to final destination
-cp $WORK_DIR/longterm_dl1_check.* $OUTPUT_DIR/.
+cp $WORK_DIR/longterm_dl1_check.h5 $OUTPUT_DIR/longterm_dl1_check_v07.h5
+cp $WORK_DIR/longterm_dl1_check.html $OUTPUT_DIR/longterm_dl1_check_v07.html
 
 # FIXME: For the moment the copy to datacheck webserver is not working within this script
 # It must be done separately.
