@@ -21,7 +21,8 @@ from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import MyFormatter
 from osa.utils.register import register_run_concept_files
 from osa.utils.standardhandle import gettag, stringify
-from osa.utils.utils import getlockfile, is_day_closed, is_defined, lstdate_to_dir, destination_dir
+from osa.utils.utils import getlockfile, is_day_closed, is_defined, lstdate_to_dir, destination_dir, createlock
+from osa.veto.veto import createclosed
 
 __all__ = [
     "use_night_summary",
@@ -66,7 +67,8 @@ def main():
 
     # starting the algorithm
     if is_day_closed():
-        log.error(f"Night {options.date} already closed for {options.tel_id}")
+        log.info(f"Night {options.date} already closed for {options.tel_id}")
+        sys.exit(0)
     else:
         # proceed
         if options.seqtoclose is not None:
@@ -319,9 +321,6 @@ def register_found_pattern(file_path, seq_list, concept, destination_path):
             log.debug(f"Destination file {new_dst} does not exists")
             register_non_existing_file(str(file_path), concept, seq_list)
 
-    # For the moment we do not want to close to allow further reprocessing
-    # setclosedfilename(s)
-    # createclosed(s.closed)
     # Return filepath already registered to be deleted from the set of all files
     return file_path
 
@@ -367,6 +366,9 @@ def register_non_existing_file(file_path_str, concept, seq_list):
                 if options.seqtoclose is None and not os.path.exists(file_path_str):
                     log.debug("File does not exists")
 
+        setclosedfilename(s)
+        createclosed(s.closed)
+
 
 def set_closed_with_file(ana_text):
     """Write the analysis report to the closer file."""
@@ -374,9 +376,8 @@ def set_closed_with_file(ana_text):
     closer_file = getlockfile()
     is_closed = False
     if not options.simulate:
-        pass
-        # For the moment we do not generate NightFinished lock file
-        # is_closed = createlock(closer_file, ana_text)
+        # Generate NightFinished lock file
+        is_closed = createlock(closer_file, ana_text)
     else:
         log.info(f"SIMULATE Creation of lock file {closer_file}")
 
