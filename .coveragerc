@@ -1,3 +1,0 @@
-[report]
-exclude_lines = @vectorize
-omit = setup.py

@@ -1,0 +1,4 @@
+ignore:
+  - "dev"
+  - "extra"
+  - "utils"
