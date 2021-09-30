@@ -44,7 +44,7 @@ jobs:
           # activate our env again
           source $CONDA/etc/profile.d/conda.sh
           conda activate ci
-          pip install .[tests]
-          pytest --cov --cov-report=xml
+          pytest -v --cov --cov-report=xml
 
-      - uses: codecov/codecov-action@v2.1.0
+      - name: Codecov
+        uses: codecov/codecov-action@v2
