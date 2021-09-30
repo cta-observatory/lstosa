@@ -1,34 +1,22 @@
+import argparse
 import datetime
-from pathlib import Path
+import logging
 import subprocess as sp
 import sys
-import argparse
+from pathlib import Path
+
 from osa.configs import options
+from osa.utils.cliopts import sequencer_webmaker_argparser
+from osa.utils.logging import MyFormatter
+from osa.utils.utils import is_day_closed
 
+log = logging.getLogger(__name__)
 
-def valid_date(s):
-    try:
-        return datetime.datetime.strptime(s, "%Y_%m_%d")
-    except ValueError:
-        msg = f"Not a valid date: '{s}'."
-        raise argparse.ArgumentTypeError(msg)
-
-
-# FIXME: unify with sequencer cli parsing?
-def argument_parser():
-    parser = argparse.ArgumentParser(
-        description="Script to make an xhtml from LSTOSA sequencer output"
-    )
-    parser.add_argument("-d", "--date", help="Date - format YYYY_MM_DD", type=valid_date)
-    parser.add_argument(
-        "-c",
-        "--config-file",
-        dest="osa_config_file",
-        default="cfg/sequencer.cfg",
-        help="OSA config file.",
-    )
-
-    return parser
+# Logging
+fmt = MyFormatter()
+handler = logging.StreamHandler()
+handler.setFormatter(fmt)
+logging.root.addHandler(handler)
 
 
 def matrixtohtmltable(matrix, column_class, header, footer):
@@ -85,7 +73,11 @@ def webtail():
 
 
 def main():
-    args = argument_parser().parse_args()
+
+    logging.root.setLevel(logging.INFO)
+
+    args = sequencer_webmaker_argparser().parse_args()
+
     if args.date:
         year = args.date.year
         month = args.date.month
@@ -98,13 +90,16 @@ def main():
         options.date = yesterday.strftime("%Y_%m_%d")
         strdate = yesterday.strftime("%Y%m%d")
 
+    if is_day_closed():
+        log.info(f"Day {options.date} for {options.tel_id} already closed")
+        sys.exit(1)
+
     run_summary_directory = Path("/fefs/aswg/data/real/monitoring/RunSummary")
     run_summary_file = run_summary_directory / f"RunSummary_{strdate}.ecsv"
 
     # FIXME: Parse this via command line as done in the sequencer.
     #        It has to somehow identify if data was taken and update the web.
     #        Otherwise the web does not needs to be updated.
-    telescope = "LST1"
 
     if not run_summary_file.is_file():
         print(f"No RunSummary file found for {strdate}")
@@ -150,7 +145,7 @@ def main():
         "-s",
         "-d",
         options.date,
-        telescope,
+        options.tel_id,
     ]
 
     try:
@@ -162,7 +157,7 @@ def main():
     else:
         print(
             f'<p>Sequencer at {datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC. '
-            f'Telescopes found: {telescope}</p>'
+            f"Date {options.date}. Telescope: {options.tel_id}</p>"
         )
 
         # Strip newlines and fit it into a table:
