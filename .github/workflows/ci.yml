@@ -1,11 +1,8 @@
-
-  
 name: CI
 
 on: [push, pull_request]
 
 env:
-  NUMBA_NUM_THREADS: 1
   MPLBACKEND: Agg
   PYTEST_ADDOPTS: --color=yes
 
@@ -14,9 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # we currently only support python 3.7 since traitlets 5 requires 3.7
-        # and protozfits does not support python 3.8.
-        python-version: [3.7, 3.8]
+        python-version: [3.7]
 
     steps:
       - uses: actions/checkout@v2
@@ -49,8 +44,7 @@ jobs:
           # activate our env again
           source $CONDA/etc/profile.d/conda.sh
           conda activate ci
-          pytest -v --cov=/. --cov-report=xml --cov-report=term
-      - uses: codecov/codecov-action@v1
-        with:
-          # disable gcov, not needed
-          functionalities: gcov
+          pip install .[tests]
+          pytest --cov --cov-report=xml
+
+      - uses: codecov/codecov-action@v2.1.0
