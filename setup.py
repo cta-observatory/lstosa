@@ -13,10 +13,10 @@ entry_points = {
         "calibrationsequence = osa.scripts.calibrationsequence:main",
         "copy_datacheck = osa.scripts.copy_datacheck:main",
         "datasequence = osa.scripts.datasequence:main",
-        "create_nightsummary = osa.scripts.create_nightsummary:main",
         "provprocess = osa.scripts.provprocess:main",
         "simulate_processing = osa.scripts.simulate_processing:main",
         "sequencer_webmaker = osa.scripts.sequencer_webmaker:main",
+        "show_run_summary = osa.scripts.show_run_summary:main",
     ]
 }
 
