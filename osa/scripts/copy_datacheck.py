@@ -41,11 +41,13 @@ def main():
         nightdir = lstdate_to_dir(options.date)
         analysis_log_dir = Path(cfg.get("LST1", "ANALYSISDIR")) / nightdir / options.prod_id / "log"
         dl1_dir = Path(cfg.get("LST1", "DL1DIR")) / nightdir / options.prod_id / options.dl1_prod_id
+        dl1_longterm_daily = Path("/fefs/aswg/data/real/OSA/DL1DataCheck_LongTerm") / "v0.7" / nightdir
 
         drs4_pdf = [file for file in analysis_log_dir.glob("drs4*.pdf")]
         calib_pdf = [file for file in analysis_log_dir.glob("calibration*.pdf")]
-        dl1_pdf = [file for file in dl1_dir.glob("datacheck*.pdf")]
-        list_of_files = [drs4_pdf, calib_pdf, dl1_pdf]
+        dl1_pdf = [file for file in dl1_dir.glob("*datacheck*.pdf")]
+        dl1_longterm_daily = [file for file in dl1_longterm_daily.glob("*datacheck*")]
+        list_of_files = [drs4_pdf, calib_pdf, dl1_pdf, dl1_longterm_daily]
         files_to_transfer = list(itertools.chain(*list_of_files))
 
         log.debug("Creating directories")
@@ -79,7 +81,7 @@ def create_destination_dir(host, datedir, prod_id):
         subprocess.run(cmd)
 
 
-def copy_files(host, datedir, files):
+def copy_files(host, datedir, file_list):
     """
 
     Parameters
@@ -92,20 +94,20 @@ def copy_files(host, datedir, files):
     # Copy PDF files
     datacheck_basedir = Path(cfg.get("WEBSERVER", "DATACHECK"))
     # Scopy files
-    for pdf_file in files:
-        if "drs4" in str(pdf_file):
+    for file_to_transfer in file_list:
+        if "drs4" in str(file_to_transfer):
             destination_dir = datacheck_basedir / "drs4" / options.prod_id / datedir
-            cmd = ["scp", str(pdf_file), f"{host}:{destination_dir}/."]
+            cmd = ["scp", str(file_to_transfer), f"{host}:{destination_dir}/."]
             subprocess.run(cmd)
 
-        elif "calibration" in str(pdf_file):
+        elif "calibration" in str(file_to_transfer):
             destination_dir = datacheck_basedir / "enf_calibration" / options.prod_id / datedir
-            cmd = ["scp", pdf_file, f"{host}:{destination_dir}/."]
+            cmd = ["scp", file_to_transfer, f"{host}:{destination_dir}/."]
             subprocess.run(cmd)
 
-        elif "datacheck_dl1" in str(pdf_file):
+        elif "datacheck" in str(file_to_transfer):
             destination_dir = datacheck_basedir / "dl1" / options.prod_id / datedir
-            cmd = ["scp", pdf_file, f"{host}:{destination_dir}/."]
+            cmd = ["scp", file_to_transfer, f"{host}:{destination_dir}/."]
             subprocess.run(cmd)
 
 
