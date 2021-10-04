@@ -9,7 +9,7 @@ lstosa |ci| |docs| |coverage| |precommit|
   :target: https://github.com/gae-ucm/lstosa/actions/workflows/ci.yml
 
 .. |coverage| image:: https://codecov.io/gh/gae-ucm/lstosa/branch/main/graph/badge.svg
-  :target: https://codecov.io/gh//gae-ucm/lstosa
+  :target: https://codecov.io/gh/gae-ucm/lstosa
   
 .. |precommit| image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
 
