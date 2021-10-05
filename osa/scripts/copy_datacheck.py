@@ -60,7 +60,7 @@ def main():
     log.debug("Creating directories")
     create_destination_dir(cfg.get("WEBSERVER", "HOST"), nightdir, options.prod_id)
     if not files_to_transfer and is_day_closed():
-        log.warning("No observations, hence no files to be copied")
+        log.warning("No observations. No files to be copied")
         set_no_observations_flag(cfg.get("WEBSERVER", "HOST"), nightdir, options.prod_id)
     else:
         log.debug("Transferring files")
