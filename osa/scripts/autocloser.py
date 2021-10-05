@@ -6,6 +6,8 @@ import re
 import subprocess
 
 from osa.configs import options
+from osa.configs.config import cfg
+from osa.scripts.copy_datacheck import set_no_observations_flag
 from osa.utils.cliopts import set_default_directory_if_needed
 
 __all__ = ["Telescope", "Sequence"]
@@ -154,6 +156,13 @@ class Telescope(object):
         self.parse_sequencer()
         if not self.build_Sequences():
             log.warning(f"Sequencer for {self.telescope} is empty! Ignoring {self.telescope}")
+
+            if not args.simulate and not args.test:
+                set_no_observations_flag(
+                    cfg.get("WEBSERVER", "HOST"),
+                    nightdir,
+                    options.prod_id
+                )
             return
         self.incidence = Incidence(self.telescope)
 
@@ -197,6 +206,7 @@ class Telescope(object):
                 "-s",
                 "-c",
                 f"{args.osa_config_file}",
+                "-t",
                 "-d",
                 f"{year:04}_{month:02}_{day:02}",
                 self.telescope,
@@ -497,11 +507,6 @@ class Incidence(object):
                 if self.incidencesDict[k]:
                     incidences += self.write_error(self.incidencesStereo[k], self.incidencesDict[k])
 
-        # suggestion by Lab: always create incidence file, even if empty,
-        # incidence table is clearer like this
-        # if incidences == "" and not args.onlyIncidences:
-        #     log.info('   No incidences found.')
-        #     return
         log.info(self.header + incidences)
         self.create_incidenceFile(self.header + incidences)
         return
@@ -550,23 +555,6 @@ def understand_mono_sequence(tel, seq):
     return False
 
 
-def understand_stereo_sequence(tel, seq):
-    if seq.is_rc1_for_ST():
-        log.info("Waiting for sequence to be closed in M1 or M2...")
-        return True
-
-    if seq.is_error3() and tel.problem.is_too_few_star_events(seq.dictSequence["Run"]):
-        seq.understood = True
-        log.info("Updating incidences: empty superstar file")
-        tel.incidence.add_incidence(
-            "error3", f"{seq.dictSequence['Run']}({seq.dictSequence['Subruns']})"
-        )
-        seq.readyToClose = True
-        return True
-
-    return False
-
-
 def understand_sequence(tel, seq):
     if seq.is_closed():
         seq.understood = True
@@ -592,9 +580,6 @@ def understand_sequence(tel, seq):
         return False
 
     if tel.telescope in ["LST1", "LST2"] and understand_mono_sequence(tel, seq):
-        return True
-
-    if tel.telescope == "ST" and understand_stereo_sequence(tel, seq):
         return True
 
     if seq.is_flawless():
@@ -642,10 +627,6 @@ def check_for_output_files(path):
 
 if __name__ == "__main__":
 
-    # when problems occur?
-    min_subruns_per_run = 5
-    #########################################################
-
     args = argument_parser().parse_args()
 
     if "ST" in args.tel:
@@ -657,6 +638,9 @@ if __name__ == "__main__":
     formatter = logging.Formatter("%(levelname)s: %(message)s")
     ch.setFormatter(MyFormatter())
     log.addHandler(ch)
+
+    if "ST" in args.tel:
+        args.tel = ["LST1", "LST2", "ST"]
 
     if args.log:
         fh = logging.FileHandler(args.log)
@@ -704,6 +688,8 @@ if __name__ == "__main__":
         day = datetime.datetime.now().day
         hour = datetime.datetime.now().hour
 
+    nightdir = f"{year:04d}{month:02d}{day:02d}"
+
     message = (
         f"\n========== Starting {os.path.basename(__file__)}"
         f" at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
@@ -711,8 +697,8 @@ if __name__ == "__main__":
     )
     log.info(message)
 
-    # if is_night_time():
-    #     exit(1)
+    if is_night_time():
+        exit(1)
 
     # create telescope, sequence, problem and incidence objects
     log.info("Simulating sequencer...")
