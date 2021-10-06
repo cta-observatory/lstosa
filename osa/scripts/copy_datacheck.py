@@ -20,10 +20,6 @@ from osa.utils.utils import (
     copy_files_datacheck_web,
 )
 
-
-__all__ = ["copy_files", "create_destination_dir", "is_merge_process_finished"]
-
-
 log = myLogger(logging.getLogger())
 
 

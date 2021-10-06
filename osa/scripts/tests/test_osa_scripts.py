@@ -29,12 +29,21 @@ def run_program(*args):
             f"Running {args[0]} failed with return code {result.returncode}"
             f", output: \n {result.stdout}"
         )
+    return result
 
 
 def test_sequencer():
     run_program(
         "sequencer", "-c", "cfg/sequencer_test.cfg", "-d", "2020_01_17", "-v", "-t", "-s", "LST1"
     )
+
+
+def test_autocloser():
+    result = run_program(
+        "python", "osa/scripts/autocloser.py", "-c", "cfg/sequencer_test.cfg", "-d", "2020_01_17", "-t", "LST1"
+    )
+    assert result.stdout.split()[-1] == "Exit"
+    assert os.path.exists("./testfiles/running_analysis/20200117/v0.1.0_v01/AutoCloser_Incidences_tmp.txt")
 
 
 def test_closer(test_data):

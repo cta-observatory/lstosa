@@ -1,0 +1,8 @@
+============================== Starting sequencer.py at 2020-01-17 18:49:22 UTC for LST, Telescope: LST1, Night: 2020_01_17 ==============================
+Tel   Seq  Parent  Type      Run   Subruns  Source  Wobble  Action  Tries  JobID  State  Host  CPU_time  Walltime  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%
+LST1    0  None    PEDCALIB  1862  4        None    None    Closed      0  None   None   None  None      None      None  None  None    None    None        None
+LST1    1       0  DATA      1863  45       None    None    Closed      0  None   None   None  None      None      None   100     100       0           0   100
+LST1    1       0  DATA      1864  110      None    None    Check       0  None   None   None  None      None      None   100     100       0           0    90
+LST1    1       0  DATA      1865  40       None    None    Check       0  None   None   None  None      None      None   100     100       0           0    80
+LST1    1       0  DATA      1866  73       None    None    Check       0  None   None   None  None      None      None   100     100       0           0     4
+
