@@ -29,7 +29,7 @@ from traitlets.config import Config
 
 from osa.utils.logging import myLogger
 
-log = myLogger(logging.getLogger(__name__))
+log = myLogger(logging.getLogger())
 
 parser = argparse.ArgumentParser(description="Create run summary file")
 

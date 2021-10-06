@@ -20,7 +20,7 @@ from osa.utils.utils import lstdate_to_dir
 
 __all__ = ["datasequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
 
-log = myLogger(logging.getLogger(__name__))
+log = myLogger(logging.getLogger())
 
 
 def datasequence(calibrationfile, pedestalfile, time_calibration, drivefile, run_summary, run_str):

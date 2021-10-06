@@ -20,7 +20,7 @@ from osa.utils.logging import myLogger
 
 __all__ = ["copy_used_file", "parse_lines_log", "parse_lines_run", "produce_provenance"]
 
-log = myLogger(logging.getLogger(__name__))
+log = myLogger(logging.getLogger())
 
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]

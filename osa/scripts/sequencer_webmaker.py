@@ -10,7 +10,7 @@ from osa.utils.cliopts import sequencer_webmaker_argparser
 from osa.utils.logging import myLogger
 from osa.utils.utils import is_day_closed
 
-log = myLogger(logging.getLogger(__name__))
+log = myLogger(logging.getLogger())
 
 
 def matrixtohtmltable(matrix, column_class, header, footer):

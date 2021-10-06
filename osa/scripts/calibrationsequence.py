@@ -28,7 +28,7 @@ __all__ = [
     "drs4_pedestal",
 ]
 
-log = myLogger(logging.getLogger(__name__))
+log = myLogger(logging.getLogger())
 
 
 def calibrationsequence(

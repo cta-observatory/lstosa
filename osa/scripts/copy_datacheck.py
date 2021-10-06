@@ -17,7 +17,7 @@ from osa.utils.utils import lstdate_to_dir
 
 __all__ = ["copy_files", "create_destination_dir", "is_merge_process_finished"]
 
-log = myLogger(logging.getLogger(__name__))
+log = myLogger(logging.getLogger())
 
 
 def main():

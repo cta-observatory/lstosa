@@ -37,7 +37,7 @@ CONFIG_FLAGS = {
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 
-log = myLogger(logging.getLogger(__name__))
+log = myLogger(logging.getLogger())
 
 
 def do_setup():

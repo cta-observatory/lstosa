@@ -37,7 +37,7 @@ __all__ = [
     "reportsequences",
 ]
 
-log = myLogger(logging.getLogger(__name__))
+log = myLogger(logging.getLogger())
 
 
 def main():

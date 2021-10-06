@@ -11,7 +11,7 @@ from osa.utils.logging import myLogger
 
 __all__ = ["Telescope", "Sequence"]
 
-log = myLogger(logging.getLogger(__name__))
+log = myLogger(logging.getLogger())
 
 
 # settings / global variables
