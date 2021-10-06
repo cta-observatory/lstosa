@@ -40,10 +40,10 @@ def test_sequencer():
 
 def test_autocloser():
     result = run_program(
-        "python", "osa/scripts/autocloser.py", "-c", "cfg/sequencer_test.cfg", "-d", "2018_11_06", "-t", "LST1"
+        "python", "osa/scripts/autocloser.py", "-c", "cfg/sequencer_test.cfg", "-d", "2020_01_17", "-t", "LST1"
     )
     assert result.stdout.split()[-1] == "Exit"
-    assert os.path.exists("./testfiles/running_analysis/20181106/v0.1.0_v01/AutoCloser_Incidences_tmp.txt")
+    assert os.path.exists("./testfiles/running_analysis/20200117/v0.1.0_v01/AutoCloser_Incidences_tmp.txt")
 
 
 def test_closer(test_data):
