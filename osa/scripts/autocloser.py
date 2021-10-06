@@ -7,8 +7,8 @@ import subprocess
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.scripts.copy_datacheck import set_no_observations_flag, create_destination_dir
 from osa.utils.cliopts import set_default_directory_if_needed
+from osa.utils.utils import set_no_observations_flag, create_directories_datacheck_web
 
 __all__ = ["Telescope", "Sequence"]
 
@@ -36,7 +36,7 @@ def valid_date(s):
 
 def argument_parser():
     parser = argparse.ArgumentParser(
-        description="This script is an automatic error handler and closer for LSTOSA."
+        description="This script is an automatic error handler and closer for lstosa."
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Turn on verbose mode")
     parser.add_argument(
@@ -155,24 +155,16 @@ class Telescope(object):
             return
 
         self.parse_sequencer()
-        
+
         # Create directories in the webserver to copy datacheck products
         log.debug("Setting up the directories in the datacheck webserver")
-        create_destination_dir(
-            cfg.get("WEBSERVER", "HOST"),
-            nightdir,
-            prod_id
-            )
+        create_directories_datacheck_web(cfg.get("WEBSERVER", "HOST"), nightdir, prod_id)
 
         if not self.build_Sequences():
             log.warning(f"Sequencer for {self.telescope} is empty! Ignoring {self.telescope}")
 
             if not args.simulate and not args.test:
-                set_no_observations_flag(
-                    cfg.get("WEBSERVER", "HOST"),
-                    nightdir,
-                    options.prod_id
-                )
+                set_no_observations_flag(cfg.get("WEBSERVER", "HOST"), nightdir, options.prod_id)
             return
         self.incidence = Incidence(self.telescope)
 
@@ -377,10 +369,10 @@ class Sequence(object):
         if self.dictSequence["Type"] == "PEDCALIB":
             log.debug("Cannot check for missing subruns in the middle for CALIBRATION")
             return True
-        search_str = f"{analysis_path(self.dictSequence['Tel'])}/dl1*{int(self.dictSequence['Run']):05d}*.h5"
-        subrun_nrs = sorted(
-                [int(os.path.basename(f).split(".")[2]) for f in glob.glob(search_str)]
+        search_str = (
+            f"{analysis_path(self.dictSequence['Tel'])}/dl1*{int(self.dictSequence['Run']):05d}*.h5"
         )
+        subrun_nrs = sorted([int(os.path.basename(f).split(".")[2]) for f in glob.glob(search_str)])
         return bool(subrun_nrs and len(subrun_nrs) == int(self.dictSequence["Subruns"]))
 
     def close(self):

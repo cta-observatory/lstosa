@@ -5,16 +5,32 @@ Functions to deal with dates, directories and prod IDs
 import hashlib
 import logging
 import os
+import subprocess
 from datetime import datetime, timedelta
 from os import getpid, readlink, symlink
 from os.path import dirname, exists, isdir, isfile, islink, join, split
+from pathlib import Path
 from socket import gethostname
 
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.iofile import writetofile
 
+__all__ = [
+    "getcurrentdate",
+    "getnightdirectory",
+    "get_lstchain_version",
+    "create_directories_datacheck_web",
+    "set_no_observations_flag",
+    "copy_files_datacheck_web",
+    "lstdate_to_dir",
+    "is_day_closed",
+]
+
 log = logging.getLogger(__name__)
+
+DATACHECK_PRODUCTS = ["drs4", "enf_calibration", "dl1"]
+DATACHECK_BASEDIR = Path(cfg.get("WEBSERVER", "DATACHECK"))
 
 
 def getcurrentdate(sep):
@@ -71,7 +87,7 @@ def getnightdirectory():
         if options.nightsummary and options.tel_id != "ST":
             log.error(f"Analysis directory {directory} does not exists!")
         elif options.simulate:
-            log.debug(f"SIMULATE the creation of the analysis directory.")
+            log.debug("SIMULATE the creation of the analysis directory.")
         else:
             os.makedirs(directory, exist_ok=True)
     log.debug(f"Analysis directory: {directory}")
@@ -263,9 +279,7 @@ def lstdate_to_dir(night):
     nightdir = night.split(cfg.get("LST", "DATESEPARATOR"))
     if len(nightdir) != 3:
         log.error(f"Night directory structure could not be created from {nightdir}")
-    # dir = join(nightdir[0], nightdir[1], nightdir[2])
-    dir = "".join(nightdir)
-    return dir
+    return "".join(nightdir)
 
 
 def dir_to_lstdate(dir):
@@ -387,12 +401,8 @@ def get_md5sum_and_copy(inputf, outputf):
 
 def is_day_closed():
     """Get the name and Check for the existence of the Closer flag file."""
-
-    answer = False
     flag_file = getlockfile()
-    if exists(flag_file):
-        answer = True
-    return answer
+    return bool(exists(flag_file))
 
 
 def time_to_seconds(timestring):
@@ -479,3 +489,74 @@ def destination_dir(concept, create_dir=True):
     else:
         log.debug(f"SIMULATING creation of final directory for {concept}")
     return directory
+
+
+def create_directories_datacheck_web(host, datedir, prod_id):
+    """Create directories for drs4, enf_calibration
+    and dl1 products in the data-check webserver via ssh. It also copies
+    the index.php file needed to build the directory tree structure.
+
+    Parameters
+    ----------
+    host
+    datedir
+    prod_id
+    """
+
+    # Create directory and copy the index.php to each directory
+    for product in DATACHECK_PRODUCTS:
+        destination_dir = DATACHECK_BASEDIR / product / prod_id / datedir
+        cmd = ["ssh", host, "mkdir", "-p", destination_dir]
+        subprocess.run(cmd, capture_output=True)
+        cmd = ["scp", cfg.get("WEBSERVER", "INDEXPHP"), f"{host}:{destination_dir}/."]
+        subprocess.run(cmd, capture_output=True)
+
+
+def set_no_observations_flag(host, datedir, prod_id):
+    """Create a file indicating that are no observations
+    on a given date in the data-check webserver.
+
+    Parameters
+    ----------
+    host
+    datedir
+    prod_id
+    """
+
+    for product in DATACHECK_PRODUCTS:
+        try:
+            # Check if destination directory exists, otherwise create it
+            destination_dir = DATACHECK_BASEDIR / product / prod_id / datedir
+            no_observations_flag = destination_dir / "no_observations"
+            cmd = ["ssh", host, "touch", no_observations_flag]
+            subprocess.check_output(cmd)
+        except subprocess.CalledProcessError as e:
+            log.warning(f"Destination directory does not exists. {e}")
+
+
+def copy_files_datacheck_web(host, datedir, file_list):
+    """
+
+    Parameters
+    ----------
+    host
+    datedir
+    file_list
+    """
+    # FIXME: Check if files exists already at webserver CHECK HASH
+    # Copy files to server
+    for file_to_transfer in file_list:
+        if "drs4" in str(file_to_transfer):
+            destination_dir = DATACHECK_BASEDIR / "drs4" / options.prod_id / datedir
+            cmd = ["scp", str(file_to_transfer), f"{host}:{destination_dir}/."]
+            subprocess.run(cmd)
+
+        elif "calibration" in str(file_to_transfer):
+            destination_dir = DATACHECK_BASEDIR / "enf_calibration" / options.prod_id / datedir
+            cmd = ["scp", file_to_transfer, f"{host}:{destination_dir}/."]
+            subprocess.run(cmd)
+
+        elif "datacheck" in str(file_to_transfer):
+            destination_dir = DATACHECK_BASEDIR / "dl1" / options.prod_id / datedir
+            cmd = ["scp", file_to_transfer, f"{host}:{destination_dir}/."]
+            subprocess.run(cmd)
