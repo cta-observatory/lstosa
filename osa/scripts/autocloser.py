@@ -7,10 +7,11 @@ import subprocess
 
 from osa.configs import options
 from osa.utils.cliopts import set_default_directory_if_needed
+from osa.utils.logging import myLogger
 
 __all__ = ["Telescope", "Sequence"]
 
-log = logging.getLogger("autocloser_logger")
+log = myLogger(logging.getLogger(__name__))
 log.setLevel(logging.DEBUG)
 
 

@@ -27,7 +27,9 @@ from ctapipe_io_lst.event_time import calc_dragon_time, combine_counters
 from lstchain.paths import parse_r0_filename
 from traitlets.config import Config
 
-log = logging.getLogger(__name__)
+from osa.utils.logging import myLogger
+
+log = myLogger(logging.getLogger(__name__))
 
 parser = argparse.ArgumentParser(description="Create run summary file")
 

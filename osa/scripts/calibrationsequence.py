@@ -18,7 +18,7 @@ from osa.configs.config import cfg
 from osa.jobs.job import historylevel
 from osa.reports.report import history
 from osa.utils.cliopts import calibrationsequencecliparsing
-from osa.utils.logging import MyFormatter
+from osa.utils.logging import myLogger
 from osa.utils.standardhandle import stringify
 
 __all__ = [
@@ -28,13 +28,7 @@ __all__ = [
     "drs4_pedestal",
 ]
 
-log = logging.getLogger(__name__)
-
-# Logging
-fmt = MyFormatter()
-handler = logging.StreamHandler()
-handler.setFormatter(fmt)
-logging.root.addHandler(handler)
+log = myLogger(logging.getLogger(__name__))
 
 
 def calibrationsequence(
