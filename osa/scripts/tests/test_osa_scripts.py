@@ -44,7 +44,6 @@ def test_autocloser():
     )
     assert result.stdout.split()[-1] == "Exit"
     assert os.path.exists("./testfiles/running_analysis/20181106/v0.1.0_v01/AutoCloser_Incidences_tmp.txt")
-    print(result)
 
 
 def test_closer(test_data):
