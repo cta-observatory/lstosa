@@ -47,6 +47,7 @@ setup(
         "prov",
         "pydot",
         "pydotplus",
+        "psutil",
     ],
     package_data={
         'osa': [
