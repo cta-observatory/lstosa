@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 fmt = MyFormatter()
 handler = logging.StreamHandler()
 handler.setFormatter(fmt)
-logging.root.addHandler(handler)
+log.addHandler(handler)
 log.setLevel(logging.INFO)
 
 
@@ -83,9 +83,9 @@ def create_destination_dir(host, datedir, prod_id):
     for product in analysis_products:
         destination_dir = datacheck_basedir / product / prod_id / datedir
         cmd = ["ssh", host, "mkdir", "-p", destination_dir]
-        subprocess.run(cmd)
+        subprocess.run(cmd, capture_output=True)
         cmd = ["scp", cfg.get("WEBSERVER", "INDEXPHP"), f"{host}:{destination_dir}/."]
-        subprocess.run(cmd)
+        subprocess.run(cmd, capture_output=True)
 
 
 def set_no_observations_flag(host, datedir, prod_id):
@@ -98,11 +98,16 @@ def set_no_observations_flag(host, datedir, prod_id):
     datedir
     prod_id
     """
+
     for product in analysis_products:
-        destination_dir = datacheck_basedir / product / prod_id / datedir
-        no_observations_flag = destination_dir / "no_observations"
-        cmd = ["ssh", host, "touch", no_observations_flag]
-        subprocess.run(cmd)
+        try:
+            # Check if destination directory exists, otherwise create it
+            destination_dir = datacheck_basedir / product / prod_id / datedir
+            no_observations_flag = destination_dir / "no_observations"
+            cmd = ["ssh", host, "touch", no_observations_flag]
+            subprocess.check_output(cmd)
+        except subprocess.CalledProcessError as e:
+            log.warning(f"Destination directory does not exists. {e}")
 
 
 def copy_files(host, datedir, file_list):
