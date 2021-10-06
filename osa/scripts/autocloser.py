@@ -7,7 +7,7 @@ import subprocess
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.scripts.copy_datacheck import set_no_observations_flag
+from osa.scripts.copy_datacheck import set_no_observations_flag, create_destination_dir
 from osa.utils.cliopts import set_default_directory_if_needed
 
 __all__ = ["Telescope", "Sequence"]
@@ -153,7 +153,17 @@ class Telescope(object):
                 f"Simulation of the sequencer failed for {self.telescope}! Ignoring {self.telescope}"
             )
             return
+
         self.parse_sequencer()
+        
+        # Create directories in the webserver to copy datacheck products
+        log.debug("Setting up the directories in the datacheck webserver")
+        create_destination_dir(
+            cfg.get("WEBSERVER", "HOST"),
+            nightdir,
+            prod_id
+            )
+
         if not self.build_Sequences():
             log.warning(f"Sequencer for {self.telescope} is empty! Ignoring {self.telescope}")
 
@@ -205,8 +215,7 @@ class Telescope(object):
                 "sequencer",
                 "-s",
                 "-c",
-                f"{args.osa_config_file}",
-                "-t",
+                args.osa_config_file,
                 "-d",
                 f"{year:04}_{month:02}_{day:02}",
                 self.telescope,
@@ -257,6 +266,8 @@ class Telescope(object):
             closerArgs = [
                 "closer",
                 "-s",
+                "-c",
+                args.osa_config_file,
                 "-v",
                 "-y",
                 "-d",
@@ -266,6 +277,8 @@ class Telescope(object):
         else:
             closerArgs = [
                 "closer",
+                "-c",
+                args.osa_config_file,
                 "-v",
                 "-y",
                 "-d",
@@ -346,7 +359,7 @@ class Sequence(object):
             return True
         if (
             self.dictSequence["Type"] == "PEDCALIB"
-            and self.dictSequence["Exit"] == "2:0"  # Leave until the calib sequence is implemented
+            and self.dictSequence["Exit"] == "0:0"
             and self.dictSequence["DL1%"] == "None"
             and self.dictSequence["DATACHECK%"] == "None"
             and self.dictSequence["MUONS%"] == "None"
@@ -361,21 +374,14 @@ class Sequence(object):
         import glob
 
         log.debug("Check for missing subruns in the middle")
-        if self.dictSequence["Tel"] == "ST":
-            log.debug("Cannot check for missing subruns in the middle for ST")
-            return True
         if self.dictSequence["Type"] == "PEDCALIB":
             log.debug("Cannot check for missing subruns in the middle for CALIBRATION")
             return True
-        # FIXME: adapt to LST
-        search_str = f"{analysis_path(self.dictSequence['Tel'])}/20*_{int(self.dictSequence['Run']):08d}.*_Y_*.root"
+        search_str = f"{analysis_path(self.dictSequence['Tel'])}/dl1*{int(self.dictSequence['Run']):05d}*.h5"
         subrun_nrs = sorted(
-            [int(os.path.basename(f).split(".")[1][0:3]) for f in glob.glob(search_str)]
+                [int(os.path.basename(f).split(".")[2]) for f in glob.glob(search_str)]
         )
-        for i, x in enumerate(subrun_nrs, 1):
-            if i != x:
-                return False
-        return bool(subrun_nrs and subrun_nrs[-1] == int(self.dictSequence["Subruns"]))
+        return bool(subrun_nrs and len(subrun_nrs) == int(self.dictSequence["Subruns"]))
 
     def close(self):
         log.info("Closing sequence...")
@@ -422,14 +428,14 @@ class Incidence(object):
         self.telescope = telescope
         # known incidences (keys in both dicts have to be unique!):
         self.incidencesMono = {
-            "error2": "Short runs(# of subruns) excluded from OSA",
-            "default_time_calib": "Used a default time calibration from same operiod",
+            "short_run": "Short runs (few number of subruns)",
+            "default_time_calib": "Used a default time calibration file",
         }
         self.incidencesDict = {}
         for k in self.incidencesMono:
             self.incidencesDict[k] = []
         # runs with these errors get discarded
-        self.errors_to_discard = ["error2"]
+        self.errors_to_discard = []
         self.write_header()
 
     def write_header(self):
@@ -526,35 +532,6 @@ def is_night_time():
     return True
 
 
-def understand_mono_sequence(tel, seq):
-    """These are "issues" the sequencer solved by itself and we only want
-    to note them down by checking the *.history file!
-
-    Parameters
-    ----------
-    tel
-    seq
-
-    Returns
-    -------
-
-    """
-
-    #if seq.is_missingReport():
-    #    seq.understood = True
-    #    if not tel.problem.recoverReport(seq.dictSequence["Run"]):
-    #        # send email that i could not recover report files!
-    #        log.warning(
-    #            f"Failed to recover at least one missing report file for sequence {seq.dictSequence['Run']}"
-    #        )
-    #    if tel.problem.recoveredReports:
-    #        log.info(f"Updating incidences: Reports recovered for {tel.problem.recoveredReports}")
-    #        tel.incidence.add_incidence("recReps", tel.problem.recoveredReports)
-    #    return True
-
-    return False
-
-
 def understand_sequence(tel, seq):
     if seq.is_closed():
         seq.understood = True
@@ -579,41 +556,12 @@ def understand_sequence(tel, seq):
         log.warning("At least one subrun is missing!")
         return False
 
-    if tel.telescope in ["LST1", "LST2"] and understand_mono_sequence(tel, seq):
-        return True
-
     if seq.is_flawless():
         seq.understood = True
         log.info("Is flawless")
         seq.readyToClose = True
         return True
     return False
-
-
-def has_equal_nr_of_sequences(teldict):
-    log.debug("Check for equal nr of runs")
-    if "LST1" not in teldict or "LST2" not in teldict:
-        log.debug("Cannot check for equal nr of sequences in mono case")
-        return True
-    if teldict["LST1"].closed or teldict["LST2"].closed:
-        log.debug("The other telescope seems to be closed")
-        return True
-    return len(teldict["LST1"].sequences) == len(teldict["LST2"].sequences)
-
-
-# def sendEmail(message):
-# FIXME: Adap it to LST
-#     msg = MIMEText(message)
-#     msg['Subject'] = 'AutoCloser'
-#     msg['From'] = 'LSTOSA Daemon <analysis@ana7.magic.iac.es>'
-#     msg['To'] = '<gae-lst-onsite@gae.ucm.es>'
-#     try:
-#         s = smtplib.SMTP('localhost')
-#         s.sendmail('analysis@ana7.magic.iac.es', ['gae-lst-onsite@gae.ucm.es'],
-#                    msg.as_string())
-#         return True
-#     except smtplib.SMTPException:
-#         return False
 
 
 def check_for_output_files(path):
@@ -700,6 +648,8 @@ if __name__ == "__main__":
     if is_night_time():
         exit(1)
 
+    prod_id = cfg.get("LST1", "PROD-ID")
+
     # create telescope, sequence, problem and incidence objects
     log.info("Simulating sequencer...")
     telescopes = dict((tel, Telescope(tel)) for tel in args.tel)
@@ -715,14 +665,6 @@ if __name__ == "__main__":
         # loop over sequences
         for seq in telescopes[tel]:
             log.info(f"Processing sequence {seq.dictSequence['Run']}...")
-
-            # check if LST1 and LST2 have the same nr of subruns for this sequence.
-            # returns True if check is not possible...
-            # became obsolete since the has_all_subruns check!
-            # if not seq.has_equal_nr_of_subruns(telescopes):
-            #     log.warning("LST1 and LST2 have different nrs of subruns!")
-            #     continue
-            #
 
             if not understand_sequence(telescopes[tel], seq):
                 log.warning(f"Could not interpret sequence {seq.dictSequence['Run']}")
@@ -744,11 +686,6 @@ if __name__ == "__main__":
             if not telescopes[tel].is_transferred():
                 log.warning(f"More raw data expected for {tel}!")
                 continue
-
-            if not has_equal_nr_of_sequences(telescopes):
-                log.warning("LST1 and LST2 have different nrs of sequences!")
-                continue
-
             if not all([seq.readyToClose for seq in telescopes[tel]]):
                 log.warning(f"{tel} is NOT ready to close!")
                 continue
