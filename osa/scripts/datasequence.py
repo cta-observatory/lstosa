@@ -357,8 +357,8 @@ def dl1_to_dl2(run_str, historyfile):
 if __name__ == "__main__":
     # set the arguments and options through cli parsing
     (
-        drs4_ped_file,
         calib_file,
+        drs4_ped_file,
         time_calib_file,
         drive_log_file,
         run_summary_file,
@@ -372,6 +372,6 @@ if __name__ == "__main__":
 
     # run the routine
     rc = datasequence(
-        drs4_ped_file, calib_file, time_calib_file, drive_log_file, run_summary_file, run_number
+        calib_file, drs4_ped_file, time_calib_file, drive_log_file, run_summary_file, run_number
     )
     sys.exit(rc)

@@ -407,8 +407,8 @@ def datasequence_argparser():
         default=False,
         help="Do not produce DL2 files (default False)",
     )
-    parser.add_argument("drs4_ped_file", help="Path of the DRS4 pedestal file")
     parser.add_argument("calib_file", help="Path of the calibration file")
+    parser.add_argument("drs4_ped_file", help="Path of the DRS4 pedestal file")
     parser.add_argument("time_calib_file", help="Path of the time calibration file")
     parser.add_argument("drive_log_file", help="Path of drive log file with pointing information")
     parser.add_argument(
@@ -462,8 +462,8 @@ def datasequencecliparsing():
     options.lstchain_version = get_lstchain_version()
 
     return (
-        opts.drs4_ped_file,
         opts.calib_file,
+        opts.drs4_ped_file,
         opts.time_calib_file,
         opts.drive_log_file,
         opts.run_summary_file,
