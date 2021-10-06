@@ -94,6 +94,10 @@ def extractsubruns(summary_table):
 
     log.debug("Subrun list extracted")
 
+    if not subrun_list:
+        log.warning("No runs found. Nothing to do.")
+        exit(1)
+
     return subrun_list
 
 
@@ -111,6 +115,7 @@ def extractruns(subrun_list):
 
     """
     run_list = []
+
     for s in subrun_list:
         if s.runobj not in run_list:
             s.runobj.subruns = s.subrun

@@ -16,7 +16,7 @@ from osa.nightsummary.extract import extractruns, extractsequences, extractsubru
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.provenance.utils import get_log_config
 from osa.utils.cliopts import simprocparsing
-from osa.utils.logging import MyFormatter
+from osa.utils.logging import myLogger
 from osa.utils.utils import lstdate_to_number
 
 __all__ = [
@@ -37,7 +37,7 @@ CONFIG_FLAGS = {
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 
-log = logging.getLogger(__name__)
+log = myLogger(logging.getLogger(__name__))
 
 
 def do_setup():
@@ -157,11 +157,7 @@ def simulate_processing():
 
 
 if __name__ == "__main__":
-    # Logging
-    fmt = MyFormatter()
-    handler = logging.StreamHandler()
-    handler.setFormatter(fmt)
-    logging.root.addHandler(handler)
+
     log.setLevel(logging.INFO)
 
     simprocparsing()

@@ -17,6 +17,7 @@ import yaml
 
 from osa.provenance.io import read_prov
 from osa.provenance.utils import get_log_config, parse_variables
+from osa.utils.logging import myLogger
 
 # gammapy specific
 # from gammapy.scripts.info import (
@@ -63,13 +64,13 @@ session_tag = ""
 def setup_logging():
     """Setup logging configuration."""
 
-    log = logging.getLogger(__name__)
+    plog = myLogger(logging.getLogger(__name__))
 
     try:
         logging.config.dictConfig(provconfig)
     except Exception as ex:
-        log.warning(ex)
-        log.warning("Failed to set up the logger.")
+        plog.warning(ex)
+        plog.warning("Failed to set up the logger.")
         logging.basicConfig(level="INFO")
 
 

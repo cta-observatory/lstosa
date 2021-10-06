@@ -11,7 +11,6 @@ from pathlib import Path
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.cliopts import copy_datacheck_parsing
-from osa.utils.logging import MyFormatter
 from osa.utils.utils import (
     lstdate_to_dir,
     is_day_closed,
@@ -20,14 +19,7 @@ from osa.utils.utils import (
     copy_files_datacheck_web,
 )
 
-log = logging.getLogger(__name__)
-
-# Logging
-fmt = MyFormatter()
-handler = logging.StreamHandler()
-handler.setFormatter(fmt)
-log.addHandler(handler)
-log.setLevel(logging.INFO)
+log = myLogger(logging.getLogger(__name__))
 
 
 def main():
@@ -35,6 +27,8 @@ def main():
     Get analysis products to be copied to the webserver,
     create directories and eventually copy the files.
     """
+    log.setLevel(logging.INFO)
+
     # Set cli options and arguments
     copy_datacheck_parsing()
 
