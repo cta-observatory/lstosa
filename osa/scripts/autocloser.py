@@ -9,20 +9,12 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.cliopts import set_default_directory_if_needed
 from osa.utils.utils import set_no_observations_flag, create_directories_datacheck_web
+from osa.utils.logging import myLogger
+
 
 __all__ = ["Telescope", "Sequence"]
 
-log = logging.getLogger("autocloser_logger")
-log.setLevel(logging.DEBUG)
-
-
-# formatter for the output
-class MyFormatter(logging.Formatter):
-    FORMATS = {logging.INFO: "%(message)s", "DEFAULT": "%(levelname)s: %(message)s"}
-
-    def format(self, record):
-        self._fmt = self.FORMATS.get(record.levelno, self.FORMATS["DEFAULT"])
-        return logging.Formatter.format(self, record)
+log = myLogger(logging.getLogger())
 
 
 # settings / global variables
@@ -573,11 +565,7 @@ if __name__ == "__main__":
         args.tel = ["LST1", "LST2", "ST"]
 
     # for the console output
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-    formatter = logging.Formatter("%(levelname)s: %(message)s")
-    ch.setFormatter(MyFormatter())
-    log.addHandler(ch)
+    log.setLevel(logging.INFO)
 
     if "ST" in args.tel:
         args.tel = ["LST1", "LST2", "ST"]
@@ -585,12 +573,11 @@ if __name__ == "__main__":
     if args.log:
         fh = logging.FileHandler(args.log)
         fh.setLevel(logging.DEBUG)
-        fh.setFormatter(MyFormatter())
         log.addHandler(fh)
         log.info(f"Logging verbose output to {args.log}")
 
     if args.verbose:
-        ch.setLevel(logging.DEBUG)
+        log.setLevel(logging.DEBUG)
         log.debug("Verbose output.")
 
     if args.simulate:

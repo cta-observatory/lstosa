@@ -18,7 +18,7 @@ from osa.nightsummary.nightsummary import get_runsummary_file, run_summary_table
 from osa.rawcopy.raw import get_check_rawdir
 from osa.reports.report import finished_assignments, finished_text, start
 from osa.utils.cliopts import closercliparsing
-from osa.utils.logging import MyFormatter
+from osa.utils.logging import myLogger
 from osa.utils.register import register_run_concept_files
 from osa.utils.standardhandle import gettag, stringify
 from osa.utils.utils import getlockfile, is_day_closed, is_defined, lstdate_to_dir, destination_dir, createlock
@@ -41,13 +41,7 @@ __all__ = [
     "merge_dl2",
 ]
 
-log = logging.getLogger(__name__)
-
-# Logging
-fmt = MyFormatter()
-handler = logging.StreamHandler()
-handler.setFormatter(fmt)
-logging.root.addHandler(handler)
+log = myLogger(logging.getLogger())
 
 
 def main():
@@ -57,9 +51,9 @@ def main():
     closercliparsing()
 
     if options.verbose:
-        logging.root.setLevel(logging.DEBUG)
+        log.setLevel(logging.DEBUG)
     else:
-        logging.root.setLevel(logging.INFO)
+        log.setLevel(logging.INFO)
 
     # initiating report
     tag = gettag()

@@ -14,19 +14,13 @@ from osa.jobs.job import historylevel
 from osa.provenance.capture import trace
 from osa.reports.report import history
 from osa.utils.cliopts import datasequencecliparsing
-from osa.utils.logging import MyFormatter
+from osa.utils.logging import myLogger
 from osa.utils.standardhandle import stringify
 from osa.utils.utils import lstdate_to_dir
 
 __all__ = ["datasequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
 
-log = logging.getLogger(__name__)
-
-# Logging
-fmt = MyFormatter()
-handler = logging.StreamHandler()
-handler.setFormatter(fmt)
-logging.root.addHandler(handler)
+log = myLogger(logging.getLogger())
 
 
 def datasequence(calibrationfile, pedestalfile, time_calibration, drivefile, run_summary, run_str):
@@ -363,8 +357,8 @@ def dl1_to_dl2(run_str, historyfile):
 if __name__ == "__main__":
     # set the arguments and options through cli parsing
     (
-        drs4_ped_file,
         calib_file,
+        drs4_ped_file,
         time_calib_file,
         drive_log_file,
         run_summary_file,
@@ -372,12 +366,12 @@ if __name__ == "__main__":
     ) = datasequencecliparsing()
 
     if options.verbose:
-        logging.root.setLevel(logging.DEBUG)
+        log.setLevel(logging.DEBUG)
     else:
-        logging.root.setLevel(logging.INFO)
+        log.setLevel(logging.INFO)
 
     # run the routine
     rc = datasequence(
-        drs4_ped_file, calib_file, time_calib_file, drive_log_file, run_summary_file, run_number
+        calib_file, drs4_ped_file, time_calib_file, drive_log_file, run_summary_file, run_number
     )
     sys.exit(rc)

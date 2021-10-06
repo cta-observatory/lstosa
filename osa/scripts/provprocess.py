@@ -16,10 +16,11 @@ from osa.provenance.capture import get_activity_id, get_file_hash
 from osa.provenance.io import provdoc2graph, provdoc2json, provlist2provdoc, read_prov
 from osa.provenance.utils import get_log_config
 from osa.utils.cliopts import provprocessparsing
+from osa.utils.logging import myLogger
 
 __all__ = ["copy_used_file", "parse_lines_log", "parse_lines_run", "produce_provenance"]
 
-log = logging.getLogger(__name__)
+log = myLogger(logging.getLogger())
 
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
@@ -319,12 +320,6 @@ if __name__ == "__main__":
         log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
-    handler = logging.StreamHandler()
-    format = logging.Formatter(
-        "%(asctime)s %(levelname)s [%(name)s] (%(module)s.%(funcName)s): %(message)s"
-    )
-    handler.setFormatter(format)
-    logging.getLogger().addHandler(handler)
 
     pathRO = cfg.get("LST1", "RAWDIR")
     pathDL1 = cfg.get("LST1", "DL1DIR")
