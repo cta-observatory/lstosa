@@ -403,9 +403,9 @@ if __name__ == "__main__":
     ) = calibrationsequencecliparsing()
 
     if options.verbose:
-        logging.root.setLevel(logging.DEBUG)
+        log.setLevel(logging.DEBUG)
     else:
-        logging.root.setLevel(logging.INFO)
+        log.setLevel(logging.INFO)
 
     # run the routine
     rc = calibrationsequence(pedoutfile, caloutfile, calib_run_number, ped_run_number, run_summary)

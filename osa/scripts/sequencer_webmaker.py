@@ -68,7 +68,7 @@ def webtail():
 
 def main():
 
-    logging.root.setLevel(logging.INFO)
+    log.setLevel(logging.INFO)
 
     args = sequencer_webmaker_argparser().parse_args()
 

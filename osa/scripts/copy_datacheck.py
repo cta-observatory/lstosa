@@ -25,6 +25,8 @@ def main():
     Get analysis products to be copied to the webserver,
     create directories and eventually copy the files.
     """
+    log.setLevel(logging.INFO)
+
     # Set cli options and arguments
     copy_datacheck_parsing()
 

@@ -51,9 +51,9 @@ def main():
     closercliparsing()
 
     if options.verbose:
-        logging.root.setLevel(logging.DEBUG)
+        log.setLevel(logging.DEBUG)
     else:
-        logging.root.setLevel(logging.INFO)
+        log.setLevel(logging.INFO)
 
     # initiating report
     tag = gettag()

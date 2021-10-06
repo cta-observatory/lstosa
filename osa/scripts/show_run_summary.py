@@ -431,6 +431,8 @@ def main():
      - dragon_reference_counter
     """
 
+    log.setLevel(logging.INFO)
+
     args = parser.parse_args()
 
     date_path = args.r0_path / args.date
