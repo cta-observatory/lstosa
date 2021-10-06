@@ -76,10 +76,7 @@ def argument_parser():
 def analysis_path(tel):
     options.tel_id = tel
     options.date = f"{year:04}_{month:02}_{day:02}"
-    running_analysis_dir = set_default_directory_if_needed()
-    if args.test:
-        return f"./{tel}"
-    return running_analysis_dir
+    return set_default_directory_if_needed()
 
 
 def closedFlag(tel):
@@ -90,7 +87,7 @@ def closedFlag(tel):
 
 
 def exampleSeq(tel):
-    return f"./ExampleSequences/SeqExpl{tel}_4.txt"
+    return "./extra/example_sequencer.txt"
 
 
 def cronLock(tel):
