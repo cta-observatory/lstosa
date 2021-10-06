@@ -12,16 +12,6 @@ from osa.utils.logging import myLogger
 __all__ = ["Telescope", "Sequence"]
 
 log = myLogger(logging.getLogger(__name__))
-log.setLevel(logging.DEBUG)
-
-
-# formatter for the output
-class MyFormatter(logging.Formatter):
-    FORMATS = {logging.INFO: "%(message)s", "DEFAULT": "%(levelname)s: %(message)s"}
-
-    def format(self, record):
-        self._fmt = self.FORMATS.get(record.levelno, self.FORMATS["DEFAULT"])
-        return logging.Formatter.format(self, record)
 
 
 # settings / global variables
@@ -653,21 +643,16 @@ if __name__ == "__main__":
         args.tel = ["LST1", "LST2", "ST"]
 
     # for the console output
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-    formatter = logging.Formatter("%(levelname)s: %(message)s")
-    ch.setFormatter(MyFormatter())
-    log.addHandler(ch)
+    log.setLevel(logging.INFO)
 
     if args.log:
         fh = logging.FileHandler(args.log)
         fh.setLevel(logging.DEBUG)
-        fh.setFormatter(MyFormatter())
         log.addHandler(fh)
         log.info(f"Logging verbose output to {args.log}")
 
     if args.verbose:
-        ch.setLevel(logging.DEBUG)
+        log.setLevel(logging.DEBUG)
         log.debug("Verbose output.")
 
     if args.simulate:
