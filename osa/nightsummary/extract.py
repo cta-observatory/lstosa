@@ -94,6 +94,10 @@ def extractsubruns(summary_table):
 
     log.debug("Subrun list extracted")
 
+    if not subrun_list:
+        log.warning("No runs found. Nothing to do.")
+        exit(1)
+
     return subrun_list
 
 
@@ -274,6 +278,9 @@ def extractsequences(run_list):
     # ready to return the list of sequences
     log.debug("Sequence list extracted")
 
+    if not store:
+        log.warning("No data sequences found. Nothing to do")
+
     return sequence_list
 
 
@@ -323,7 +330,9 @@ def generateworkflow(run_list, store, require):
 
     """
     sequence_list = []
+
     log.debug(f"The storage contains {len(store)} data sequences")
+
     parent = None
     for r in run_list:
         # the next seq value to assign (if this happens)
