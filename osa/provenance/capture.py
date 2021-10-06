@@ -70,7 +70,6 @@ def setup_logging():
     except Exception as ex:
         log.warning(ex)
         log.warning("Failed to set up the logger.")
-        logging.basicConfig(level="INFO")
 
 
 # def provenance(cls):

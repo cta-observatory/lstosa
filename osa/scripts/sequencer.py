@@ -23,7 +23,7 @@ from osa.nightsummary.extract import (
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.reports.report import rule, start
 from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_needed
-from osa.utils.logging import MyFormatter
+from osa.utils.logging import myLogger
 from osa.utils.standardhandle import gettag
 from osa.utils.utils import is_day_closed
 from osa.veto.veto import getclosedlist, getvetolist
@@ -37,13 +37,7 @@ __all__ = [
     "reportsequences",
 ]
 
-log = logging.getLogger(__name__)
-
-# Logging
-fmt = MyFormatter()
-handler = logging.StreamHandler()
-handler.setFormatter(fmt)
-logging.root.addHandler(handler)
+log = myLogger(logging.getLogger())
 
 
 def main():
@@ -56,9 +50,9 @@ def main():
     sequencercliparsing()
 
     if options.verbose:
-        logging.root.setLevel(logging.DEBUG)
+        log.setLevel(logging.DEBUG)
     else:
-        logging.root.setLevel(logging.INFO)
+        log.setLevel(logging.INFO)
 
     process_mode = None
     single_array = ["LST1", "LST2"]
