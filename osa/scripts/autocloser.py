@@ -69,7 +69,7 @@ def argument_parser():
         help="OSA config file.",
     )
     parser.add_argument("-l", "--log", default="", help="Write log to a file.")
-    parser.add_argument("tel", nargs="*", default="LST1", choices=["LST1", "LST2", "ST"])
+    parser.add_argument("tel", nargs="*", choices=["LST1"])
     return parser
 
 
@@ -85,7 +85,8 @@ def analysis_path(tel):
 def closedFlag(tel):
     if args.test:
         return f"./{tel}/NightFinished.txt"
-    return f"/data/{tel}/OSA/Closer{year:04}/{month:02}/{day:02}/NightFinished.txt"
+    basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get("LSTOSA", "TEXTSUFFIX")
+    return os.path.join(cfg.get(tel, "CLOSERDIR"), nightdir, prod_id, basename)
 
 
 def exampleSeq(tel):
@@ -561,14 +562,8 @@ if __name__ == "__main__":
 
     args = argument_parser().parse_args()
 
-    if "ST" in args.tel:
-        args.tel = ["LST1", "LST2", "ST"]
-
     # for the console output
     log.setLevel(logging.INFO)
-
-    if "ST" in args.tel:
-        args.tel = ["LST1", "LST2", "ST"]
 
     if args.log:
         fh = logging.FileHandler(args.log)
@@ -631,6 +626,7 @@ if __name__ == "__main__":
 
     # create telescope, sequence, problem and incidence objects
     log.info("Simulating sequencer...")
+
     telescopes = dict((tel, Telescope(tel)) for tel in args.tel)
 
     # loop over telescopes and trying to interpret sequencer
