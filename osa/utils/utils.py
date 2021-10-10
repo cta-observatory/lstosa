@@ -26,7 +26,11 @@ __all__ = [
     "lstdate_to_dir",
     "is_day_closed",
     "date_in_yymmdd",
-    "time_to_seconds"
+    "time_to_seconds",
+    "getlockfile",
+    "is_defined",
+    "destination_dir",
+    "createlock"
 ]
 
 log = logging.getLogger(__name__)

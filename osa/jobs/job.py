@@ -2,13 +2,13 @@
 Functions to handle the job submission using SLURM
 """
 
+import datetime
 import logging
 import os
 import subprocess
 import sys
 import time
 from glob import glob
-import datetime
 
 import pandas as pd
 
