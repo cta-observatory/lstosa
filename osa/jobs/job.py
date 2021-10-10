@@ -8,6 +8,7 @@ import subprocess
 import sys
 import time
 from glob import glob
+import datetime
 
 import pandas as pd
 
@@ -101,9 +102,7 @@ def historylevel(historyfile, data_type):
                 prod_id = words[2]
                 exit_status = int(words[-1])
                 log.debug(f"{program}, finished with error {exit_status} and prod ID {prod_id}")
-            except IndexError as err:
-                log.exception(f"Malformed history file {historyfile}, {err}")
-            except ValueError as err:
+            except (IndexError, ValueError) as err:
                 log.exception(f"Malformed history file {historyfile}, {err}")
             else:
                 if program == cfg.get("LSTOSA", "R0-DL1"):
@@ -364,7 +363,7 @@ def createjobtemplate(s, get_content=False):
             TAB * 2 + "'{0}".format(str(s.run).zfill(5)) + ".{0}'.format(str(subruns).zfill(4)), \n"
         )
     content += TAB * 2 + f"'{options.tel_id}'\n"
-    content += TAB + f"])\n"
+    content += TAB + '])\n'
 
     content += "\n"
 
@@ -492,7 +491,8 @@ def getqueuejoblist(sequence_list):
     """
     user = cfg.get("ENV", "USER")
     sacct_format = "--format=jobid%8,jobname%25,cputime,elapsed,state,exitcode"
-    commandargs = ["sacct", "-u", user, sacct_format]
+    start_date = (datetime.date.today() - datetime.timedelta(weeks=1)).isoformat()
+    commandargs = ["sacct", "-u", user, "--starttime", start_date, sacct_format]
     queue_list = []
     try:
         sacct_output = subprocess.check_output(commandargs, universal_newlines=True)
@@ -525,50 +525,51 @@ def setqueuevalues(queue_list, sequence_list):
     sequence_list
     """
     # Create data frames for sequence list and queue array
-    if sequence_list:
-        sequences_df = pd.DataFrame([vars(s) for s in sequence_list])
-        df_queue = pd.DataFrame.from_dict(queue_list)
-        # Add column with elapsed seconds of the job run-time to be averaged
-        if "JobName" in df_queue.columns:
-            df_queue_filtered = df_queue[df_queue["JobName"].isin(sequences_df["jobname"])].copy()
-            df_queue_filtered["DeltaTime"] = df_queue_filtered["CPUTime"].apply(time_to_seconds)
-            for s in sequence_list:
-                df_jobname = df_queue_filtered[df_queue_filtered["JobName"] == s.jobname]
-                s.tries = len(df_jobname["JobID"].unique())
-                s.action = "Check"
-                try:
-                    s.jobid = max(df_jobname["JobID"])  # Get latest JobID
-                    df_jobid_filtered = df_jobname[df_jobname["JobID"] == s.jobid]
-                    s.cputime = time.strftime(
-                        "%H:%M:%S", time.gmtime(df_jobid_filtered["DeltaTime"].median())
-                    )
-                    if (df_jobid_filtered.State.values == "COMPLETED").all():
-                        s.state = "COMPLETED"
-                        s.exit = df_jobid_filtered["ExitCode"].iloc[0]
-                    elif (df_jobid_filtered.State.values == "PENDING").all():
-                        s.state = "PENDING"
-                        s.exit = None
-                    elif (df_jobid_filtered.State.values == "FAILED").any():
-                        s.state = "FAILED"
-                        s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "FAILED"][
-                            "ExitCode"
-                        ].iloc[0]
-                    elif (df_jobid_filtered.State.values == "CANCELLED").any():
-                        s.state = "CANCELLED"
-                        s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "CANCELLED"][
-                            "ExitCode"
-                        ].iloc[0]
-                    elif (df_jobid_filtered.State.values == "TIMEOUT").any():
-                        s.state = "TIMEOUT"
-                        s.exit = "0:15"
-                    else:
-                        s.state = "RUNNING"
-                        s.exit = None
-                    log.debug(
-                        f"Queue attributes: sequence {s.seq}, JobName {s.jobname}, "
-                        f"JobID {s.jobid}, State {s.state}, CPUTime {s.cputime}, Exit {s.exit} updated"
-                    )
-                except ValueError:
-                    log.debug(f"Queue attributes for sequence {s.seq} not present in sacct output.")
-        else:
-            log.debug("No jobs reported in sacct queue.")
+    if not sequence_list:
+        return
+    sequences_df = pd.DataFrame([vars(s) for s in sequence_list])
+    df_queue = pd.DataFrame.from_dict(queue_list)
+    # Add column with elapsed seconds of the job run-time to be averaged
+    if "JobName" in df_queue.columns:
+        df_queue_filtered = df_queue[df_queue["JobName"].isin(sequences_df["jobname"])].copy()
+        df_queue_filtered["DeltaTime"] = df_queue_filtered["CPUTime"].apply(time_to_seconds)
+        for s in sequence_list:
+            df_jobname = df_queue_filtered[df_queue_filtered["JobName"] == s.jobname]
+            s.tries = len(df_jobname["JobID"].unique())
+            s.action = "Check"
+            try:
+                s.jobid = max(df_jobname["JobID"])  # Get latest JobID
+                df_jobid_filtered = df_jobname[df_jobname["JobID"] == s.jobid]
+                s.cputime = time.strftime(
+                    "%H:%M:%S", time.gmtime(df_jobid_filtered["DeltaTime"].median())
+                )
+                if (df_jobid_filtered.State.values == "COMPLETED").all():
+                    s.state = "COMPLETED"
+                    s.exit = df_jobid_filtered["ExitCode"].iloc[0]
+                elif (df_jobid_filtered.State.values == "PENDING").all():
+                    s.state = "PENDING"
+                    s.exit = None
+                elif (df_jobid_filtered.State.values == "FAILED").any():
+                    s.state = "FAILED"
+                    s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "FAILED"][
+                        "ExitCode"
+                    ].iloc[0]
+                elif (df_jobid_filtered.State.values == "CANCELLED").any():
+                    s.state = "CANCELLED"
+                    s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "CANCELLED"][
+                        "ExitCode"
+                    ].iloc[0]
+                elif (df_jobid_filtered.State.values == "TIMEOUT").any():
+                    s.state = "TIMEOUT"
+                    s.exit = "0:15"
+                else:
+                    s.state = "RUNNING"
+                    s.exit = None
+                log.debug(
+                    f"Queue attributes: sequence {s.seq}, JobName {s.jobname}, "
+                    f"JobID {s.jobid}, State {s.state}, CPUTime {s.cputime}, Exit {s.exit} updated"
+                )
+            except ValueError:
+                log.debug(f"Queue attributes for sequence {s.seq} not present in sacct output.")
+    else:
+        log.debug("No jobs reported in sacct queue.")

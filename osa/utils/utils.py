@@ -25,6 +25,8 @@ __all__ = [
     "copy_files_datacheck_web",
     "lstdate_to_dir",
     "is_day_closed",
+    "date_in_yymmdd",
+    "time_to_seconds"
 ]
 
 log = logging.getLogger(__name__)
@@ -179,13 +181,12 @@ def get_dl2_prod_id():
     return options.dl2_prod_id
 
 
-def createlock(lockfile, content):
+def createlock(lockfile):
     """
 
     Parameters
     ----------
     lockfile
-    content
 
     Returns
     -------
