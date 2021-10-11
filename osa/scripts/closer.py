@@ -577,7 +577,7 @@ def merge_dl2(sequence_list):
                 options.directory,
                 "-o",
                 f"log/slurm_merge_dl2_{sequence.run:05d}_%j.log",
-                f"lstchain_merge_hdf5_files",
+                "lstchain_merge_hdf5_files",
                 f"--input-dir={dl2_dir}",
                 f"--output-file={dl2_merged_file}",
                 "--no-image=True",
@@ -585,6 +585,7 @@ def merge_dl2(sequence_list):
                 f"--run-number={sequence.run}",
                 f"--pattern={dl2_pattern}",
             ]
+
 
             if not options.simulate and not options.test:
                 subprocess.run(cmd)

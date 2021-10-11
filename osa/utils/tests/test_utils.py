@@ -70,8 +70,8 @@ def test_destination_dir():
     basedir = cfg.get("LST1", "DIR")
 
     data_types = {
-        "DL1AB": f"DL1",
-        "DATACHECK": f"DL1",
+        "DL1AB": "DL1",
+        "DATACHECK": "DL1",
         "PEDESTAL": "calibration",
         "CALIB": "calibration",
         "TIMECALIB": "calibration",
@@ -92,3 +92,9 @@ def test_destination_dir():
         else:
             expected_directory = os.path.join(basedir, dst, datedir, options.prod_id)
         assert directory == expected_directory
+
+
+def test_time_to_seconds():
+    from osa.utils.utils import time_to_seconds
+    seconds = time_to_seconds("01:30:15")
+    assert seconds == 3600 + 30*60 + 15
