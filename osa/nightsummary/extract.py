@@ -30,7 +30,8 @@ __all__ = [
 
 
 def extractsubruns(summary_table):
-    """Extract sub-wun wise information from RunSummary files
+    """
+    Extract sub-wun wise information from RunSummary files
 
     Parameters
     ----------
