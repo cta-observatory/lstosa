@@ -96,7 +96,6 @@ def single_process(telescope, process_mode):
     if not options.simulate:
         os.makedirs(options.log_directory, exist_ok=True)
 
-    simulate_save = options.simulate
     is_report_needed = True
 
     if process_mode == "single":

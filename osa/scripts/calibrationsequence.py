@@ -219,7 +219,7 @@ def calibrate_charge(
         "--input_file=" + calibration_run_file,
         "--output_file=" + calib_output_file,
         f"--EventSource.max_events={max_events}",
-        f"--EventSource.default_trigger_type=tib",
+        "--EventSource.default_trigger_type=tib",
         f"--EventSource.min_flatfield_adc={min_ff}",
         f"--EventSource.max_flatfield_adc={max_ff}",
         "--LSTEventSource.EventTimeCalculator.run_summary_path=" + run_summary,

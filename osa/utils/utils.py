@@ -28,7 +28,7 @@ __all__ = [
     "get_prod_id",
     "date_in_yymmdd",
     "destination_dir",
-    "time_to_seconds"
+    "time_to_seconds",
     "date_in_yymmdd",
     "time_to_seconds",
     "getlockfile",
