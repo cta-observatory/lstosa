@@ -295,6 +295,7 @@ def createjobtemplate(s, get_content=False):
     content = "#!/bin/env python\n"
     # Set sbatch parameters
     content += "\n"
+    
     if s.type == "DATA":
         content += f"#SBATCH --array=0-{int(n_subruns) - 1} \n"
     content += "#SBATCH --cpus-per-task=1 \n"
