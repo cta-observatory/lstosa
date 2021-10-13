@@ -8,7 +8,6 @@ from osa.configs import config, options
 from osa.configs.config import cfg
 from osa.rawcopy.raw import getrawdir
 from osa.utils.iofile import appendtofile
-from osa.utils.standardhandle import gettag
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +37,6 @@ def header(message):
     ----------
     message
     """
-    tag = gettag()
     framesize = size()
     if len(message) < framesize - 2:
         prettyframe = int((framesize - 2 - len(message)) / 2) * "="

@@ -29,6 +29,12 @@ __all__ = [
     "date_in_yymmdd",
     "destination_dir",
     "time_to_seconds"
+    "date_in_yymmdd",
+    "time_to_seconds",
+    "getlockfile",
+    "is_defined",
+    "destination_dir",
+    "createlock"
 ]
 
 log = logging.getLogger(__name__)
@@ -183,13 +189,12 @@ def get_dl2_prod_id():
     return options.dl2_prod_id
 
 
-def createlock(lockfile, content):
+def createlock(lockfile):
     """
 
     Parameters
     ----------
     lockfile
-    content
 
     Returns
     -------

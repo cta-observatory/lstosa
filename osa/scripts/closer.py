@@ -169,36 +169,34 @@ def ask_for_closing():
     """
 
     if options.noninteractive:
-        # in not-interactive mode, we assume the answer is yes
-        pass
-    else:
-        answer_check = False
-        while not answer_check:
-            try:
+        return
+    answer_check = False
+    while not answer_check:
+        try:
+            if options.simulate:
                 question = "Close that day? (y/n): "
-                if options.simulate:
-                    question += "[SIMULATE ongoing] "
-                # FIXME: figure out where raw_input comes from. I set it to answer no
-                # answer_user = input(question)
-                answer_user = "n"
-            except KeyboardInterrupt:
-                log.warning("Program quitted by user. No answer")
-                sys.exit(1)
-            except EOFError as ErrorValue:
-                log.exception("End of file not expected", ErrorValue)
+                question += "[SIMULATE ongoing] "
+            # FIXME: figure out where raw_input comes from. I set it to answer no
+            # answer_user = input(question)
+            answer_user = "n"
+        except KeyboardInterrupt:
+            log.warning("Program quitted by user. No answer")
+            sys.exit(1)
+        except EOFError as ErrorValue:
+            log.exception("End of file not expected", ErrorValue)
+        else:
+            answer_check = True
+            if answer_user in {"n", "N"}:
+                # the user does not want to close
+                log.info(
+                    f"Day {options.date} for {options.tel_id} will remain open unless closing is forced"
+                )
+                sys.exit(0)
+            elif answer_user in {"y", "Y"}:
+                continue
             else:
-                answer_check = True
-                if answer_user == "n" or answer_user == "N":
-                    # the user does not want to close
-                    log.info(
-                        f"Day {options.date} for {options.tel_id} will remain open unless closing is forced"
-                    )
-                    sys.exit(0)
-                elif answer_user == "y" or answer_user == "Y":
-                    continue
-                else:
-                    log.warning("Answer not understood, please type y or n")
-                    answer_check = False
+                log.warning("Answer not understood, please type y or n")
+                answer_check = False
 
 
 def notify_neither_data_nor_reason_given():
@@ -228,7 +226,7 @@ def post_process(seq_tuple):
     merge_dl2(seq_list)
 
     if options.seqtoclose is None:
-        return set_closed_with_file(analysis_text)
+        return set_closed_with_file()
     return False
 
 
@@ -244,14 +242,13 @@ def post_process_files(seq_list):
 
     output_files_set = set(Path(options.directory).rglob("*Run*"))
 
-    DL1_RE = re.compile(fr"{options.directory}/dl1(?:.*).(?:h5|hdf5|hdf)")
-    DL1AB_RE = re.compile(fr"{options.dl1_prod_id}(?:.*)/dl1(?:.*).(?:h5|hdf5|hdf)")
-    DL2_RE = re.compile(fr"{options.dl2_prod_id}(?:.*)/dl2(?:.*).(?:h5|hdf5|hdf)")
-    MUONS_RE = re.compile(r"muons(?:.*).fits")
-    DATACHECK_RE = re.compile(r"datacheck_dl1(?:.*).(?:h5|hdf5|hdf)")
-    CALIB_RE = re.compile(r"/calibration(?:.*).(?:h5|hdf5|hdf)")
-    TIMECALIB_RE = re.compile(r"/time_calibration(?:.*).(?:h5|hdf5|hdf)")
-    PEDESTAL_RE = re.compile(r"drs4(?:.*).fits")
+    DL1AB_RE = re.compile(fr"{options.dl1_prod_id}.*/dl1.*.(?:h5|hdf5|hdf)")
+    DL2_RE = re.compile(fr"{options.dl2_prod_id}.*/dl2.*.(?:h5|hdf5|hdf)")
+    MUONS_RE = re.compile(r"muons.*.fits")
+    DATACHECK_RE = re.compile(r"datacheck_dl1.*.(?:h5|hdf5|hdf)")
+    CALIB_RE = re.compile(r"/calibration.*.(?:h5|hdf5|hdf)")
+    TIMECALIB_RE = re.compile(r"/time_calibration.*.(?:h5|hdf5|hdf)")
+    PEDESTAL_RE = re.compile(r"drs4.*.fits")
 
     pattern_files = dict(
         [
@@ -364,14 +361,14 @@ def register_non_existing_file(file_path_str, concept, seq_list):
         createclosed(s.closed)
 
 
-def set_closed_with_file(ana_text):
+def set_closed_with_file():
     """Write the analysis report to the closer file."""
 
     closer_file = getlockfile()
     is_closed = False
     if not options.simulate:
         # Generate NightFinished lock file
-        is_closed = createlock(closer_file, ana_text)
+        is_closed = createlock(closer_file)
     else:
         log.info(f"SIMULATE Creation of lock file {closer_file}")
 
