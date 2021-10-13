@@ -2,10 +2,8 @@
 Extract subrun, run, sequence list and build corresponding objects.
 """
 import logging
-from datetime import datetime
 
 from astropy import units as u
-from astropy.table import Table
 from astropy.time import Time
 
 from osa.configs import options
@@ -32,23 +30,15 @@ __all__ = [
 
 
 def extractsubruns(summary_table):
-    """
+    """Extract sub-wun wise information from RunSummary files
 
     Parameters
     ----------
-    nightsummary_file: str
-        File name of the run summary astropy Table containing the information run-wise.
-        Content of the table:
-          run_id, datatype: int64
-          n_subruns, datatype: int64
-          run_type, datatype: string
-          ucts_timestamp, datatype: int64
-          run_start, datatype: int64
-          dragon_reference_time, datatype: int64
-          dragon_reference_module_id, datatype: int16
-          dragon_reference_module_index, datatype: int16
-          dragon_reference_counter, datatype: uint64
-          dragon_reference_source, datatype: string
+    summary_table: astropy.Table
+    Table containing run-wise information indicated in
+    nightsummary.run_summary.
+
+    See Also: nightsummary.run_summary
 
     Returns
     -------

@@ -31,6 +31,7 @@ __all__ = [
     "set_default_directory_if_needed",
     "simprocparsing",
     "stereosequencecliparsing",
+    "sequencer_webmaker_argparser"
 ]
 
 log = logging.getLogger(__name__)
@@ -827,7 +828,7 @@ def rawcopycliparsing():
     if len(args) != 1:
         log.error("incorrect number of arguments, type -h for help")
     elif args[0] == "ST":
-        log.error(f"not yet ready for telescope ST")
+        log.error("not yet ready for telescope ST")
     elif args[0] not in ["LST1", "LST2"]:
         log.error("wrong telescope id, use 'LST1', 'LST2' or 'ST'")
     options.tel_id = args[0]
@@ -870,7 +871,6 @@ def provprocess_argparser():
 
 
 def provprocessparsing():
-    message = "usage: %prog [-c CONFIGFILE] [-f PROCESS] <RUN_NUMBER> <DATEFOLDER> <SUBFOLDER>"
 
     # parse the command line
     opts = provprocess_argparser().parse_args()
