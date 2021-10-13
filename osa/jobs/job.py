@@ -363,7 +363,8 @@ def createjobtemplate(s, get_content=False):
             TAB * 2 + "'{0}".format(str(s.run).zfill(5)) + ".{0}'.format(str(subruns).zfill(4)), \n"
         )
     content += TAB * 2 + f"'{options.tel_id}'\n"
-    content += TAB + '])\n'
+
+    content += TAB + "])\n"
 
     content += "\n"
 
