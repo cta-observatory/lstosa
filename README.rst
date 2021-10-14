@@ -34,7 +34,7 @@ Install
 
 .. code-block:: bash
 
-   git clone git@github.com:gae-ucm/lstosa.git
+   git clone https://github.com/gae-ucm/lstosa.git
    cd lstosa
    conda env create -n osa -f environment.yml
    conda activate osa
