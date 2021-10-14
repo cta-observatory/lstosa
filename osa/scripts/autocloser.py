@@ -8,9 +8,8 @@ import subprocess
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.cliopts import set_default_directory_if_needed
-from osa.utils.utils import set_no_observations_flag, create_directories_datacheck_web
 from osa.utils.logging import myLogger
-
+from osa.utils.utils import set_no_observations_flag, create_directories_datacheck_web
 
 __all__ = ["Telescope", "Sequence"]
 
@@ -273,7 +272,12 @@ class Telescope(object):
             return True
 
         log.debug(f"Executing {' '.join(closerArgs)}")
-        closer = subprocess.Popen(closerArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        closer = subprocess.Popen(
+            closerArgs,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=False
+        )
         stdout, stderr = closer.communicate()
         if closer.returncode != 0:
             log.warning(f"'closer' returned error code {closer.returncode}! See output: {stdout}")
