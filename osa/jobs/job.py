@@ -394,6 +394,7 @@ def submitjobs(sequence_list):
                     parent_jobid = subprocess.check_output(
                         commandargs,
                         universal_newlines=True,
+                        shell=False
                     ).split()[0]
                 except subprocess.CalledProcessError as Error:
                     log.exception(Error, 2)
@@ -463,11 +464,11 @@ def submitjobs(sequence_list):
             elif options.test:
                 log.debug("Test launching datasequence scripts for first subrun without sbatch")
                 commandargs = ["python", s.script]
-                subprocess.check_output(commandargs)
+                subprocess.check_output(commandargs, shell=False)
             else:
                 try:
                     log.debug(f"Launching script {s.script}")
-                    subprocess.check_output(commandargs)
+                    subprocess.check_output(commandargs, shell=False)
                 except subprocess.CalledProcessError as Error:
                     log.exception(Error, 2)
                 except OSError as err:
@@ -496,7 +497,11 @@ def getqueuejoblist(sequence_list):
     commandargs = ["sacct", "-u", user, "--starttime", start_date, sacct_format]
     queue_list = []
     try:
-        sacct_output = subprocess.check_output(commandargs, universal_newlines=True)
+        sacct_output = subprocess.check_output(
+            commandargs,
+            universal_newlines=True,
+            shell=False
+        )
     except subprocess.CalledProcessError as Error:
         log.exception(f"Command '{stringify(commandargs)}' failed, {Error}")
     except OSError as Error:

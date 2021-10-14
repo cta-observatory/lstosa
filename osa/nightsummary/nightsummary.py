@@ -42,14 +42,18 @@ def build_external(command, rawdir):
         commandargs.append("-i")
     commandargs.append(rawdir)
     try:
-        stdout = subprocess.check_output(commandargs, universal_newlines=True)
+        stdout = subprocess.check_output(
+            commandargs,
+            universal_newlines=True,
+            shell=False
+        )
     except OSError as error:
         log.exception(f"Command {stringify(commandargs)}, error: {error}")
     except subprocess.CalledProcessError as error:
         log.exception(f"Subprocess error: {error}")
     else:
         log.debug("Getting output...\n" + stdout.rstrip())
-    return stdout
+        return stdout
 
 
 def run_summary_table(date):
@@ -66,7 +70,7 @@ def run_summary_table(date):
      - dragon_reference_counter, datatype: uint64
      - dragon_reference_source, datatype: string
 
-    It reads an existing nightsummary file.
+    It reads an existing RunSummary file.
 
     Returns
     -------

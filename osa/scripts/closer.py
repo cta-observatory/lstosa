@@ -496,7 +496,12 @@ def merge_dl1datacheck(seq_list):
             ]
             if not options.simulate and not options.test:
                 try:
-                    process = subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+                    process = subprocess.run(
+                        cmd,
+                        stdout=subprocess.PIPE,
+                        universal_newlines=True,
+                        shell=False
+                    )
                 except (subprocess.CalledProcessError, RuntimeError) as err:
                     log.exception(f"Not able to run DL1 datacheck: {err}")
                 else:
@@ -545,7 +550,12 @@ def extract_provenance(seq_list):
             ]
             if not options.simulate and not options.test:
                 try:
-                    process = subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+                    process = subprocess.run(
+                        cmd,
+                        stdout=subprocess.PIPE,
+                        universal_newlines=True,
+                        shell=False
+                    )
                 except (subprocess.CalledProcessError, RuntimeError) as err:
                     log.exception(f"Not able to run DL1 datacheck: {err}")
                 else:
@@ -583,9 +593,8 @@ def merge_dl2(sequence_list):
                 f"--pattern={dl2_pattern}",
             ]
 
-
             if not options.simulate and not options.test:
-                subprocess.run(cmd)
+                subprocess.run(cmd, shell=False)
 
             else:
                 log.debug("Simulate launching scripts")
