@@ -96,5 +96,7 @@ def test_destination_dir():
 
 def test_time_to_seconds():
     from osa.utils.utils import time_to_seconds
-    seconds = time_to_seconds("01:30:15")
-    assert seconds == 3600 + 30*60 + 15
+    seconds_with_day = time_to_seconds("2-02:27:15")
+    assert seconds_with_day == 2 * 24 * 3600 + 2 * 3600 + 27 * 60 + 15
+    seconds = time_to_seconds("02:27:15")
+    assert seconds == 2 * 3600 + 27 * 60 + 15
