@@ -415,22 +415,28 @@ def is_day_closed():
 
 
 def time_to_seconds(timestring):
-    """Transform HH:MM:SS time format to seconds.
+    """Transform (D-)HH:MM:SS time format to seconds.
 
     Parameters
     ----------
     timestring: str
-        Time in format HH:MM:SS
+        Time in format (D-)HH:MM:SS
 
     Returns
     -------
-    Seconds that correspond to HH:MM:SS
+    Seconds that correspond to (D-)HH:MM:SS
 
     """
     if timestring is None:
         timestring = "00:00:00"
-    hours, minutes, seconds = timestring.split(":")
-    return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+    if "-" in timestring:
+        # Day is also specified (D-)HH:MM:SS
+        days, hhmmss = timestring.split("-", )
+        hours, minutes, seconds = hhmmss.split(":")
+        return int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+    else:
+        hours, minutes, seconds = timestring.split(":")
+        return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
 
 
 def date_in_yymmdd(datestring):
