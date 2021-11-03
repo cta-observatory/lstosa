@@ -17,6 +17,7 @@ dependencies:
   - gammapy>=0.18
   - h5py
   - joblib
+  - traitlets=5.0
   # dev dependencies
   - pre-commit
   - pytest
