@@ -4,7 +4,12 @@ from pathlib import Path, PurePath
 
 from osa.configs import options
 from osa.provenance.capture import trace
-from osa.provenance.io import *
+from osa.provenance.io import (
+    read_prov,
+    provlist2provdoc,
+    provdoc2json,
+    provdoc2graph
+)
 
 
 @trace

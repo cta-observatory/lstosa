@@ -606,7 +606,7 @@ def get_input_file(run_number):
 
 
 def stringify(args):
-    """Join a list of arguments in a string"""
+    """Join a list of arguments in a string."""
     return " ".join(map(str, args))
 
 

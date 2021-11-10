@@ -121,17 +121,13 @@ def single_process(telescope, process_mode):
     # adds the scripts
     preparejobs(sequence_list)
 
-    # if test in order to be able to run it locally
     if not options.test:
-        queue_list = getqueuejoblist(sequence_list)
-    veto_list = getvetolist(sequence_list)
-    closed_list = getclosedlist(sequence_list)
+        getqueuejoblist(sequence_list)
+    getvetolist(sequence_list)
+    getclosedlist(sequence_list)
     update_sequence_status(sequence_list)
     # updatesequencedb(sequence_list)
-    # actually, submitjobs does not need the queue_list nor veto_list
-    # job_list = submitjobs(sequence_list, queue_list, veto_list)
-
-    job_list = submitjobs(sequence_list)
+    submitjobs(sequence_list)
 
     # report
     if is_report_needed:
@@ -170,12 +166,11 @@ def stereo_process(telescope, s1_list, s2_list):
     # writeworkflow(sequence_list)
     # adds the scripts
     preparestereojobs(sequence_list)
-    queue_list = getqueuejoblist(sequence_list)
-    veto_list = getvetolist(sequence_list)
-    closed_list = getclosedlist(sequence_list)
+    getqueuejoblist(sequence_list)
+    getvetolist(sequence_list)
+    getclosedlist(sequence_list)
     update_sequence_status(sequence_list)
-    # actually, submitjobs does not need the queue_list nor veto_list
-    job_list = submitjobs(sequence_list)
+    submitjobs(sequence_list)
     # finalizing report
     rule()
     reportsequences(sequence_list)

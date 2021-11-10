@@ -83,7 +83,7 @@ def test_scheduler_env_variables(sequence_list):
 
 
 def test_job_header_template(sequence_list):
-    """Extract and check the header for the first two sequences"""
+    """Extract and check the header for the first two sequences."""
     from osa.jobs.job import job_header_template
     # Extract the first sequence
     first_sequence = sequence_list[0]

@@ -352,8 +352,6 @@ def log_session(class_instance, start):
             session_id = lines[0]["session_id"]
             sessions.add(session_id)
 
-    module_name = class_instance.__class__.__module__
-    class_name = class_instance.__name__
     if session_id not in sessions:
         sessions.add(session_id)
         system = get_system_provenance()
