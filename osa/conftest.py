@@ -49,7 +49,8 @@ def test_data():
         prefix="time_calibration_", suffix=".hdf5", dir=running_analysis
     )
 
-    return test_dir, dl1_file, raw_dir, running_analysis
+    return test_dir, dl1_file, raw_dir, running_analysis, dl1ab_directory, dl1ab_file, \
+           dl2_file, muons_file, dcheck_file, calib_file, drs4_file, time_file
 
 
 @pytest.fixture(scope="session")
@@ -72,7 +73,4 @@ def sequence_list(test_data, run_summary):
 
     subrun_list = extractsubruns(run_summary)
     run_list = extractruns(subrun_list)
-    # modifies run_list by adding the seq and parent info into runs
-    seq_list = extractsequences(run_list)
-
-    return seq_list
+    return extractsequences(run_list)
