@@ -42,6 +42,8 @@ jobs:
       - name: Run pyflakes
         # need to use a login shell for the conda setup to work
         run: |
+          . $CONDA/etc/profile.d/conda.sh
+          conda activate ci
           pyflakes osa
 
       - name: Tests
