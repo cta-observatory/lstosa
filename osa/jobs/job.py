@@ -347,22 +347,18 @@ def createjobtemplate(sequence, get_content=False):
     job_header = job_header_template(sequence)
 
     nightdir = lstdate_to_dir(options.date)
-    scriptsdir = cfg.get("LSTOSA", "SCRIPTSDIR")
     drivedir = cfg.get("LST1", "DRIVEDIR")
     run_summary_dir = cfg.get("LST1", "RUN_SUMMARY_DIR")
 
-    # FIXME: make these scripts executable
     if sequence.type == "PEDCALIB":
-        command = os.path.join(scriptsdir, "calibrationsequence.py")
+        command = "calibrationsequence"
     elif sequence.type == "DATA":
-        command = os.path.join(scriptsdir, "datasequence.py")
-    elif sequence.type == "STEREO":
-        command = os.path.join(scriptsdir, "stereosequence.py")
+        command = "datasequence"
     else:
         log.error(f"Unknown sequence type {sequence.type}")
         command = None
 
-    commandargs = ["python", command]
+    commandargs = [command]
 
     if options.verbose:
         commandargs.append("-v")
@@ -469,10 +465,10 @@ def createjobtemplate(sequence, get_content=False):
 def submitjobs(sequence_list):
     job_list = []
     command = cfg.get("ENV", "SBATCHBIN")
-    env_nodisplay = "--export=ALL,MPLBACKEND=Agg"
+    no_display_backend = "--export=ALL,MPLBACKEND=Agg"
 
     for s in sequence_list:
-        commandargs = [command, "--parsable", env_nodisplay]
+        commandargs = [command, "--parsable", no_display_backend]
         if s.type == "PEDCALIB":
             commandargs.append(s.script)
             if options.simulate or options.nocalib or options.test:
