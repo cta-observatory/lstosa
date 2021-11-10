@@ -6,7 +6,7 @@ from os.path import basename, getsize, join
 
 from osa.configs import config, options
 from osa.configs.config import cfg
-from osa.rawcopy.raw import getrawdir
+from osa.raw import getrawdir
 from osa.utils.iofile import appendtofile
 
 log = logging.getLogger(__name__)

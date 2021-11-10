@@ -14,7 +14,7 @@ from osa.configs.datamodel import (
     SequenceStereo,
     SubrunObj,
 )
-from osa.jobs.job import setsequencecalibfilenames, setsequencefilenames
+from osa.job import setsequencecalibfilenames, setsequencefilenames
 from osa.utils.utils import lstdate_to_iso
 
 log = logging.getLogger(__name__)

@@ -12,11 +12,11 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.jobs.job import are_all_jobs_correctly_finished
+from osa.job import are_all_jobs_correctly_finished
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import get_runsummary_file, run_summary_table
-from osa.rawcopy.raw import get_check_rawdir
-from osa.reports.report import start
+from osa.raw import get_check_rawdir
+from osa.report import start
 from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import myLogger
 from osa.utils.register import register_run_concept_files
@@ -30,7 +30,7 @@ from osa.utils.utils import (
     createlock,
     gettag
 )
-from osa.veto.veto import createclosed
+from osa.veto import createclosed
 
 __all__ = [
     "use_night_summary",

@@ -11,7 +11,7 @@ import yaml
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.configs.datamodel import SequenceData
-from osa.jobs.job import createjobtemplate
+from osa.job import createjobtemplate
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.provenance.utils import get_log_config

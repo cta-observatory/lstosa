@@ -10,9 +10,9 @@ from os.path import basename, join
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.jobs.job import historylevel
+from osa.job import historylevel
 from osa.provenance.capture import trace
-from osa.reports.report import history
+from osa.report import history
 from osa.utils.cliopts import datasequencecliparsing
 from osa.utils.logging import myLogger
 from osa.utils.utils import lstdate_to_dir, stringify

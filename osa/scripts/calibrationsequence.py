@@ -15,8 +15,8 @@ import matplotlib.pyplot as plt
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.jobs.job import historylevel
-from osa.reports.report import history
+from osa.job import historylevel
+from osa.report import history
 from osa.utils.cliopts import calibrationsequencecliparsing
 from osa.utils.logging import myLogger
 from osa.utils.utils import stringify, get_input_file

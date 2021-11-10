@@ -2,9 +2,10 @@ import logging
 from datetime import datetime
 from os.path import exists, isfile, join, ismount
 
+from osa.utils.standardhandle import error, errornonfatal, gettag, output
+
 from dev.mail import send_email
 from osa.configs.config import cfg
-from osa.utils.standardhandle import error, errornonfatal, gettag, output
 from osa.utils.utils import lstdate_to_dir, createlock, get_night_limit_timestamp, lstdate_to_iso
 
 log = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ def raw_copy():
     as another user."""
     tag = gettag()
 
-    from osa.reports.report import start
+    from osa.report import start
 
     """ Starting the algorithm. """
 

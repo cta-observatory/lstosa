@@ -12,7 +12,7 @@ options.tel_id = "LST1"
 
 
 def test_historylevel():
-    from osa.jobs.job import historylevel
+    from osa.job import historylevel
 
     options.dl1_prod_id = "tailcut84"
     options.dl2_prod_id = "model1"
@@ -34,7 +34,7 @@ def test_historylevel():
 
 
 def test_preparejobs(test_data, sequence_list):
-    from osa.jobs.job import preparejobs
+    from osa.job import preparejobs
 
     options.simulate = False
     options.directory = test_data[3]
@@ -46,7 +46,7 @@ def test_preparejobs(test_data, sequence_list):
 
 
 def test_setsequencefilenames(test_data, sequence_list):
-    from osa.jobs.job import setsequencefilenames
+    from osa.job import setsequencefilenames
 
     for sequence in sequence_list:
         setsequencefilenames(sequence)
@@ -54,7 +54,7 @@ def test_setsequencefilenames(test_data, sequence_list):
 
 
 def test_scheduler_env_variables(sequence_list):
-    from osa.jobs.job import scheduler_env_variables
+    from osa.job import scheduler_env_variables
     # Extract the first sequence
     first_sequence = sequence_list[0]
     env_variables = scheduler_env_variables(first_sequence)
@@ -84,7 +84,7 @@ def test_scheduler_env_variables(sequence_list):
 
 def test_job_header_template(sequence_list):
     """Extract and check the header for the first two sequences."""
-    from osa.jobs.job import job_header_template
+    from osa.job import job_header_template
     # Extract the first sequence
     first_sequence = sequence_list[0]
     header = job_header_template(first_sequence)

@@ -10,7 +10,7 @@ import sys
 from astropy.table import Table
 
 from osa.configs.config import cfg
-from osa.rawcopy.raw import are_rawfiles_transferred
+from osa.raw import are_rawfiles_transferred
 from osa.utils.utils import lstdate_to_dir, stringify
 
 __all__ = ["build_external", "get_runsummary_file", "run_summary_table"]
