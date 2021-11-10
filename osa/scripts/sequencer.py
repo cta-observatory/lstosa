@@ -24,8 +24,7 @@ from osa.nightsummary.nightsummary import run_summary_table
 from osa.reports.report import rule, start
 from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_needed
 from osa.utils.logging import myLogger
-from osa.utils.standardhandle import gettag
-from osa.utils.utils import is_day_closed
+from osa.utils.utils import is_day_closed, gettag
 from osa.veto.veto import getclosedlist, getvetolist
 
 __all__ = [
@@ -102,12 +101,13 @@ def single_process(telescope, process_mode):
         if is_day_closed():
             log.info(f"Day {options.date} for {options.tel_id} already closed")
             return sequence_list
+    elif process_mode == "stereo":
+        # only simulation for single array required
+        options.nightsummary = True
+        options.simulate = True
+        is_report_needed = False
     else:
-        if process_mode == "stereo":
-            # only simulation for single array required
-            options.nightsummary = True
-            options.simulate = True
-            is_report_needed = False
+        raise Exception("Process mode not found")
 
     # building the sequences
     summary_table = run_summary_table(options.date)

@@ -11,8 +11,7 @@ from astropy.table import Table
 
 from osa.configs.config import cfg
 from osa.rawcopy.raw import are_rawfiles_transferred
-from osa.utils.standardhandle import stringify
-from osa.utils.utils import lstdate_to_dir
+from osa.utils.utils import lstdate_to_dir, stringify
 
 __all__ = ["build_external", "get_runsummary_file", "run_summary_table"]
 
@@ -91,7 +90,7 @@ def run_summary_table(date):
     # else:
 
     nightsummary_file = get_runsummary_file(date)
-    log.debug(f"Trying run summary file path {nightsummary_file}")
+    log.debug(f"Looking for run summary file {nightsummary_file}")
     if not os.path.isfile(nightsummary_file):
         log.error(f"Run summary file {nightsummary_file} not found")
         sys.exit(1)

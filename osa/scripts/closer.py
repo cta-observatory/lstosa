@@ -20,8 +20,16 @@ from osa.reports.report import finished_assignments, finished_text, start
 from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import myLogger
 from osa.utils.register import register_run_concept_files
-from osa.utils.standardhandle import gettag, stringify
-from osa.utils.utils import getlockfile, is_day_closed, is_defined, lstdate_to_dir, destination_dir, createlock
+from osa.utils.utils import (
+    getlockfile,
+    is_day_closed,
+    stringify,
+    is_defined,
+    lstdate_to_dir,
+    destination_dir,
+    createlock,
+    gettag
+)
 from osa.veto.veto import createclosed
 
 __all__ = [
