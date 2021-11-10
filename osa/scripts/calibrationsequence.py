@@ -19,7 +19,7 @@ from osa.jobs.job import historylevel
 from osa.reports.report import history
 from osa.utils.cliopts import calibrationsequencecliparsing
 from osa.utils.logging import myLogger
-from osa.utils.standardhandle import stringify
+from osa.utils.utils import stringify, get_input_file
 
 __all__ = [
     "calibrationsequence",
@@ -83,7 +83,7 @@ def calibrationsequence(
     return rc
 
 
-def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000, tel_id=1):
+def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000):
     """
     Create a DRS4 pedestal file
 
@@ -93,7 +93,6 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000,
     pedestal_output_file
     history_file
     max_events
-    tel_id
 
     Returns
     -------
@@ -103,16 +102,7 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000,
     if options.simulate:
         return 0
 
-    rawdata_path = Path(cfg.get("LST1", "RAWDIR"))
-    # Get raw data run regardless when was taken
-    run_drs4_file_list = [
-        file for file in rawdata_path.rglob(f'*/{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_ped}.0000*')
-    ]
-    if run_drs4_file_list:
-        input_file = str(run_drs4_file_list[0])
-    else:
-        log.error(f"Files corresponding to DRS4 pedestal run {run_ped} not found")
-        sys.exit(1)
+    input_file = get_input_file(run_ped)
 
     calib_configfile = None
     output_file = path.join(options.directory, pedestal_output_file)
@@ -186,19 +176,7 @@ def calibrate_charge(
     if options.simulate:
         return 0
 
-    rawdata_path = Path(cfg.get("LST1", "RAWDIR"))
-    # Get raw data run regardless when was taken
-    run_calib_file_list = [
-        file
-        for file in rawdata_path.rglob(
-            f'*/{cfg.get("LSTOSA", "R0PREFIX")}.Run{calibration_run}.0000*'
-        )
-    ]
-    if run_calib_file_list:
-        calibration_run_file = str(run_calib_file_list[0])
-    else:
-        log.error(f"Files corresponding to calibration run {calibration_run} not found")
-        sys.exit(1)
+    calibration_run_file = get_input_file(calibration_run)
 
     calib_configfile = cfg.get("LSTOSA", "CALIBCONFIGFILE")
     drs4_pedestal_path = path.join(options.directory, pedestal_file)
@@ -276,7 +254,7 @@ def calibrate_charge(
 
 
 def calibrate_time(
-    calibration_run, pedestal_file, calibration_output_file, run_summary, history_file, subrun=0
+        calibration_run, pedestal_file, calibration_output_file, run_summary, history_file
 ):
     """
     Create a time calibration file
@@ -287,7 +265,6 @@ def calibrate_time(
     pedestal_file
     calibration_output_file
     history_file
-    subrun
 
     Returns
     -------
@@ -297,20 +274,7 @@ def calibrate_time(
     if options.simulate:
         return 0
 
-    rawdata_path = Path(cfg.get("LST1", "RAWDIR"))
-    # Get raw data run regardless when was taken
-    run_calib_file_list = [
-        file
-        for file in rawdata_path.rglob(
-            f'*/{cfg.get("LSTOSA", "R0PREFIX")}.Run{calibration_run}.{subrun:04d}.fits.fz'
-        )
-    ]
-
-    if run_calib_file_list:
-        calibration_data_file = str(run_calib_file_list[0])
-    else:
-        log.error(f"Files corresponding to calibration run {calibration_run} not found")
-        sys.exit(1)
+    calibration_data_file = get_input_file(calibration_run)
 
     calib_configfile = cfg.get("LSTOSA", "CALIBCONFIGFILE")
     time_calibration_output_file = path.join(options.directory, f"time_{calibration_output_file}")
@@ -392,8 +356,7 @@ def calibrate_time(
     return rc
 
 
-if __name__ == "__main__":
-    # Set the options through cli parsing
+def main():
     (
         pedoutfile,
         caloutfile,
@@ -410,3 +373,7 @@ if __name__ == "__main__":
     # run the routine
     rc = calibrationsequence(pedoutfile, caloutfile, calib_run_number, ped_run_number, run_summary)
     sys.exit(rc)
+
+
+if __name__ == "__main__":
+    main()

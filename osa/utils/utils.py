@@ -1,8 +1,8 @@
 """
 Functions to deal with dates, directories and prod IDs
 """
-
 import hashlib
+import inspect
 import logging
 import os
 import subprocess
@@ -34,7 +34,9 @@ __all__ = [
     "getlockfile",
     "is_defined",
     "destination_dir",
-    "createlock"
+    "createlock",
+    "get_input_file",
+    "stringify"
 ]
 
 log = logging.getLogger(__name__)
@@ -95,7 +97,7 @@ def getnightdirectory():
 
     if not exists(directory):
         if options.nightsummary and options.tel_id != "ST":
-            log.error(f"Analysis directory {directory} does not exists!")
+            raise Exception(f"Analysis directory {directory} does not exists.")
         elif options.simulate:
             log.debug("SIMULATE the creation of the analysis directory.")
         else:
@@ -238,7 +240,7 @@ def getlockfile():
         options.prod_id,
     )
     lockfile = join(dir, basename)
-    log.debug(f"Lock file is {lockfile}")
+    log.debug(f"Looking for lock file {lockfile}")
     return lockfile
 
 
@@ -575,3 +577,39 @@ def copy_files_datacheck_web(host, datedir, file_list):
             destination_dir = DATACHECK_BASEDIR / "dl1" / options.prod_id / datedir
             cmd = ["scp", file_to_transfer, f"{host}:{destination_dir}/."]
             subprocess.run(cmd)
+
+
+def get_input_file(run_number):
+    """
+    Get the input file for the given run number.
+
+    Parameters
+    ----------
+    run_number
+
+    Returns
+    -------
+
+    """
+    r0_path = Path(cfg.get("LST1", "RAWDIR"))
+
+    # Get raw data file.
+    file_list = [
+        file for file in r0_path.rglob(
+            f'*/{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_number:05d}.0000*'
+        )
+    ]
+    if file_list:
+        return str(file_list[0])
+    raise IOError(f"Files corresponding to run {run_number} not found.")
+
+
+def stringify(args):
+    """Join a list of arguments in a string"""
+    return " ".join(map(str, args))
+
+
+def gettag():
+    parentfile = os.path.basename(inspect.stack()[1][1])
+    parentmodule = inspect.stack()[1][3]
+    return f"{parentfile}({parentmodule})"
