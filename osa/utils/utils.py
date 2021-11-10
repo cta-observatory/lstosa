@@ -36,7 +36,8 @@ __all__ = [
     "destination_dir",
     "createlock",
     "get_input_file",
-    "stringify"
+    "stringify",
+    "gettag",
 ]
 
 log = logging.getLogger(__name__)

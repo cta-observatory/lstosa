@@ -15,8 +15,7 @@ from osa.provenance.capture import trace
 from osa.reports.report import history
 from osa.utils.cliopts import datasequencecliparsing
 from osa.utils.logging import myLogger
-from osa.utils.standardhandle import stringify
-from osa.utils.utils import lstdate_to_dir
+from osa.utils.utils import lstdate_to_dir, stringify
 
 __all__ = ["datasequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
 
@@ -136,27 +135,15 @@ def r0_to_dl1(
         "--pointing-file=" + drivefile,
         "--run-summary-path=" + run_summary,
     ]
-
-    try:
-        log.info(f"Executing {stringify(commandargs)}")
-        rc = subprocess.call(commandargs)
-    except subprocess.CalledProcessError as error:
-        log.exception(f"Subprocess error: {error}")
-    except OSError as error:
-        log.exception(f"Command {stringify(commandargs)} failed, {error}")
-    else:
-        history(
-            run_str,
-            options.prod_id,  # TODO: consider only DL2 prod ID?
-            command,
-            basename(calibrationfile),
-            basename(pedestalfile),
-            rc,
-            historyfile,
-        )
-        if rc != 0:
-            sys.exit(rc)
-        return rc
+    return run_program_with_logging(
+        commandargs,
+        historyfile,
+        run_str,
+        options.prod_id,
+        command,
+        basename(calibrationfile),
+        basename(pedestalfile),
+    )
 
 
 def dl1ab(run_str, historyfile):
@@ -215,26 +202,15 @@ def dl1ab(run_str, historyfile):
             "--config=" + config_file,
         ]
 
-    try:
-        log.info(f"Executing {stringify(commandargs)}")
-        rc = subprocess.call(commandargs)
-    except subprocess.CalledProcessError as error:
-        log.exception(f"Subprocess error: {error}")
-    except OSError as error:
-        log.exception(f"Command {stringify(commandargs)} failed, {error}")
-    else:
-        history(
-            run_str,
-            options.dl1_prod_id,
-            command,
-            basename(input_dl1_datafile),
-            config_file,
-            rc,
-            historyfile,
-        )
-        if rc != 0:
-            sys.exit(rc)
-        return rc
+    return run_program_with_logging(
+        commandargs,
+        historyfile,
+        run_str,
+        options.dl1_prod_id,
+        command,
+        basename(input_dl1_datafile),
+        config_file,
+    )
 
 
 def dl1_datacheck(run_str, historyfile):
@@ -275,26 +251,15 @@ def dl1_datacheck(run_str, historyfile):
         "--batch",
     ]
 
-    try:
-        log.info(f"Executing {stringify(commandargs)}")
-        rc = subprocess.call(commandargs)
-    except subprocess.CalledProcessError as error:
-        log.exception(f"Subprocess error: {error}")
-    except OSError as error:
-        log.exception(f"Command {stringify(commandargs)} failed, {error}")
-    else:
-        history(
-            run_str,
-            options.dl1_prod_id,
-            command,
-            basename(input_dl1_datafile),
-            None,
-            rc,
-            historyfile,
-        )
-        if rc != 0:
-            sys.exit(rc)
-        return rc
+    return run_program_with_logging(
+        commandargs,
+        historyfile,
+        run_str,
+        options.dl1_prod_id,
+        command,
+        basename(input_dl1_datafile),
+        None
+    )
 
 
 @trace
@@ -332,30 +297,42 @@ def dl1_to_dl2(run_str, historyfile):
         "--config=" + configfile,
     ]
 
+    return run_program_with_logging(
+        commandargs,
+        historyfile,
+        run_str,
+        options.dl2_prod_id,
+        command,
+        basename(datafile),
+        basename(configfile)
+    )
+
+
+def run_program_with_logging(commandargs, historyfile, *args):
+    """
+    Run the program
+
+    Returns
+    -------
+    rc
+
+    """
+
     try:
         log.info(f"Executing {stringify(commandargs)}")
         rc = subprocess.call(commandargs)
     except subprocess.CalledProcessError as error:
         log.exception(f"Subprocess error: {error}")
     except OSError as error:
-        log.exception(f"Command {stringify(commandargs)} failed, error: {error}")
+        log.exception(f"Command {stringify(commandargs)} failed, {error}")
     else:
-        history(
-            run_str,
-            options.dl2_prod_id,
-            command,
-            basename(datafile),
-            basename(configfile),
-            rc,
-            historyfile,
-        )
+        history(args, rc, historyfile)
         if rc != 0:
             sys.exit(rc)
         return rc
 
 
-if __name__ == "__main__":
-    # set the arguments and options through cli parsing
+def main():
     (
         calib_file,
         drs4_ped_file,
@@ -372,6 +349,15 @@ if __name__ == "__main__":
 
     # run the routine
     rc = datasequence(
-        calib_file, drs4_ped_file, time_calib_file, drive_log_file, run_summary_file, run_number
+        calib_file,
+        drs4_ped_file,
+        time_calib_file,
+        drive_log_file,
+        run_summary_file,
+        run_number
     )
     sys.exit(rc)
+
+
+if __name__ == "__main__":
+    main()
