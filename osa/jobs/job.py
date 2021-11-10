@@ -10,13 +10,13 @@ import sys
 import time
 from glob import glob
 
+import matplotlib.pyplot as plt
 import pandas as pd
 
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.iofile import readfromfile, writetofile
-from osa.utils.standardhandle import stringify
-from osa.utils.utils import date_in_yymmdd, lstdate_to_dir, time_to_seconds
+from osa.utils.utils import date_in_yymmdd, lstdate_to_dir, time_to_seconds, stringify
 
 log = logging.getLogger(__name__)
 
@@ -142,23 +142,34 @@ def historylevel(historyfile, data_type):
 
 def preparejobs(sequence_list):
     for s in sequence_list:
+        log.debug(f"Creating sequence.py for sequence {s.seq}")
         createjobtemplate(s)
 
 
 def preparestereojobs(sequence_list):
     for s in sequence_list:
-        log.debug(f"Creating sequence.py for sequence {s.seq}")
+        log.debug(f"Creating sequence.py for stereo sequence {s.seq}")
         createjobtemplate(s)
 
 
 def setrunfromparent(sequence_list):
-    # this is a dictionary, seq -> parent's run number
+    """
+    Create a dictionary with run number and its the parent run number.
+    Parameters
+    ----------
+    sequence_list
+
+    Returns
+    -------
+    dictionary with run number and its the parent run number
+
+    """
     dictionary = {}
     for s1 in sequence_list:
         if s1.parent is not None:
             for s2 in sequence_list:
                 if s2.seq == s1.parent:
-                    log.debug(f"Assigning runfromparent({s1.parent}) = {s2.run}")
+                    log.debug(f"Assigning run from parent({s1.parent}) = {s2.run}")
                     dictionary[s1.parent] = s2.run
                     break
     return dictionary
@@ -234,23 +245,122 @@ def guesscorrectinputcard(s):
     return os.path.abspath(options.configfile)
 
 
-def createjobtemplate(s, get_content=False):
+def get_job_statistics(sequence_list):
+    """
+    Get statistics of the jobs. Check elapsed time used,
+    the memory used, the number of jobs completed, the number of jobs failed,
+    the number of jobs running, the number of jobs queued.
+    It will fetch the information from the sacct output.
+    """
+    # Call sacct output and take information from it.
+    sacct_output = subprocess.check_output(
+        ["sacct", "-X", "-n", "-o", "JobID,JobName,State,Elapsed,MaxRSS,MaxVMSize"]
+    )
+    sacct_output = sacct_output.decode("utf-8")
+    sacct_output = sacct_output.split("\n")
+    sacct_output = sacct_output[1:]  # remove header
+    # Copy the information to a pandas dataframe.
+    df = pd.DataFrame(
+        columns=["JobID", "JobName", "State", "Elapsed", "MaxRSS", "MaxVMSize"]
+    )
+
+    # Plot the an 2D histogram of the memory use (MaxRSS) as a function of the elapsed time
+    # taking also into account the State of the job.
+    plt.figure(figsize=(10, 8))
+    plt.title("Elapsed time as a function of MaxRSS")
+    plt.xlabel("MaxRSS")
+    plt.ylabel("Elapsed time")
+    plt.grid(True)
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.tight_layout()
+    plt.hist2d(
+        df["Elapsed"],
+        df["MaxRSS"],
+        bins=100
+    )
+
+    # TODO: this function will be called in the closer loop after all
+    #  the jobs are done for a given production.
+    return None
+
+
+def scheduler_env_variables(sequence, scheduler="slurm"):
+    """
+    Return the environment variables for the scheduler.
+    """
+    # FIXME: Create a class with the SBATCH variables we want to use in the pilot job
+    #  and then use the string representation of the class to create the header.
+    if scheduler == "slurm":
+        sbatch_parameters = [
+            f"--job-name={sequence.jobname}",
+            "--cpus-per-task=1",
+            f"--chdir={options.directory}",
+            f"--output=log/slurm_{sequence.run:05d}.%4a_%A.out",
+            f"--error=log/slurm_{sequence.run:05d}.%4a_%A.err",
+        ]
+
+        # Get the number of subruns. The number of subruns starts counting from 0.
+        subruns = int(sequence.subrun_list[-1].subrun) - 1
+
+        # Depending on the type of sequence, we need to set different sbatch environment variables
+        if sequence.type == "DATA":
+            sbatch_parameters.append(f"--array=0-{subruns}")
+
+        sbatch_parameters.append(
+            f"--partition={cfg.get('SBATCH', f'PARTITION-{sequence.type}')}"
+        )
+        sbatch_parameters.append(
+            f"--mem-per-cpu={cfg.get('SBATCH', f'MEMSIZE-{sequence.type}')}"
+        )
+
+        return ["SBATCH " + line for line in sbatch_parameters]
+
+    else:
+        log.warning("No other schedulers are currently supported")
+
+
+def job_header_template(sequence):
+    """
+    Returns a string with the job header template
+    including SBATCH environment variables for sequencerXX.py script
+
+    Parameters
+    ----------
+    sequence: sequence object
+
+    Returns
+    -------
+    String with job header template: string
+    """
+    python_shebang = "#!/bin/env python"
+    sbatch_parameters = "\n".join(scheduler_env_variables(sequence))
+
+    return python_shebang + 2 * "\n" + sbatch_parameters
+
+
+def createjobtemplate(sequence, get_content=False):
     """This file contains instruction to be submitted to SLURM"""
     # TODO: refactor this function creating wrappers that handle slurm part
+
+    # Get the job header template.
+    job_header = job_header_template(sequence)
 
     nightdir = lstdate_to_dir(options.date)
     scriptsdir = cfg.get("LSTOSA", "SCRIPTSDIR")
     drivedir = cfg.get("LST1", "DRIVEDIR")
     run_summary_dir = cfg.get("LST1", "RUN_SUMMARY_DIR")
 
-    command = None
     # FIXME: make these scripts executable
-    if s.type == "PEDCALIB":
+    if sequence.type == "PEDCALIB":
         command = os.path.join(scriptsdir, "calibrationsequence.py")
-    elif s.type == "DATA":
+    elif sequence.type == "DATA":
         command = os.path.join(scriptsdir, "datasequence.py")
-    elif s.type == "STEREO":
+    elif sequence.type == "STEREO":
         command = os.path.join(scriptsdir, "stereosequence.py")
+    else:
+        log.error(f"Unknown sequence type {sequence.type}")
+        command = None
 
     commandargs = ["python", command]
 
@@ -260,10 +370,10 @@ def createjobtemplate(s, get_content=False):
         commandargs.append("-w")
     if options.configfile:
         commandargs.append("-c")
-        commandargs.append(guesscorrectinputcard(s))
+        commandargs.append(guesscorrectinputcard(sequence))
     if options.compressed:
         commandargs.append("-z")
-    if s.type == "DATA" and options.nodl2:
+    if sequence.type == "DATA" and options.nodl2:
         commandargs.append("--nodl2")
 
     commandargs.append("-d")
@@ -271,44 +381,23 @@ def createjobtemplate(s, get_content=False):
     commandargs.append("--prod-id")
     commandargs.append(options.prod_id)
 
-    if s.type == "PEDCALIB":
-        commandargs.append(s.pedestal)
-        commandargs.append(s.calibration)
-        ped_run_number = str(s.previousrun).zfill(5)
-        cal_run_number = str(s.run).zfill(5)
+    if sequence.type == "PEDCALIB":
+        commandargs.append(sequence.pedestal)
+        commandargs.append(sequence.calibration)
+        ped_run_number = str(sequence.previousrun).zfill(5)
+        cal_run_number = str(sequence.run).zfill(5)
         commandargs.append(ped_run_number)
         commandargs.append(cal_run_number)
         commandargs.append(os.path.join(run_summary_dir, f"RunSummary_{nightdir}.ecsv"))
 
-    if s.type == "DATA":
-        commandargs.append(os.path.join(options.directory, s.calibration))
-        commandargs.append(os.path.join(options.directory, s.pedestal))
-        commandargs.append(os.path.join(options.directory, "time_" + s.calibration))
-        commandargs.append(os.path.join(drivedir, s.drive))
+    if sequence.type == "DATA":
+        commandargs.append(os.path.join(options.directory, sequence.calibration))
+        commandargs.append(os.path.join(options.directory, sequence.pedestal))
+        commandargs.append(os.path.join(options.directory, "time_" + sequence.calibration))
+        commandargs.append(os.path.join(drivedir, sequence.drive))
         commandargs.append(os.path.join(run_summary_dir, f"RunSummary_{nightdir}.ecsv"))
 
-    # Get the number of subruns by looking at the last subrun
-    # number of the subrun list for a given sequence
-    n_subruns = s.subrun_list[-1].subrun
-
-    # Build the content of the sequencerXX.py script
-    content = "#!/bin/env python\n"
-    # Set sbatch parameters
-    content += "\n"
-    
-    if s.type == "DATA":
-        content += f"#SBATCH --array=0-{int(n_subruns) - 1} \n"
-    content += "#SBATCH --cpus-per-task=1 \n"
-    if s.type == "PEDCALIB":
-        content += f"#SBATCH -p {cfg.get('SBATCH', 'PARTITION-CALI')} \n"
-        content += f"#SBATCH --mem-per-cpu={cfg.get('SBATCH', 'MEMSIZE-CALI')} \n"
-    else:
-        content += f"#SBATCH -p {cfg.get('SBATCH', 'PARTITION-DATA')} \n"
-        content += f"#SBATCH --mem-per-cpu={cfg.get('SBATCH', 'MEMSIZE-DATA')} \n"
-    content += f"#SBATCH -D {options.directory} \n"
-    content += f"#SBATCH -o log/slurm_{s.run:05d}.%4a_%A.out \n"
-    content += f"#SBATCH -e log/slurm_{s.run:05d}.%4a_%A.err \n"
-    content += "\n"
+    content = []
 
     content += "import subprocess \n"
     content += "import sys, os \n"
@@ -349,18 +438,18 @@ def createjobtemplate(s, get_content=False):
         content += TAB * 2 + f"'{i}',\n"
     if not options.test:
         content += (
-            TAB * 2
-            + f"'--stderr=log/sequence_{s.jobname}."
-            + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)), \n"
+                TAB * 2
+                + f"'--stderr=log/sequence_{sequence.jobname}."
+                + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)), \n"
         )
         content += (
-            TAB * 2
-            + f"'--stdout=log/sequence_{s.jobname}."
-            + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)), \n"
+                TAB * 2
+                + f"'--stdout=log/sequence_{sequence.jobname}."
+                + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)), \n"
         )
-    if s.type == "DATA":
+    if sequence.type == "DATA":
         content += (
-            TAB * 2 + "'{0}".format(str(s.run).zfill(5)) + ".{0}'.format(str(subruns).zfill(4)), \n"
+                TAB * 2 + "'{0}".format(str(sequence.run).zfill(5)) + ".{0}'.format(str(subruns).zfill(4)), \n"
         )
     content += TAB * 2 + f"'{options.tel_id}'\n"
 
@@ -371,7 +460,7 @@ def createjobtemplate(s, get_content=False):
     content += "sys.exit(proc.returncode)"
 
     if not options.simulate:
-        writetofile(s.script, content)
+        writetofile(sequence.script, content)
 
     if get_content:
         return content
