@@ -308,9 +308,17 @@ def dl1_to_dl2(run_str, historyfile):
     )
 
 
-def run_program_with_logging(commandargs, historyfile, *args):
+def run_program_with_logging(
+        commandargs,
+        historyfile,
+        run,
+        prod_id,
+        stage,
+        input_file,
+        config_file
+):
     """
-    Run the program
+    Run the program and log the output in the history file
 
     Returns
     -------
@@ -326,7 +334,7 @@ def run_program_with_logging(commandargs, historyfile, *args):
     except OSError as error:
         log.exception(f"Command {stringify(commandargs)} failed, {error}")
     else:
-        history(args, rc, historyfile)
+        history(run, prod_id, stage, input_file, config_file, rc, historyfile)
         if rc != 0:
             sys.exit(rc)
         return rc
