@@ -34,12 +34,15 @@ jobs:
           echo "Creating conda env"
           conda env create -n ci -f environment.yml
           conda activate ci
+          pip install pyflakes
           echo "Installing additional pip packages"
           echo "pip install ."
           pip install .
 
-      - name: Run pyflakes with reviewdog
-        uses: reviewdog/action-pyflakes@v1
+      - name: Run pyflakes
+        # need to use a login shell for the conda setup to work
+        run: |
+          pyflakes osa
 
       - name: Tests
         run: |
