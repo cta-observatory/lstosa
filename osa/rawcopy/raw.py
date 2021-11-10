@@ -60,26 +60,9 @@ def get_check_rawdir():
 
 
 def getrawdir():
-    rawdir = None
     nightdir = lstdate_to_dir(options.date)
-    if options.tel_id in ["LST1", "LST2"]:
-        rawdir = join(cfg.get(options.tel_id, "RAWDIR"), nightdir)
-    return rawdir
-
-
-def getreportdir():
-    reportdir = join(cfg.get(options.tel_id, "REPORTDIR"), options.date)
-    reportsuffix = cfg.get("LSTOSA", "REPORTSUFFIX")
-    if not exists(reportdir):
-        # the most sensible thing to do is to quit succesfully after a warning
-        # log.warning(f"rawdir set to . because {rawdir} does not exists!")
-        # rawdir = os.getcwd()
-        log.error(f"Report directory {reportdir} does not exist")
-    else:
-        # check that it contains at least one raw or compressed-raw file and set compression flag
-        list = glob(join(reportdir, "*" + reportsuffix))
-
-        if len(list) == 0:
-            log.error(f"Empty report directory {reportdir}")
-    log.debug(f"Report directory: {reportdir}")
-    return reportdir
+    return (
+        join(cfg.get(options.tel_id, "RAWDIR"), nightdir)
+        if options.tel_id in ["LST1", "LST2"]
+        else None
+    )
