@@ -65,9 +65,6 @@ def main():
             process_mode = "complete"
         elif options.tel_id == "ST":
             process_mode = "stereo"
-        sequence_lst1 = single_process("LST1", process_mode)
-        sequence_lst2 = single_process("LST2", process_mode)
-        # stereo_process is missing right now
 
 
 def single_process(telescope, process_mode):

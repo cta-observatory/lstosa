@@ -16,7 +16,7 @@ from osa.jobs.job import are_all_jobs_correctly_finished
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import get_runsummary_file, run_summary_table
 from osa.rawcopy.raw import get_check_rawdir
-from osa.reports.report import finished_assignments, finished_text, start
+from osa.reports.report import start
 from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import myLogger
 from osa.utils.register import register_run_concept_files
@@ -215,10 +215,7 @@ def notify_neither_data_nor_reason_given():
 
 def post_process(seq_tuple):
     """Set of last instructions."""
-
     seq_list = seq_tuple[1]
-    analysis_dict = finished_assignments(seq_list)
-    analysis_text = finished_text(analysis_dict)
 
     # Close the sequences
     post_process_files(seq_list)

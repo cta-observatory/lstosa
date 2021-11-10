@@ -397,7 +397,7 @@ def createjobtemplate(sequence, get_content=False):
         commandargs.append(os.path.join(drivedir, sequence.drive))
         commandargs.append(os.path.join(run_summary_dir, f"RunSummary_{nightdir}.ecsv"))
 
-    content = []
+    content = job_header + '\n' + " ".join(commandargs)
 
     content += "import subprocess \n"
     content += "import sys, os \n"

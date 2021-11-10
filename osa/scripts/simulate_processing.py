@@ -52,7 +52,7 @@ def do_setup():
         CONFIG_FLAGS["Go"] = False
         log.info(f"File {LOG_FILENAME} already exists.")
         log.info(f"You must rename/remove {LOG_FILENAME} to produce a clean provenance.")
-        log.info(f"You can also set --append flag to append captured provenance.")
+        log.info("You can also set --append flag to append captured provenance.")
         return
 
     CONFIG_FLAGS["TearSubDL1"] = False if pathDL1sub.exists() or options.provenance else pathDL1sub
@@ -68,7 +68,7 @@ def do_setup():
             CONFIG_FLAGS["Go"] = False
             log.info(f"Folder {pathDL2sub} already exist.")
         if not CONFIG_FLAGS["Go"]:
-            log.info(f"You must enforce provenance files overwrite with --force flag.")
+            log.info("You must enforce provenance files overwrite with --force flag.")
             return
 
     pathDL1sub.mkdir(parents=True, exist_ok=True)
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     simprocparsing()
     options.directory = lstdate_to_number(options.date)
 
-    log.info(f"Running simulate processing")
+    log.info("Running simulate processing")
 
     do_setup()
     if CONFIG_FLAGS["Go"]:

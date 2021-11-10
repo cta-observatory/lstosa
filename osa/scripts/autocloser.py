@@ -553,7 +553,8 @@ def understand_sequence(tel, seq):
 def check_for_output_files(path):
     found_files = [re.search("LST-1.Run", file) for file in os.listdir(path)]
     if any(found_files):
-        file_names = [m.group() for m in found_files if m]
+        pass
+        # file_names = [m.group() for m in found_files if m]
         # file_names_str = ', '.join(file_names)
         # sendEmail('WARNING: Following *LST-1.Run* files found '
         #           'in "%s" after closing: %s' % (path, file_names_str))
