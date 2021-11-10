@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: [ 3.7, 3.8 ]
 
     steps:
       - uses: actions/checkout@v2
@@ -37,6 +37,9 @@ jobs:
           echo "Installing additional pip packages"
           echo "pip install ."
           pip install .
+
+      - name: Run pyflakes with reviewdog
+        uses: reviewdog/action-pyflakes@v1
 
       - name: Tests
         run: |
