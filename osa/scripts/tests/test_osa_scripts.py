@@ -3,16 +3,28 @@ import subprocess as sp
 
 import pytest
 
+from osa.configs import options
+
 ALL_SCRIPTS = [
     "sequencer",
     "closer",
-    # "autocloser",
-    # "calibrationsequence",
+    "calibrationsequence",
     "copy_datacheck",
-    # "datasequence",
-    # "provprocess",
-    # "simulate_processing",
+    "datasequence",
+    "show_run_summary"
 ]
+
+
+def run_program(*args):
+    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding='utf-8')
+
+    if result.returncode != 0:
+        raise ValueError(
+            f"Running {args[0]} failed with return code {result.returncode}"
+            f", output: \n {result.stdout}"
+        )
+    else:
+        return result
 
 
 @pytest.mark.parametrize("script", ALL_SCRIPTS)
@@ -21,34 +33,24 @@ def test_all_help(script):
     run_program(script, "--help")
 
 
-def run_program(*args):
-    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8")
-
-    if result.returncode != 0:
-        raise ValueError(
-            f"Running {args[0]} failed with return code {result.returncode}"
-            f", output: \n {result.stdout}"
-        )
-    return result
-
-
 def test_sequencer():
     run_program(
-        "sequencer", "-c", "cfg/sequencer_test.cfg", "-d", "2020_01_17", "-v", "-t", "-s", "LST1"
+        "sequencer", "-c", "cfg/sequencer.cfg", "-d", "2020_01_17", "-v", "-t", "-s", "LST1"
     )
 
 
-def test_autocloser():
+def test_autocloser(test_data):
     result = run_program(
-        "python", "osa/scripts/autocloser.py", "-c", "cfg/sequencer_test.cfg", "-d", "2020_01_17", "-t", "LST1"
+        "python", "osa/scripts/autocloser.py", "-c", "cfg/sequencer.cfg", "-d", "2020_01_17", "-t", "LST1"
     )
+    assert os.path.exists(test_data[3])  # Check that the analysis directory exists
     assert result.stdout.split()[-1] == "Exit"
     assert os.path.exists("./testfiles/running_analysis/20200117/v0.1.0_v01/AutoCloser_Incidences_tmp.txt")
 
 
 def test_closer(test_data):
     run_program(
-        "closer", "-c", "cfg/sequencer_test.cfg", "-y", "-v", "-t", "-d", "2020_01_17", "LST1"
+        "closer", "-c", "cfg/sequencer.cfg", "-y", "-v", "-t", "-d", "2020_01_17", "LST1"
     )
     assert os.path.exists(test_data[0])
     # Check that files have been moved to their final destinations
@@ -57,22 +59,20 @@ def test_closer(test_data):
     assert os.path.exists("./testfiles/calibration/20200117/v01")
 
 
-def test_datasequence(temp_dir):
+def test_datasequence(test_data):
     drs4_file = "drs4_pedestal.Run00001.0000.fits"
     calib_file = "calibration.Run00002.0000.hdf5"
     timecalib_file = "time_calibration.Run00002.0000.hdf5"
     drive_file = "drive_log_20200117.txt"
     runsummary_file = "RunSummary_20200117.ecsv"
-    prod_id = "v0.1.0"
+    prod_id = "v0.1.0_v01"
     run_number = "00003.0000"
-    analysis_dir = temp_dir / "running_analysis/20200117/v0.1.0"
-    analysis_dir.mkdir(parents=True, exist_ok=True)
+    options.directory = test_data[3]
 
     run_program(
-        "python",
-        "osa/scripts/datasequence.py",
+        "datasequence",
         "-c",
-        "cfg/sequencer_test.cfg",
+        "cfg/sequencer.cfg",
         "-d",
         "2020_01_17",
         "-s",
@@ -88,21 +88,19 @@ def test_datasequence(temp_dir):
     )
 
 
-def test_calibrationsequence(temp_dir):
-    drs4_file = "drs4_pedestal.Run00001.0000.fits"
-    calib_file = "calibration.Run00002.0000.hdf5"
+def test_calibrationsequence(test_data):
+    drs4_file = "drs4_pedestal.Run02005.0000.fits"
+    calib_file = "calibration.Run02006.0000.hdf5"
     runsummary_file = "RunSummary_20200117.ecsv"
-    prod_id = "v0.1.0"
-    drs4_run_number = "00003"
-    pedcal_run_number = "00004"
-    analysis_dir = temp_dir / "running_analysis/20200117/v0.1.0"
-    analysis_dir.mkdir(parents=True, exist_ok=True)
+    prod_id = "v0.1.0_v01"
+    drs4_run_number = "02005"
+    pedcal_run_number = "02006"
+    options.directory = test_data[3]
 
     run_program(
-        "python",
-        "osa/scripts/calibrationsequence.py",
+        "calibrationsequence",
         "-c",
-        "cfg/sequencer_test.cfg",
+        "cfg/sequencer.cfg",
         "-d",
         "2020_01_17",
         "-s",
