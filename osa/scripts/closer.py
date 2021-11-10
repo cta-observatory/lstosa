@@ -37,19 +37,26 @@ __all__ = [
     "is_raw_data_available",
     "is_sequencer_successful",
     "notify_sequencer_errors",
-    "notify_neither_data_nor_reason_given",
     "ask_for_closing",
     "post_process",
     "post_process_files",
     "setclosedfilename",
     "is_finished_check",
     "extract_provenance",
-    "merge_dl1datacheck",
+    "merge_dl1_datacheck",
     "set_closed_with_file",
     "merge_dl2",
 ]
 
 log = myLogger(logging.getLogger())
+
+DL1AB_RE = re.compile(fr"{options.dl1_prod_id}.*/dl1.*.(?:h5|hdf5|hdf)")
+DL2_RE = re.compile(fr"{options.dl2_prod_id}.*/dl2.*.(?:h5|hdf5|hdf)")
+MUONS_RE = re.compile(r"muons.*.fits")
+DATACHECK_RE = re.compile(r"datacheck_dl1.*.(?:h5|hdf5|hdf)")
+CALIB_RE = re.compile(r"/calibration.*.(?:h5|hdf5|hdf)")
+TIMECALIB_RE = re.compile(r"/time_calibration.*.(?:h5|hdf5|hdf)")
+PEDESTAL_RE = re.compile(r"drs4.*.fits")
 
 
 def main():
@@ -79,26 +86,18 @@ def main():
         if options.reason is not None:
             log.warning("No data found")
             sequencer_tuple = [False, []]
-            if is_defined(options.reason):
-                # good user, proceed automatically
-                pass
-            else:
+            if not is_defined(options.reason):
                 # notify and ask for closing and a reason
-                notify_neither_data_nor_reason_given()
+                log.warning("No data found and no reason is given")
                 ask_for_closing()
-                # FIXME: ask_for_reason is not defined anywhere
-                # ask_for_reason()
-            # proceed with a reason
+
         elif is_raw_data_available() or use_night_summary():
             # proceed normally
             log.debug(f"Checking sequencer_tuple {sequencer_tuple}")
             night_summary_table = run_summary_table(options.date)
             sequencer_tuple = is_finished_check(night_summary_table)
 
-            if is_sequencer_successful(sequencer_tuple):
-                # close automatically
-                pass
-            else:
+            if not is_sequencer_successful(sequencer_tuple):
                 # notify and ask for closing
                 notify_sequencer_errors()
                 ask_for_closing()
@@ -107,10 +106,6 @@ def main():
             sys.exit(-1)
 
         post_process(sequencer_tuple)
-
-        # TODO: Copy datacheck to www automation (currently done by another script)
-        # It is not so straightforward the usage of ssh/scp with SLURM.
-        # Once cp's are open to datacheck server, this could be done.
 
 
 def use_night_summary():
@@ -156,9 +151,7 @@ def is_sequencer_successful(seq_tuple):
     -------
 
     """
-    # TODO: implement a more reliable non - intrusive than is_finished_check.
-    answer = seq_tuple[0]
-    return answer
+    return seq_tuple[0]
 
 
 def notify_sequencer_errors():
@@ -191,7 +184,7 @@ def ask_for_closing():
             log.warning("Program quitted by user. No answer")
             sys.exit(1)
         except EOFError as ErrorValue:
-            log.exception("End of file not expected", ErrorValue)
+            log.exception(f"End of file not expected, {ErrorValue}")
         else:
             answer_check = True
             if answer_user in {"n", "N"}:
@@ -207,12 +200,6 @@ def ask_for_closing():
                 answer_check = False
 
 
-def notify_neither_data_nor_reason_given():
-    """Message informing the user of the situation."""
-
-    log.info("There is no data and you did not enter any reason for that")
-
-
 def post_process(seq_tuple):
     """Set of last instructions."""
     seq_list = seq_tuple[1]
@@ -222,7 +209,7 @@ def post_process(seq_tuple):
 
     # First merge DL1 datacheck files and produce PDFs
     if cfg.getboolean("LSTOSA", "merge_dl1_datacheck"):
-        merge_dl1datacheck(seq_list)
+        merge_dl1_datacheck(seq_list)
 
     # Extract the provenance info
     extract_provenance(seq_list)
@@ -246,14 +233,6 @@ def post_process_files(seq_list):
     """
 
     output_files_set = set(Path(options.directory).rglob("*Run*"))
-
-    DL1AB_RE = re.compile(fr"{options.dl1_prod_id}.*/dl1.*.(?:h5|hdf5|hdf)")
-    DL2_RE = re.compile(fr"{options.dl2_prod_id}.*/dl2.*.(?:h5|hdf5|hdf)")
-    MUONS_RE = re.compile(r"muons.*.fits")
-    DATACHECK_RE = re.compile(r"datacheck_dl1.*.(?:h5|hdf5|hdf)")
-    CALIB_RE = re.compile(r"/calibration.*.(?:h5|hdf5|hdf)")
-    TIMECALIB_RE = re.compile(r"/time_calibration.*.(?:h5|hdf5|hdf)")
-    PEDESTAL_RE = re.compile(r"drs4.*.fits")
 
     pattern_files = dict(
         [
@@ -377,12 +356,6 @@ def set_closed_with_file():
     else:
         log.info(f"SIMULATE Creation of lock file {closer_file}")
 
-    # the close file will be send to a remote monitor server
-    if is_closed:
-        # synchronize_remote(closer_file)
-        # FIXME: do we have to sync?
-        pass
-
     return is_closed
 
 
@@ -428,31 +401,6 @@ def is_finished_check(nightsummary):
     return [sequence_success, sequence_list]
 
 
-# def synchronize_remote(lockfile):
-#     from os.path import join
-#     import subprocess
-#     from osa.configs.config import cfg
-#     user = cfg.get('REMOTE', 'STATISTICSUSER')
-#     host = cfg.get('REMOTE', 'STATISTICSHOST')
-#     remotedirectory = join(cfg.get('REMOTE', 'STATISTICSDIR'), options.tel_id)
-#     remotebasename = options.date + cfg.get('REMOTE', 'STATISTICSSUFFIX')
-#     remotepath = join(remotedirectory, remotebasename)
-#     log.info(
-#         f"Synchronizing {options.tel_id} {options.date} by copying lock file to {user}@{host}:{remotepath}"
-#     )
-#     commandargs = [
-#         'scp', '-P', cfg.get('REMOTE', 'STATISTICSSSHPORT'),
-#         lockfile, user + '@' + host + ':' + join(remotedirectory, remotebasename)
-#     ]
-#     try:
-#         subprocess.call(commandargs)
-#     # except OSError as (ValueError, NameError):
-#     except OSError:
-#         log.warning(
-#             f"Could not copy securely with command: {stringify(commandargs)}, {OSError}"
-#         )
-
-
 def setclosedfilename(seq):
     """
     Close sequence and creates a .closed file
@@ -466,7 +414,7 @@ def setclosedfilename(seq):
     seq.closed = os.path.join(options.directory, basename + closed_suffix)
 
 
-def merge_dl1datacheck(seq_list):
+def merge_dl1_datacheck(seq_list):
     """
     Merge every DL1 datacheck h5 files run-wise and generate the PDF files
 
@@ -491,37 +439,56 @@ def merge_dl1datacheck(seq_list):
                 "-D",
                 options.directory,
                 "-o",
-                f"log/slurm_mergedl1datacheck_{sequence.run:05d}_%j.out",
+                f"log/merge_dl1_datacheck_{sequence.run:05d}_%j.out",
                 "-e",
-                f"log/slurm_mergedl1datacheck_{sequence.run:05d}_%j.err",
+                f"log/merge_dl1_datacheck_{sequence.run:05d}_%j.err",
                 "lstchain_check_dl1",
                 f"--input-file={dl1_prod_id_directory}/datacheck_dl1_LST-1.Run{sequence.run:05d}.*.h5",
                 f"--output-dir={dl1_prod_id_directory}",
                 f"--muons-dir={dl1_base_directory}",
             ]
-            if not options.simulate and not options.test:
-                try:
-                    process = subprocess.run(
-                        cmd,
-                        stdout=subprocess.PIPE,
-                        universal_newlines=True,
-                        shell=False
-                    )
-                except (subprocess.CalledProcessError, RuntimeError) as err:
-                    log.exception(f"Not able to run DL1 datacheck: {err}")
-                else:
-                    if process.returncode != 0:
-                        sys.exit(process.returncode)
 
-                # TODO implement an automatic scp to www datacheck,
-                # right after the production of the PDF files.
-                # Right now there is no connection opened from cps
-                # to the datacheck webserver. Hence it has to be done without
-                # slurm and after assuring that the files are already produced.
+            # TODO implement an automatic scp to www datacheck,
+            #  right after the production of the PDF files.
+            #  Right now there is no connection opened from cp's
+            #  to the datacheck webserver. Hence it has to be done without
+            #  slurm and after assuring that the files are already produced.
 
-            else:
-                log.debug("Simulate launching scripts")
-            log.debug(f"{stringify(cmd)}")
+            run_subprocess(cmd)
+
+
+def run_subprocess(cmd):
+    """
+    Run a subprocess and return the output
+
+    Parameters
+    ----------
+    cmd: list
+        List of strings representing the command to be run
+
+    Returns
+    -------
+    output: str
+        Output of the command
+    """
+    if not options.simulate and not options.test:
+
+        try:
+            process = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                universal_newlines=True,
+            )
+        except (subprocess.CalledProcessError, RuntimeError) as error:
+            log.exception(f"Subprocess error: {error}")
+        else:
+            if process.returncode != 0:
+                sys.exit(process.returncode)
+            return process.stdout
+    else:
+        log.debug("Simulate launching scripts")
+
+    log.debug(f"{stringify(cmd)}")
 
 
 def extract_provenance(seq_list):
@@ -553,22 +520,7 @@ def extract_provenance(seq_list):
                 nightdir,
                 options.prod_id,
             ]
-            if not options.simulate and not options.test:
-                try:
-                    process = subprocess.run(
-                        cmd,
-                        stdout=subprocess.PIPE,
-                        universal_newlines=True,
-                        shell=False
-                    )
-                except (subprocess.CalledProcessError, RuntimeError) as err:
-                    log.exception(f"Not able to run DL1 datacheck: {err}")
-                else:
-                    if process.returncode != 0:
-                        sys.exit(process.returncode)
-            else:
-                log.debug("Simulate launching scripts")
-            log.debug(f"{stringify(cmd)}")
+            run_subprocess(cmd)
 
 
 def merge_dl2(sequence_list):
