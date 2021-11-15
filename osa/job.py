@@ -1,5 +1,5 @@
 """
-Functions to handle the job submission using scheduler.
+Functions to handle the interaction with the job scheduler.
 """
 
 import datetime
@@ -28,8 +28,7 @@ TAB = "\t".expandtabs(4)
 __all__ = [
     "are_all_jobs_correctly_finished",
     "historylevel",
-    "preparejobs",
-    "preparestereojobs",
+    "prepare_jobs",
     "sequence_filenames",
     "sequence_calibration_filenames",
     "queue_job_list",
@@ -39,6 +38,7 @@ __all__ = [
     "create_job_template",
     "set_cache_dirs",
     "setrunfromparent",
+    "submit_jobs"
 ]
 
 
@@ -55,28 +55,30 @@ def are_all_jobs_correctly_finished(sequence_list):
     flag: bool
     """
     flag = True
-    for s in sequence_list:  # Run wise
+    for sequence in sequence_list:
         history_files_list = glob(
-            rf"{options.directory}/*{s.run}*.history"
-        )  # Subrun wise
+            rf"{options.directory}/*{sequence.run}*.history"
+        )
         for history_file in history_files_list:
             # TODO: s.history should be SubRunObj attribute not RunObj
             # s.history only working for CALIBRATION sequence (run-wise), since it is
             # looking for .../sequence_LST1_04180.history files
             # we need to check all the subrun wise history files
             # .../sequence_LST1_04180.XXXX.history
-            out, rc = historylevel(history_file, s.type)
+            out, rc = historylevel(history_file, sequence.type)
             if out == 0:
-                log.debug(f"Job {s.seq} ({s.type}) correctly finished")
+                log.debug(f"Job {sequence.seq} ({sequence.type}) correctly finished")
                 continue
             elif out == 1 and options.no_dl2:
                 log.debug(
-                    f"Job {s.seq} ({s.type}) correctly finished up to DL1ab, but no-dL2 option selected"
+                    f"Job {sequence.seq} ({sequence.type}) correctly "
+                    f"finished up to DL1ab, but no-dL2 option selected"
                 )
                 continue
             else:
                 log.warning(
-                    f"Job {s.seq} (run {s.run}) not correctly/completely finished [level {out}]"
+                    f"Job {sequence.seq} (run {sequence.run}) not "
+                    f"correctly finished [level {out}]"
                 )
                 flag = False
     return flag
@@ -118,8 +120,9 @@ def historylevel(historyfile, data_type):
     exit_status = 0
     if os.path.exists(historyfile):
         for line in read_from_file(historyfile).splitlines():
-            # FIXME: create a dict with the program, exit status and prod id to take into account
-            # not only the last history line but also the others.
+            # FIXME: create a dict with the program, exit status
+            #  and prod id to take into account not only the last
+            #  history line but also the others.
             words = line.split()
             try:
                 program = words[1]
@@ -178,16 +181,11 @@ def historylevel(historyfile, data_type):
     return level, exit_status
 
 
-def preparejobs(sequence_list):
-    for s in sequence_list:
-        log.debug(f"Creating sequence.py for sequence {s.seq}")
-        create_job_template(s)
-
-
-def preparestereojobs(sequence_list):
-    for s in sequence_list:
-        log.debug(f"Creating sequence.py for stereo sequence {s.seq}")
-        create_job_template(s)
+def prepare_jobs(sequence_list):
+    """Prepare job file template for each sequence."""
+    for sequence in sequence_list:
+        log.debug(f"Creating sequence.py for sequence {sequence.seq}")
+        create_job_template(sequence)
 
 
 def setrunfromparent(sequence_list):
@@ -274,8 +272,8 @@ def get_job_statistics():
         columns=["JobID", "JobName", "State", "Elapsed", "MaxRSS", "MaxVMSize"]
     )
 
-    # Plot the an 2D histogram of the memory use (MaxRSS) as a function of the elapsed time
-    # taking also into account the State of the job.
+    # Plot the an 2D histogram of the memory use (MaxRSS) as a function of the
+    # elapsed time taking also into account the State of the job.
     plt.figure(figsize=(10, 8))
     plt.title("Elapsed time as a function of MaxRSS")
     plt.xlabel("MaxRSS")
@@ -309,7 +307,8 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
         # Get the number of subruns. The number of subruns starts counting from 0.
         subruns = int(sequence.subrun_list[-1].subrun) - 1
 
-        # Depending on the type of sequence, we need to set different sbatch environment variables
+        # Depending on the type of sequence, we need to set
+        # different sbatch environment variables
         if sequence.type == "DATA":
             sbatch_parameters.append(f"--array=0-{subruns}")
 
@@ -346,6 +345,7 @@ def job_header_template(sequence):
     else:
         return python_shebang
 
+
 def set_cache_dirs():
     """
     Export cache directories for the jobs provided they
@@ -374,7 +374,7 @@ def set_cache_dirs():
     return "\n".join(content)
 
 
-def create_job_template(sequence, get_content=False, file_path=None):
+def create_job_template(sequence, get_content=False):
     """
     This file contains instruction to be submitted to job scheduler.
 
@@ -382,7 +382,6 @@ def create_job_template(sequence, get_content=False, file_path=None):
     ----------
     sequence : sequence object
     get_content: bool
-    file_path : pathlib.Path
 
     Returns
     -------
@@ -472,20 +471,20 @@ def create_job_template(sequence, get_content=False, file_path=None):
         content += TAB * 2 + f"'{i}',\n"
     if not options.test:
         content += (
-                TAB * 2
-                + f"'--stderr=log/sequence_{sequence.jobname}."
-                + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)),\n"
+            TAB * 2
+            + f"'--stderr=log/sequence_{sequence.jobname}."
+            + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)),\n"
         )
         content += (
-                TAB * 2
-                + f"'--stdout=log/sequence_{sequence.jobname}."
-                + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)),\n"
+            TAB * 2
+            + f"'--stdout=log/sequence_{sequence.jobname}."
+            + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)),\n"
         )
     if sequence.type == "DATA":
         content += (
-                TAB * 2
-                + "'{0}".format(str(sequence.run).zfill(5))
-                + ".{0}'.format(str(subruns).zfill(4)),\n"
+            TAB * 2
+            + "'{0}".format(str(sequence.run).zfill(5))
+            + ".{0}'.format(str(subruns).zfill(4)),\n"
         )
     content += TAB * 2 + f"'{options.tel_id}'\n"
     content += TAB + "])\n"
@@ -493,16 +492,13 @@ def create_job_template(sequence, get_content=False, file_path=None):
     content += "sys.exit(proc.returncode)"
 
     if not options.simulate:
-        if file_path is None:
-            write_to_file(sequence.script, content)
-        else:
-            write_to_file(file_path, content)
+        write_to_file(sequence.script, content)
 
     if get_content:
         return content
 
 
-def submitjobs(sequence_list):
+def submit_jobs(sequence_list):
     job_list = []
     command = cfg.get("ENV", "SBATCHBIN")
     no_display_backend = "--export=ALL,MPLBACKEND=Agg"
@@ -637,9 +633,9 @@ def queue_job_list(sequence_list):
             queue_header = sacct_output.splitlines()[0].split()
             queue_lines = (
                 sacct_output.replace("+", "")
-                    .replace("sequence_", "")
-                    .replace(".py", "")
-                    .splitlines()[2:]
+                .replace("sequence_", "")
+                .replace(".py", "")
+                .splitlines()[2:]
             )
             queue_sequences = [line.split() for line in queue_lines if "batch" not in line]
             queue_list = [dict(zip(queue_header, sequence)) for sequence in queue_sequences]
@@ -704,7 +700,8 @@ def queue_values(queue_list, sequence_list):
                     s.exit = None
                 log.debug(
                     f"Queue attributes: sequence {s.seq}, JobName {s.jobname}, "
-                    f"JobID {s.jobid}, State {s.state}, CPUTime {s.cputime}, Exit {s.exit} updated"
+                    f"JobID {s.jobid}, State {s.state}, "
+                    f"CPUTime {s.cputime}, Exit {s.exit} updated"
                 )
             except ValueError:
                 log.debug(

@@ -346,7 +346,8 @@ def calibrate_time(
         calibpath = Path(cfg.get("LST1", "CALIBDIR"))
         outputf = time_calibration_output_file
         log.info(
-            f"Searching for file */{options.calib_prod_id}/time_calibration.Run{def_time_calib_run:05d}*"
+            f"Searching for file "
+            f"*/{options.calib_prod_id}/time_calibration.Run{def_time_calib_run:05d}*"
         )
         file_list = [
             file

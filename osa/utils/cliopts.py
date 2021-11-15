@@ -579,6 +579,7 @@ def stereosequencecliparsing():
 
 
 def sequencer_argparser():
+    """Argument parser for sequencer script."""
     parser = ArgumentParser()
     # options which define variables
     parser.add_argument(

@@ -13,7 +13,7 @@ from os.path import join
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import queue_job_list, preparejobs, preparestereojobs, submitjobs
+from osa.job import queue_job_list, prepare_jobs, submit_jobs
 from osa.nightsummary.extract import (
     extractruns,
     extractsequences,
@@ -103,7 +103,7 @@ def single_process(telescope):
     #     write_workflow(sequence_list)
 
     # adds the scripts
-    preparejobs(sequence_list)
+    prepare_jobs(sequence_list)
 
     if not options.test:
         queue_job_list(sequence_list)
@@ -112,7 +112,7 @@ def single_process(telescope):
     update_sequence_status(sequence_list)
     # updatesequencedb(sequence_list)
     if not options.no_submit:
-        submitjobs(sequence_list)
+        submit_jobs(sequence_list)
 
     # report
     if is_report_needed:
@@ -150,12 +150,12 @@ def stereo_process(telescope, s1_list, s2_list):
     # Workflow and Submission
     # write_workflow(sequence_list)
     # Adds the scripts
-    preparestereojobs(sequence_list)
+    prepare_jobs(sequence_list)
     queue_job_list(sequence_list)
     getvetolist(sequence_list)
     getclosedlist(sequence_list)
     update_sequence_status(sequence_list)
-    submitjobs(sequence_list)
+    submit_jobs(sequence_list)
     # finalizing report
     rule()
     reportsequences(sequence_list)

@@ -68,7 +68,7 @@ def start_end_of_run_files_stat(date_path, run_number, num_files):
     last_subrun = num_files - 1  # first subrun is 0
     pattern_first_subrun = date_path / f"LST-1.1.Run{run_number:05d}.0000.fits.fz"
     pattern_last_subrun = (
-            date_path / f"LST-1.1.Run{run_number:05d}.{last_subrun:04d}.fits.fz"
+        date_path / f"LST-1.1.Run{run_number:05d}.{last_subrun:04d}.fits.fz"
     )
     try:
         run_start_first_file = Time(os.path.getctime(pattern_first_subrun), format="unix")
