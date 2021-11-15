@@ -1,18 +1,12 @@
-#!/usr/bin/env python2.6
-import cliopts
-import config
-import options
-from standardhandle import error, gettag, output, stringify, verbose, warning
+import logging
+
+from osa.configs import options
+from osa.utils.utils import gettag, stringify
+
+log = logging.getLogger(__name__)
 
 
-##############################################################################
-#
-# select_db
-#
-##############################################################################
 def select_db(servername, username, database, table, selections, conditions):
-    tag = gettag()
-
     appendix = None
     feedback = select_appendix_db(
         servername, username, database, table, selections, conditions, appendix
@@ -20,11 +14,6 @@ def select_db(servername, username, database, table, selections, conditions):
     return feedback
 
 
-##############################################################################
-#
-# select_appendix_db
-#
-##############################################################################
 def select_appendix_db(servername, username, database, table, selections, conditions, appendix):
     tag = gettag()
 
@@ -42,16 +31,11 @@ def select_appendix_db(servername, username, database, table, selections, condit
                 # Allright
                 pass
             else:
-                error(tag, "Wrong number of selected items {0}".format(fields), 8)
+                log.error("Wrong number of selected items {0}".format(fields))
             matrix.append(fields)
     return matrix
 
 
-##############################################################################
-#
-# insert_and_select_id_db
-#
-##############################################################################
 def insert_and_select_id_db(servername, username, database, table, assignments, conditions):
     tag = gettag()
 
@@ -70,11 +54,6 @@ def insert_and_select_id_db(servername, username, database, table, assignments, 
     return id
 
 
-##############################################################################
-#
-# update_and_select_id_db
-#
-##############################################################################
 def update_and_select_id_db(servername, username, database, table, assignments, conditions):
     tag = gettag()
 
@@ -103,8 +82,6 @@ def update_and_select_id_db(servername, username, database, table, assignments, 
 def update_or_insert_and_select_id_db(
     servername, username, database, table, assignments, conditions
 ):
-    tag = gettag()
-
     """ It tries an update of the db and, if it fails, then inserts """
     feedback = None
     id = update_and_select_id_db(servername, username, database, table, assignments, conditions)
@@ -119,11 +96,6 @@ def update_or_insert_and_select_id_db(
     return id
 
 
-##############################################################################
-#
-# insert_db
-#
-##############################################################################
 def insert_db(servername, username, database, table, assignments, conditions):
     tag = gettag()
 
@@ -135,11 +107,6 @@ def insert_db(servername, username, database, table, assignments, conditions):
     return feedback
 
 
-##############################################################################
-#
-# update_db
-#
-##############################################################################
 def update_db(servername, username, database, table, assignments, conditions):
     tag = gettag()
 
@@ -151,11 +118,6 @@ def update_db(servername, username, database, table, assignments, conditions):
     return feedback
 
 
-##############################################################################
-#
-# insert_ignore_db
-#
-##############################################################################
 def insert_ignore_db(servername, username, database, table, assignments, conditions):
     tag = gettag()
 
@@ -167,11 +129,6 @@ def insert_ignore_db(servername, username, database, table, assignments, conditi
     return feedback
 
 
-##############################################################################
-#
-# update_ignore_db
-#
-##############################################################################
 def update_ignore_db(servername, username, database, table, assignments, conditions):
     tag = gettag()
 
@@ -183,11 +140,6 @@ def update_ignore_db(servername, username, database, table, assignments, conditi
     return feedback
 
 
-##############################################################################
-#
-# query_db
-#
-##############################################################################
 def query_db(servername, username, database, table, verb, assignments, conditions, appendix):
     tag = gettag()
     set_a = set_assignments(assignments)
@@ -199,11 +151,6 @@ def query_db(servername, username, database, table, verb, assignments, condition
     return feedback
 
 
-##############################################################################
-#
-# select_selections
-#
-##############################################################################
 def select_selections(selections):
     tag = gettag()
 
@@ -212,11 +159,6 @@ def select_selections(selections):
     return string
 
 
-##############################################################################
-#
-# set_assignments_where_conditions
-#
-##############################################################################
 def set_assignments(assignments):
     tag = gettag()
 
@@ -224,11 +166,6 @@ def set_assignments(assignments):
     return string
 
 
-##############################################################################
-#
-# where_conditions
-#
-##############################################################################
 def where_conditions(conditions):
     tag = gettag()
 
@@ -236,16 +173,11 @@ def where_conditions(conditions):
     return string
 
 
-##############################################################################
-#
-# phrase_builder
-#
-##############################################################################
 def phrase_builder(instruction, junction, assignments):
-    tag = gettag()
-
-    """ With the assignments as a dictionary, we can compose a sentence,
-        starting by instruction and separated by the junction. """
+    """
+    With the assignments as a dictionary, we can compose a sentence,
+    starting by instruction and separated by the junction.
+    """
 
     import types
 
@@ -273,11 +205,6 @@ def phrase_builder(instruction, junction, assignments):
     return string
 
 
-##############################################################################
-#
-# is_number
-#
-##############################################################################
 def is_number(s):
     tag = gettag()
 
@@ -299,11 +226,6 @@ def is_number(s):
         return False
 
 
-##############################################################################
-#
-# is_parenthesis
-#
-##############################################################################
 def is_parenthesis(s):
     tag = gettag()
 
@@ -314,11 +236,6 @@ def is_parenthesis(s):
     return False
 
 
-##############################################################################
-#
-# connect_or_call (fill the mysql table)
-#
-##############################################################################
 def connect_or_call(servername, username, database, sql_command):
     tag = gettag()
 
@@ -338,11 +255,6 @@ def connect_or_call(servername, username, database, sql_command):
     return feedback
 
 
-##############################################################################
-#
-# subprocess_call_db
-#
-##############################################################################
 def subprocess_call_db(servername, username, database, sql_command):
     tag = gettag()
     # Let's do it through a system call
@@ -374,24 +286,19 @@ def subprocess_call_db(servername, username, database, sql_command):
             sql_command = str("%s'%s'%s" %(outer[0],md5sum_text,outer[1]))
     """
     commandargs.append(sql_command)
-    # print(commandargs)
+
     try:
         feedback = subprocess.check_output(commandargs)
     # except OSError as (ErrorValue, ErrorName):
-    except OSError as ErrorValue:
-        error(tag, ErrorName, ErrorValue)
-    except subprocess.CalledProcessError as e:
-        error(tag, "MySQL> {0}: {1}".format(stringify(e.cmd), e.output), e.returncode)
+    except OSError as error:
+        log.error(error)
+    except subprocess.CalledProcessError as error:
+        log.error("MySQL> {0}: {1}".format(stringify(error.cmd), error.output), error.returncode)
     else:
         log.debug("Database query OK: {0}".format(sql_command))
     return feedback
 
 
-##############################################################################
-#
-# connect_db
-#
-##############################################################################
 def connect_db(servername, username, database, sql_command):
     tag = gettag()
     # Let's do it through the API
@@ -399,15 +306,15 @@ def connect_db(servername, username, database, sql_command):
 
     try:
         conn = MySQLdb.connect(host=servername, user=username, db=database)
-    except MySQLdb.OperationalError(ValueError, NameError):
-        error("Could not connect to Database {0}, {1}".format(database, NameError), ValueError)
+    except MySQLdb.OperationalError(ValueError, NameError) as error:
+        log.error(f"Could not connect to Database, {error}")
     else:
         x = conn.cursor()
         try:
             x.execute(sql_command)
         except MySQLdb.Error(ValueError, NameError):
             conn.rollback()
-            error(tag, "MySQL> {0}: {1}".format(sql_command, NameError), ValueError)
+            log.error("MySQL> {0}: {1}".format(sql_command, NameError), ValueError)
         else:
             feedback = x.fetchall()
             conn.commit()

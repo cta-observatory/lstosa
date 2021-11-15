@@ -2,11 +2,9 @@ import logging
 from datetime import datetime
 from os.path import exists, isfile, join, ismount
 
-from osa.utils.standardhandle import error, errornonfatal, gettag, output
-
 from dev.mail import send_email
 from osa.configs.config import cfg
-from osa.utils.utils import lstdate_to_dir, createlock, get_night_limit_timestamp, lstdate_to_iso
+from osa.utils.utils import lstdate_to_dir, createlock, get_night_limit_timestamp, lstdate_to_iso, gettag
 
 log = logging.getLogger(__name__)
 
@@ -26,11 +24,11 @@ def raw_copy():
 
     if not options.nocheck and is_activity_over():
         # Exit
-        error(tag, "Activity over for {0} {1}".format(options.date, options.tel_id), 1)
+        log.log.error(tag, "Activity over for {0} {1}".format(options.date, options.tel_id), 1)
 
     if is_activity_locked(lock):
         # Exit
-        error(tag, "Activity locked for {0}".format(options.tel_id), 1)
+        log.log.error(tag, "Activity locked for {0}".format(options.tel_id), 1)
     elif acquire_lock(lock):
         try:
             """ Initiating report. """
@@ -47,13 +45,13 @@ def raw_copy():
             }
 
             send_email(message)
-            error(tag, "rawcopy loop crashed with error {}".format(e), 1)
+            log.log.error(tag, "rawcopy loop crashed with error {}".format(e), 1)
         else:
             """ Unlock for a proper ending """
             release_lock(lock)
     else:
         """ Locking failed for some reason, stop """
-        error(tag, "Activity for {0} could not be locked".format(options.tel_id), 1)
+        log.log.error(tag, "Activity for {0} could not be locked".format(options.tel_id), 1)
 
 
 def is_activity_over():
@@ -72,11 +70,6 @@ def is_activity_over():
         return False
 
 
-##############################################################################
-#
-# is_activity_locked
-#
-##############################################################################
 def is_activity_locked(flag_file):
     tag = gettag()
 
@@ -90,11 +83,6 @@ def is_activity_locked(flag_file):
         return False
 
 
-##############################################################################
-#
-# Should lock be removed
-#
-##############################################################################
 def should_remove_lock(flag_file):
     tag = gettag()
     """ Get the path to the log file and check if we should remove the lock. """
@@ -121,11 +109,6 @@ def should_remove_lock(flag_file):
     return False
 
 
-##############################################################################
-#
-# get_lockname
-#
-##############################################################################
 def get_lockname():
     tag = gettag()
 
@@ -135,11 +118,6 @@ def get_lockname():
     return join(cfg.get(options.tel_id, "lockdir"), basename)
 
 
-##############################################################################
-#
-# acquire_lock
-#
-##############################################################################
 def acquire_lock(lock_file):
     tag = gettag()
 
@@ -156,13 +134,8 @@ def acquire_lock(lock_file):
         return True
     else:
         return False
-    ##############################################################################
 
 
-#
-# loop_until_activity_is_over
-#
-##############################################################################
 def loop_until_activity_is_over():
     tag = gettag()
 
@@ -205,7 +178,7 @@ def loop_until_activity_is_over():
                     log.info("Program quitted by user")
                     break
         else:
-            log.error(f"Exit status from copy={rc} not foreseen.")
+            log.log.error(f"Exit status from copy={rc} not foreseen.")
 
 
 def handle_pools():
@@ -357,10 +330,10 @@ def mount_or_unmount(action, fsystem, wait_remount):
     except subprocess.CalledProcessError as Error:
         # NOTE/ToDo: Crash in the disk, try to mount it. [mireia]
         if Error.returncode == 1:
-            error(tag, "{0}".format(Error), Error)
+            log.error(tag, "{0}".format(Error), Error)
         elif Error.returncode == 2:
             # Classical umounting failure in non-mounted fs
-            error(tag, "{0}".format(Error), Error)
+            log.error(tag, "{0}".format(Error), Error)
         elif Error.returncode == 32:
             # Classical mounting failure without umounting first
             mount_or_unmount("umount", fsystem, wait_remount)
@@ -369,7 +342,7 @@ def mount_or_unmount(action, fsystem, wait_remount):
         else:
             # Unlock activity and exit
             release_lock(lock)
-            error(tag, "{0}".format(Error), Error.returncode)
+            log.error(tag, "{0}".format(Error), Error.returncode)
     else:
         t_start = datetime.utcnow()
         log.info("{0} {1}ed at {2}".format(fsystem, action, t_start))
@@ -495,9 +468,9 @@ def calculate_md5sum(file):
 ##############################################################################
 def create_md5sum_inverse_dict(file):
     tag = gettag()
-    from osa.utils.iofile import readfromfile
+    from osa.utils.iofile import read_from_file
 
-    content = readfromfile(file)
+    content = read_from_file(file)
     md5sum_dict = {}
     if content:
         for line in content.splitlines():
@@ -509,12 +482,12 @@ def create_md5sum_inverse_dict(file):
 def update_md5sums(hash, file, md5sums_file):
     tag = gettag()
 
-    from osa.utils.iofile import appendtofile, sedsi, writetofile
+    from osa.utils.iofile import append_to_file, sedsi, write_to_file
 
     """ Similar to md5sum file >> md5sums_file with update option """
     string = "{0}  {1}\n".format(hash, file)
     if not exists(md5sums_file):
-        writetofile(md5sums_file, string)
+        write_to_file(md5sums_file, string)
     else:
         file_to_hash = create_md5sum_inverse_dict(md5sums_file)
         if file in file_to_hash.keys():
@@ -523,7 +496,7 @@ def update_md5sums(hash, file, md5sums_file):
                 """ Other hash, update md5sums_file """
                 sedsi(file_to_hash[file], hash, md5sums_file)
         else:
-            appendtofile(md5sums_file, string)
+            append_to_file(md5sums_file, string)
 
 
 def update_summary_db():
@@ -625,7 +598,7 @@ def release_lock(file):
     try:
         unlink(file)
     except OSError as e:
-        error(tag, f"Could not remove lock file {file}, {e.strerror}", e.errno)
+        log.error(tag, f"Could not remove lock file {file}, {e.strerror}", e.errno)
     else:
         log.debug("Lock successfully released")
 
@@ -731,7 +704,7 @@ class Pool(object):
             elif suffix == compress_suffix:
                 self.discovered.add(CompressFile(f))
             else:
-                error(tag, "Suffix {0} not admitted".format(suffix), 7)
+                log.error(tag, "Suffix {0} not admitted".format(suffix), 7)
 
         for fileobj in self.discovered:
             fileobj.update()
@@ -749,7 +722,7 @@ class Pool(object):
                     self.accepted.add(fileobj)
             else:
                 self.discarded.add(fileobj)
-        output(
+        log.info(
             tag,
             "-> discovered: {0}, processed: {1}, accepted: {2}, discarded: {3}".format(
                 len(self.discovered), len(self.processed), len(self.accepted), len(self.discarded)
@@ -1269,9 +1242,9 @@ class RawFile(MagicFile):
         except subprocess.CalledProcessError as e:
             if e.returncode is 255:
                 release_lock(lock)
-                raise error(tag, f"Failed, {e.output}")
+                raise log.error(tag, f"Failed, {e.output}")
             else:
-                errornonfatal(tag, "Failed, {0}".format(e.output))
+                log.error("Failed, {0}".format(e.output))
         except (KeyboardInterrupt, SystemExit):
             release_lock(lock)
             log.info("Exiting by user or system...")
@@ -1505,8 +1478,6 @@ def interpool_missing_summary(meta_pool, report_pool, raw_pool, compress_pool):
     """ This functions provide a summary of the files which do not have the
         corresponding metadata or report """
     from os.path import join
-
-    from osa.utils.iofile import writetofile
 
     output_prefix = cfg.get("OUTPUT", "orphanprefix")
     output_suffix = cfg.get("OUTPUT", "textsuffix")

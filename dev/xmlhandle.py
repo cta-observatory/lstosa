@@ -1,31 +1,24 @@
 import logging
 
-from osa.utils.standardhandle import error, gettag
-
 log = logging.getLogger(__name__)
 
 
 def xmlhandleData(dom):
-    tag = gettag()
-
     jobs = dom.getElementsByTagName("Job")
     return xmlhandleJobs(jobs)
 
 
 def xmlhandleJobs(jobs):
-    tag = gettag()
-
     return [xmlhandleJob(job) for job in jobs]
 
 
 def xmlhandleJob(job):
     global name
-    tag = gettag()
 
     try:
         name = xmlhandlejobkey(job.getElementsByTagName("Job_Name")[0])
     except IndexError as e:
-        error(tag, "Could not get first element with Job_Name tag, {0}".format(e), 5)
+        log.error("Could not get first element with Job_Name tag, {0}".format(e))
     else:
         jobid = int(xmlhandlejobkey(job.getElementsByTagName("Job_Id")[0]).split(".", 1)[0])
         jobhost = None
@@ -40,7 +33,7 @@ def xmlhandleJob(job):
                 if state == "C":
                     log.warning("Job {0} found not having an exec_host, {1}".format(jobid, Error))
                 else:
-                    error(tag, "Job {0} found not having an exec_host, {1}".format(jobid, Error), 6)
+                    log.error("Job {0} found not having an exec_host, {1}".format(jobid, Error))
             else:
                 # The cputime appears after some feedback from the pbs_mom within the resources_used tag
                 # an initial period of indetermination is expected
@@ -74,11 +67,9 @@ def xmlhandleJob(job):
 
 
 def xmlhandlejobkey(name):
-    tag = gettag()
     return "%s" % getText(name.childNodes)
 
 
 def getText(nodelist):
-    tag = gettag()
     rc = [node.data for node in nodelist if node.nodeType == node.TEXT_NODE]
     return "".join(rc)

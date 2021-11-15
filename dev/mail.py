@@ -1,14 +1,12 @@
-import options
-from standardhandle import error, errornonfatal, gettag, output, stringify, verbose
+import logging
+
+from osa.configs import options
+from osa.utils.utils import stringify
+
+log = logging.getLogger(__name__)
 
 
-##############################################################################
-#
-# send_command_file
-#
-##############################################################################
 def send_stream(stream):
-    tag = gettag()
     """ TODO: use the email package from python """
 
     import subprocess
@@ -17,47 +15,25 @@ def send_stream(stream):
     if not options.simulate:
         try:
             subprocess.check_call(commandargs, stdin=stream)
-        except subprocess.CalledProcessError as e:
-            errornonfatal(tag, e.output)
+        except subprocess.CalledProcessError as error:
+            log.error(error)
     else:
-        log.debug("Simulating: {0}".stringify(commandargs))
+        log.debug(f"Simulating: {stringify(commandargs)}")
 
 
-##############################################################################
-#
-# send_file
-#
-##############################################################################
-def send_file(file):
-    tag = gettag()
-    with open(file, "r") as i:
-        send_command_stream(i)
-
-
-##############################################################################
-#
-# send_content
-#
-##############################################################################
 def send_assignments(assignments):
-    tag = gettag()
     import tempfile
 
     content = set_content(assignments)
     if content:
-        i = tempfile.SpooledTemporaryFile("w+")
+        i = tempfile.SpooledTemporaryFile(mode="w+")
         i.write(content)
         i.seek(0, 0)
         send_stream(i)
     else:
-        errornonfatal(tag, "Empty assignments {0}".format(assignments))
+        log.error(f"Empty assignments {assignments}")
 
 
-##############################################################################
-#
-# send_email
-#
-##############################################################################
 def send_email(assignments):
     import smtplib
     from email.mime.text import MIMEText
@@ -74,13 +50,7 @@ def send_email(assignments):
         return False
 
 
-##############################################################################
-#
-# set_headers
-#
-##############################################################################
 def set_content(assignments):
-    tag = gettag()
     """ TODO: use the email package from python """
 
     content = "MIME-Version: 1.0\n"
