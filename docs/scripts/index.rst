@@ -34,7 +34,7 @@ In the analysis folders you will find several types of ``sequence_*`` files:
    DEPRECATED. Specify the subruns of a sequence/run that will be analyzed by the sequencer.
 
 ``sequence_*.history``
-   This file keeps tracks of the :func:`execution history<osa.reports.report.history>` of a sequence/run.
+   This file keeps tracks of the :func:`execution history<osa.report.history>` of a sequence/run.
 
 ``sequence_*.{err,log,out}``
    These files are the logs of the job executed on the working nodes.
@@ -190,5 +190,3 @@ API/References
 
 .. automodapi:: osa.scripts.simulate_processing
     :no-heading:
-
-
