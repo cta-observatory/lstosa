@@ -37,7 +37,7 @@ __all__ = [
     "scheduler_env_variables",
     "create_job_template",
     "set_cache_dirs",
-    "setrunfromparent"
+    "setrunfromparent",
 ]
 
 
@@ -55,7 +55,9 @@ def are_all_jobs_correctly_finished(sequence_list):
     """
     flag = True
     for s in sequence_list:  # Run wise
-        history_files_list = glob(rf"{options.directory}/*{s.run}*.history")  # Subrun wise
+        history_files_list = glob(
+            rf"{options.directory}/*{s.run}*.history"
+        )  # Subrun wise
         for history_file in history_files_list:
             # TODO: s.history should be SubRunObj attribute not RunObj
             # s.history only working for CALIBRATION sequence (run-wise), since it is
@@ -122,27 +124,41 @@ def historylevel(historyfile, data_type):
                 program = words[1]
                 prod_id = words[2]
                 exit_status = int(words[-1])
-                log.debug(f"{program}, finished with error {exit_status} and prod ID {prod_id}")
+                log.debug(
+                    f"{program}, finished with error {exit_status} and prod ID {prod_id}"
+                )
             except (IndexError, ValueError) as err:
                 log.exception(f"Malformed history file {historyfile}, {err}")
             else:
                 if program == cfg.get("LSTOSA", "R0-DL1"):
-                    nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
+                    nonfatalrcs = [
+                        int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")
+                    ]
                     level = 3 if exit_status in nonfatalrcs else 4
                 elif program == "lstchain_dl1ab":
-                    nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
+                    nonfatalrcs = [
+                        int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")
+                    ]
                     if (exit_status in nonfatalrcs) and (prod_id == options.dl1_prod_id):
-                        log.debug(f"DL1ab prod ID: {options.dl1_prod_id} already produced")
+                        log.debug(
+                            f"DL1ab prod ID: {options.dl1_prod_id} already produced"
+                        )
                         level = 2
                     else:
                         level = 3
-                        log.debug(f"DL1ab prod ID: {options.dl1_prod_id} not produced yet")
+                        log.debug(
+                            f"DL1ab prod ID: {options.dl1_prod_id} not produced yet"
+                        )
                         break
                 elif program == "lstchain_check_dl1":
-                    nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")]
+                    nonfatalrcs = [
+                        int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")
+                    ]
                     level = 1 if exit_status in nonfatalrcs else 2
                 elif program == cfg.get("LSTOSA", "DL1-DL2"):
-                    nonfatalrcs = [int(k) for k in cfg.get("NONFATALRCS", "DL1-DL2").split(",")]
+                    nonfatalrcs = [
+                        int(k) for k in cfg.get("NONFATALRCS", "DL1-DL2").split(",")
+                    ]
                     if (exit_status in nonfatalrcs) and (prod_id == options.dl2_prod_id):
                         log.debug(f"DL2 prod ID: {options.dl2_prod_id} already produced")
                         level = 0
@@ -267,11 +283,7 @@ def get_job_statistics():
     plt.xscale("log")
     plt.yscale("log")
     plt.tight_layout()
-    plt.hist2d(
-        job_information["Elapsed"],
-        job_information["MaxRSS"],
-        bins=100
-    )
+    plt.hist2d(job_information["Elapsed"], job_information["MaxRSS"], bins=100)
 
     # TODO: this function will be called in the closer loop after all
     #  the jobs are done for a given production.
@@ -426,15 +438,17 @@ def create_job_template(sequence, get_content=False, file_path=None):
         commandargs.append(Path(drivedir) / sequence.drive)
         commandargs.append(Path(run_summary_dir) / f"RunSummary_{nightdir}.ecsv")
 
-    python_imports = dedent("""\
+    python_imports = dedent(
+        """\
     
     import os
     import subprocess
     import sys
     import tempfile
     
-    """)
-    content = job_header + '\n' + python_imports
+    """
+    )
+    content = job_header + "\n" + python_imports
 
     if not options.test:
         content += set_cache_dirs()
@@ -467,7 +481,9 @@ def create_job_template(sequence, get_content=False, file_path=None):
         )
     if sequence.type == "DATA":
         content += (
-                TAB * 2 + "'{0}".format(str(sequence.run).zfill(5)) + ".{0}'.format(str(subruns).zfill(4)),\n"
+                TAB * 2
+                + "'{0}".format(str(sequence.run).zfill(5))
+                + ".{0}'.format(str(subruns).zfill(4)),\n"
         )
     content += TAB * 2 + f"'{options.tel_id}'\n"
     content += TAB + "])\n"
@@ -499,9 +515,7 @@ def submitjobs(sequence_list):
                 try:
                     log.debug(f"Launching script {s.script}")
                     parent_jobid = subprocess.check_output(
-                        commandargs,
-                        universal_newlines=True,
-                        shell=False
+                        commandargs, universal_newlines=True, shell=False
                     ).split()[0]
                 except subprocess.CalledProcessError as Error:
                     log.exception(Error)
@@ -569,7 +583,9 @@ def submitjobs(sequence_list):
             if options.simulate:
                 log.debug("SIMULATE Launching scripts")
             elif options.test:
-                log.debug("TEST launching datasequence scripts for first subrun without scheduler")
+                log.debug(
+                    "TEST launching datasequence scripts for first subrun without scheduler"
+                )
                 commandargs = ["python", s.script]
                 subprocess.check_output(commandargs, shell=False)
             else:
@@ -605,9 +621,7 @@ def queue_job_list(sequence_list):
     queue_list = []
     try:
         sacct_output = subprocess.check_output(
-            commandargs,
-            universal_newlines=True,
-            shell=False
+            commandargs, universal_newlines=True, shell=False
         )
     except subprocess.CalledProcessError as Error:
         log.exception(f"Command '{stringify(commandargs)}' failed, {Error}")
@@ -644,8 +658,12 @@ def queue_values(queue_list, sequence_list):
     df_queue = pd.DataFrame.from_dict(queue_list)
     # Add column with elapsed seconds of the job run-time to be averaged
     if "JobName" in df_queue.columns:
-        df_queue_filtered = df_queue[df_queue["JobName"].isin(sequences_df["jobname"])].copy()
-        df_queue_filtered["DeltaTime"] = df_queue_filtered["CPUTime"].apply(time_to_seconds)
+        df_queue_filtered = df_queue[
+            df_queue["JobName"].isin(sequences_df["jobname"])
+        ].copy()
+        df_queue_filtered["DeltaTime"] = df_queue_filtered["CPUTime"].apply(
+            time_to_seconds
+        )
         for s in sequence_list:
             df_jobname = df_queue_filtered[df_queue_filtered["JobName"] == s.jobname]
             s.tries = len(df_jobname["JobID"].unique())
@@ -664,14 +682,14 @@ def queue_values(queue_list, sequence_list):
                     s.exit = None
                 elif (df_jobid_filtered.State.values == "FAILED").any():
                     s.state = "FAILED"
-                    s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "FAILED"][
-                        "ExitCode"
-                    ].iloc[0]
+                    s.exit = df_jobid_filtered[
+                        df_jobid_filtered.State.values == "FAILED"
+                        ]["ExitCode"].iloc[0]
                 elif (df_jobid_filtered.State.values == "CANCELLED").any():
                     s.state = "CANCELLED"
-                    s.exit = df_jobid_filtered[df_jobid_filtered.State.values == "CANCELLED"][
-                        "ExitCode"
-                    ].iloc[0]
+                    s.exit = df_jobid_filtered[
+                        df_jobid_filtered.State.values == "CANCELLED"
+                        ]["ExitCode"].iloc[0]
                 elif (df_jobid_filtered.State.values == "TIMEOUT").any():
                     s.state = "TIMEOUT"
                     s.exit = "0:15"
@@ -683,6 +701,8 @@ def queue_values(queue_list, sequence_list):
                     f"JobID {s.jobid}, State {s.state}, CPUTime {s.cputime}, Exit {s.exit} updated"
                 )
             except ValueError:
-                log.debug(f"Queue attributes for sequence {s.seq} not present in sacct output.")
+                log.debug(
+                    f"Queue attributes for sequence {s.seq} not present in sacct output."
+                )
     else:
         log.debug("No jobs reported in sacct queue.")

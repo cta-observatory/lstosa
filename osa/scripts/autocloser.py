@@ -22,7 +22,9 @@ def argument_parser():
     parser = argparse.ArgumentParser(
         description="This script is an automatic error handler and closer for lstosa."
     )
-    parser.add_argument("-v", "--verbose", action="store_true", help="Turn on verbose mode")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Turn on verbose mode"
+    )
     parser.add_argument(
         "-t",
         "--test",
@@ -35,7 +37,9 @@ def argument_parser():
         action="store_true",
         help="Create nothing, only simulate closer (safe mode)",
     )
-    parser.add_argument("--ignorecronlock", action="store_true", help='Ignore "cron.lock"')
+    parser.add_argument(
+        "--ignorecronlock", action="store_true", help='Ignore "cron.lock"'
+    )
     parser.add_argument(
         "-i",
         "--onlyIncidences",
@@ -47,12 +51,20 @@ def argument_parser():
         "-f", "--force", action="store_true", help="Force the autocloser to close the day"
     )
     parser.add_argument(
-        "-e", "--equal", action="store_true", help="Skip check for equal amount of sequences"
+        "-e",
+        "--equal",
+        action="store_true",
+        help="Skip check for equal amount of sequences",
     )
     parser.add_argument(
-        "-w", "--woIncidences", action="store_true", help="Close without writing down incidences."
+        "-w",
+        "--woIncidences",
+        action="store_true",
+        help="Close without writing down incidences.",
     )
-    parser.add_argument("-r", "--runwise", action="store_true", help="Close the day run-wise.")
+    parser.add_argument(
+        "-r", "--runwise", action="store_true", help="Close the day run-wise."
+    )
     parser.add_argument(
         "-c",
         "--config-file",
@@ -143,10 +155,14 @@ class Telescope(object):
         create_directories_datacheck_web(cfg.get("WEBSERVER", "HOST"), nightdir, prod_id)
 
         if not self.build_Sequences():
-            log.warning(f"Sequencer for {self.telescope} is empty! Ignoring {self.telescope}")
+            log.warning(
+                f"Sequencer for {self.telescope} is empty! Ignoring {self.telescope}"
+            )
 
             if not args.simulate and not args.test:
-                set_no_observations_flag(cfg.get("WEBSERVER", "HOST"), nightdir, options.prod_id)
+                set_no_observations_flag(
+                    cfg.get("WEBSERVER", "HOST"), nightdir, options.prod_id
+                )
             return
         self.incidence = Incidence(self.telescope)
 
@@ -196,7 +212,10 @@ class Telescope(object):
             ]
             log.debug(f"Executing {' '.join(seqArgs)}")
             seqr = subprocess.Popen(
-                seqArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
+                seqArgs,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True,
             )
             self.stdout, self.stderr = seqr.communicate()
             log.info(self.stdout)
@@ -266,14 +285,13 @@ class Telescope(object):
 
         log.debug(f"Executing {' '.join(closerArgs)}")
         closer = subprocess.Popen(
-            closerArgs,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            shell=False
+            closerArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False
         )
         stdout, stderr = closer.communicate()
         if closer.returncode != 0:
-            log.warning(f"'closer' returned error code {closer.returncode}! See output: {stdout}")
+            log.warning(
+                f"'closer' returned error code {closer.returncode}! See output: {stdout}"
+            )
             return False
         self.closed = True
         return True
@@ -356,10 +374,10 @@ class Sequence(object):
         if self.dictSequence["Type"] == "PEDCALIB":
             log.debug("Cannot check for missing subruns in the middle for CALIBRATION")
             return True
-        search_str = (
-            f"{analysis_path(self.dictSequence['Tel'])}/dl1*{int(self.dictSequence['Run']):05d}*.h5"
+        search_str = f"{analysis_path(self.dictSequence['Tel'])}/dl1*{int(self.dictSequence['Run']):05d}*.h5"
+        subrun_nrs = sorted(
+            [int(os.path.basename(f).split(".")[2]) for f in glob.glob(search_str)]
         )
-        subrun_nrs = sorted([int(os.path.basename(f).split(".")[2]) for f in glob.glob(search_str)])
         return bool(subrun_nrs and len(subrun_nrs) == int(self.dictSequence["Subruns"]))
 
     def close(self):
@@ -391,10 +409,14 @@ class Sequence(object):
             return True
 
         log.debug(f"Executing {' '.join(closerArgs)}")
-        closer = subprocess.Popen(closerArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        closer = subprocess.Popen(
+            closerArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
         stdout, stderr = closer.communicate()
         if closer.returncode != 0:
-            log.warning(f"'closer' returned error code {closer.returncode}! See output: {stdout}")
+            log.warning(
+                f"'closer' returned error code {closer.returncode}! See output: {stdout}"
+            )
             return False
         self.closed = True
         return True
@@ -418,7 +440,9 @@ class Incidence(object):
         self.write_header()
 
     def write_header(self):
-        self.header = f"NIGHT={year:04}-{month:02}-{day:02}\nTELESCOPE={self.telescope}\nCOMMENTS="
+        self.header = (
+            f"NIGHT={year:04}-{month:02}-{day:02}\nTELESCOPE={self.telescope}\nCOMMENTS="
+        )
         return
 
     def write_error(self, text, runs):
@@ -486,11 +510,15 @@ class Incidence(object):
         if self.telescope != "ST":
             for k in self.incidencesMono:
                 if self.incidencesDict[k]:
-                    incidences += self.write_error(self.incidencesMono[k], self.incidencesDict[k])
+                    incidences += self.write_error(
+                        self.incidencesMono[k], self.incidencesDict[k]
+                    )
         else:
             for k in self.incidencesStereo:
                 if self.incidencesDict[k]:
-                    incidences += self.write_error(self.incidencesStereo[k], self.incidencesDict[k])
+                    incidences += self.write_error(
+                        self.incidencesStereo[k], self.incidencesDict[k]
+                    )
 
         log.info(self.header + incidences)
         self.create_incidenceFile(self.header + incidences)

@@ -33,9 +33,13 @@ def matrixtohtmltable(matrix, column_class, header, footer):
         for col in row:
             if (index == 0 and header) or row[0] == matrix[0][0]:
                 # I know this invalidates html, but it is nice some headers in between
-                print('<th class="{1}">{0}</th>'.format(col, column_class[row.index(col)]))
+                print(
+                    '<th class="{1}">{0}</th>'.format(col, column_class[row.index(col)])
+                )
             else:
-                print('<td class="{1}">{0}</td>'.format(col, column_class[row.index(col)]))
+                print(
+                    '<td class="{1}">{0}</td>'.format(col, column_class[row.index(col)])
+                )
         print("</tr>")
         if index == 0 and header:
             print("</thead>")
@@ -145,7 +149,9 @@ def main():
         output = sp.run(commandargs, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8")
     except sp.CalledProcessError:
         # Sorry, it does not work (day closed, asked with wrong parameters ...)
-        print(f"Command with the following args {commandargs} failed, {output.returncode}")
+        print(
+            f"Command with the following args {commandargs} failed, {output.returncode}"
+        )
         sys.exit(1)
     else:
         print(

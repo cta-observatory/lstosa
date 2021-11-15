@@ -481,8 +481,7 @@ def datasequencecliparsing():
 
 
 def stereosequencecliparsing():
-    message = "usage: %prog  [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <RUN>"
-    parser = OptionParser(usage=message)
+    parser = OptionParser()
     parser.add_option(
         "-c",
         "--config",
@@ -559,7 +558,8 @@ def stereosequencecliparsing():
     options.warning = opts.warning
     options.compressed = opts.compressed
 
-    # the standardhandle has to be declared here, since verbose and warnings are options from the cli
+    # the standardhandle has to be declared here,
+    # since verbose and warnings are options from the cli
     log.debug(f"the options are {opts}")
     log.debug(f"the argument is {args}")
 
@@ -567,7 +567,8 @@ def stereosequencecliparsing():
     if len(args) != 1:
         log.error("incorrect number of arguments, type -h for help")
 
-    # mapping the telescope argument to an option parameter (it might become an option in the future)
+    # mapping the telescope argument to an option
+    # parameter (it might become an option in the future)
     options.tel_id = "ST"
 
     # setting the default date and directory if needed
@@ -602,8 +603,8 @@ def sequencer_argparser():
         action="store",
         type=str,
         dest="mode",
-        choices=["P", "S", "T"],
-        help="mode to run dependant sequences:\n P=parallel [default], S=Sequential, T=temperature-aware",
+        choices=["P"],
+        help="[Deprecated] mode to run dependant sequences:\n P=parallel [default]",
     )
     # boolean options
     parser.add_argument(
@@ -634,7 +635,7 @@ def sequencer_argparser():
         "--test",
         action="store_true",
         default=False,
-        help="test locally outside the CTA-N IT container avoiding interaction with SLURM",
+        help="Test locally avoiding interaction with job scheduler",
     )
     parser.add_argument(
         "--no-submit",
@@ -677,7 +678,7 @@ def sequencer_argparser():
         action="store_true",
         dest="compressed",
         default=False,
-        help="Use input as compressed raw.gz files, compulsory if using -n and raw.gz files",
+        help="[Deprecated] Use input as compressed raw.gz files",
     )
     parser.add_argument(
         "--stderr",
@@ -724,7 +725,8 @@ def sequencer_cli_parsing():
     options.compressed = opts.compressed
     options.tel_id = opts.tel_id
 
-    # the standardhandle has to be declared before here, since verbose and warnings are options from the cli
+    # the standardhandle has to be declared before here,
+    # since verbose and warnings are options from the cli
     log.debug(f"the options are {opts}")
 
     # set the default value for mode
@@ -753,8 +755,7 @@ def sequencer_cli_parsing():
 
 
 def rawcopycliparsing():
-    message = "usage: %prog [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-z] <TEL_ID>"
-    parser = OptionParser(usage=message)
+    parser = OptionParser()
     parser.add_option(
         "-c",
         "--config",
@@ -830,11 +831,13 @@ def rawcopycliparsing():
     options.warning = opts.warning
     options.compressed = opts.compressed
 
-    # the standardhandle has to be declared here, since verbose and warnings are options from the cli
+    # the standardhandle has to be declared here,
+    # since verbose and warnings are options from the cli
     log.debug(f"the options are {opts}")
     log.debug(f"the argument is {args}")
 
-    # mapping the telescope argument to an option parameter (it might become an option in the future)
+    # mapping the telescope argument to an option
+    # parameter (it might become an option in the future)
     if len(args) != 1:
         log.error("incorrect number of arguments, type -h for help")
     elif args[0] == "ST":

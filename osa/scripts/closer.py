@@ -28,7 +28,7 @@ from osa.utils.utils import (
     lstdate_to_dir,
     destination_dir,
     create_lock,
-    gettag
+    gettag,
 )
 from osa.veto import createclosed
 
@@ -257,7 +257,9 @@ def post_process_files(seq_list):
             pattern_found = pattern_re.search(file)
             if pattern_found:
                 log.debug(f"Pattern {concept} found, {pattern_found} in {file}")
-                registered_file = register_found_pattern(file_path, seq_list, concept, dst_path)
+                registered_file = register_found_pattern(
+                    file_path, seq_list, concept, dst_path
+                )
                 output_files_set.remove(registered_file)
 
 
@@ -428,7 +430,9 @@ def merge_dl1_datacheck(seq_list):
     # Inside DL1 directory there are different subdirectories for each cleaning level.
     # Muons fits files are in the base dl1 directory whereas the dl1 and datacheck files
     # are in the corresponding subdirectory for each cleaning level.
-    dl1_base_directory = os.path.join(cfg.get("LST1", "DL1DIR"), nightdir, options.prod_id)
+    dl1_base_directory = os.path.join(
+        cfg.get("LST1", "DL1DIR"), nightdir, options.prod_id
+    )
     dl1_prod_id_directory = os.path.join(dl1_base_directory, options.dl1_prod_id)
 
     for sequence in seq_list:

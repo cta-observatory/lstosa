@@ -57,9 +57,13 @@ def parse_variables(class_instance):
         timecalibration_filename = os.path.basename(class_instance.args[2])
         running_analysis_dir = re.findall(r"(.*)sequence", class_instance.args[6])[0]
         calibration_path = Path(calib_dir) / nightdir / options.calib_prod_id
-        class_instance.CoefficientsCalibrationFile = str(calibration_path / calibration_filename)
+        class_instance.CoefficientsCalibrationFile = str(
+            calibration_path / calibration_filename
+        )
         class_instance.PedestalFile = str(calibration_path / pedestal_filename)
-        class_instance.TimeCalibrationFile = str(calibration_path / timecalibration_filename)
+        class_instance.TimeCalibrationFile = str(
+            calibration_path / timecalibration_filename
+        )
         class_instance.PointingFile = class_instance.args[3]
         class_instance.ObservationRun = class_instance.args[5].split(".")[0]
         class_instance.ObservationSubRun = class_instance.args[5].split(".")[0]
@@ -68,7 +72,9 @@ def parse_variables(class_instance):
         )[0]
         class_instance.SoftwareVersion = options.lstchain_version
         class_instance.ProdID = options.prod_id
-        class_instance.CalibrationRun = re.findall(r"Run(\d{5}).", class_instance.args[0])[0]
+        class_instance.CalibrationRun = re.findall(
+            r"Run(\d{5}).", class_instance.args[0]
+        )[0]
         class_instance.PedestalRun = re.findall(r"Run(\d{5}).", class_instance.args[1])[0]
         outdir_dl1 = running_analysis_dir.replace("running_analysis", "DL1")
         class_instance.DL1SubrunDataset = (
@@ -92,9 +98,15 @@ def parse_variables(class_instance):
         class_instance.SoftwareVersion = options.lstchain_version
         class_instance.DL1ProdID = options.prod_id
         class_instance.DL2ProdID = options.dl2_prod_id
-        class_instance.RFModelEnergyFile = str(Path(rf_models_directory) / "reg_energy.sav")
-        class_instance.RFModelDispFile = str(Path(rf_models_directory) / "reg_disp_vector.sav")
-        class_instance.RFModelGammanessFile = str(Path(rf_models_directory) / "cls_gh.sav")
+        class_instance.RFModelEnergyFile = str(
+            Path(rf_models_directory) / "reg_energy.sav"
+        )
+        class_instance.RFModelDispFile = str(
+            Path(rf_models_directory) / "reg_disp_vector.sav"
+        )
+        class_instance.RFModelGammanessFile = str(
+            Path(rf_models_directory) / "cls_gh.sav"
+        )
         running_analysis_dir = re.findall(r"(.*)sequence", class_instance.args[1])[0]
         # /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.0001.h5
         outdir_dl2 = Path(dl2_dir) / nightdir / options.dl2_prod_id

@@ -23,12 +23,7 @@ log = myLogger(logging.getLogger())
 
 
 def datasequence(
-        calibrationfile,
-        pedestalfile,
-        time_calibration,
-        drivefile,
-        run_summary,
-        run_str
+        calibrationfile, pedestalfile, time_calibration, drivefile, run_summary, run_str
 ):
     """
     Performs all the steps to process a whole run.
@@ -103,7 +98,7 @@ def r0_to_dl1(
         drivefile,
         run_summary,
         run_str,
-        historyfile
+        historyfile,
 ):
     """
     Prepare and launch the actual lstchain script that is performing
@@ -273,7 +268,7 @@ def dl1_datacheck(run_str, historyfile):
         options.dl1_prod_id,
         command,
         basename(input_dl1_datafile),
-        None
+        None,
     )
 
 
@@ -319,18 +314,12 @@ def dl1_to_dl2(run_str, historyfile):
         options.dl2_prod_id,
         command,
         basename(datafile),
-        basename(configfile)
+        basename(configfile),
     )
 
 
 def run_program_with_logging(
-        commandargs,
-        historyfile,
-        run,
-        prod_id,
-        stage,
-        input_file,
-        config_file
+        commandargs, historyfile, run, prod_id, stage, input_file, config_file
 ):
     """
     Run the program and log the output in the history file
@@ -378,7 +367,7 @@ def main():
         time_calib_file,
         drive_log_file,
         run_summary_file,
-        run_number
+        run_number,
     )
     sys.exit(rc)
 

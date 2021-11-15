@@ -80,7 +80,9 @@ def parse_lines_log(filter_step, run_number):
         for line in f.readlines():
             ll = line.split(PROV_PREFIX)
             if len(ll) != 3:
-                log.warning(f"format {PROV_PREFIX} mismatch in log file {LOG_FILENAME}\n{line}")
+                log.warning(
+                    f"format {PROV_PREFIX} mismatch in log file {LOG_FILENAME}\n{line}"
+                )
                 continue
             prov_str = ll.pop()
             prov_dict = yaml.safe_load(prov_str)
@@ -281,7 +283,11 @@ def produce_provenance():
             r0_to_dl1_processed_lines = copy.deepcopy(processed_lines)
         if grain == "dl1_to_dl2":
             dl1_to_dl2_processed_lines = copy.deepcopy(processed_lines)
-        if grain == "r0_to_dl2" and r0_to_dl1_processed_lines and dl1_to_dl2_processed_lines:
+        if (
+                grain == "r0_to_dl2"
+                and r0_to_dl1_processed_lines
+                and dl1_to_dl2_processed_lines
+        ):
             processed_lines = r0_to_dl1_processed_lines + dl1_to_dl2_processed_lines[1:]
 
         if processed_lines:

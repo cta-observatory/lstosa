@@ -13,12 +13,12 @@ ALL_SCRIPTS = [
     "calibrationsequence",
     "copy_datacheck",
     "datasequence",
-    "show_run_summary"
+    "show_run_summary",
 ]
 
 
 def run_program(*args):
-    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding='utf-8')
+    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8")
 
     if result.returncode != 0:
         raise ValueError(
@@ -37,18 +37,12 @@ def test_all_help(script):
 
 def test_simulated_sequencer():
     rc = run_program(
-        "sequencer",
-        "-c",
-        "cfg/sequencer.cfg",
-        "-d",
-        "2020_01_17",
-        "-s",
-        "-t",
-        "LST1"
+        "sequencer", "-c", "cfg/sequencer.cfg", "-d", "2020_01_17", "-s", "-t", "LST1"
     )
     assert rc.returncode == 0
-    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    assert dedent(f"""\
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    assert dedent(
+        f"""\
     =========================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Night: 2020_01_17 ===========================
     Tel   Seq  Parent  Type      Run   Subruns  Source  Wobble  Action  Tries  JobID  State  Host  CPU_time  Walltime  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%  
     LST1    0  None    PEDCALIB  1805  5        None    None    None    None   None   None   None  None      None      None  None  None    None    None        None  
@@ -72,7 +66,8 @@ def test_simulated_sequencer():
     LST1   18       0  DATA      1825  69       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
     LST1   19       0  DATA      1826  6        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
     LST1   20       0  DATA      1827  1        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0 
-    """)
+    """
+    )
 
 
 def test_sequencer(sequence_file):
@@ -82,11 +77,22 @@ def test_sequencer(sequence_file):
 
 def test_autocloser(running_analysis_dir):
     result = run_program(
-        "python", "osa/scripts/autocloser.py", "-c", "cfg/sequencer.cfg", "-d", "2020_01_17", "-t", "LST1"
+        "python",
+        "osa/scripts/autocloser.py",
+        "-c",
+        "cfg/sequencer.cfg",
+        "-d",
+        "2020_01_17",
+        "-t",
+        "LST1",
     )
-    assert os.path.exists(running_analysis_dir)  # Check that the analysis directory exists
+    assert os.path.exists(
+        running_analysis_dir
+    )  # Check that the analysis directory exists
     assert result.stdout.split()[-1] == "Exit"
-    assert os.path.exists("./test_osa/test_files0/running_analysis/20200117/v0.1.0_v01/AutoCloser_Incidences_tmp.txt")
+    assert os.path.exists(
+        "./test_osa/test_files0/running_analysis/20200117/v0.1.0_v01/AutoCloser_Incidences_tmp.txt"
+    )
 
 
 def test_closer(r0_dir, running_analysis_dir):

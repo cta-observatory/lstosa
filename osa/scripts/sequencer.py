@@ -180,15 +180,21 @@ def update_sequence_status(seq_list):
                 Decimal(get_status_for_sequence(seq, "CALIB") * 100) / seq.subruns
             )
         elif seq.type == "DATA":
-            seq.dl1status = int(Decimal(get_status_for_sequence(seq, "DL1") * 100) / seq.subruns)
+            seq.dl1status = int(
+                Decimal(get_status_for_sequence(seq, "DL1") * 100) / seq.subruns
+            )
             seq.dl1abstatus = int(
                 Decimal(get_status_for_sequence(seq, "DL1AB") * 100) / seq.subruns
             )
             seq.datacheckstatus = int(
                 Decimal(get_status_for_sequence(seq, "DATACHECK") * 100) / seq.subruns
             )
-            seq.muonstatus = int(Decimal(get_status_for_sequence(seq, "MUON") * 100) / seq.subruns)
-            seq.dl2status = int(Decimal(get_status_for_sequence(seq, "DL2") * 100) / seq.subruns)
+            seq.muonstatus = int(
+                Decimal(get_status_for_sequence(seq, "MUON") * 100) / seq.subruns
+            )
+            seq.dl2status = int(
+                Decimal(get_status_for_sequence(seq, "DL2") * 100) / seq.subruns
+            )
 
 
 def get_status_for_sequence(sequence, program):
@@ -233,7 +239,9 @@ def get_status_for_sequence(sequence, program):
         files = glob(join(options.directory, f"{prefix}*{sequence.run}*{suffix}"))
 
     number_of_files = len(files)
-    log.debug(f"Found {number_of_files} {program} files for sequence name {sequence.jobname}")
+    log.debug(
+        f"Found {number_of_files} {program} files for sequence name {sequence.jobname}"
+    )
     return number_of_files
 
 

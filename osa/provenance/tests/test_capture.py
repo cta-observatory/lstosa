@@ -4,12 +4,7 @@ from pathlib import Path, PurePath
 
 from osa.configs import options
 from osa.provenance.capture import trace
-from osa.provenance.io import (
-    read_prov,
-    provlist2provdoc,
-    provdoc2json,
-    provdoc2graph
-)
+from osa.provenance.io import read_prov, provlist2provdoc, provdoc2json, provdoc2graph
 
 
 @trace
@@ -34,8 +29,9 @@ def dl1_to_dl2(
 
 
 def select_config(tmp_path):
-
-    config_file = Path(__file__).resolve().parent / ".." / ".." / ".." / options.configfile
+    config_file = (
+            Path(__file__).resolve().parent / ".." / ".." / ".." / options.configfile
+    )
     in_config_arg = False
     for args in sys.argv:
         if in_config_arg:

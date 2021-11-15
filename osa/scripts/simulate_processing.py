@@ -55,8 +55,12 @@ def do_setup():
         log.info("You can also set --append flag to append captured provenance.")
         return
 
-    CONFIG_FLAGS["TearSubDL1"] = False if pathDL1sub.exists() or options.provenance else pathDL1sub
-    CONFIG_FLAGS["TearSubDL2"] = False if pathDL2sub.exists() or options.provenance else pathDL2sub
+    CONFIG_FLAGS["TearSubDL1"] = (
+        False if pathDL1sub.exists() or options.provenance else pathDL1sub
+    )
+    CONFIG_FLAGS["TearSubDL2"] = (
+        False if pathDL2sub.exists() or options.provenance else pathDL2sub
+    )
     CONFIG_FLAGS["TearDL1"] = False if pathDL1.exists() or options.provenance else pathDL1
     CONFIG_FLAGS["TearDL2"] = False if pathDL2.exists() or options.provenance else pathDL2
 

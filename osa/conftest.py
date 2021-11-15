@@ -42,9 +42,15 @@ def dl1b_subdir(running_analysis_dir):
 @pytest.fixture(scope="session")
 def test_calibration_data(running_analysis_dir):
     """Mock calibration files for testing."""
-    fd, calib_file = tempfile.mkstemp(prefix="calibration_", suffix=".hdf5", dir=running_analysis_dir)
-    fd, drs4_file = tempfile.mkstemp(prefix="drs4_", suffix=".fits", dir=running_analysis_dir)
-    fd, time_file = tempfile.mkstemp(prefix="time_calibration_", suffix=".hdf5", dir=running_analysis_dir)
+    fd, calib_file = tempfile.mkstemp(
+        prefix="calibration_", suffix=".hdf5", dir=running_analysis_dir
+    )
+    fd, drs4_file = tempfile.mkstemp(
+        prefix="drs4_", suffix=".fits", dir=running_analysis_dir
+    )
+    fd, time_file = tempfile.mkstemp(
+        prefix="time_calibration_", suffix=".hdf5", dir=running_analysis_dir
+    )
     return calib_file, drs4_file, time_file
 
 
@@ -54,8 +60,12 @@ def test_observed_data(running_analysis_dir, dl1b_subdir):
     fd, dl1_file = tempfile.mkstemp(prefix="dl1_", suffix=".h5", dir=running_analysis_dir)
     fd, dl1ab_file = tempfile.mkstemp(prefix="dl1_", suffix=".h5", dir=dl1b_subdir)
     fd, dl2_file = tempfile.mkstemp(prefix="dl2_", suffix=".h5", dir=running_analysis_dir)
-    fd, muons_file = tempfile.mkstemp(prefix="muons_", suffix=".fits", dir=running_analysis_dir)
-    fd, datacheck_file = tempfile.mkstemp(prefix="datacheck_dl1_", suffix=".h5", dir=dl1b_subdir)
+    fd, muons_file = tempfile.mkstemp(
+        prefix="muons_", suffix=".fits", dir=running_analysis_dir
+    )
+    fd, datacheck_file = tempfile.mkstemp(
+        prefix="datacheck_dl1_", suffix=".h5", dir=dl1b_subdir
+    )
     return dl1_file, dl1ab_file, dl2_file, muons_file, datacheck_file
 
 
@@ -78,15 +88,8 @@ def sequence_list(running_analysis_dir, run_summary):
 
 @pytest.fixture(scope="session")
 def sequence_file(running_analysis_dir):
-    run_program(
-        "sequencer",
-        "-d",
-        "2020_01_17",
-        "--no-submit",
-        "-t",
-        "LST1"
-    )
+    run_program("sequencer", "-d", "2020_01_17", "--no-submit", "-t", "LST1")
     return [
         running_analysis_dir / "sequence_LST1_01805.py",
-        running_analysis_dir / "sequence_LST1_01807.py"
+        running_analysis_dir / "sequence_LST1_01807.py",
     ]

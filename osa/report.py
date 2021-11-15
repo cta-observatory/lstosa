@@ -80,11 +80,15 @@ def finished_text(ana_dict):
         content += f"analysis.finished.data.files.r0={ana_dict['FILES_RAW']}\n"
         content += f"analysis.finished.data.files.pedestal={ana_dict['FILES_PEDESTAL']}\n"
         content += f"analysis.finished.data.files.calib={ana_dict['FILES_CALIB']}\n"
-        content += f"analysis.finished.data.files.time_calib={ana_dict['FILES_TIMECALIB']}\n"
+        content += (
+            f"analysis.finished.data.files.time_calib={ana_dict['FILES_TIMECALIB']}\n"
+        )
         content += f"analysis.finished.data.files.dl1={ana_dict['FILES_DL1']}\n"
         content += f"analysis.finished.data.files.dl2={ana_dict['FILES_DL2']}\n"
         content += f"analysis.finished.data.files.muons={ana_dict['FILES_MUON']}\n"
-        content += f"analysis.finished.data.files.datacheck={ana_dict['FILES_DATACHECK']}\n"
+        content += (
+            f"analysis.finished.data.files.datacheck={ana_dict['FILES_DATACHECK']}\n"
+        )
 
     if options.reason is not None:
         content += f"analysis.finished.data.comment={ana_dict['COMMENTS']}.\n"
@@ -109,7 +113,16 @@ def finished_assignments(sequence_list):
     disk_space_GB = 0
     rawnum = 0
     if options.tel_id == "LST1":
-        concept_set = ["PEDESTAL", "CALIB", "TIMECALIB", "DL1", "DL1AB", "MUON", "DATACHECK", "DL2"]
+        concept_set = [
+            "PEDESTAL",
+            "CALIB",
+            "TIMECALIB",
+            "DL1",
+            "DL1AB",
+            "MUON",
+            "DATACHECK",
+            "DL2",
+        ]
         rawdir = getrawdir()
         if sequence_list is not None:
             for s in sequence_list:
@@ -184,5 +197,7 @@ def history(run, prod_id, program, input_file, input_card, rc, history_file) -> 
     """
     now = datetime.utcnow()
     datestring = now.strftime("%a %b %d %X UTC %Y")
-    stringtowrite = f"{run} {program} {prod_id} {datestring} {input_file} {input_card} {rc}\n"
+    stringtowrite = (
+        f"{run} {program} {prod_id} {datestring} {input_file} {input_card} {rc}\n"
+    )
     append_to_file(history_file, stringtowrite)

@@ -16,7 +16,7 @@ from lstchain.scripts.lstchain_create_run_summary import (
     get_list_of_runs,
     get_runs_and_subruns,
     type_of_run,
-    read_counters
+    read_counters,
 )
 
 from osa.utils.logging import myLogger
@@ -67,7 +67,9 @@ def start_end_of_run_files_stat(date_path, run_number, num_files):
 
     last_subrun = num_files - 1  # first subrun is 0
     pattern_first_subrun = date_path / f"LST-1.1.Run{run_number:05d}.0000.fits.fz"
-    pattern_last_subrun = date_path / f"LST-1.1.Run{run_number:05d}.{last_subrun:04d}.fits.fz"
+    pattern_last_subrun = (
+            date_path / f"LST-1.1.Run{run_number:05d}.{last_subrun:04d}.fits.fz"
+    )
     try:
         run_start_first_file = Time(os.path.getctime(pattern_first_subrun), format="unix")
         run_end_last_file = Time(os.path.getmtime(pattern_last_subrun), format="unix")
@@ -141,8 +143,8 @@ def main():
 
     run_summary["elapsed"].unit = u.min
 
-    c = " Run summary "
-    print(f"{c.center(50, '*')}")
+    header = " Run summary "
+    print(f"{header.center(50, '*')}")
     run_summary.pprint_all()
     print("\n")
 
@@ -154,16 +156,18 @@ def main():
     ].groups.aggregate(np.sum)
     total_obs_time["elapsed"].format = "7.1f"
 
-    c = " Observation time per run type "
-    print(f"{c.center(50, '*')}")
+    header = " Observation time per run type "
+    print(f"{header.center(50, '*')}")
     total_obs_time.pprint_all()
     print("\n")
 
     run_summary["number_of_runs"] = 1
-    total_obs = run_summary["number_of_runs", "n_subruns", "elapsed"].groups.aggregate(np.sum)
+    total_obs = run_summary["number_of_runs", "n_subruns", "elapsed"].groups.aggregate(
+        np.sum
+    )
     total_obs["elapsed"].format = "7.1f"
-    c = " Total observation time "
-    print(f"{c.center(50, '*')}")
+    header = " Total observation time "
+    print(f"{header.center(50, '*')}")
     total_obs.pprint_all()
 
 
