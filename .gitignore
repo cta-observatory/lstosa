@@ -1,5 +1,11 @@
 .pytest_cache
 
+# Test
+test_osa
+testfiles
+prov.log
+docs/prov.log
+
 # Compiled files
 *.py[co]
 *.a
