@@ -22,7 +22,8 @@ docs_require = [
     "sphinx_rtd_theme",
     "sphinx_automodapi",
     "sphinx_argparse",
-    "sphinx-autoapi"
+    "sphinx-autoapi",
+    "numpydoc"
 ]
 tests_require = [
     "pytest",
