@@ -13,7 +13,7 @@ from osa.utils.utils import (
     get_lstchain_version,
     get_prod_id,
     getcurrentdate,
-    getnightdirectory,
+    night_directory,
     is_defined,
 )
 
@@ -26,12 +26,12 @@ __all__ = [
     "provprocessparsing",
     "rawcopycliparsing",
     "sequencer_argparser",
-    "sequencercliparsing",
+    "sequencer_cli_parsing",
     "set_default_date_if_needed",
     "set_default_directory_if_needed",
     "simprocparsing",
     "stereosequencecliparsing",
-    "sequencer_webmaker_argparser"
+    "sequencer_webmaker_argparser",
 ]
 
 log = logging.getLogger(__name__)
@@ -618,7 +618,6 @@ def sequencer_argparser():
         "-s",
         "--simulate",
         action="store_true",
-        dest="simulate",
         default=False,
         help="do not submit sequences as jobs",
     )
@@ -626,20 +625,24 @@ def sequencer_argparser():
         "-t",
         "--test",
         action="store_true",
-        dest="test",
         default=False,
-        help="test LSTOSA locally outside the CTA-N IT container avoiding interaction with SLURM",
+        help="test locally outside the CTA-N IT container avoiding interaction with SLURM",
     )
     parser.add_argument(
-        "--nocalib",
+        "--no-submit",
         action="store_true",
-        dest="nocalib",
         default=False,
-        help="Skip calibration sequence. Run data sequences assuming calib "
-        "products already produced (default False)",
+        help="Produce job files but do not submit them",
     )
     parser.add_argument(
-        "--nodl2",
+        "--no-calib",
+        action="store_true",
+        default=False,
+        help="Skip calibration sequence. Run data sequences assuming "
+             "calibration products already produced (default False)",
+    )
+    parser.add_argument(
+        "--no-dl2",
         action="store_true",
         default=False,
         help="Do not produce DL2 files (default False)",
@@ -650,7 +653,7 @@ def sequencer_argparser():
         action="store_true",
         dest="verbose",
         default=False,
-        help="make lots of noise for debugging",
+        help="Increase verbosity for debugging",
     )
     parser.add_argument(
         "-w",
@@ -691,7 +694,7 @@ def sequencer_argparser():
     return parser
 
 
-def sequencercliparsing():
+def sequencer_cli_parsing():
     # parse the command line
     opts = sequencer_argparser().parse_args()
 
@@ -705,8 +708,9 @@ def sequencercliparsing():
     options.nightsummary = opts.nightsum
     options.simulate = opts.simulate
     options.test = opts.test
-    options.nocalib = opts.nocalib
-    options.nodl2 = opts.nodl2
+    options.no_submit = opts.no_submit
+    options.no_calib = opts.no_calib
+    options.no_dl2 = opts.no_dl2
     options.verbose = opts.verbose
     options.warning = opts.warning
     options.compressed = opts.compressed
@@ -1026,4 +1030,4 @@ def set_default_directory_if_needed():
     if is_defined(options.directory):
         return options.directory
     else:
-        return getnightdirectory()
+        return night_directory()
