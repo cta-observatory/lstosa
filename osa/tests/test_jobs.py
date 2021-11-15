@@ -118,9 +118,9 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     assert header == output_string2
 
 
-def test_create_job_template(sequence_list):
+def test_create_job_template_scheduler(sequence_list):
     from osa.job import create_job_template
-    options.test = True
+    options.test = False
     content = create_job_template(sequence_list[1], get_content=True)
     expected_content = dedent(f"""\
     #!/bin/env python
@@ -133,6 +133,50 @@ def test_create_job_template(sequence_list):
     #SBATCH --array=0-18
     #SBATCH --partition=short
     #SBATCH --mem-per-cpu=16GB
+
+    import os
+    import subprocess
+    import sys
+    import tempfile
+
+    os.environ['CTAPIPE_CACHE'] = '/fefs/aswg/lstanalyzer/.ctapipe/ctapipe_cache'
+    os.environ['CTAPIPE_SVC_PATH'] = '/fefs/aswg/lstanalyzer/.ctapipe/service'
+    os.environ['MPLCONFIGDIR'] = '/fefs/aswg/lstanalyzer/.cache/matplotlib'
+    subruns = os.getenv('SLURM_ARRAY_TASK_ID')
+    job_id = os.getenv('SLURM_JOB_ID')
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        os.environ['NUMBA_CACHE_DIR'] = tmpdirname
+        proc = subprocess.run([
+            'datasequence',
+            '-c',
+            '{Path.cwd()}/cfg/sequencer.cfg',
+            '-d',
+            '2020_01_17',
+            '--prod-id',
+            'v0.1.0_v01',
+            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0_v01/calibration.Run01805.0000.hdf5',
+            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0_v01/drs4_pedestal.Run01804.0000.fits',
+            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0_v01/time_calibration.Run01805.0000.hdf5',
+            'extra/monitoring/DrivePositioning/drive_log_20_01_17.txt',
+            'extra/monitoring/RunSummary/RunSummary_20200117.ecsv',
+            '--stderr=log/sequence_LST1_01807.{{0}}_{{1}}.err'.format(str(subruns).zfill(4), str(job_id)),
+            '--stdout=log/sequence_LST1_01807.{{0}}_{{1}}.out'.format(str(subruns).zfill(4), str(job_id)),
+            '01807.{{0}}'.format(str(subruns).zfill(4)),
+            'LST1'
+        ])
+
+    sys.exit(proc.returncode)""")
+    assert content == expected_content
+
+
+def test_create_job_template_local(sequence_list):
+    """Check the job file in local mode (assuming no scheduler)."""
+    from osa.job import create_job_template
+    options.test = True
+    content = create_job_template(sequence_list[1], get_content=True)
+    expected_content = dedent(f"""\
+    #!/bin/env python
 
     import os
     import subprocess

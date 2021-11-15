@@ -5,6 +5,7 @@ Functions to handle the job submission using scheduler.
 import datetime
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -339,10 +340,11 @@ def job_header_template(sequence):
     String with job header template: string
     """
     python_shebang = "#!/bin/env python"
-    sbatch_parameters = "\n".join(scheduler_env_variables(sequence))
-
-    return python_shebang + 2 * "\n" + sbatch_parameters
-
+    if not options.test:
+        sbatch_parameters = "\n".join(scheduler_env_variables(sequence))
+        return python_shebang + 2 * "\n" + sbatch_parameters
+    else:
+        return python_shebang
 
 def set_cache_dirs():
     """
@@ -612,34 +614,38 @@ def queue_job_list(sequence_list):
 
     Returns
     -------
-
+    queue_list: list
+        List of jobs in the queue
     """
-    user = cfg.get("ENV", "USER")
-    sacct_format = "--format=jobid%8,jobname%25,cputime,elapsed,state,exitcode"
-    start_date = (datetime.date.today() - datetime.timedelta(weeks=1)).isoformat()
-    commandargs = ["sacct", "-u", user, "--starttime", start_date, sacct_format]
-    queue_list = []
-    try:
-        sacct_output = subprocess.check_output(
-            commandargs, universal_newlines=True, shell=False
-        )
-    except subprocess.CalledProcessError as Error:
-        log.exception(f"Command '{stringify(commandargs)}' failed, {Error}")
-    except OSError as Error:
-        log.exception(f"Command '{stringify(commandargs)}' failed, {Error}")
+    if shutil.which('sacct') is None:
+        log.warning("No job info available since sacct command is not available")
     else:
-        queue_header = sacct_output.splitlines()[0].split()
-        queue_lines = (
-            sacct_output.replace("+", "")
-            .replace("sequence_", "")
-            .replace(".py", "")
-            .splitlines()[2:]
-        )
-        queue_sequences = [line.split() for line in queue_lines if "batch" not in line]
-        queue_list = [dict(zip(queue_header, sequence)) for sequence in queue_sequences]
-        queue_values(queue_list, sequence_list)
+        user = cfg.get("ENV", "USER")
+        sacct_format = "--format=jobid%8,jobname%25,cputime,elapsed,state,exitcode"
+        start_date = (datetime.date.today() - datetime.timedelta(weeks=1)).isoformat()
+        commandargs = ["sacct", "-u", user, "--starttime", start_date, sacct_format]
+        queue_list = []
+        try:
+            sacct_output = subprocess.check_output(
+                commandargs, universal_newlines=True, shell=False
+            )
+        except subprocess.CalledProcessError as Error:
+            log.exception(f"Command '{stringify(commandargs)}' failed, {Error}")
+        except OSError as Error:
+            log.exception(f"Command '{stringify(commandargs)}' failed, {Error}")
+        else:
+            queue_header = sacct_output.splitlines()[0].split()
+            queue_lines = (
+                sacct_output.replace("+", "")
+                    .replace("sequence_", "")
+                    .replace(".py", "")
+                    .splitlines()[2:]
+            )
+            queue_sequences = [line.split() for line in queue_lines if "batch" not in line]
+            queue_list = [dict(zip(queue_header, sequence)) for sequence in queue_sequences]
+            queue_values(queue_list, sequence_list)
 
-    return queue_list
+        return queue_list
 
 
 def queue_values(queue_list, sequence_list):
