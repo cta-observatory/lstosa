@@ -8,7 +8,7 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.cliopts import set_default_directory_if_needed
+from osa.utils.cliopts import set_default_directory_if_needed, valid_date
 from osa.utils.logging import myLogger
 from osa.utils.utils import set_no_observations_flag, create_directories_datacheck_web
 
@@ -18,14 +18,6 @@ log = myLogger(logging.getLogger())
 
 
 # settings / global variables
-def valid_date(s):
-    try:
-        return datetime.datetime.strptime(s, "%Y_%m_%d")
-    except ValueError:
-        msg = f"Not a valid date: '{s}'."
-        raise argparse.ArgumentTypeError(msg)
-
-
 def argument_parser():
     parser = argparse.ArgumentParser(
         description="This script is an automatic error handler and closer for lstosa."

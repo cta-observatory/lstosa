@@ -22,9 +22,16 @@ __all__ = ["datasequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
 log = myLogger(logging.getLogger())
 
 
-def datasequence(calibrationfile, pedestalfile, time_calibration, drivefile, run_summary, run_str):
+def datasequence(
+        calibrationfile,
+        pedestalfile,
+        time_calibration,
+        drivefile,
+        run_summary,
+        run_str
+):
     """
-    Performs all the steps to process a whole run
+    Performs all the steps to process a whole run.
 
     Parameters
     ----------
@@ -37,7 +44,8 @@ def datasequence(calibrationfile, pedestalfile, time_calibration, drivefile, run
 
     Returns
     -------
-
+    rc: int
+        Return code of the last executed command.
     """
     historysuffix = cfg.get("LSTOSA", "HISTORYSUFFIX")
     sequenceprebuild = join(options.directory, f"sequence_{options.tel_id}_{run_str}")
@@ -89,7 +97,13 @@ def datasequence(calibrationfile, pedestalfile, time_calibration, drivefile, run
 # FIXME: Parse all different arguments via config file or sequence_list.txt
 @trace
 def r0_to_dl1(
-    calibrationfile, pedestalfile, time_calibration, drivefile, run_summary, run_str, historyfile
+        calibrationfile,
+        pedestalfile,
+        time_calibration,
+        drivefile,
+        run_summary,
+        run_str,
+        historyfile
 ):
     """
     Prepare and launch the actual lstchain script that is performing
@@ -110,7 +124,8 @@ def r0_to_dl1(
 
     Returns
     -------
-    rc
+    rc: int
+        Return code of the executed command.
     """
 
     if options.simulate:
@@ -159,7 +174,7 @@ def dl1ab(run_str, historyfile):
 
     Returns
     -------
-    rc
+    rc: int
     """
 
     if options.simulate:

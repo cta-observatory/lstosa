@@ -32,6 +32,7 @@ __all__ = [
     "simprocparsing",
     "stereosequencecliparsing",
     "sequencer_webmaker_argparser",
+    "valid_date",
 ]
 
 log = logging.getLogger(__name__)
@@ -279,8 +280,12 @@ def calibrationsequence_argparser():
         default=False,
         help="do not submit sequences as jobs",
     )
-    parser.add_argument("pedoutfile", help="Full path of the DRS4 pedestal file to be created")
-    parser.add_argument("caloutfile", help="Full path of the calibration file to be created")
+    parser.add_argument(
+        "pedoutfile", help="Full path of the DRS4 pedestal file to be created"
+    )
+    parser.add_argument(
+        "caloutfile", help="Full path of the calibration file to be created"
+    )
     parser.add_argument("calib_run_number", help="Calibration run number")
     parser.add_argument("ped_run_number", help="DRS4 pedestal run number")
     parser.add_argument("run_summary_file", help="Run summary file")
@@ -411,9 +416,12 @@ def datasequence_argparser():
     parser.add_argument("calib_file", help="Path of the calibration file")
     parser.add_argument("drs4_ped_file", help="Path of the DRS4 pedestal file")
     parser.add_argument("time_calib_file", help="Path of the time calibration file")
-    parser.add_argument("drive_log_file", help="Path of drive log file with pointing information")
     parser.add_argument(
-        "run_summary_file", help="Path of run summary file with time reference information"
+        "drive_log_file", help="Path of drive log file with pointing information"
+    )
+    parser.add_argument(
+        "run_summary_file",
+        help="Path of run summary file with time reference information",
     )
     parser.add_argument("run_number", help="Number of the run to be processed")
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
@@ -745,9 +753,7 @@ def sequencer_cli_parsing():
 
 
 def rawcopycliparsing():
-    message = (
-        "usage: %prog [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-z] <TEL_ID>"
-    )
+    message = "usage: %prog [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-z] <TEL_ID>"
     parser = OptionParser(usage=message)
     parser.add_option(
         "-c",
@@ -867,8 +873,12 @@ def provprocess_argparser():
         dest="quit",
         help="use this flag to reset session and remove log file",
     )
-    parser.add_argument("run", help="Number of the run whose provenance is to be extracted")
-    parser.add_argument("date", action="store", type=str, help="Observation starting date YYYYMMDD")
+    parser.add_argument(
+        "run", help="Number of the run whose provenance is to be extracted"
+    )
+    parser.add_argument(
+        "date", action="store", type=str, help="Observation starting date YYYYMMDD"
+    )
     parser.add_argument("prod_id", action="store", type=str, help="Production ID")
 
     return parser
@@ -1004,7 +1014,9 @@ def valid_date(s):
 
 
 def sequencer_webmaker_argparser():
-    parser = ArgumentParser(description="Script to make an xhtml from LSTOSA sequencer output")
+    parser = ArgumentParser(
+        description="Script to make an xhtml from LSTOSA sequencer output"
+    )
     parser.add_argument("-d", "--date", help="Date - format YYYY_MM_DD", type=valid_date)
     parser.add_argument(
         "-c",

@@ -197,6 +197,7 @@ def setrunfromparent(sequence_list):
 
 
 def sequence_filenames(sequence):
+    """Build names of the script, veto and history files."""
     script_suffix = cfg.get("LSTOSA", "SCRIPTSUFFIX")
     history_suffix = cfg.get("LSTOSA", "HISTORYSUFFIX")
     veto_suffix = cfg.get("LSTOSA", "VETOSUFFIX")
@@ -208,32 +209,33 @@ def sequence_filenames(sequence):
 
 
 def sequence_calibration_filenames(sequence_list):
+    """Build names of the calibration and drive files."""
+    nightdir = lstdate_to_dir(options.date)
+    yy_mm_dd = date_in_yymmdd(nightdir)
     calib_suffix = cfg.get("LSTOSA", "CALIBSUFFIX")
     pedestal_suffix = cfg.get("LSTOSA", "PEDESTALSUFFIX")
     drive_suffix = cfg.get("LSTOSA", "DRIVESUFFIX")
-    for s in sequence_list:
-        if len(s.parent_list) == 0:
-            cal_run_string = str(s.run).zfill(5)
+    drivefile = f"drive_log_{yy_mm_dd}{drive_suffix}"
+
+    for sequence in sequence_list:
+        if len(sequence.parent_list) == 0:
+            cal_run_string = str(sequence.run).zfill(5)
             calfile = f"calibration.Run{cal_run_string}.0000{calib_suffix}"
             timecalfile = f"time_calibration.Run{cal_run_string}.0000{calib_suffix}"
-            ped_run_string = str(s.previousrun).zfill(5)
+            ped_run_string = str(sequence.previousrun).zfill(5)
             pedfile = f"drs4_pedestal.Run{ped_run_string}.0000{pedestal_suffix}"
-            nightdir = lstdate_to_dir(options.date)
-            yy_mm_dd = date_in_yymmdd(nightdir)
         else:
-            run_string = str(s.parent_list[0].run).zfill(5)
-            ped_run_string = str(s.parent_list[0].previousrun).zfill(5)
-            nightdir = lstdate_to_dir(options.date)
-            yy_mm_dd = date_in_yymmdd(nightdir)
+            run_string = str(sequence.parent_list[0].run).zfill(5)
+            ped_run_string = str(sequence.parent_list[0].previousrun).zfill(5)
             calfile = f"calibration.Run{run_string}.0000{calib_suffix}"
             timecalfile = f"time_calibration.Run{run_string}.0000{calib_suffix}"
             pedfile = f"drs4_pedestal.Run{ped_run_string}.0000{pedestal_suffix}"
 
-        drivefile = f"drive_log_{yy_mm_dd}{drive_suffix}"
-        s.drive = drivefile
-        s.calibration = Path(options.directory) / calfile
-        s.time_calibration = Path(options.directory) / timecalfile
-        s.pedestal = Path(options.directory) / pedfile
+        # Assign the calibration and drive files to the sequence object
+        sequence.drive = drivefile
+        sequence.calibration = Path(options.directory) / calfile
+        sequence.time_calibration = Path(options.directory) / timecalfile
+        sequence.pedestal = Path(options.directory) / pedfile
 
 
 def get_job_statistics():
@@ -251,7 +253,7 @@ def get_job_statistics():
     sacct_output = sacct_output.split("\n")
     sacct_output = sacct_output[1:]  # remove header
     # Copy the information to a pandas dataframe.
-    df = pd.DataFrame(
+    job_information = pd.DataFrame(
         columns=["JobID", "JobName", "State", "Elapsed", "MaxRSS", "MaxVMSize"]
     )
 
@@ -266,8 +268,8 @@ def get_job_statistics():
     plt.yscale("log")
     plt.tight_layout()
     plt.hist2d(
-        df["Elapsed"],
-        df["MaxRSS"],
+        job_information["Elapsed"],
+        job_information["MaxRSS"],
         bins=100
     )
 

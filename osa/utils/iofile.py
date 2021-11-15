@@ -7,10 +7,10 @@ from osa.configs import options
 log = logging.getLogger(__name__)
 
 __all__ = [
-    'read_from_file',
-    'write_to_file',
-    'append_to_file',
-    'sedsi',
+    "read_from_file",
+    "write_to_file",
+    "append_to_file",
+    "sedsi",
 ]
 
 
@@ -41,14 +41,18 @@ def write_to_file(file, content):
         else:
             if options.simulate:
                 remove(file_temp)
-                log.debug(f"SIMULATE File {file_temp} would replace {file}. Deleting {file_temp}")
+                log.debug(
+                    f"SIMULATE File {file_temp} would replace {file}. Deleting {file_temp}"
+                )
             else:
                 try:
                     rename(file_temp, file)
                 except (IOError, OSError) as e:
                     log.exception(f"{e.strerror} {e.filename}")
     elif options.simulate:
-        log.debug(f"SIMULATE File {file_temp} would be written as {file}. Deleting {file_temp}")
+        log.debug(
+            f"SIMULATE File {file_temp} would be written as {file}. Deleting {file_temp}"
+        )
     else:
         rename(file_temp, file)
     return True

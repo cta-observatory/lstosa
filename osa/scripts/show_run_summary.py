@@ -1,8 +1,6 @@
 """
-Create a run summary for a given date containing the number of subruns,
-the start time of the run, type pf the run: DATA, DRS4, CALI, and
-the reference timestamp and counter of the run.
-"""
+Show the run summary for a given date containing the number of subruns,
+the start and end time of the run and type pf the run: DATA, DRS4, PEDCALIB."""
 
 import argparse
 import logging
@@ -13,10 +11,6 @@ import numpy as np
 from astropy import units as u
 from astropy.table import Table
 from astropy.time import Time
-from ctapipe_io_lst import (
-    LSTEventSource,
-)
-from ctapipe_io_lst.event_time import calc_dragon_time
 from lstchain.scripts.lstchain_create_run_summary import (
     get_list_of_files,
     get_list_of_runs,
@@ -24,7 +18,6 @@ from lstchain.scripts.lstchain_create_run_summary import (
     type_of_run,
     read_counters
 )
-from traitlets.config import Config
 
 from osa.utils.logging import myLogger
 
@@ -51,28 +44,6 @@ dtypes = {
     "time_end": str,
     "elapsed": u.quantity.Quantity,
 }
-
-
-def end_time(filename, ref_time, ref_counter, ref_module_id):
-
-    config = Config()
-    config.EventTimeCalculator.dragon_reference_time = int(ref_time)
-    config.EventTimeCalculator.dragon_reference_counter = int(ref_counter)
-    config.EventTimeCalculator.dragon_module_id = int(ref_module_id)
-
-    try:
-        with LSTEventSource(filename, config=config, max_events=1) as source:
-            source.log.setLevel(logging.ERROR)
-
-            for event in source:
-                lst_event_container = event.lst.tel[1]
-
-            return calc_dragon_time(lst_event_container, ref_module_id, ref_time, ref_counter)
-
-    except Exception as err:
-        log.debug(f"Files {filename} have error: {err}")
-
-        return -1
 
 
 def start_end_of_run_files_stat(date_path, run_number, num_files):
@@ -109,7 +80,9 @@ def start_end_of_run_files_stat(date_path, run_number, num_files):
         )
 
     except Exception as err:
-        log.error(f"Files {pattern_first_subrun} and/or {pattern_last_subrun} have error: {err}")
+        log.error(
+            f"Files {pattern_first_subrun} or {pattern_last_subrun} have error: {err}"
+        )
 
         return dict(
             time_start=None,

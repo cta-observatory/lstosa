@@ -44,7 +44,7 @@ __all__ = [
     "get_md5sum_and_copy",
     "get_dl1_prod_id",
     "get_dl2_prod_id",
-    "get_night_limit_timestamp"
+    "get_night_limit_timestamp",
 ]
 
 log = logging.getLogger(__name__)
@@ -140,7 +140,7 @@ def get_prod_id():
         else:
             options.prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
 
-    log.debug(f"Getting the prod ID for the running analysis directory: {options.prod_id}")
+    log.debug(f"Getting prod ID for the running analysis directory: {options.prod_id}")
 
     return options.prod_id
 
@@ -156,7 +156,9 @@ def get_calib_prod_id():
         if cfg.get("LST1", "CALIB-PROD-ID") is not None:
             options.calib_prod_id = cfg.get("LST1", "CALIB-PROD-ID")
         else:
-            options.calib_prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
+            options.calib_prod_id = (
+                    get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
+            )
 
     log.debug(f"Getting prod ID for calibration products: {options.calib_prod_id}")
 
@@ -165,7 +167,8 @@ def get_calib_prod_id():
 
 def get_dl1_prod_id():
     """
-    Get the prod ID for the dl1 products provided it is defined in the configuration file.
+    Get the prod ID for the dl1 products provided
+    it is defined in the configuration file.
 
     Returns
     -------
@@ -175,7 +178,9 @@ def get_dl1_prod_id():
         if cfg.get("LST1", "DL1-PROD-ID") is not None:
             options.dl1_prod_id = cfg.get("LST1", "DL1-PROD-ID")
         else:
-            options.dl1_prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
+            options.dl1_prod_id = (
+                    get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
+            )
 
     log.debug(f"Getting prod ID for DL1 products: {options.dl1_prod_id}")
 
@@ -193,7 +198,9 @@ def get_dl2_prod_id():
         if cfg.get("LST1", "DL2-PROD-ID") is not None:
             options.dl2_prod_id = cfg.get("LST1", "DL2-PROD-ID")
         else:
-            options.dl2_prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
+            options.dl2_prod_id = (
+                    get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
+            )
 
     log.debug(f"Getting prod ID for DL2 products: {options.dl2_prod_id}")
 
@@ -225,7 +232,6 @@ def create_lock(lockfile) -> bool:
             if not exists(dir):
                 os.makedirs(dir, exist_ok=True)
                 log.debug(f"Creating parent directory {dir} for lock file")
-                return True
             if isdir(dir):
                 pid = str(getpid())
                 hostname = gethostname()
@@ -446,33 +452,37 @@ def time_to_seconds(timestring):
         timestring = "00:00:00"
     if "-" in timestring:
         # Day is also specified (D-)HH:MM:SS
-        days, hhmmss = timestring.split("-", )
+        days, hhmmss = timestring.split(
+            "-",
+        )
         hours, minutes, seconds = hhmmss.split(":")
-        return int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+        return (
+                int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+        )
     else:
         hours, minutes, seconds = timestring.split(":")
         return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
 
 
-def date_in_yymmdd(datestring):
+def date_in_yymmdd(date_string):
     """
     Convert date string YYYYMMDD into YY_MM_DD format to be used for
     drive log file names.
 
     Parameters
     ----------
-    datestring: in format YYYYMMDD
+    date_string: in format YYYYMMDD
 
     Returns
     -------
-    yy_mm_dd: datestring in format YY_MM_DD
+    yy_mm_dd: date_string in format YY_MM_DD
 
     """
-    date = list(datestring)
-    yy = "".join(date[2:4])
-    mm = "".join(date[4:6])
-    dd = "".join(date[6:8])
-    return f"{yy}_{mm}_{dd}"
+    date = list(date_string)
+    year = "".join(date[2:4])
+    month = "".join(date[4:6])
+    day = "".join(date[6:8])
+    return f"{year}_{month}_{day}"
 
 
 def destination_dir(concept, create_dir=True):
@@ -504,7 +514,10 @@ def destination_dir(concept, create_dir=True):
         )
     elif concept == "DL2":
         directory = os.path.join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl2_prod_id
+            cfg.get(options.tel_id, concept + "DIR"),
+            nightdir,
+            options.prod_id,
+            options.dl2_prod_id,
         )
     elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
         directory = os.path.join(
@@ -582,7 +595,9 @@ def copy_files_datacheck_web(host, datedir, file_list):
             subprocess.run(cmd)
 
         elif "calibration" in str(file_to_transfer):
-            destination_dir = DATACHECK_BASEDIR / "enf_calibration" / options.prod_id / datedir
+            destination_dir = (
+                    DATACHECK_BASEDIR / "enf_calibration" / options.prod_id / datedir
+            )
             cmd = ["scp", file_to_transfer, f"{host}:{destination_dir}/."]
             subprocess.run(cmd)
 
@@ -613,7 +628,8 @@ def get_input_file(run_number):
 
     # Get raw data file.
     file_list = [
-        file for file in r0_path.rglob(
+        file
+        for file in r0_path.rglob(
             f'*/{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_number:05d}.0000*'
         )
     ]
