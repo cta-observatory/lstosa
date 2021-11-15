@@ -613,7 +613,8 @@ def get_input_file(run_number):
 
     Parameters
     ----------
-    run_number
+    run_number: str
+        String with the run number
 
     Returns
     -------
@@ -624,16 +625,16 @@ def get_input_file(run_number):
     IOError
         If the input file cannot be found.
     """
-    r0_path = Path(cfg.get("LST1", "RAWDIR"))
+    r0_path = Path(cfg.get("LST1", "RAWDIR")).absolute()
 
     # Get raw data file.
     file_list = list(
-        r0_path.rglob(f"*/{cfg.get('LSTOSA', 'R0PREFIX')}.Run{run_number:05d}.0000*")
+        r0_path.rglob(f"*/{cfg.get('LSTOSA', 'R0PREFIX')}.Run{run_number}.0000*")
     )
 
     if file_list:
         return str(file_list[0])
-    raise IOError(f"Files corresponding to run {run_number} not found.")
+    raise IOError(f"Files corresponding to run {run_number} not found in {r0_path}.")
 
 
 def stringify(args):

@@ -99,7 +99,8 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000)
 
     Parameters
     ----------
-    run_ped
+    run_ped: str
+        String with run number of the pedestal run
     pedestal_output_file
     history_file
     max_events

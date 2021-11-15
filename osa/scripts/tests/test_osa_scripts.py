@@ -95,7 +95,7 @@ def test_autocloser(running_analysis_dir):
     )
 
 
-def test_closer(r0_dir, running_analysis_dir):
+def test_closer(r0_dir, running_analysis_dir, test_observed_data):
     run_program(
         "closer", "-c", "cfg/sequencer.cfg", "-y", "-v", "-t", "-d", "2020_01_17", "LST1"
     )
@@ -105,6 +105,7 @@ def test_closer(r0_dir, running_analysis_dir):
     assert os.path.exists("./test_osa/test_files0/DL1/20200117/v0.1.0_v01/tailcut84")
     assert os.path.exists("./test_osa/test_files0/DL2/20200117/v0.1.0_v01")
     assert os.path.exists("./test_osa/test_files0/calibration/20200117/v01")
+    assert os.path.exists(test_observed_data[1])
 
 
 def test_datasequence(running_analysis_dir):

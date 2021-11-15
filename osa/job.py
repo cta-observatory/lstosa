@@ -42,11 +42,13 @@ __all__ = [
 
 def are_all_jobs_correctly_finished(sequence_list):
     """
-    Check if all jobs are correctly finished by looking at the history file.
+    Check if all jobs are correctly finished by looking
+    at the history file.
 
     Parameters
     ----------
-    sequence_list
+    sequence_list: list
+        List of sequence objects
 
     Returns
     -------

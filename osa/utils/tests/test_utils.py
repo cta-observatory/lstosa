@@ -62,6 +62,7 @@ def test_destination_dir():
     datedir = lstdate_to_dir(options.date)
     options.dl1_prod_id = cfg.get("LST1", "DL1-PROD-ID")
     options.dl2_prod_id = cfg.get("LST1", "DL2-PROD-ID")
+    options.calib_prod_id = cfg.get("LST1", "CALIB-PROD-ID")
     options.prod_id = cfg.get("LST1", "PROD-ID")
     basedir = cfg.get("LST1", "DIR")
 
@@ -85,6 +86,10 @@ def test_destination_dir():
             expected_directory = os.path.join(
                 basedir, dst, datedir, options.prod_id, options.dl2_prod_id
             )
+        elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
+            expected_directory = os.path.join(
+                basedir, dst, datedir, options.calib_prod_id
+            )
         else:
             expected_directory = os.path.join(basedir, dst, datedir, options.prod_id)
         assert directory == expected_directory
@@ -97,3 +102,10 @@ def test_time_to_seconds():
     assert seconds_with_day == 2 * 24 * 3600 + 2 * 3600 + 27 * 60 + 15
     seconds = time_to_seconds("02:27:15")
     assert seconds == 2 * 3600 + 27 * 60 + 15
+
+
+def test_get_input_file(r0_data):
+    from osa.utils.utils import get_input_file
+    run_number = "01805"
+    assert r0_data.exists()
+    assert get_input_file(run_number) == str(r0_data)

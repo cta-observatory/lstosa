@@ -33,6 +33,13 @@ def r0_dir(base_test_dir):
 
 
 @pytest.fixture(scope="session")
+def r0_data(r0_dir):
+    r0_file = r0_dir / "LST-1.1.Run01805.0000.fits.fz"
+    r0_file.touch()
+    return r0_file
+
+
+@pytest.fixture(scope="session")
 def dl1b_subdir(running_analysis_dir):
     dl1ab_directory = running_analysis_dir / dl1_prod_id
     dl1ab_directory.mkdir(parents=True, exist_ok=True)

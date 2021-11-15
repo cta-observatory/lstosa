@@ -12,8 +12,8 @@ def test_dirs_available(base_test_dir, running_analysis_dir, r0_dir):
     assert r0_dir.is_dir()
 
 
-def test_files_available(test_observed_data):
-    """Function to clean the test files created by the previous test."""
+def test_files_available(test_observed_data, r0_data):
+    assert os.path.exists(r0_data)  # R0 file
     assert os.path.exists(test_observed_data[0])  # DL1 file
     assert os.path.exists(test_observed_data[1])  # DL1ab file
     assert os.path.exists(test_observed_data[2])  # DL2 file
@@ -21,10 +21,10 @@ def test_files_available(test_observed_data):
     assert os.path.exists(test_observed_data[4])  # Datacheck DL1 file
 
 
-@pytest.mark.trylast
-def test_clean_test_files(base_test_dir):
-    """Function to clean the test files created by the previous test."""
-    shutil.rmtree(base_test_dir)
-    # FIXME: produce this prov.log file inside
-    if os.path.exists("prov.log"):
-        os.remove("prov.log")
+# @pytest.mark.trylast
+# def test_clean_test_files(base_test_dir):
+#     """Function to clean the test files created by the previous test."""
+#     shutil.rmtree(base_test_dir)
+#     # FIXME: produce this prov.log file inside
+#     if os.path.exists("prov.log"):
+#         os.remove("prov.log")
