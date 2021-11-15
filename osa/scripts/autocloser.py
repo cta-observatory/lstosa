@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import subprocess
+from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -81,8 +82,8 @@ def analysis_path(tel):
 def closedFlag(tel):
     if args.test:
         return f"./{tel}/NightFinished.txt"
-    basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get("LSTOSA", "TEXTSUFFIX")
-    return os.path.join(cfg.get(tel, "CLOSERDIR"), nightdir, prod_id, basename)
+    basename = cfg.get("LSTOSA", "end_of_activity")
+    return Path(cfg.get(tel, "CLOSERDIR")) / nightdir / prod_id / basename
 
 
 def exampleSeq(tel):
