@@ -1,5 +1,4 @@
 import os
-import shutil
 
 import pytest
 
@@ -19,12 +18,3 @@ def test_files_available(test_observed_data, r0_data):
     assert os.path.exists(test_observed_data[2])  # DL2 file
     assert os.path.exists(test_observed_data[3])  # Muons file
     assert os.path.exists(test_observed_data[4])  # Datacheck DL1 file
-
-
-# @pytest.mark.trylast
-# def test_clean_test_files(base_test_dir):
-#     """Function to clean the test files created by the previous test."""
-#     shutil.rmtree(base_test_dir)
-#     # FIXME: produce this prov.log file inside
-#     if os.path.exists("prov.log"):
-#         os.remove("prov.log")
