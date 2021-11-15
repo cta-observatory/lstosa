@@ -100,3 +100,11 @@ def sequence_file(running_analysis_dir):
         running_analysis_dir / "sequence_LST1_01805.py",
         running_analysis_dir / "sequence_LST1_01807.py",
     ]
+
+
+@pytest.fixture(scope="session")
+def txt_file_test(running_analysis_dir):
+    from osa.utils.iofile import write_to_file
+    file_name = running_analysis_dir / "test.txt"
+    write_to_file(file_name, 'This is a test')
+    return file_name

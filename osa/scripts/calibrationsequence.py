@@ -57,9 +57,9 @@ def calibrationsequence(
     rc
 
     """
-    history_file = path.join(
-        options.directory, f"sequence_{options.tel_id}_{cal_run_number}.history"
-    )
+    history_file = \
+        Path(options.directory) / f"sequence_{options.tel_id}_{cal_run_number}.history"
+
     level, rc = (3, 0) if options.simulate else historylevel(history_file, "PEDCALIB")
 
     log.info(f"Going to level {level}")
