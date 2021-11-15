@@ -52,7 +52,7 @@ jobs:
           # activate our env again
           source $CONDA/etc/profile.d/conda.sh
           conda activate ci
-          pytest -v --cov --cov-report=xml
+          pytest --basetemp=test_osa -v --cov --cov-report=xml
 
       - name: Codecov
         uses: codecov/codecov-action@v2
