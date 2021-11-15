@@ -23,12 +23,10 @@ def test_getcurrentdate():
         assert getcurrentdate("_") == now.strftime("%Y_%m_%d")
 
 
-def test_getnightdirectory():
-    from osa.utils.utils import getnightdirectory, lstdate_to_dir
+def test_night_directory(running_analysis_dir):
+    from osa.utils.utils import night_directory
 
-    analysis_dir = cfg.get(options.tel_id, "ANALYSISDIR")
-    nightdir = lstdate_to_dir(options.date)
-    assert getnightdirectory() == os.path.join(analysis_dir, nightdir, options.prod_id)
+    assert night_directory().resolve() == running_analysis_dir
 
 
 def test_lstdate_to_number():
@@ -41,8 +39,6 @@ def test_get_lstchain_version():
     from osa.utils.utils import get_lstchain_version
     from lstchain import __version__
 
-    assert get_lstchain_version().startswith("v")
-    # Last line is version specific, needs to be changed
     assert get_lstchain_version() == "v" + __version__
 
 

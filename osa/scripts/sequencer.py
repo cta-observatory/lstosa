@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Main LSTOSA script. It creates and execute the calibration sequence and
+Orchestrator script that creates and execute the calibration sequence and
 prepares a SLURM job array which launches the data sequences for every subrun.
 """
 
@@ -13,7 +13,7 @@ from os.path import join
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import getqueuejoblist, preparejobs, preparestereojobs, submitjobs
+from osa.job import queue_job_list, preparejobs, preparestereojobs, submitjobs
 from osa.nightsummary.extract import (
     extractruns,
     extractsequences,
@@ -22,7 +22,7 @@ from osa.nightsummary.extract import (
 )
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.report import rule, start
-from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_needed
+from osa.utils.cliopts import sequencer_cli_parsing, set_default_directory_if_needed
 from osa.utils.logging import myLogger
 from osa.utils.utils import is_day_closed, gettag
 from osa.veto import getclosedlist, getvetolist
@@ -45,29 +45,23 @@ def main():
     the calibration sequence and afterward it prepares a SLURM job
     array which launches the data sequences for every subrun.
     """
-    # Set the options through parsing of the command line interface
-    sequencercliparsing()
+    sequencer_cli_parsing()
 
     if options.verbose:
         log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
 
-    process_mode = None
     single_array = ["LST1", "LST2"]
     tag = gettag()
     start(tag)
     if options.tel_id in single_array:
-        process_mode = "single"
-        single_process(options.tel_id, process_mode)
+        single_process(options.tel_id)
     else:
-        if options.tel_id == "all":
-            process_mode = "complete"
-        elif options.tel_id == "ST":
-            process_mode = "stereo"
+        log.error("Process mode not supported yet")
 
 
-def single_process(telescope, process_mode):
+def single_process(telescope):
     """
     Runs the single process for a single telescope
 
@@ -75,8 +69,6 @@ def single_process(telescope, process_mode):
     ----------
     telescope : str
         Options: 'LST1', 'LST2' or 'ST'
-    process_mode : str
-        Options: 'single', 'stereo' or 'complete'
 
     Returns
     -------
@@ -94,19 +86,11 @@ def single_process(telescope, process_mode):
 
     is_report_needed = True
 
-    if process_mode == "single":
-        if is_day_closed():
-            log.info(f"Day {options.date} for {options.tel_id} already closed")
-            return sequence_list
-    elif process_mode == "stereo":
-        # only simulation for single array required
-        options.nightsummary = True
-        options.simulate = True
-        is_report_needed = False
-    else:
-        raise Exception("Process mode not found")
+    if is_day_closed():
+        log.info(f"Day {options.date} for {options.tel_id} already closed")
+        return sequence_list
 
-    # building the sequences
+    # Build the sequences
     summary_table = run_summary_table(options.date)
     subrun_list = extractsubruns(summary_table)
     run_list = extractruns(subrun_list)
@@ -116,18 +100,19 @@ def single_process(telescope, process_mode):
     # FIXME: Does this makes sense or should be removed?
     # workflow and submission
     # if not options.simulate:
-    #     writeworkflow(sequence_list)
+    #     write_workflow(sequence_list)
 
     # adds the scripts
     preparejobs(sequence_list)
 
     if not options.test:
-        getqueuejoblist(sequence_list)
+        queue_job_list(sequence_list)
     getvetolist(sequence_list)
     getclosedlist(sequence_list)
     update_sequence_status(sequence_list)
     # updatesequencedb(sequence_list)
-    submitjobs(sequence_list)
+    if not options.no_submit:
+        submitjobs(sequence_list)
 
     # report
     if is_report_needed:
@@ -162,11 +147,11 @@ def stereo_process(telescope, s1_list, s2_list):
 
     # building the sequences
     sequence_list = extractsequencesstereo(s1_list, s2_list)
-    # workflow and Submission
-    # writeworkflow(sequence_list)
-    # adds the scripts
+    # Workflow and Submission
+    # write_workflow(sequence_list)
+    # Adds the scripts
     preparestereojobs(sequence_list)
-    getqueuejoblist(sequence_list)
+    queue_job_list(sequence_list)
     getvetolist(sequence_list)
     getclosedlist(sequence_list)
     update_sequence_status(sequence_list)

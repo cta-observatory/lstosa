@@ -11,7 +11,7 @@ import yaml
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.configs.datamodel import SequenceData
-from osa.job import createjobtemplate
+from osa.job import create_job_template
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.provenance.utils import get_log_config
@@ -136,7 +136,7 @@ def simulate_processing():
                 continue
             with mp.Pool() as pool:
                 args_ds = [
-                    parse_template(createjobtemplate(s, get_content=True), subrun_idx)
+                    parse_template(create_job_template(s, get_content=True), subrun_idx)
                     for subrun_idx in range(sl.subrun)
                 ]
                 processed = pool.map(simulate_subrun_processing, args_ds)

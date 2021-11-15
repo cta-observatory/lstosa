@@ -8,22 +8,24 @@ import os
 import subprocess
 from datetime import datetime, timedelta
 from os import getpid, readlink, symlink
-from os.path import dirname, exists, isdir, isfile, islink, join, split
+from os.path import dirname, exists, isdir, isfile, islink, split
 from pathlib import Path
 from socket import gethostname
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.iofile import writetofile
+from osa.utils.iofile import write_to_file
 
 __all__ = [
     "getcurrentdate",
-    "getnightdirectory",
+    "night_directory",
     "get_lstchain_version",
     "create_directories_datacheck_web",
     "set_no_observations_flag",
     "copy_files_datacheck_web",
     "lstdate_to_dir",
+    "lstdate_to_iso",
+    "lstdate_to_number",
     "is_day_closed",
     "get_prod_id",
     "date_in_yymmdd",
@@ -31,13 +33,18 @@ __all__ = [
     "time_to_seconds",
     "date_in_yymmdd",
     "time_to_seconds",
-    "getlockfile",
+    "get_lock_file",
     "is_defined",
     "destination_dir",
-    "createlock",
+    "create_lock",
     "get_input_file",
     "stringify",
     "gettag",
+    "get_calib_prod_id",
+    "get_md5sum_and_copy",
+    "get_dl1_prod_id",
+    "get_dl2_prod_id",
+    "get_night_limit_timestamp"
 ]
 
 log = logging.getLogger(__name__)
@@ -59,7 +66,7 @@ def getcurrentdate(sep):
 
     Returns
     -------
-    stringdate: string
+    string_date: string
         Date in string format using the given separator
 
     """
@@ -76,43 +83,41 @@ def getcurrentdate(sep):
         # tomorrow
         gap = timedelta(hours=24)
         now = now + gap
-    stringdate = now.strftime("%Y" + sep + "%m" + sep + "%d")
-    log.debug(f"stringdate by default {stringdate}")
-    return stringdate
+    string_date = now.strftime("%Y" + sep + "%m" + sep + "%d")
+    log.debug(f"stringdate by default {string_date}")
+    return string_date
 
 
-def getnightdirectory():
+def night_directory():
     """
-    Get the path of the running_analysis directory for a certain night
+    Path of the running_analysis directory for a certain night
 
     Returns
     -------
     directory
         Path of the running_analysis directory for a certain night
-
     """
     log.debug(f"Getting analysis path for tel_id {options.tel_id}")
-    nightdir = lstdate_to_dir(options.date)
+    date = lstdate_to_dir(options.date)
     options.prod_id = get_prod_id()
-    directory = join(cfg.get(options.tel_id, "ANALYSISDIR"), nightdir, options.prod_id)
+    directory = Path(cfg.get(options.tel_id, "ANALYSISDIR")) / date / options.prod_id
 
-    if not exists(directory):
-        if options.nightsummary and options.tel_id != "ST":
-            raise Exception(f"Analysis directory {directory} does not exists.")
-        elif options.simulate:
-            log.debug("SIMULATE the creation of the analysis directory.")
-        else:
-            os.makedirs(directory, exist_ok=True)
+    if not directory.exists() and not options.simulate:
+        directory.mkdir(parents=True, exist_ok=True)
+    else:
+        log.debug("SIMULATE the creation of the analysis directory.")
+
     log.debug(f"Analysis directory: {directory}")
     return directory
 
 
 def get_lstchain_version():
     """
+    Get the lstchain version.
 
     Returns
     -------
-
+    lstchain_version: string
     """
     from lstchain import __version__
 
@@ -122,10 +127,12 @@ def get_lstchain_version():
 
 def get_prod_id():
     """
+    Get production ID from the configuration file if it is defined.
+    Otherwise, it takes the lstchain version used.
 
     Returns
     -------
-
+    prod_id: string
     """
     if not options.prod_id:
         if cfg.get("LST1", "PROD-ID") is not None:
@@ -158,10 +165,11 @@ def get_calib_prod_id():
 
 def get_dl1_prod_id():
     """
+    Get the prod ID for the dl1 products provided it is defined in the configuration file.
 
     Returns
     -------
-
+    dl1_prod_id: string
     """
     if not options.dl1_prod_id:
         if cfg.get("LST1", "DL1-PROD-ID") is not None:
@@ -192,16 +200,17 @@ def get_dl2_prod_id():
     return options.dl2_prod_id
 
 
-def createlock(lockfile):
+def create_lock(lockfile) -> bool:
     """
+    Create a lock file to prevent multiple instances of the same analysis.
 
     Parameters
     ----------
-    lockfile
+    lockfile: pathlib.Path
 
     Returns
     -------
-
+    bool
     """
     dir = dirname(lockfile)
     if options.simulate:
@@ -220,29 +229,27 @@ def createlock(lockfile):
                 pid = str(getpid())
                 hostname = gethostname()
                 content = f"{hostname}:{pid}"
-                writetofile(lockfile, content)
+                write_to_file(lockfile, content)
                 log.debug(f"Lock file {lockfile} created")
                 return True
             else:
                 log.error(f"Expecting {dir} to be a directory, not a file")
 
 
-def getlockfile():
+def get_lock_file():
     """
+    Create night-is-finished lock file.
 
     Returns
     -------
-
+    lockfile: pathlib.Path
+        Path of the lock file
     """
-    basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get("LSTOSA", "TEXTSUFFIX")
-    dir = join(
-        cfg.get(options.tel_id, "CLOSERDIR"),
-        lstdate_to_dir(options.date),
-        options.prod_id,
-    )
-    lockfile = join(dir, basename)
-    log.debug(f"Looking for lock file {lockfile}")
-    return lockfile
+    basename = cfg.get("LSTOSA", "end_of_activity")
+    date = lstdate_to_dir(options.date)
+    lock_file = Path(cfg.get(options.tel_id, "CLOSERDIR")) / date / options.prod_id / basename
+    log.debug(f"Looking for lock file {lock_file}")
+    return lock_file
 
 
 def lstdate_to_number(night):
@@ -277,18 +284,19 @@ def lstdate_to_iso(night):
     return night.replace(cfg.get("LST", "DATESEPARATOR"), sepbar)
 
 
-def lstdate_to_dir(night):
-    """Function to change from YYYY_MM_DD to YYYY/MM/DD
+def lstdate_to_dir(date):
+    """Function to change from YYYY_MM_DD to YYYYMMDD
 
     Parameters
     ----------
-    night
+    date: string
+        String with the date in YYYY_MM_DD format
 
     Returns
     -------
-
+    String with the date in YYYYMMDD format
     """
-    nightdir = night.split(cfg.get("LST", "DATESEPARATOR"))
+    nightdir = date.split(cfg.get("LST", "DATESEPARATOR"))
     if len(nightdir) != 3:
         log.error(f"Night directory structure could not be created from {nightdir}")
     return "".join(nightdir)
@@ -413,7 +421,7 @@ def get_md5sum_and_copy(inputf, outputf):
 
 def is_day_closed():
     """Get the name and Check for the existence of the Closer flag file."""
-    flag_file = getlockfile()
+    flag_file = get_lock_file()
     return bool(exists(flag_file))
 
 

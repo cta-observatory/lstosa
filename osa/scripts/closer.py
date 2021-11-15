@@ -21,13 +21,13 @@ from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import myLogger
 from osa.utils.register import register_run_concept_files
 from osa.utils.utils import (
-    getlockfile,
+    get_lock_file,
     is_day_closed,
     stringify,
     is_defined,
     lstdate_to_dir,
     destination_dir,
-    createlock,
+    create_lock,
     gettag
 )
 from osa.veto import createclosed
@@ -181,7 +181,7 @@ def ask_for_closing():
             # answer_user = input(question)
             answer_user = "n"
         except KeyboardInterrupt:
-            log.warning("Program quitted by user. No answer")
+            log.warning("Program exited by user.")
             sys.exit(1)
         except EOFError as ErrorValue:
             log.exception(f"End of file not expected, {ErrorValue}")
@@ -347,36 +347,35 @@ def register_non_existing_file(file_path_str, concept, seq_list):
 
 def set_closed_with_file():
     """Write the analysis report to the closer file."""
-
-    closer_file = getlockfile()
+    closer_file = get_lock_file()
     is_closed = False
     if not options.simulate:
         # Generate NightFinished lock file
-        is_closed = createlock(closer_file)
+        is_closed = create_lock(closer_file)
     else:
         log.info(f"SIMULATE Creation of lock file {closer_file}")
 
     return is_closed
 
 
-def is_finished_check(nightsummary):
+def is_finished_check(run_summary):
     """
+    Check that all sequences are finished.
 
     Parameters
     ----------
-    nightsummary: astropy.Table
+    run_summary: astropy.Table
         Table containing the run information from a given date.
 
     Returns
     -------
-
+    seq_finished, seq_list: bool, list
     """
-    # we ought to implement a method of successful or unsuccessful finishing
-    # and it is done looking at the files
+
     sequence_success = False
-    if nightsummary is not None:
+    if run_summary is not None:
         # building the sequences (the same way than the sequencer)
-        subrun_list = extractsubruns(nightsummary)
+        subrun_list = extractsubruns(run_summary)
         run_list = extractruns(subrun_list)
         sequence_list = extractsequences(run_list)
 
@@ -401,9 +400,9 @@ def is_finished_check(nightsummary):
     return [sequence_success, sequence_list]
 
 
-def setclosedfilename(seq):
+def setclosedfilename(seq) -> None:
     """
-    Close sequence and creates a .closed file
+    Close sequence and creates a .closed lock file.
 
     Parameters
     ----------
@@ -450,7 +449,7 @@ def merge_dl1_datacheck(seq_list):
 
             # TODO implement an automatic scp to www datacheck,
             #  right after the production of the PDF files.
-            #  Right now there is no connection opened from cp's
+            #  Right now there is no connection opened from cp machines
             #  to the datacheck webserver. Hence it has to be done without
             #  slurm and after assuring that the files are already produced.
 
