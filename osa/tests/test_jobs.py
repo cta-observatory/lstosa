@@ -35,11 +35,11 @@ def test_historylevel():
 
 
 def test_preparejobs(running_analysis_dir, sequence_list):
-    from osa.job import preparejobs
+    from osa.job import prepare_jobs
 
     options.simulate = False
     options.directory = running_analysis_dir
-    preparejobs(sequence_list)
+    prepare_jobs(sequence_list)
     expected_calib_script = os.path.join(running_analysis_dir, "sequence_LST1_01805.py")
     expected_data_script = os.path.join(running_analysis_dir, "sequence_LST1_01807.py")
     assert os.path.isfile(os.path.abspath(expected_calib_script))

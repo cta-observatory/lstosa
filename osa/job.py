@@ -1,6 +1,4 @@
-"""
-Functions to handle the interaction with the job scheduler.
-"""
+"""Functions to handle the interaction with the job scheduler."""
 
 import datetime
 import logging
@@ -233,7 +231,7 @@ def sequence_calibration_filenames(sequence_list):
     drivefile = f"drive_log_{yy_mm_dd}{drive_suffix}"
 
     for sequence in sequence_list:
-        if len(sequence.parent_list) == 0:
+        if not sequence.parent_list:
             cal_run_string = str(sequence.run).zfill(5)
             calfile = f"calibration.Run{cal_run_string}.0000{calib_suffix}"
             timecalfile = f"time_calibration.Run{cal_run_string}.0000{calib_suffix}"
@@ -336,14 +334,16 @@ def job_header_template(sequence):
 
     Returns
     -------
-    String with job header template: string
+    header: str
+        String with job header template
     """
     python_shebang = "#!/bin/env python"
     if not options.test:
         sbatch_parameters = "\n".join(scheduler_env_variables(sequence))
-        return python_shebang + 2 * "\n" + sbatch_parameters
+        header = python_shebang + 2 * "\n" + sbatch_parameters
     else:
-        return python_shebang
+        header = python_shebang
+    return header
 
 
 def set_cache_dirs():
@@ -441,13 +441,13 @@ def create_job_template(sequence, get_content=False):
 
     python_imports = dedent(
         """\
-    
-    import os
-    import subprocess
-    import sys
-    import tempfile
-    
-    """
+        
+        import os
+        import subprocess
+        import sys
+        import tempfile
+        
+        """
     )
     content = job_header + "\n" + python_imports
 
@@ -499,6 +499,19 @@ def create_job_template(sequence, get_content=False):
 
 
 def submit_jobs(sequence_list):
+    """
+    Submit the jobs to the cluster.
+
+    Parameters
+    ----------
+    sequence_list: list
+        List of sequences to submit.
+
+    Returns
+    -------
+    job_list: list
+        List of submitted job IDs.
+    """
     job_list = []
     command = cfg.get("ENV", "SBATCHBIN")
     no_display_backend = "--export=ALL,MPLBACKEND=Agg"
@@ -515,13 +528,14 @@ def submit_jobs(sequence_list):
                     parent_jobid = subprocess.check_output(
                         commandargs, universal_newlines=True, shell=False
                     ).split()[0]
-                except subprocess.CalledProcessError as Error:
-                    log.exception(Error)
-                except OSError as Error:
-                    log.exception(f"Command '{command}' not found, error {Error}")
+                except subprocess.CalledProcessError as error:
+                    log.exception(error)
+                except OSError as error:
+                    log.exception(f"Command '{command}' not found, error {error}")
             log.debug(commandargs)
 
-            # FIXME here s.jobid has not been redefined se it keeps the one from previous time sequencer was launched
+            # FIXME here s.jobid has not been redefined se it keeps the one
+            #  from previous time sequencer was launched
         # Add the job dependencies after calibration sequence
         if len(s.parent_list) != 0 and s.type == "DATA":
             if not options.simulate and not options.no_calib and not options.test:

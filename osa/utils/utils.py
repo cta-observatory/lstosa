@@ -157,7 +157,7 @@ def get_calib_prod_id():
             options.calib_prod_id = cfg.get("LST1", "CALIB-PROD-ID")
         else:
             options.calib_prod_id = (
-                    get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
+                get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
             )
 
     log.debug(f"Getting prod ID for calibration products: {options.calib_prod_id}")
@@ -179,7 +179,7 @@ def get_dl1_prod_id():
             options.dl1_prod_id = cfg.get("LST1", "DL1-PROD-ID")
         else:
             options.dl1_prod_id = (
-                    get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
+                get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
             )
 
     log.debug(f"Getting prod ID for DL1 products: {options.dl1_prod_id}")
@@ -199,7 +199,7 @@ def get_dl2_prod_id():
             options.dl2_prod_id = cfg.get("LST1", "DL2-PROD-ID")
         else:
             options.dl2_prod_id = (
-                    get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
+                get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
             )
 
     log.debug(f"Getting prod ID for DL2 products: {options.dl2_prod_id}")
@@ -457,7 +457,7 @@ def time_to_seconds(timestring):
         )
         hours, minutes, seconds = hhmmss.split(":")
         return (
-                int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+            int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
         )
     else:
         hours, minutes, seconds = timestring.split(":")
