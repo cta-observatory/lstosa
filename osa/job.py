@@ -1,5 +1,5 @@
 """
-Functions to handle the job submission using SLURM
+Functions to handle the job submission using scheduler.
 """
 
 import datetime
@@ -9,33 +9,52 @@ import subprocess
 import sys
 import time
 from glob import glob
+from pathlib import Path
+from textwrap import dedent
 
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.iofile import readfromfile, writetofile
+from osa.utils.iofile import read_from_file, write_to_file
 from osa.utils.utils import date_in_yymmdd, lstdate_to_dir, time_to_seconds, stringify
 
 log = logging.getLogger(__name__)
 
 TAB = "\t".expandtabs(4)
 
+__all__ = [
+    "are_all_jobs_correctly_finished",
+    "historylevel",
+    "preparejobs",
+    "preparestereojobs",
+    "sequence_filenames",
+    "sequence_calibration_filenames",
+    "queue_job_list",
+    "queue_values",
+    "job_header_template",
+    "scheduler_env_variables",
+    "create_job_template",
+    "set_cache_dirs",
+    "setrunfromparent"
+]
 
-def are_all_jobs_correctly_finished(seqlist):
+
+def are_all_jobs_correctly_finished(sequence_list):
     """
+    Check if all jobs are correctly finished by looking at the history file.
 
     Parameters
     ----------
-    seqlist
+    sequence_list
 
     Returns
     -------
-
+    flag: bool
     """
     flag = True
-    for s in seqlist:  # Run wise
+    for s in sequence_list:  # Run wise
         history_files_list = glob(rf"{options.directory}/*{s.run}*.history")  # Subrun wise
         for history_file in history_files_list:
             # TODO: s.history should be SubRunObj attribute not RunObj
@@ -47,9 +66,9 @@ def are_all_jobs_correctly_finished(seqlist):
             if out == 0:
                 log.debug(f"Job {s.seq} ({s.type}) correctly finished")
                 continue
-            elif out == 1 and options.nodl2:
+            elif out == 1 and options.no_dl2:
                 log.debug(
-                    f"Job {s.seq} ({s.type}) correctly finished up to DL1ab, but noDL2 option selected"
+                    f"Job {s.seq} ({s.type}) correctly finished up to DL1ab, but no-dL2 option selected"
                 )
                 continue
             else:
@@ -64,10 +83,12 @@ def historylevel(historyfile, data_type):
     """
     Returns the level from which the analysis should begin and
     the rc of the last executable given a certain history file.
+
     For PEDCALIB sequences:
      - DRS4->time calib is level 3->2
      - time calib->charge calib is level 2->1
      - charge calib 1->0 (sequence completed)
+
     For DATA sequences:
      - R0->DL1 is level 4->3
      - DL1->DL1AB is level 3->2
@@ -82,7 +103,7 @@ def historylevel(historyfile, data_type):
 
     Returns
     -------
-
+    level, exit_status: int, int
     """
     if data_type == "DATA":
         level = 4
@@ -93,7 +114,7 @@ def historylevel(historyfile, data_type):
         sys.exit(1)
     exit_status = 0
     if os.path.exists(historyfile):
-        for line in readfromfile(historyfile).splitlines():
+        for line in read_from_file(historyfile).splitlines():
             # FIXME: create a dict with the program, exit status and prod id to take into account
             # not only the last history line but also the others.
             words = line.split()
@@ -143,18 +164,19 @@ def historylevel(historyfile, data_type):
 def preparejobs(sequence_list):
     for s in sequence_list:
         log.debug(f"Creating sequence.py for sequence {s.seq}")
-        createjobtemplate(s)
+        create_job_template(s)
 
 
 def preparestereojobs(sequence_list):
     for s in sequence_list:
         log.debug(f"Creating sequence.py for stereo sequence {s.seq}")
-        createjobtemplate(s)
+        create_job_template(s)
 
 
 def setrunfromparent(sequence_list):
     """
     Create a dictionary with run number and its the parent run number.
+
     Parameters
     ----------
     sequence_list
@@ -162,7 +184,6 @@ def setrunfromparent(sequence_list):
     Returns
     -------
     dictionary with run number and its the parent run number
-
     """
     dictionary = {}
     for s1 in sequence_list:
@@ -175,18 +196,18 @@ def setrunfromparent(sequence_list):
     return dictionary
 
 
-def setsequencefilenames(s):
+def sequence_filenames(sequence):
     script_suffix = cfg.get("LSTOSA", "SCRIPTSUFFIX")
     history_suffix = cfg.get("LSTOSA", "HISTORYSUFFIX")
     veto_suffix = cfg.get("LSTOSA", "VETOSUFFIX")
-    basename = f"sequence_{s.jobname}"
+    basename = f"sequence_{sequence.jobname}"
 
-    s.script = os.path.join(options.directory, basename + script_suffix)
-    s.veto = os.path.join(options.directory, basename + veto_suffix)
-    s.history = os.path.join(options.directory, basename + history_suffix)
+    sequence.script = Path(options.directory) / f"{basename}{script_suffix}"
+    sequence.veto = Path(options.directory) / f"{basename}{veto_suffix}"
+    sequence.history = Path(options.directory) / f"{basename}{history_suffix}"
 
 
-def setsequencecalibfilenames(sequence_list):
+def sequence_calibration_filenames(sequence_list):
     calib_suffix = cfg.get("LSTOSA", "CALIBSUFFIX")
     pedestal_suffix = cfg.get("LSTOSA", "PEDESTALSUFFIX")
     drive_suffix = cfg.get("LSTOSA", "DRIVESUFFIX")
@@ -209,40 +230,13 @@ def setsequencecalibfilenames(sequence_list):
             pedfile = f"drs4_pedestal.Run{ped_run_string}.0000{pedestal_suffix}"
 
         drivefile = f"drive_log_{yy_mm_dd}{drive_suffix}"
-        s.calibration = calfile
-        s.time_calibration = timecalfile
-        s.pedestal = pedfile
         s.drive = drivefile
+        s.calibration = Path(options.directory) / calfile
+        s.time_calibration = Path(options.directory) / timecalfile
+        s.pedestal = Path(options.directory) / pedfile
 
 
-def guesscorrectinputcard(s):
-    """Returns guessed input card for:
-    datasequencer
-    calibrationsequence
-    stereosequence
-    """
-    # if it fails, return the default one
-    # FIXME: implement a way of selecting Nov cfg file
-
-    # bindir = cfg.get("LSTOSA", "PYTHONDIR")
-
-    # try:
-    #     # assert(s.kind_obs)
-    #     assert s.source
-    #     assert s.hv_setting
-    #     assert s.moonfilter
-    # except:
-    #     return options.configfile
-    #
-    # # Non standard input cards.
-    # input_card_str = ""
-    # if input_card_str != "":
-    #     return join(bindir, 'cfg', f'osa{input_card_str}.cfg')
-
-    return os.path.abspath(options.configfile)
-
-
-def get_job_statistics(sequence_list):
+def get_job_statistics():
     """
     Get statistics of the jobs. Check elapsed time used,
     the memory used, the number of jobs completed, the number of jobs failed,
@@ -311,7 +305,7 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
             f"--mem-per-cpu={cfg.get('SBATCH', f'MEMSIZE-{sequence.type}')}"
         )
 
-        return ["SBATCH " + line for line in sbatch_parameters]
+        return ["#SBATCH " + line for line in sbatch_parameters]
 
     else:
         log.warning("No other schedulers are currently supported")
@@ -336,8 +330,48 @@ def job_header_template(sequence):
     return python_shebang + 2 * "\n" + sbatch_parameters
 
 
-def createjobtemplate(sequence, get_content=False):
-    """This file contains instruction to be submitted to SLURM"""
+def set_cache_dirs():
+    """
+    Export cache directories for the jobs provided they
+    are defined in the config file.
+
+    Returns
+    -------
+    content: string
+        String with the command to export the cache directories
+    """
+
+    ctapipe_cache = cfg.get("CACHE", "CTAPIPE_CACHE")
+    ctapipe_svc_path = cfg.get("CACHE", "CTAPIPE_SVC_PATH")
+    mpl_config_path = cfg.get("CACHE", "MPLCONFIGDIR")
+
+    content = []
+    if ctapipe_cache:
+        content.append(f"os.environ['CTAPIPE_CACHE'] = '{ctapipe_cache}'")
+
+    if ctapipe_svc_path:
+        content.append(f"os.environ['CTAPIPE_SVC_PATH'] = '{ctapipe_svc_path}'")
+
+    if mpl_config_path:
+        content.append(f"os.environ['MPLCONFIGDIR'] = '{mpl_config_path}'")
+
+    return "\n".join(content)
+
+
+def create_job_template(sequence, get_content=False, file_path=None):
+    """
+    This file contains instruction to be submitted to job scheduler.
+
+    Parameters
+    ----------
+    sequence : sequence object
+    get_content: bool
+    file_path : pathlib.Path
+
+    Returns
+    -------
+    job_template : string
+    """
     # TODO: refactor this function creating wrappers that handle slurm part
 
     # Get the job header template.
@@ -363,11 +397,11 @@ def createjobtemplate(sequence, get_content=False):
         commandargs.append("-w")
     if options.configfile:
         commandargs.append("-c")
-        commandargs.append(guesscorrectinputcard(sequence))
+        commandargs.append(Path(options.configfile).resolve())
     if options.compressed:
         commandargs.append("-z")
-    if sequence.type == "DATA" and options.nodl2:
-        commandargs.append("--nodl2")
+    if sequence.type == "DATA" and options.no_dl2:
+        commandargs.append("--no-dl2")
 
     commandargs.append("-d")
     commandargs.append(options.date)
@@ -381,39 +415,28 @@ def createjobtemplate(sequence, get_content=False):
         cal_run_number = str(sequence.run).zfill(5)
         commandargs.append(ped_run_number)
         commandargs.append(cal_run_number)
-        commandargs.append(os.path.join(run_summary_dir, f"RunSummary_{nightdir}.ecsv"))
+        commandargs.append(Path(run_summary_dir) / f"RunSummary_{nightdir}.ecsv")
 
     if sequence.type == "DATA":
-        commandargs.append(os.path.join(options.directory, sequence.calibration))
-        commandargs.append(os.path.join(options.directory, sequence.pedestal))
-        commandargs.append(os.path.join(options.directory, "time_" + sequence.calibration))
-        commandargs.append(os.path.join(drivedir, sequence.drive))
-        commandargs.append(os.path.join(run_summary_dir, f"RunSummary_{nightdir}.ecsv"))
+        commandargs.append(os.path.abspath(sequence.calibration.resolve()))
+        commandargs.append(sequence.pedestal.resolve())
+        commandargs.append(sequence.time_calibration.resolve())
+        commandargs.append(Path(drivedir) / sequence.drive)
+        commandargs.append(Path(run_summary_dir) / f"RunSummary_{nightdir}.ecsv")
 
-    content = job_header + '\n' + " ".join(commandargs)
-
-    content += "import subprocess \n"
-    content += "import sys, os \n"
-    content += "import tempfile \n"
-    content += "\n" * 2
+    python_imports = dedent("""\
+    
+    import os
+    import subprocess
+    import sys
+    import tempfile
+    
+    """)
+    content = job_header + '\n' + python_imports
 
     if not options.test:
-        # Exporting some cache directories
-        ctapipe_cache = cfg.get("CACHE", "CTAPIPE_CACHE")
-        ctapipe_svc_path = cfg.get("CACHE", "CTAPIPE_SVC_PATH")
-        mpl_config_path = cfg.get("CACHE", "MPLCONFIGDIR")
-
-        if ctapipe_cache:
-            content += f"os.environ['CTAPIPE_CACHE'] = '{ctapipe_cache}'\n"
-
-        if ctapipe_svc_path:
-            content += f"os.environ['CTAPIPE_SVC_PATH'] = '{ctapipe_svc_path}'\n"
-
-        if mpl_config_path:
-            content += f"os.environ['MPLCONFIGDIR'] = '{mpl_config_path}'\n"
-
+        content += set_cache_dirs()
         content += "\n"
-
         # Use the SLURM env variables
         content += "subruns = os.getenv('SLURM_ARRAY_TASK_ID')\n"
         content += "job_id = os.getenv('SLURM_JOB_ID')\n"
@@ -433,27 +456,27 @@ def createjobtemplate(sequence, get_content=False):
         content += (
                 TAB * 2
                 + f"'--stderr=log/sequence_{sequence.jobname}."
-                + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)), \n"
+                + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)),\n"
         )
         content += (
                 TAB * 2
                 + f"'--stdout=log/sequence_{sequence.jobname}."
-                + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)), \n"
+                + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)),\n"
         )
     if sequence.type == "DATA":
         content += (
-                TAB * 2 + "'{0}".format(str(sequence.run).zfill(5)) + ".{0}'.format(str(subruns).zfill(4)), \n"
+                TAB * 2 + "'{0}".format(str(sequence.run).zfill(5)) + ".{0}'.format(str(subruns).zfill(4)),\n"
         )
     content += TAB * 2 + f"'{options.tel_id}'\n"
-
     content += TAB + "])\n"
-
     content += "\n"
-
     content += "sys.exit(proc.returncode)"
 
     if not options.simulate:
-        writetofile(sequence.script, content)
+        if file_path is None:
+            write_to_file(sequence.script, content)
+        else:
+            write_to_file(file_path, content)
 
     if get_content:
         return content
@@ -468,7 +491,7 @@ def submitjobs(sequence_list):
         commandargs = [command, "--parsable", no_display_backend]
         if s.type == "PEDCALIB":
             commandargs.append(s.script)
-            if options.simulate or options.nocalib or options.test:
+            if options.simulate or options.no_calib or options.test:
                 log.debug("SIMULATE Launching scripts")
             else:
                 try:
@@ -479,15 +502,15 @@ def submitjobs(sequence_list):
                         shell=False
                     ).split()[0]
                 except subprocess.CalledProcessError as Error:
-                    log.exception(Error, 2)
-                except OSError as err:
-                    log.exception(f"Command '{command}' not found", err)
+                    log.exception(Error)
+                except OSError as Error:
+                    log.exception(f"Command '{command}' not found, error {Error}")
             log.debug(commandargs)
 
             # FIXME here s.jobid has not been redefined se it keeps the one from previous time sequencer was launched
-        # Introduce the job dependencies after calibration sequence
+        # Add the job dependencies after calibration sequence
         if len(s.parent_list) != 0 and s.type == "DATA":
-            if not options.simulate and not options.nocalib and not options.test:
+            if not options.simulate and not options.no_calib and not options.test:
                 log.debug("Adding dependencies to job submission")
                 depend_string = f"--dependency=afterok:{parent_jobid}"
                 commandargs.append(depend_string)
@@ -544,7 +567,7 @@ def submitjobs(sequence_list):
             if options.simulate:
                 log.debug("SIMULATE Launching scripts")
             elif options.test:
-                log.debug("Test launching datasequence scripts for first subrun without sbatch")
+                log.debug("TEST launching datasequence scripts for first subrun without scheduler")
                 commandargs = ["python", s.script]
                 subprocess.check_output(commandargs, shell=False)
             else:
@@ -561,7 +584,7 @@ def submitjobs(sequence_list):
     return job_list
 
 
-def getqueuejoblist(sequence_list):
+def queue_job_list(sequence_list):
     """
     Fetch the information of jobs in the queue using the sacct SLURM command
 
@@ -598,12 +621,12 @@ def getqueuejoblist(sequence_list):
         )
         queue_sequences = [line.split() for line in queue_lines if "batch" not in line]
         queue_list = [dict(zip(queue_header, sequence)) for sequence in queue_sequences]
-        setqueuevalues(queue_list, sequence_list)
+        queue_values(queue_list, sequence_list)
 
     return queue_list
 
 
-def setqueuevalues(queue_list, sequence_list):
+def queue_values(queue_list, sequence_list):
     """
     Extract queue values and fetch them into the table of sequences
 
