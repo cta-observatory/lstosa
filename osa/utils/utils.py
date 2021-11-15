@@ -1,6 +1,5 @@
-"""
-Functions to deal with dates, directories and prod IDs
-"""
+"""Functions to deal with dates, directories and prod IDs."""
+
 import hashlib
 import inspect
 import logging
@@ -8,7 +7,7 @@ import os
 import subprocess
 from datetime import datetime, timedelta
 from os import getpid, readlink, symlink
-from os.path import dirname, exists, isdir, isfile, islink, split
+from os.path import dirname, exists, islink, split
 from pathlib import Path
 from socket import gethostname
 
@@ -219,29 +218,26 @@ def create_lock(lockfile) -> bool:
     -------
     bool
     """
-    dir = dirname(lockfile)
+    directory_lock = lockfile.parent
     if options.simulate:
         log.debug(f"SIMULATE Creation of lock file {lockfile}")
-        return True
     else:
-        if exists(lockfile) and isfile(lockfile):
+        if lockfile.exists() and lockfile.is_file():
             with open(lockfile, "r") as f:
                 hostpid = f.readline()
             log.error(f"Lock by a previous process {hostpid}, exiting!\n")
+            return True
         else:
-            if not exists(dir):
-                os.makedirs(dir, exist_ok=True)
-                log.debug(f"Creating parent directory {dir} for lock file")
-            if isdir(dir):
+            if not directory_lock.exists():
+                directory_lock.mkdir(exist_ok=True, parents=True)
+                log.debug(f"Creating parent directory {directory_lock} for lock file")
                 pid = str(getpid())
                 hostname = gethostname()
                 content = f"{hostname}:{pid}"
                 write_to_file(lockfile, content)
                 log.debug(f"Lock file {lockfile} created")
                 return True
-            else:
-                log.error(f"Expecting {dir} to be a directory, not a file")
-                return False
+    return False
 
 
 def get_lock_file():
@@ -577,14 +573,18 @@ def set_no_observations_flag(host, datedir, prod_id):
             log.warning(f"Destination directory does not exists. {e}")
 
 
-def copy_files_datacheck_web(host, datedir, file_list):
+def copy_files_datacheck_web(host, datedir, file_list) -> None:
     """
+    Copy files to the data-check webserver via scp.
 
     Parameters
     ----------
-    host
-    datedir
-    file_list
+    host: str
+        Hostname of the webserver
+    datedir: str
+        Date directory in the webserver
+    file_list: list
+        List of files to be copied
     """
     # FIXME: Check if files exists already at webserver CHECK HASH
     # Copy files to server
@@ -596,7 +596,7 @@ def copy_files_datacheck_web(host, datedir, file_list):
 
         elif "calibration" in str(file_to_transfer):
             destination_dir = (
-                    DATACHECK_BASEDIR / "enf_calibration" / options.prod_id / datedir
+                DATACHECK_BASEDIR / "enf_calibration" / options.prod_id / datedir
             )
             cmd = ["scp", file_to_transfer, f"{host}:{destination_dir}/."]
             subprocess.run(cmd)
@@ -627,12 +627,10 @@ def get_input_file(run_number):
     r0_path = Path(cfg.get("LST1", "RAWDIR"))
 
     # Get raw data file.
-    file_list = [
-        file
-        for file in r0_path.rglob(
-            f'*/{cfg.get("LSTOSA", "R0PREFIX")}.Run{run_number:05d}.0000*'
-        )
-    ]
+    file_list = list(
+        r0_path.rglob(f"*/{cfg.get('LSTOSA', 'R0PREFIX')}.Run{run_number:05d}.0000*")
+    )
+
     if file_list:
         return str(file_list[0])
     raise IOError(f"Files corresponding to run {run_number} not found.")

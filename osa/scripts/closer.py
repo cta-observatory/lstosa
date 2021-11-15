@@ -208,7 +208,7 @@ def post_process(seq_tuple):
     post_process_files(seq_list)
 
     # First merge DL1 datacheck files and produce PDFs
-    if cfg.getboolean("LSTOSA", "merge_dl1_datacheck"):
+    if cfg.getboolean("lstchain", "merge_dl1_datacheck"):
         merge_dl1_datacheck(seq_list)
 
     # Extract the provenance info
