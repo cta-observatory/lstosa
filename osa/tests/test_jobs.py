@@ -164,7 +164,7 @@ def test_create_job_template(sequence_list):
     assert content == expected_content
 
 
-def test_set_cache_dirs(sequence_list, sequence_file):
+def test_set_cache_dirs():
     from osa.job import set_cache_dirs
 
     cache = set_cache_dirs()

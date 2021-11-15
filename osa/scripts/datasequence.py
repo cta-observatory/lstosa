@@ -322,8 +322,8 @@ def run_program_with_logging(
 
     Returns
     -------
-    rc
-
+    rc: int
+        Return code of the program
     """
 
     try:
@@ -341,6 +341,7 @@ def run_program_with_logging(
 
 
 def main():
+    """Performs the analysis steps to convert raw data into DL2 files."""
     (
         calib_file,
         drs4_ped_file,

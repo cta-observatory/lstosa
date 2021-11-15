@@ -225,6 +225,7 @@ def create_lock(lockfile) -> bool:
             if not exists(dir):
                 os.makedirs(dir, exist_ok=True)
                 log.debug(f"Creating parent directory {dir} for lock file")
+                return True
             if isdir(dir):
                 pid = str(getpid())
                 hostname = gethostname()
@@ -234,6 +235,7 @@ def create_lock(lockfile) -> bool:
                 return True
             else:
                 log.error(f"Expecting {dir} to be a directory, not a file")
+                return False
 
 
 def get_lock_file():
@@ -247,7 +249,8 @@ def get_lock_file():
     """
     basename = cfg.get("LSTOSA", "end_of_activity")
     date = lstdate_to_dir(options.date)
-    lock_file = Path(cfg.get(options.tel_id, "CLOSERDIR")) / date / options.prod_id / basename
+    close_directory = Path(cfg.get(options.tel_id, "CLOSERDIR"))
+    lock_file = close_directory / date / options.prod_id / basename
     log.debug(f"Looking for lock file {lock_file}")
     return lock_file
 
@@ -285,7 +288,8 @@ def lstdate_to_iso(night):
 
 
 def lstdate_to_dir(date):
-    """Function to change from YYYY_MM_DD to YYYYMMDD
+    """
+    Function to change from YYYY_MM_DD to YYYYMMDD.
 
     Parameters
     ----------
@@ -598,7 +602,12 @@ def get_input_file(run_number):
 
     Returns
     -------
+    input_file: str
 
+    Raises
+    ------
+    IOError
+        If the input file cannot be found.
     """
     r0_path = Path(cfg.get("LST1", "RAWDIR"))
 
@@ -619,6 +628,7 @@ def stringify(args):
 
 
 def gettag():
-    parentfile = os.path.basename(inspect.stack()[1][1])
-    parentmodule = inspect.stack()[1][3]
-    return f"{parentfile}({parentmodule})"
+    """Get the name of the script currently being used."""
+    parent_file = os.path.basename(inspect.stack()[1][1])
+    parent_module = inspect.stack()[1][3]
+    return f"{parent_file}({parent_module})"

@@ -357,6 +357,10 @@ def calibrate_time(
 
 
 def main():
+    """
+    Performs the calibration steps (obtain the drs4 baseline correction,
+    drs4 time correction and ADC to photo-electron coefficients).
+    """
     (
         pedoutfile,
         caloutfile,
