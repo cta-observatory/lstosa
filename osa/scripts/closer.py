@@ -105,6 +105,8 @@ def main():
             log.error("Never thought about this possibility, please check the code")
             sys.exit(-1)
 
+        store_conda_env_export()
+
         post_process(sequencer_tuple)
 
 
@@ -560,6 +562,13 @@ def merge_dl2(sequence_list):
                 log.debug("Simulate launching scripts")
 
             log.debug(f"Executing {stringify(cmd)}")
+
+
+def store_conda_env_export():
+    """Store file with `conda env export` output to log the packages versions used."""
+    conda_env_file = Path(options.directory) / "log" / "conda_env.yml"
+    conda_env_file.touch()
+    subprocess.run(["conda", "env", "export", "--file", str(conda_env_file)])
 
 
 if __name__ == "__main__":
