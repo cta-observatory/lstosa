@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 def are_rawfiles_transferred_for_tel(tel_id):
     nightdir = lstdate_to_dir(options.date)
     dir = join(cfg.get(tel_id, "ENDOFRAWTRANSFERDIR"), nightdir)
-    flagfile = join(dir, cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX"))
+    flagfile = join(dir, cfg.get("LSTOSA", "end_of_activity"))
 
     # FIXME: How can we check that all files are there?
     if exists(flagfile):

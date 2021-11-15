@@ -4,7 +4,7 @@ import os
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.iofile import readfromfile
+from osa.utils.iofile import read_from_file
 
 __all__ = [
     "createveto",
@@ -128,7 +128,7 @@ def failedhistory(historyfile, maxnumber):
     card = []
     goal = []
     exit_status = []
-    for line in readfromfile(historyfile).splitlines():
+    for line in read_from_file(historyfile).splitlines():
         words = line.split()
         # columns 2, 10, 11 and 12 of history file contains the info (index 1, -3, -2 and -1 respectively)
         programme.append(words[1])

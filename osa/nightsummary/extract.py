@@ -14,7 +14,7 @@ from osa.configs.datamodel import (
     SequenceStereo,
     SubrunObj,
 )
-from osa.job import setsequencecalibfilenames, setsequencefilenames
+from osa.job import sequence_calibration_filenames, sequence_filenames
 from osa.utils.utils import lstdate_to_iso
 
 log = logging.getLogger(__name__)
@@ -298,7 +298,7 @@ def extractsequencesstereo(s1_list, s2_list):
                     ss = SequenceStereo(s1, s2)
                     ss.seq = len(ss_list)
                     ss.jobname = f"{ss.telescope}_{ss.run:05d}"
-                    setsequencefilenames(ss)
+                    sequence_filenames(ss)
                     ss_list.append(ss)
                     break
     log.debug(f"Appended {len(ss_list)} stereo sequences")
@@ -354,7 +354,7 @@ def generateworkflow(run_list, store, require):
 
                 s.previousrun = previousrun
                 s.jobname = f"{r.telescope}_{r.run:05d}"
-                setsequencefilenames(s)
+                sequence_filenames(s)
                 if s not in sequence_list:
                     sequence_list.append(s)
         elif r.type == "PEDCALIB":
@@ -369,7 +369,7 @@ def generateworkflow(run_list, store, require):
                     s.parent = None
                     s.previousrun = previousrun
                     s.jobname = f"{r.telescope}_{str(r.run).zfill(5)}"
-                    setsequencefilenames(s)
+                    sequence_filenames(s)
                     log.debug(
                         f"Sequence {s.seq} assigned to run {r.run} whose parent is"
                         f" {s.parent} with run {s.previousrun}"
@@ -379,7 +379,7 @@ def generateworkflow(run_list, store, require):
                     break
 
     # insert the calibration file names
-    setsequencecalibfilenames(sequence_list)
+    sequence_calibration_filenames(sequence_list)
     log.debug("Workflow completed")
     return sequence_list
 

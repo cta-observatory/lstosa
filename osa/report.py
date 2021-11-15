@@ -7,7 +7,7 @@ from os.path import basename, getsize, join
 from osa.configs import config, options
 from osa.configs.config import cfg
 from osa.raw import getrawdir
-from osa.utils.iofile import appendtofile
+from osa.utils.iofile import append_to_file
 
 log = logging.getLogger(__name__)
 
@@ -160,7 +160,7 @@ def finished_assignments(sequence_list):
     return dictionary
 
 
-def history(run, prod_id, program, input_file, input_card, rc, history_file):
+def history(run, prod_id, program, input_file, input_card, rc, history_file) -> None:
     """
     Appends a history line to the history file. A history line
     reports the outcome of the execution of a lstchain executable.
@@ -185,4 +185,4 @@ def history(run, prod_id, program, input_file, input_card, rc, history_file):
     now = datetime.utcnow()
     datestring = now.strftime("%a %b %d %X UTC %Y")
     stringtowrite = f"{run} {program} {prod_id} {datestring} {input_file} {input_card} {rc}\n"
-    appendtofile(history_file, stringtowrite)
+    append_to_file(history_file, stringtowrite)

@@ -20,8 +20,7 @@ log = logging.getLogger(__name__)
 
 def build_external(command, rawdir):
     """
-    Calls the create nightsummary script.
-    This is usually the `create_nightsummary.py` file.
+    Calls the create run summary script.
 
     Parameters
     ----------
