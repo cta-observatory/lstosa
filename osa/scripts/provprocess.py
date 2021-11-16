@@ -73,7 +73,6 @@ def parse_lines_log(filter_step, run_number):
     Returns
     -------
     filtered
-
     """
     filtered = []
     with open(LOG_FILENAME, "r") as f:
@@ -244,65 +243,76 @@ def parse_lines_run(filter_step, prov_lines, out):
     return working_lines
 
 
+def define_paths(grain, start_path, end_path):
+    """Define target folders according to granularity."""
+    paths = {}
+
+    # check destination folder exists
+    step_path = Path(start_path) / options.date / options.prod_id / end_path
+    if not step_path.exists():
+        log.error(f"Path {step_path} does not exist")
+
+    # make folder log/ if does not exist
+    paths["out_path"] = step_path / "log"
+    paths["out_path"].mkdir(parents=True, exist_ok=True)
+
+    # define paths for prov products
+    paths["log_path"] = paths["out_path"] / f"{grain}_{base_filename}.log"
+    paths["json_filepath"] = paths["out_path"] / f"{grain}_{base_filename}.json"
+    paths["graph_filepath"] = paths["out_path"] / f"{grain}_{base_filename}.pdf"
+
+    return paths
+
+
+def produce_provenance_files(processed_lines, paths):
+    """Create provenance products as JSON logs and graphs."""
+
+    with open(paths["log_path"], "w") as f:
+        for line in processed_lines:
+            f.write(f"{line}\n")
+    log.info(f"creating {paths['log_path']}")
+    provdoc = provlist2provdoc(processed_lines)
+
+    # make json
+    try:
+        provdoc2json(provdoc, str(paths["json_filepath"]))
+        log.info(f"creating {paths['json_filepath']}")
+    except Exception as ex:
+        log.exception(f"problem while creating json: {ex}")
+    # make graph
+    try:
+        provdoc2graph(provdoc, str(paths["graph_filepath"]), "pdf")
+        log.info(f"creating {paths['graph_filepath']}")
+    except Exception as ex:
+        log.exception(f"problem while creating graph: {ex}")
+
+
 def produce_provenance():
     """Create run-wise provenance products as JSON logs and graphs according to granularity."""
 
-    # create prov products for each granularity level
-    r0_to_dl1_processed_lines = []
-    dl1_to_dl2_processed_lines = []
-    for grain, fold in GRANULARITY.items():
+    linesR0DL1 = []
+    linesDL1DL2 = []
 
-        processed_lines = []
-        # derive destination folder
-        if fold == pathDL2:
-            step_path = Path(fold) / options.date / options.prod_id / options.dl2_prod_id
-        else:
-            step_path = Path(fold) / options.date / options.prod_id / options.dl1_prod_id
+    if options.filter == "r0_to_dl1" or not options.filter:
+        pathsR0DL1 = define_paths("r0_to_dl1", pathDL1, options.dl1_prod_id)
+        plines = parse_lines_run("r0_to_dl1", read_prov(filename=session_log_filename), str(pathsR0DL1["out_path"]))
+        linesR0DL1 = copy.deepcopy(plines)
+        produce_provenance_files(plines, pathsR0DL1)
 
-        # check destination folder exists
-        if not step_path.exists():
-            log.error(f"Path {step_path} does not exist")
+    if options.filter == "dl1_to_dl2" or not options.filter:
+        pathsDL1DL2 = define_paths("dl1_to_dl2", pathDL2, options.dl2_prod_id)
+        plines = parse_lines_run("dl1_to_dl2", read_prov(filename=session_log_filename), str(pathsDL1DL2["out_path"]))
+        linesDL1DL2 = copy.deepcopy(plines)
 
-        # make folder log/ if does not exist
-        outpath = step_path / "log"
-        outpath.mkdir(parents=True, exist_ok=True)
+        # create last step products only if filtering
+        if options.filter == "dl1_to_dl2":
+            produce_provenance_files(plines, pathsDL1DL2)
 
-        # define paths for prov products
-        log_path = outpath / f"{grain}_{base_filename}.log"
-        json_filepath = outpath / f"{grain}_{base_filename}.json"
-        graph_filepath = outpath / f"{grain}_{base_filename}.pdf"
-
-        # process temp log file
-        if grain != "r0_to_dl2":
-            processed_lines = parse_lines_run(
-                grain, read_prov(filename=session_log_filename), str(outpath)
-            )
-        if grain == "r0_to_dl1":
-            r0_to_dl1_processed_lines = copy.deepcopy(processed_lines)
-        if grain == "dl1_to_dl2":
-            dl1_to_dl2_processed_lines = copy.deepcopy(processed_lines)
-        if grain == "r0_to_dl2" and r0_to_dl1_processed_lines and dl1_to_dl2_processed_lines:
-            processed_lines = r0_to_dl1_processed_lines + dl1_to_dl2_processed_lines[1:]
-
-        if processed_lines:
-            # make filtered session log file
-            with open(log_path, "w") as f:
-                for line in processed_lines:
-                    f.write(f"{line}\n")
-            log.info(f"creating {log_path}")
-            provdoc = provlist2provdoc(processed_lines)
-            # make json
-            try:
-                provdoc2json(provdoc, str(json_filepath))
-                log.info(f"creating {json_filepath}")
-            except Exception as ex:
-                log.exception(f"problem while creating json: {ex}")
-            # make graph
-            try:
-                provdoc2graph(provdoc, str(graph_filepath), "pdf")
-                log.info(f"creating {graph_filepath}")
-            except Exception as ex:
-                log.exception(f"problem while creating graph: {ex}")
+    # create all steps products in last step path
+    if not options.filter:
+        all_lines = linesR0DL1 + linesDL1DL2[1:]
+        pathsR0DL2 = define_paths("r0_to_dl2", pathDL2, options.dl2_prod_id)
+        produce_provenance_files(all_lines, pathsR0DL2)
 
 
 if __name__ == "__main__":
@@ -324,9 +334,6 @@ if __name__ == "__main__":
     pathRO = cfg.get("LST1", "RAWDIR")
     pathDL1 = cfg.get("LST1", "DL1DIR")
     pathDL2 = cfg.get("LST1", "DL2DIR")
-    GRANULARITY = {"r0_to_dl1": pathDL1, "dl1_to_dl2": pathDL2, "r0_to_dl2": pathDL2}
-    if options.filter:
-        GRANULARITY = {options.filter: GRANULARITY[options.filter]}
 
     # check LOG_FILENAME exists
     if not Path(LOG_FILENAME).exists():
