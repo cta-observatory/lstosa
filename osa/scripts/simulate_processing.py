@@ -10,7 +10,6 @@ import yaml
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.configs.datamodel import SequenceData
 from osa.jobs.job import createjobtemplate
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import run_summary_table
@@ -122,6 +121,12 @@ def parse_template(template, idx):
     return args[0:-3]
 
 
+def simulate_calibration(args):
+    """Simulate calibration."""
+    log.info(f"Simulating calibration call")
+    subprocess.run(args)
+
+
 def simulate_subrun_processing(args):
     """Simulate subrun processing."""
     run_str, subrun_idx = args[14].split(".")
@@ -143,17 +148,17 @@ def simulate_processing():
     # skip drs4 and calibration
     for s in sequence_list:
         processed = False
-        if not isinstance(s, SequenceData):
-            continue
         for sl in s.subrun_list:
             if sl.runobj.type != "DATA":
-                continue
-            with mp.Pool() as pool:
-                args_ds = [
-                    parse_template(createjobtemplate(s, get_content=True), subrun_idx)
-                    for subrun_idx in range(sl.subrun)
-                ]
-                processed = pool.map(simulate_subrun_processing, args_ds)
+                args_cal = parse_template(createjobtemplate(s, get_content=True), 0)
+                simulate_calibration(args_cal)
+            else:
+                with mp.Pool() as poolproc:
+                    args_proc = [
+                        parse_template(createjobtemplate(s, get_content=True), subrun_idx)
+                        for subrun_idx in range(sl.subrun)
+                    ]
+                    processed = poolproc.map(simulate_subrun_processing, args_proc)
 
         # produce prov if overwrite prov arg
         if processed and options.provenance:
