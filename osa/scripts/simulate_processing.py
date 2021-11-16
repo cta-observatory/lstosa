@@ -33,6 +33,8 @@ CONFIG_FLAGS = {
     "TearDL2": False,
     "TearSubDL1": False,
     "TearSubDL2": False,
+    "TearAnalysis": False,
+    "TearSubAnalysis": False,
 }
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
@@ -43,8 +45,10 @@ log = myLogger(logging.getLogger())
 def do_setup():
     """Set-up folder structure and check flags."""
 
+    pathAnalysis = Path(cfg.get("LST1", "ANALYSISDIR")) / options.directory
     pathDL1 = Path(cfg.get("LST1", "DL1DIR")) / options.directory
     pathDL2 = Path(cfg.get("LST1", "DL2DIR")) / options.directory
+    pathSubAnalysis = pathAnalysis / options.prod_id
     pathDL1sub = pathDL1 / options.prod_id
     pathDL2sub = pathDL2 / options.prod_id
 
@@ -55,12 +59,17 @@ def do_setup():
         log.info(f"You can also set --append flag to append captured provenance.")
         return
 
+    CONFIG_FLAGS["TearSubAnalysis"] = False if pathSubAnalysis.exists() or options.provenance else pathSubAnalysis
+    CONFIG_FLAGS["TearAnalysis"] = False if pathAnalysis.exists() or options.provenance else pathAnalysis
     CONFIG_FLAGS["TearSubDL1"] = False if pathDL1sub.exists() or options.provenance else pathDL1sub
     CONFIG_FLAGS["TearSubDL2"] = False if pathDL2sub.exists() or options.provenance else pathDL2sub
     CONFIG_FLAGS["TearDL1"] = False if pathDL1.exists() or options.provenance else pathDL1
     CONFIG_FLAGS["TearDL2"] = False if pathDL2.exists() or options.provenance else pathDL2
 
     if options.provenance and not options.force:
+        if pathSubAnalysis.exists():
+            CONFIG_FLAGS["Go"] = False
+            log.info(f"Folder {pathSubAnalysis} already exist.")
         if pathDL1sub.exists():
             CONFIG_FLAGS["Go"] = False
             log.info(f"Folder {pathDL1sub} already exist.")
@@ -71,12 +80,17 @@ def do_setup():
             log.info(f"You must enforce provenance files overwrite with --force flag.")
             return
 
+    pathSubAnalysis.mkdir(parents=True, exist_ok=True)
     pathDL1sub.mkdir(parents=True, exist_ok=True)
     pathDL2sub.mkdir(parents=True, exist_ok=True)
 
 
 def tear_down():
     """Tear down created temporal folders."""
+    if isinstance(CONFIG_FLAGS["TearSubAnalysis"], Path):
+        CONFIG_FLAGS["TearSubAnalysis"].rmdir()
+    if isinstance(CONFIG_FLAGS["TearAnalysis"], Path):
+        CONFIG_FLAGS["TearAnalysis"].rmdir()
     if isinstance(CONFIG_FLAGS["TearSubDL1"], Path):
         CONFIG_FLAGS["TearSubDL1"].rmdir()
     if isinstance(CONFIG_FLAGS["TearSubDL2"], Path):
@@ -104,13 +118,13 @@ def parse_template(template, idx):
             args.append(line.strip())
         if "subprocess.run" in line:
             keep = True
-    # Remove last two elements
-    return args[0:-2]
+    # Remove last three elements
+    return args[0:-3]
 
 
 def simulate_subrun_processing(args):
     """Simulate subrun processing."""
-    run_str, subrun_idx = args[17].split(".")
+    run_str, subrun_idx = args[14].split(".")
     log.info(f"Simulating process call for run {run_str} subrun {subrun_idx}")
     subprocess.run(args)
 
@@ -143,9 +157,10 @@ def simulate_processing():
 
         # produce prov if overwrite prov arg
         if processed and options.provenance:
+            command = Path(cfg.get("LSTOSA", "SCRIPTSDIR")) / "provprocess.py"
             args_pp = [
                 "python",
-                "provprocess.py",
+                command,
                 "-c",
                 options.configfile,
                 s.run_str,
@@ -161,6 +176,13 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
     simprocparsing()
+
+    # date and tel_id hardcoded for the moment
+    #
+    options.date = "2020_01_17"
+    options.tel_id = "LST1"
+    #
+
     options.directory = lstdate_to_number(options.date)
 
     log.info(f"Running simulate processing")
