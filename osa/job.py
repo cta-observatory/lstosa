@@ -286,16 +286,18 @@ def get_job_statistics():
 
     # TODO: this function will be called in the closer loop after all
     #  the jobs are done for a given production.
-    return None
 
 
 def scheduler_env_variables(sequence, scheduler="slurm"):
     """
     Return the environment variables for the scheduler.
     """
-    # FIXME: Create a class with the SBATCH variables we want to use in the pilot job
+    # TODO: Create a class with the SBATCH variables we want to use in the pilot job
     #  and then use the string representation of the class to create the header.
-    if scheduler == "slurm":
+    if scheduler != "slurm":
+        log.warning("No other schedulers are currently supported")
+        return None
+    else:
         sbatch_parameters = [
             f"--job-name={sequence.jobname}",
             "--cpus-per-task=1",
@@ -320,9 +322,6 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
         )
 
         return ["#SBATCH " + line for line in sbatch_parameters]
-
-    else:
-        log.warning("No other schedulers are currently supported")
 
 
 def job_header_template(sequence):
@@ -518,15 +517,15 @@ def submit_jobs(sequence_list):
     command = cfg.get("ENV", "SBATCHBIN")
     no_display_backend = "--export=ALL,MPLBACKEND=Agg"
 
-    for s in sequence_list:
+    for sequence in sequence_list:
         commandargs = [command, "--parsable", no_display_backend]
-        if s.type == "PEDCALIB":
-            commandargs.append(s.script)
+        if sequence.type == "PEDCALIB":
+            commandargs.append(sequence.script)
             if options.simulate or options.no_calib or options.test:
                 log.debug("SIMULATE Launching scripts")
             else:
                 try:
-                    log.debug(f"Launching script {s.script}")
+                    log.debug(f"Launching script {sequence.script}")
                     parent_jobid = subprocess.check_output(
                         commandargs, universal_newlines=True, shell=False
                     ).split()[0]
@@ -539,7 +538,7 @@ def submit_jobs(sequence_list):
             # FIXME here s.jobid has not been redefined se it keeps the one
             #  from previous time sequencer was launched
         # Add the job dependencies after calibration sequence
-        if len(s.parent_list) != 0 and s.type == "DATA":
+        if len(sequence.parent_list) != 0 and sequence.type == "DATA":
             if not options.simulate and not options.no_calib and not options.test:
                 log.debug("Adding dependencies to job submission")
                 depend_string = f"--dependency=afterok:{parent_jobid}"
@@ -593,25 +592,26 @@ def submit_jobs(sequence_list):
             #                        log.warning("Wrong parsing of jobid {0} not being an integer, {1}".format(stdout.split('.', 1)[0], e))
             #        job_list.append(s.jobid)
             #        log.debug("{0} {1}".format(s.action, stringify(commandargs)))
-            commandargs.append(s.script)
+            commandargs.append(sequence.script)
             if options.simulate:
                 log.debug("SIMULATE Launching scripts")
             elif options.test:
                 log.debug(
-                    "TEST launching datasequence scripts for first subrun without scheduler"
+                    "TEST launching datasequence scripts for "
+                    "first subrun without scheduler"
                 )
-                commandargs = ["python", s.script]
+                commandargs = ["python", sequence.script]
                 subprocess.check_output(commandargs, shell=False)
             else:
                 try:
-                    log.debug(f"Launching script {s.script}")
+                    log.debug(f"Launching script {sequence.script}")
                     subprocess.check_output(commandargs, shell=False)
-                except subprocess.CalledProcessError as Error:
-                    log.exception(Error, 2)
-                except OSError as err:
-                    log.exception(f"Command '{command}' not found", err)
+                except subprocess.CalledProcessError as error:
+                    log.exception(error, 2)
+                except OSError as error:
+                    log.exception(f"Command '{command}' not found", error)
             log.debug(commandargs)
-        job_list.append(s.script)
+        job_list.append(sequence.script)
 
     return job_list
 
@@ -641,10 +641,10 @@ def queue_job_list(sequence_list):
             sacct_output = subprocess.check_output(
                 commandargs, universal_newlines=True, shell=False
             )
-        except subprocess.CalledProcessError as Error:
-            log.exception(f"Command '{stringify(commandargs)}' failed, {Error}")
-        except OSError as Error:
-            log.exception(f"Command '{stringify(commandargs)}' failed, {Error}")
+        except subprocess.CalledProcessError as error:
+            log.exception(f"Command '{stringify(commandargs)}' failed, {error}")
+        except OSError as error:
+            log.exception(f"Command '{stringify(commandargs)}' failed, {error}")
         else:
             queue_header = sacct_output.splitlines()[0].split()
             queue_lines = (
@@ -653,8 +653,12 @@ def queue_job_list(sequence_list):
                 .replace(".py", "")
                 .splitlines()[2:]
             )
-            queue_sequences = [line.split() for line in queue_lines if "batch" not in line]
-            queue_list = [dict(zip(queue_header, sequence)) for sequence in queue_sequences]
+            queue_sequences = [
+                line.split() for line in queue_lines if "batch" not in line
+            ]
+            queue_list = [
+                dict(zip(queue_header, sequence)) for sequence in queue_sequences
+            ]
             queue_values(queue_list, sequence_list)
 
         return queue_list
@@ -672,7 +676,7 @@ def queue_values(queue_list, sequence_list):
     # Create data frames for sequence list and queue array
     if not sequence_list:
         return
-    sequences_df = pd.DataFrame([vars(s) for s in sequence_list])
+    sequences_df = pd.DataFrame([vars(seq) for seq in sequence_list])
     df_queue = pd.DataFrame.from_dict(queue_list)
     # Add column with elapsed seconds of the job run-time to be averaged
     if "JobName" in df_queue.columns:
@@ -682,46 +686,50 @@ def queue_values(queue_list, sequence_list):
         df_queue_filtered["DeltaTime"] = df_queue_filtered["CPUTime"].apply(
             time_to_seconds
         )
-        for s in sequence_list:
-            df_jobname = df_queue_filtered[df_queue_filtered["JobName"] == s.jobname]
-            s.tries = len(df_jobname["JobID"].unique())
-            s.action = "Check"
+        for sequence in sequence_list:
+            df_jobname = df_queue_filtered[
+                df_queue_filtered["JobName"] == sequence.jobname
+            ]
+            sequence.tries = len(df_jobname["JobID"].unique())
+            sequence.action = "Check"
             try:
-                s.jobid = max(df_jobname["JobID"])  # Get latest JobID
-                df_jobid_filtered = df_jobname[df_jobname["JobID"] == s.jobid]
-                s.cputime = time.strftime(
+                sequence.jobid = max(df_jobname["JobID"])  # Get latest JobID
+                df_jobid_filtered = df_jobname[df_jobname["JobID"] == sequence.jobid]
+                sequence.cputime = time.strftime(
                     "%H:%M:%S", time.gmtime(df_jobid_filtered["DeltaTime"].median())
                 )
                 if (df_jobid_filtered.State.values == "COMPLETED").all():
-                    s.state = "COMPLETED"
-                    s.exit = df_jobid_filtered["ExitCode"].iloc[0]
+                    sequence.state = "COMPLETED"
+                    sequence.exit = df_jobid_filtered["ExitCode"].iloc[0]
                 elif (df_jobid_filtered.State.values == "PENDING").all():
-                    s.state = "PENDING"
-                    s.exit = None
+                    sequence.state = "PENDING"
+                    sequence.exit = None
                 elif (df_jobid_filtered.State.values == "FAILED").any():
-                    s.state = "FAILED"
-                    s.exit = df_jobid_filtered[
+                    sequence.state = "FAILED"
+                    sequence.exit = df_jobid_filtered[
                         df_jobid_filtered.State.values == "FAILED"
                         ]["ExitCode"].iloc[0]
                 elif (df_jobid_filtered.State.values == "CANCELLED").any():
-                    s.state = "CANCELLED"
-                    s.exit = df_jobid_filtered[
+                    sequence.state = "CANCELLED"
+                    sequence.exit = df_jobid_filtered[
                         df_jobid_filtered.State.values == "CANCELLED"
                         ]["ExitCode"].iloc[0]
                 elif (df_jobid_filtered.State.values == "TIMEOUT").any():
-                    s.state = "TIMEOUT"
-                    s.exit = "0:15"
+                    sequence.state = "TIMEOUT"
+                    sequence.exit = "0:15"
                 else:
-                    s.state = "RUNNING"
-                    s.exit = None
+                    sequence.state = "RUNNING"
+                    sequence.exit = None
                 log.debug(
-                    f"Queue attributes: sequence {s.seq}, JobName {s.jobname}, "
-                    f"JobID {s.jobid}, State {s.state}, "
-                    f"CPUTime {s.cputime}, Exit {s.exit} updated"
+                    f"Queue attributes: sequence {sequence.seq},"
+                    f"JobName {sequence.jobname}, "
+                    f"JobID {sequence.jobid}, State {sequence.state}, "
+                    f"CPUTime {sequence.cputime}, Exit {sequence.exit} updated"
                 )
             except ValueError:
                 log.debug(
-                    f"Queue attributes for sequence {s.seq} not present in sacct output."
+                    f"Queue attributes for sequence {sequence.seq} "
+                    f"not present in sacct output."
                 )
     else:
         log.debug("No jobs reported in sacct queue.")

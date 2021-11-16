@@ -6,6 +6,7 @@ from textwrap import dedent
 import pytest
 
 from osa.configs import options
+from osa.scripts.closer import is_sequencer_successful, is_finished_check
 
 ALL_SCRIPTS = [
     "sequencer",
@@ -25,8 +26,8 @@ def run_program(*args):
             f"Running {args[0]} failed with return code {result.returncode}"
             f", output: \n {result.stdout}"
         )
-    else:
-        return result
+
+    return result
 
 
 @pytest.mark.parametrize("script", ALL_SCRIPTS)
@@ -43,30 +44,30 @@ def test_simulated_sequencer():
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     assert dedent(
         f"""\
-    =========================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Night: 2020_01_17 ===========================
-    Tel   Seq  Parent  Type      Run   Subruns  Source  Wobble  Action  Tries  JobID  State  Host  CPU_time  Walltime  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%  
-    LST1    0  None    PEDCALIB  1805  5        None    None    None    None   None   None   None  None      None      None  None  None    None    None        None  
-    LST1    1       0  DATA      1807  19       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1    2       0  DATA      1808  35       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1    3       0  DATA      1809  18       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1    4       0  DATA      1810  5        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1    5       0  DATA      1812  2        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1    6       0  DATA      1813  1        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1    7       0  DATA      1814  48       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1    8       0  DATA      1815  82       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1    9       0  DATA      1816  83       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1   10       0  DATA      1817  71       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1   11       0  DATA      1818  72       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1   12       0  DATA      1819  96       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1   13       0  DATA      1820  77       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1   14       0  DATA      1821  47       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1   15       0  DATA      1822  102      None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1   16       0  DATA      1823  68       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1   17       0  DATA      1824  79       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1   18       0  DATA      1825  69       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1   19       0  DATA      1826  6        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-    LST1   20       0  DATA      1827  1        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0 
-    """
+        =========================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Night: 2020_01_17 ===========================
+        Tel   Seq  Parent  Type      Run   Subruns  Source  Wobble  Action  Tries  JobID  State  Host  CPU_time  Walltime  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%  
+        LST1    0  None    PEDCALIB  1805  5        None    None    None    None   None   None   None  None      None      None  None  None    None    None        None  
+        LST1    1       0  DATA      1807  19       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1    2       0  DATA      1808  35       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1    3       0  DATA      1809  18       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1    4       0  DATA      1810  5        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1    5       0  DATA      1812  2        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1    6       0  DATA      1813  1        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1    7       0  DATA      1814  48       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1    8       0  DATA      1815  82       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1    9       0  DATA      1816  83       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1   10       0  DATA      1817  71       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1   11       0  DATA      1818  72       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1   12       0  DATA      1819  96       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1   13       0  DATA      1820  77       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1   14       0  DATA      1821  47       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1   15       0  DATA      1822  102      None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1   16       0  DATA      1823  68       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1   17       0  DATA      1824  79       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1   18       0  DATA      1825  69       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1   19       0  DATA      1826  6        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        LST1   20       0  DATA      1827  1        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0 
+        """
     )
 
 
@@ -91,7 +92,8 @@ def test_autocloser(running_analysis_dir):
     )  # Check that the analysis directory exists
     assert result.stdout.split()[-1] == "Exit"
     assert os.path.exists(
-        "./test_osa/test_files0/running_analysis/20200117/v0.1.0_v01/AutoCloser_Incidences_tmp.txt"
+        "./test_osa/test_files0/running_analysis/20200117/v0.1.0_v01/"
+        "AutoCloser_Incidences_tmp.txt"
     )
 
 
@@ -167,7 +169,5 @@ def test_calibrationsequence(running_analysis_dir):
 
 
 def test_is_sequencer_successful(run_summary):
-    from osa.scripts.closer import is_sequencer_successful, is_finished_check
-
     seq_tuple = is_finished_check(run_summary)
     assert is_sequencer_successful(seq_tuple) is True

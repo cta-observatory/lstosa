@@ -455,9 +455,9 @@ def time_to_seconds(timestring):
         return (
             int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
         )
-    else:
-        hours, minutes, seconds = timestring.split(":")
-        return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+
+    hours, minutes, seconds = timestring.split(":")
+    return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
 
 
 def date_in_yymmdd(date_string):

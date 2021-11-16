@@ -1,8 +1,9 @@
+"""Command line argument parser for lstosa scripts."""
+
 import datetime
 import logging
 import os
 from argparse import ArgumentParser, ArgumentTypeError
-from optparse import OptionParser
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -30,7 +31,6 @@ __all__ = [
     "set_default_date_if_needed",
     "set_default_directory_if_needed",
     "simprocparsing",
-    "stereosequencecliparsing",
     "sequencer_webmaker_argparser",
     "valid_date",
 ]
@@ -480,104 +480,6 @@ def datasequencecliparsing():
     )
 
 
-def stereosequencecliparsing():
-    parser = OptionParser()
-    parser.add_option(
-        "-c",
-        "--config",
-        action="store",
-        dest="configfile",
-        default=None,
-        help="use specific config file [default cfg/sequencer.cfg]",
-    )
-    parser.add_option(
-        "-d",
-        "--date",
-        action="store",
-        type=str,
-        dest="date",
-        help="observation ending date YYYY_MM_DD [default today]",
-    )
-    parser.add_option(
-        "-o",
-        "--outputdir",
-        action="store",
-        type=str,
-        dest="directory",
-        help="analysis output directory",
-    )
-    parser.add_option(
-        "-v",
-        "--verbose",
-        action="store_true",
-        dest="verbose",
-        default=False,
-        help="make lots of noise for debugging",
-    )
-    parser.add_option(
-        "-w",
-        "--warnings",
-        action="store_true",
-        dest="warning",
-        default=False,
-        help="show useful warnings",
-    )
-    parser.add_option(
-        "-z",
-        "--rawzip",
-        action="store_true",
-        dest="compressed",
-        default=False,
-        help="Use input as compressed raw.gz files",
-    )
-    parser.add_option(
-        "--stderr",
-        action="store",
-        type=str,
-        dest="stderr",
-        help="file for standard error",
-    )
-    parser.add_option(
-        "--stdout",
-        action="store",
-        type=str,
-        dest="stdout",
-        help="file for standard output",
-    )
-
-    # parse the command line
-    (opts, args) = parser.parse_args()
-
-    # set global variables
-    options.configfile = opts.configfile
-    options.stderr = opts.stderr
-    options.stdout = opts.stdout
-    options.date = opts.date
-    options.directory = opts.directory
-    options.verbose = opts.verbose
-    options.warning = opts.warning
-    options.compressed = opts.compressed
-
-    # the standardhandle has to be declared here,
-    # since verbose and warnings are options from the cli
-    log.debug(f"the options are {opts}")
-    log.debug(f"the argument is {args}")
-
-    # checking arguments
-    if len(args) != 1:
-        log.error("incorrect number of arguments, type -h for help")
-
-    # mapping the telescope argument to an option
-    # parameter (it might become an option in the future)
-    options.tel_id = "ST"
-
-    # setting the default date and directory if needed
-    options.date = set_default_date_if_needed()
-    options.directory = set_default_directory_if_needed()
-
-    return args
-
-
 def sequencer_argparser():
     """Argument parser for sequencer script."""
     parser = ArgumentParser()
@@ -756,8 +658,8 @@ def sequencer_cli_parsing():
 
 
 def rawcopycliparsing():
-    parser = OptionParser()
-    parser.add_option(
+    parser = ArgumentParser()
+    parser.add_argument(
         "-c",
         "--config",
         action="store",
@@ -765,7 +667,7 @@ def rawcopycliparsing():
         default=None,
         help="use specific config file [default rawcopy.cfg]",
     )
-    parser.add_option(
+    parser.add_argument(
         "-d",
         "--date",
         action="store",
@@ -773,14 +675,14 @@ def rawcopycliparsing():
         dest="date",
         help="observation ending date YYYY_MM_DD [default today]",
     )
-    parser.add_option(
+    parser.add_argument(
         "--nocheck",
         action="store_true",
         dest="nocheck",
         default=False,
         help="Skip checking if the daily activity is set over",
     )
-    parser.add_option(
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -788,7 +690,7 @@ def rawcopycliparsing():
         default=False,
         help="make lots of noise for debugging",
     )
-    parser.add_option(
+    parser.add_argument(
         "-w",
         "--warnings",
         action="store_true",
@@ -796,7 +698,7 @@ def rawcopycliparsing():
         default=False,
         help="show useful warnings",
     )
-    parser.add_option(
+    parser.add_argument(
         "-z",
         "--rawzip",
         action="store_true",
@@ -804,14 +706,14 @@ def rawcopycliparsing():
         default=False,
         help="compress output into raw.gz files",
     )
-    parser.add_option(
+    parser.add_argument(
         "--stderr",
         action="store",
         type=str,
         dest="stderr",
         help="file for standard error",
     )
-    parser.add_option(
+    parser.add_argument(
         "--stdout",
         action="store",
         type=str,
@@ -1038,12 +940,12 @@ def sequencer_webmaker_argparser():
 def set_default_date_if_needed():
     if is_defined(options.date):
         return options.date
-    else:
-        return getcurrentdate(cfg.get("LST", "DATESEPARATOR"))
+
+    return getcurrentdate(cfg.get("LST", "DATESEPARATOR"))
 
 
 def set_default_directory_if_needed():
     if is_defined(options.directory):
         return options.directory
-    else:
-        return night_directory()
+
+    return night_directory()

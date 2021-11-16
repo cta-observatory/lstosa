@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 from osa.configs import options
@@ -620,7 +621,7 @@ if __name__ == "__main__":
         log.error(
             "The command line arguments 'onlyIncidences' and 'force' are incompatible with each other"
         )
-        exit(1)
+        sys.exit(1)
 
     if args.date:
         year = args.date.year
@@ -643,7 +644,7 @@ if __name__ == "__main__":
     log.info(message)
 
     if is_night_time():
-        exit(1)
+        sys.exit(1)
 
     prod_id = cfg.get("LST1", "PROD-ID")
 

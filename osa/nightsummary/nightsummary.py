@@ -50,13 +50,14 @@ def build_external(command, rawdir):
     except subprocess.CalledProcessError as error:
         log.exception(f"Subprocess error: {error}")
     else:
-        log.debug("Getting output...\n" + stdout.rstrip())
+        log.debug(f"Getting output...{stdout.rstrip()}")
         return stdout
 
 
 def run_summary_table(date):
     """
-    Reads the run summary ECSV file containing an astropy Table with the following content.
+    Reads the run summary ECSV file containing an astropy
+    Table with the following content:
      - run_id, datatype: int64
      - n_subruns, datatype: int64
      - run_type, datatype: string
@@ -67,8 +68,6 @@ def run_summary_table(date):
      - dragon_reference_module_index, datatype: int16
      - dragon_reference_counter, datatype: uint64
      - dragon_reference_source, datatype: string
-
-    It reads an existing RunSummary file.
 
     Returns
     -------

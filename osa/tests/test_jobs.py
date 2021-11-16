@@ -6,7 +6,8 @@ from osa.configs import options
 from osa.configs.config import cfg
 
 extra_files = Path(os.getenv("OSA_TEST_DATA", "extra"))
-datasequence_history_file = extra_files / "history_files/sequence_LST1_04185.0010.history"
+datasequence_history_file = extra_files / "history_files/" \
+                                          "sequence_LST1_04185.0010.history"
 calibration_history_file = extra_files / "history_files/sequence_LST1_04183.history"
 options.date = "2020_01_17"
 options.tel_id = "LST1"
@@ -51,7 +52,8 @@ def test_sequence_filenames(running_analysis_dir, sequence_list):
 
     for sequence in sequence_list:
         sequence_filenames(sequence)
-        assert sequence.script == running_analysis_dir / f"sequence_LST1_{sequence.run:05d}.py"
+        assert sequence.script == running_analysis_dir / \
+               f"sequence_LST1_{sequence.run:05d}.py"
 
 
 def test_scheduler_env_variables(sequence_list, running_analysis_dir):

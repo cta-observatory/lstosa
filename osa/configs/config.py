@@ -1,21 +1,25 @@
+"""Open the lstosa configuration file."""
+
 import logging
 import sys
-from configparser import ConfigParser
+import configparser
 from pathlib import Path
 
 from osa.configs import options
 
 log = logging.getLogger(__name__)
 
+__all__ = ['read_config', 'cfg']
 
-def readconf():
+
+def read_config():
     """
     Read cfg lstosa config file
 
     Returns
     -------
-    conf: configuration file cfg
-
+    config: ConfigParser
+        Configuration file cfg
     """
     for idx, arg in enumerate(sys.argv):
         if arg in ["-c", "--config"]:
@@ -26,13 +30,13 @@ def readconf():
     if not Path(file).exists():
         raise FileNotFoundError(f"Configuration file {file} not found.")
 
-    conf = ConfigParser(allow_no_value=True)
+    config = configparser.ConfigParser(allow_no_value=True)
     try:
-        conf.read(file)
-    except ConfigParser.Error as err:
+        config.read(file)
+    except configparser.Error as err:
         log.exception(err)
-    log.debug(f"Sections of the config file are {conf.sections()}")
-    return conf
+    log.debug(f"Sections of the config file are {config.sections()}")
+    return config
 
 
-cfg = readconf()
+cfg = read_config()

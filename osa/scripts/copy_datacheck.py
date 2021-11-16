@@ -46,10 +46,10 @@ def main():
         Path("/fefs/aswg/data/real/OSA/DL1DataCheck_LongTerm") / "v0.7" / nightdir
     )
 
-    drs4_pdf = [file for file in analysis_log_dir.glob("drs4*.pdf")]
-    calib_pdf = [file for file in analysis_log_dir.glob("calibration*.pdf")]
-    dl1_pdf = [file for file in dl1_dir.glob("*datacheck*.pdf")]
-    dl1_longterm_daily = [file for file in dl1_longterm_daily.glob("*datacheck*")]
+    drs4_pdf = list(analysis_log_dir.glob("drs4*.pdf"))
+    calib_pdf = list(analysis_log_dir.glob("calibration*.pdf"))
+    dl1_pdf = list(dl1_dir.glob("*datacheck*.pdf"))
+    dl1_longterm_daily = list(dl1_longterm_daily.glob("*datacheck*"))
     list_of_files = [drs4_pdf, calib_pdf, dl1_pdf, dl1_longterm_daily]
     files_to_transfer = list(itertools.chain(*list_of_files))
 

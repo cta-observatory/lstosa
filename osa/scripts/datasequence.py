@@ -89,7 +89,7 @@ def datasequence(
     return rc
 
 
-# FIXME: Parse all different arguments via config file or sequence_list.txt
+# TODO: Parse all different arguments via config file or sequence_list.txt
 @trace
 def r0_to_dl1(
         calibrationfile,
@@ -122,6 +122,7 @@ def r0_to_dl1(
     rc: int
         Return code of the executed command.
     """
+    # TODO Parse all different arguments via config file or sequence_list.txt
 
     if options.simulate:
         return 0
@@ -342,6 +343,8 @@ def run_program_with_logging(
         if rc != 0:
             sys.exit(rc)
         return rc
+
+    return None
 
 
 def main():
