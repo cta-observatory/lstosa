@@ -157,9 +157,8 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000)
     if rc != 0:
         sys.exit(rc)
 
-    plot_file = path.join(
-        options.directory, "log", f"drs4_pedestal.Run{run_ped}.0000.pdf"
-    )
+    analysis_directory = Path(options.directory)
+    plot_file = analysis_directory / "log", f"drs4_pedestal.Run{run_ped}.0000.pdf"
     log.info(f"Producing plots in {plot_file}")
     drs4.plot_pedestals(input_file, output_file, run_ped, plot_file)
     plt.close("all")
@@ -288,19 +287,18 @@ def calibrate_time(
     if options.simulate:
         return 0
 
-    calibration_data_file = get_input_file(calibration_run)
+    r0_path = Path(cfg.get("LST1", "RAWDIR")).absolute()
+    calibration_data_file = f"{r0_path}/*/LST-1.1.Run{calibration_run}.000*.fits.fz"
 
     calib_configfile = cfg.get("LSTOSA", "CALIBCONFIGFILE")
-    time_calibration_output_file = path.join(
-        options.directory, f"time_{calibration_output_file}"
-    )
-    pedestal_file_path = path.join(options.directory, pedestal_file)
+    time_calibration_file = Path(options.directory) / f"time_{calibration_output_file}"
+    pedestal_file_path = Path(options.directory) / pedestal_file
 
     command = "time_calibration"
     command_args = [
         cfg.get("lstchain", command),
         f"--input-file={calibration_data_file}",
-        f"--output-file={time_calibration_output_file}",
+        f"--output-file={time_calibration_file}",
         f"--pedestal-file={pedestal_file_path}",
         f"--run-summary-path={run_summary}",
         "--max-events=53000"
@@ -314,8 +312,8 @@ def calibrate_time(
             calibration_run,
             options.calib_prod_id,
             command,
-            path.basename(time_calibration_output_file),
-            path.basename(calib_configfile),
+            time_calibration_file.name,
+            calib_configfile.name,
             error,
             history_file,
         )
@@ -327,8 +325,8 @@ def calibrate_time(
             calibration_run,
             options.calib_prod_id,
             command,
-            path.basename(time_calibration_output_file),
-            path.basename(calib_configfile),
+            time_calibration_file.name,
+            calib_configfile.name,
             rc,
             history_file,
         )
@@ -340,17 +338,18 @@ def calibrate_time(
         # FIXME: take latest available time calibration file (eg from day before)
         def_time_calib_run = int(cfg.get("LSTOSA", "DEFAULT-TIME-CALIB-RUN"))
         calibpath = Path(cfg.get("LST1", "CALIBDIR"))
-        outputf = time_calibration_output_file
+        outputf = time_calibration_file
         log.info(
             f"Searching for file "
             f"*/{options.calib_prod_id}/time_calibration.Run{def_time_calib_run:05d}*"
         )
-        file_list = [
-            file
-            for file in calibpath.rglob(
-                f"*/{options.calib_prod_id}/time_calibration.Run{def_time_calib_run:05d}*"
+        file_list = list(
+            calibpath.rglob(
+                f'*/{options.calib_prod_id}/'
+                f'time_calibration.Run{def_time_calib_run:05d}*'
             )
-        ]
+        )
+
         if file_list:
             log.info(
                 f"Creating a symlink to an already produce time calibration "
@@ -363,8 +362,8 @@ def calibrate_time(
                 calibration_run,
                 options.calib_prod_id,
                 command,
-                path.basename(time_calibration_output_file),
-                path.basename(calib_configfile),
+                time_calibration_file.name,
+                calib_configfile.name,
                 rc,
                 history_file,
             )
