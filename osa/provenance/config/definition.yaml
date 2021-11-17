@@ -97,7 +97,7 @@ activities:
 
         generation:
             - role: "DL1 subrun dataset"
-              description: "DL1 dataset produced from a given observation subrun"
+              description: "DL1 dataset for a given observation subrun"
               entityName: DL1SubrunDataset
               value: DL1SubrunDataset
               # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
@@ -121,7 +121,7 @@ activities:
               value: StoreImage
         usage:
             - role: "DL1 subrun dataset"
-              description: "DL1 dataset produced from a given observation subrun"
+              description: "DL1 dataset for a given observation subrun"
               entityName: DL1SubrunDataset
               value: DL1SubrunDataset
               # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
@@ -133,7 +133,7 @@ activities:
 
         generation:
             - role: "DL1AB subrun dataset"
-              description: "DL1AB dataset produced from a given observation subrun"
+              description: "DL1AB dataset for a given observation subrun"
               entityName: DL1SubrunDataset
               value: DL1SubrunDataset
               # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
@@ -144,13 +144,70 @@ activities:
            #   value: DL1Collection
            #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84
            #   size: 128
+
+    dl1_datacheck:
+        description:
+            "Check the contents of LST DL1 files and associated muon ring files"
+        parameters:
+        usage:
+            - role: "DL1AB subrun dataset"
+              description: "DL1AB dataset for a given observation subrun"
+              entityName: DL1SubrunDataset
+              value: DL1SubrunDataset
+              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
+
+           # - role: "DL1 Collection"
+           #   description: "Set of DL1 files for a given run"
+           #   entityName: Dl1Collection
+           #   value: DL1Collection
+           #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84
+           #   size: 128
+
+            - role: "Muons subrun dataset"
+              description: "Muons dataset for a given observation subrun"
+              entityName: MuonsSubrunDataset
+              value: MuonsSubrunDataset
+             # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/muons_LST-1.Run06275.0060.fits
+
+           # - role: "Muons Collection"
+           #   description: "Set of muons files for a given run"
+           #   entityName: MuonsCollectionRun
+           #   value: MuonsCollectionRun
+           #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
+           #   size: 128
+
+        generation:
+            - role: "DL1Check HDF5 file"
+              description: "DL1Check HDF5 file for a given run"
+              entityName: DL1CheckHDF5File
+              value: DL1CheckHDF5File
+              # filepath: /fefs/aswg/data/real/DL1/20210913/v0.7.5/tailcut84/datacheck_dl1_LST-1.Run06269.h5
+            - role: "DL1Check PDF file"
+              description: "DL1Check PDF file for a given run"
+              entityName: DL1CheckPDFFile
+              value: DL1CheckPDFFile
+              # filepath: /fefs/aswg/data/real/DL1/20210913/v0.7.5/tailcut84/datacheck_dl1_LST-1.Run06269.pdf
+
+            - role: "DL1Check subrun dataset"
+              description: "DL1Check dataset for a given observation subrun"
+              entityName: DL1CheckSubrunDataset
+              value: DL1CheckSubrunDataset
+              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/datacheck_dl1_LST-1.Run06269.0021.h5
+
+            # - role: "DL1Check Collection Run"
+            #   description: "Set of DL1Check files for a given run"
+            #   entityName: DL1CheckCollectionRun
+            #   value: DL1CheckCollectionRun
+            #   filepath: /fefs/aswg/data/real/DL1/20210913/v0.7.5/tailcut84_dynamic_cleaning
+            #   size: 128
+
     dl1_to_dl2:
         description:
             "Create DL2 files for an DL1 run and subrun"
         parameters:
         usage:
             - role: "DL1 subrun dataset"
-              description: "DL1 dataset produced from a given observation subrun"
+              description: "DL1 dataset for a given observation subrun"
               entityName: DL1SubrunDataset
               value: DL1SubrunDataset
               # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5
@@ -189,7 +246,7 @@ activities:
               value: DL2MergedFile
               # filepath: /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.h5
             - role: "DL2 subrun dataset"
-              description: "DL2 dataset produced from a given DL1 subrun"
+              description: "DL2 dataset for a given DL1 subrun"
               entityName: DL2SubrunDataset
               value: DL2SubrunDataset
               # filepath: /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.0001.h5
@@ -238,11 +295,11 @@ entities:
 #        type: File
 #        contentType: text/plain
     DL1SubrunDataset:
-        description: "DL1 subrun file produced in HDF5 format on the disk"
+        description: "DL1 subrun file in HDF5 format"
         type: File
         contentType: application/x-hdf
     DL2SubrunDataset:
-        description: "DL2 subrun file produced in HDF5 format on the disk"
+        description: "DL2 subrun file in HDF5 format"
         type: File
         contentType: application/x-hdf
     R0Collection:
@@ -251,6 +308,28 @@ entities:
     DL1Collection:
         description: "Set of DL1 files for a given run"
         type: SetCollection
+    MuonsSubrunDataset:
+        description: "Muons subrun file in FITS format"
+        type: File
+        contentType: application/fits
+    MuonsCollectionRun:
+        description: "Set of muons FITS files for a given run"
+        type: SetCollection
+    DL1CheckSubrunDataset:
+        description: "DL1 check subrun file in HDF5 format"
+        type: File
+        contentType: application/x-hdf
+    DL1CheckCollectionRun:
+        description: "Set of DL1Check HDF5 files for a given run"
+        type: SetCollection
+    DL1CheckPDFFile:
+        description: "A DL1 PDF check file"
+        type: File
+        contentType: application/pdf
+    DL1CheckHDF5File:
+        description: "A DL1 HDF5 check file"
+        type: File
+        contentType: application/hdf5
     RFModelEnergyFile:
         description: "Model file for deriving reconstructed Energy with Random Forest algorithm"
         type: File
