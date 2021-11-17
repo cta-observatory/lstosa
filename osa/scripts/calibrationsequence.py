@@ -7,7 +7,6 @@ import logging
 import os
 import subprocess
 import sys
-from os import path
 from pathlib import Path
 
 import lstchain.visualization.plot_calib as calib
@@ -22,9 +21,8 @@ from osa.utils.cliopts import calibrationsequencecliparsing
 from osa.utils.logging import myLogger
 from osa.utils.utils import stringify, get_input_file
 
-
 __all__ = [
-    "calibrationsequence",
+    "calibration_sequence",
     "calibrate_charge",
     "calibrate_time",
     "drs4_pedestal",
@@ -33,7 +31,7 @@ __all__ = [
 log = myLogger(logging.getLogger())
 
 
-def calibrationsequence(
+def calibration_sequence(
         pedestal_filename,
         calibration_filename,
         ped_run_number,
@@ -115,7 +113,7 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000)
 
     input_file = get_input_file(run_ped)
 
-    calib_configfile = None
+    calib_configfile = "Default"
     output_file = Path(options.directory) / pedestal_output_file
 
     command = "drs4_baseline"
@@ -197,14 +195,13 @@ def calibrate_charge(
 
     calibration_run_file = get_input_file(calibration_run)
 
-    calib_configfile = cfg.get("lstchain", "calibration_config_file")
-    ffactor_systematics = cfg.get("lstchain", "ffactor_systematics")
-    drs4_pedestal_path = path.join(options.directory, pedestal_file)
-    calib_output_file = path.join(options.directory, calibration_output_file)
-    time_file = path.join(options.directory, f"time_{calibration_output_file}")
-    log_output_file = path.join(
-        options.directory, "log", f"calibration.Run{calibration_run}.0000.log"
-    )
+    calib_configfile = Path(cfg.get("lstchain", "calibration_config_file"))
+    ffactor_systematics = Path(cfg.get("lstchain", "ffactor_systematics"))
+    drs4_pedestal_path = Path(options.directory) / pedestal_file
+    calib_output_file = Path(options.directory) / calibration_output_file
+    time_file = Path(options.directory) / f"time_{calibration_output_file}"
+    log_output_file = Path(options.directory) / "log" /\
+                      f"calibration.Run{calibration_run}.0000.log"
 
     command = "charge_calibration"
     command_args = [
@@ -229,7 +226,7 @@ def calibrate_charge(
             options.calib_prod_id,
             command,
             calibration_output_file,
-            path.basename(calib_configfile),
+            calib_configfile.name,
             error,
             history_file,
         )
@@ -242,7 +239,7 @@ def calibrate_charge(
             options.calib_prod_id,
             command,
             calibration_output_file,
-            path.basename(calib_configfile),
+            calib_configfile.name,
             rc,
             history_file,
         )
@@ -264,11 +261,11 @@ def calibrate_charge(
 
 
 def calibrate_time(
-    calibration_run,
-    pedestal_file,
-    calibration_output_file,
-    run_summary,
-    history_file
+        calibration_run,
+        pedestal_file,
+        calibration_output_file,
+        run_summary,
+        history_file
 ):
     """
     Create a time calibration file
@@ -292,9 +289,10 @@ def calibrate_time(
     r0_path = Path(cfg.get("LST1", "RAWDIR")).absolute()
     calibration_data_file = f"{r0_path}/*/LST-1.1.Run{calibration_run}.000*.fits.fz"
 
-    calib_configfile = cfg.get("LSTOSA", "CALIBCONFIGFILE")
     time_calibration_file = Path(options.directory) / f"time_{calibration_output_file}"
     pedestal_file_path = Path(options.directory) / pedestal_file
+
+    calib_configfile = "Default"
 
     command = "time_calibration"
     command_args = [
@@ -315,7 +313,7 @@ def calibrate_time(
             options.calib_prod_id,
             command,
             time_calibration_file.name,
-            calib_configfile.name,
+            calib_configfile,
             error,
             history_file,
         )
@@ -328,7 +326,7 @@ def calibrate_time(
             options.calib_prod_id,
             command,
             time_calibration_file.name,
-            calib_configfile.name,
+            calib_configfile,
             rc,
             history_file,
         )
@@ -365,7 +363,7 @@ def calibrate_time(
                 options.calib_prod_id,
                 command,
                 time_calibration_file.name,
-                calib_configfile.name,
+                calib_configfile,
                 rc,
                 history_file,
             )
@@ -395,7 +393,7 @@ def main():
         log.setLevel(logging.INFO)
 
     # run the routine
-    rc = calibrationsequence(
+    rc = calibration_sequence(
         pedoutfile, caloutfile, calib_run_number, ped_run_number, run_summary
     )
     sys.exit(rc)
