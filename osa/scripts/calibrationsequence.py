@@ -116,7 +116,7 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000)
     input_file = get_input_file(run_ped)
 
     calib_configfile = None
-    output_file = path.join(options.directory, pedestal_output_file)
+    output_file = Path(options.directory) / pedestal_output_file
 
     command = "drs4_baseline"
     command_args = [
@@ -157,8 +157,8 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000)
     if rc != 0:
         sys.exit(rc)
 
-    analysis_directory = Path(options.directory)
-    plot_file = analysis_directory / "log", f"drs4_pedestal.Run{run_ped}.0000.pdf"
+    analysis_log_directory = Path(options.directory) / "log"
+    plot_file = analysis_log_directory / f"drs4_pedestal.Run{run_ped}.0000.pdf"
     log.info(f"Producing plots in {plot_file}")
     drs4.plot_pedestals(input_file, output_file, run_ped, plot_file)
     plt.close("all")
@@ -250,11 +250,9 @@ def calibrate_charge(
     if rc != 0:
         sys.exit(rc)
 
-    plot_file = path.join(
-        options.directory,
-        "log",
-        f"calibration.Run{calibration_run}.0000.pedestal.Run{run_ped}.0000.pdf",
-    )
+    analysis_log_directory = Path(options.directory) / "log"
+    plot_file = analysis_log_directory /\
+                f"calibration.Run{calibration_run}.0000.pedestal.Run{run_ped}.0000.pdf"
     calib.read_file(calib_output_file, tel_id=1)
     log.info(f"Producing plots in {plot_file}")
     calib.plot_all(
@@ -266,7 +264,11 @@ def calibrate_charge(
 
 
 def calibrate_time(
-        calibration_run, pedestal_file, calibration_output_file, run_summary, history_file
+    calibration_run,
+    pedestal_file,
+    calibration_output_file,
+    run_summary,
+    history_file
 ):
     """
     Create a time calibration file
