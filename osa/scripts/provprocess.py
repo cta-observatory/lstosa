@@ -127,6 +127,7 @@ def parse_lines_run(filter_step, prov_lines, out):
     dl2filepath_str = ""
     id_activity_run = ""
     end_time_line = ""
+    osa_config_copied = False
     for line in prov_lines:
         # get info
         remove = False
@@ -140,6 +141,7 @@ def parse_lines_run(filter_step, prov_lines, out):
         name = line.get("name", "")
         content_type = line.get("contentType", "")
         used_id = line.get("used_id", "")
+        osa_cfg = line.get("config_file", "")
 
         # filter grain
         session_tag = line.get("session_tag", "0:0")
@@ -192,11 +194,14 @@ def parse_lines_run(filter_step, prov_lines, out):
         # copy used files not subruns not RFs not mergedDL2
         if filepath and content_type != "application/x-spss-sav" and name != "DL2MergedFile" and not remove:
             copy_used_file(filepath, out)
+        if session_id and osa_cfg and not osa_config_copied:
+            copy_used_file(osa_cfg, out)
+            osa_config_copied = True
 
         if not remove:
             working_lines.append(line)
 
-    # append collection run used and generated at endtime line of last activitiy
+    # append collections used and generated at endtime line of last activitiy
     if end_time_line:
         working_lines.append(end_time_line)
         if r0filepath_str and filter_step == "r0_to_dl1":
@@ -306,7 +311,7 @@ def produce_provenance():
         plinesab = parse_lines_run("dl1ab", read_prov(filename=session_log_filename), str(pathsR0DL1["out_path"]))
         linesDL1AB = copy.deepcopy(plinesab)
         DL1lines = linesR0DL1 + linesDL1AB[1:]
-        produce_provenance_files(plinesro + plinesab, pathsR0DL1)
+        produce_provenance_files(plinesro + plinesab[1:], pathsR0DL1)
 
     if options.filter == "dl1_to_dl2" or not options.filter:
         pathsDL1DL2 = define_paths("dl1_to_dl2", pathDL2, options.dl2_prod_id)
