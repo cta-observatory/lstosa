@@ -4,6 +4,7 @@ Utility functions for OSA pipeline provenance
 import logging
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -11,7 +12,8 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.utils import lstdate_to_dir
 
-__all__ = ["parse_variables", "get_log_config"]
+
+__all__ = ["parse_variables", "get_log_config", "store_conda_env_export"]
 
 
 def parse_variables(class_instance):
@@ -125,7 +127,7 @@ def parse_variables(class_instance):
 
 
 def get_log_config():
-    """Get logging configuration from an OSA config file"""
+    """Get logging configuration from an OSA config file."""
 
     # default config filename value
     config_file = Path(__file__).resolve().parent / ".." / ".." / options.configfile
@@ -137,7 +139,7 @@ def get_log_config():
         if in_config_arg:
             config_file = arg
             in_config_arg = False
-        if arg == "-c" or arg == "--config":
+        if arg in ["-c", "--config"]:
             in_config_arg = True
 
     # parse configuration
@@ -162,3 +164,11 @@ def get_log_config():
         log_config = std_logger_file.read_text()
 
     return log_config
+
+
+def store_conda_env_export():
+    """Store file with `conda env export` output to log the packages versions used."""
+    analysis_log_dir = Path(options.directory) / "log"
+    analysis_log_dir.mkdir(parents=True, exist_ok=True)
+    conda_env_file = analysis_log_dir / "conda_env.yml"
+    subprocess.run(["conda", "env", "export", "--file", str(conda_env_file)])
