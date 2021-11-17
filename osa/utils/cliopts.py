@@ -4,6 +4,7 @@ import datetime
 import logging
 import os
 from argparse import ArgumentParser, ArgumentTypeError
+from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -19,7 +20,8 @@ from osa.utils.utils import (
 )
 
 __all__ = [
-    "calibrationsequencecliparsing",
+    "calibration_sequence_cliparsing",
+    "calibration_sequence_argparser",
     "closer_argparser",
     "closercliparsing",
     "copy_datacheck_parsing",
@@ -201,7 +203,7 @@ def closercliparsing():
         options.dl2_prod_id = options.prod_id
 
 
-def calibrationsequence_argparser():
+def calibration_sequence_argparser():
     parser = ArgumentParser()
     parser.add_argument(
         "-c",
@@ -281,21 +283,37 @@ def calibrationsequence_argparser():
         help="do not submit sequences as jobs",
     )
     parser.add_argument(
-        "pedoutfile", help="Full path of the DRS4 pedestal file to be created"
+        "drs4_pedestal_file",
+        type=Path,
+        help="Full path of the DRS4 pedestal file to be created"
     )
     parser.add_argument(
-        "caloutfile", help="Full path of the calibration file to be created"
+        "calibration_file",
+        type=Path,
+        help="Full path of the calibration file to be created"
     )
-    parser.add_argument("calib_run_number", help="Calibration run number")
-    parser.add_argument("ped_run_number", help="DRS4 pedestal run number")
-    parser.add_argument("run_summary_file", help="Run summary file")
-    parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
+    parser.add_argument(
+        "calibration_run_number",
+        type=str,
+        help="Calibration run number"
+    )
+    parser.add_argument(
+        "drs4_pedestal_run_number",
+        type=str,
+        help="DRS4 pedestal run number"
+    )
+    parser.add_argument(
+        "run_summary_file",
+        type=Path,
+        help="Run summary file"
+    )
+    parser.add_argument("tel_id", choices=["LST1"])
 
     return parser
 
 
-def calibrationsequencecliparsing():
-    opts = calibrationsequence_argparser().parse_args()
+def calibration_sequence_cliparsing():
+    opts = calibration_sequence_argparser().parse_args()
 
     # set global variables
     options.configfile = opts.configfile
@@ -310,7 +328,7 @@ def calibrationsequencecliparsing():
     options.tel_id = opts.tel_id
     options.simulate = opts.simulate
 
-    log.debug(f"the options and arguments are {opts}")
+    log.debug(f"The options and arguments are {opts}")
 
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
@@ -320,10 +338,10 @@ def calibrationsequencecliparsing():
     else:
         options.calib_prod_id = options.prod_id
     return (
-        opts.pedoutfile,
-        opts.caloutfile,
-        opts.calib_run_number,
-        opts.ped_run_number,
+        opts.drs4_pedestal_file,
+        opts.calibration_file,
+        opts.calibration_run_number,
+        opts.drs4_pedestal_run_number,
         opts.run_summary_file,
     )
 

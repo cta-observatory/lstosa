@@ -12,7 +12,8 @@ def test_dirs_available(base_test_dir, running_analysis_dir, r0_dir):
 
 
 def test_files_available(test_observed_data, r0_data):
-    assert os.path.exists(r0_data)  # R0 file
+    assert os.path.exists(r0_data[0])  # R0 first file
+    assert os.path.exists(r0_data[1])  # R0 second file
     assert os.path.exists(test_observed_data[0])  # DL1 file
     assert os.path.exists(test_observed_data[1])  # DL1ab file
     assert os.path.exists(test_observed_data[2])  # DL2 file

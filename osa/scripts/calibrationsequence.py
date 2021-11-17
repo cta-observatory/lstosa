@@ -17,7 +17,7 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import historylevel
 from osa.report import history
-from osa.utils.cliopts import calibrationsequencecliparsing
+from osa.utils.cliopts import calibration_sequence_cliparsing
 from osa.utils.logging import myLogger
 from osa.utils.utils import stringify, get_input_file
 
@@ -26,34 +26,37 @@ __all__ = [
     "calibrate_charge",
     "calibrate_time",
     "drs4_pedestal",
+    "plot_calibration_checks",
+    "plot_drs4_pedestal_check",
+    "drs4_pedestal_command"
 ]
 
 log = myLogger(logging.getLogger())
 
 
 def calibration_sequence(
-        pedestal_filename,
-        calibration_filename,
-        ped_run_number,
-        cal_run_number,
-        run_summary_file,
-):
+        pedestal_filename: Path,
+        calibration_filename: Path,
+        ped_run_number: str,
+        cal_run_number: str,
+        run_summary_file: Path,
+) -> int:
     """
     Handle the three steps for creating the calibration products:
     DRS4 pedestal, charge calibration and time calibration files
 
     Parameters
     ----------
-    pedestal_filename
-    calibration_filename
-    ped_run_number
-    cal_run_number
-    run_summary_file
+    pedestal_filename: pathlib.Path
+    calibration_filename: pathlib.Path
+    ped_run_number: str
+    cal_run_number: str
+    run_summary_file: pathlib.Path
 
     Returns
     -------
-    rc
-
+    rc: int
+        Return code
     """
     history_file = \
         Path(options.directory) / f"sequence_{options.tel_id}_{cal_run_number}.history"
@@ -91,33 +94,14 @@ def calibration_sequence(
     return rc
 
 
-def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000):
-    """
-    Create a DRS4 pedestal file
-
-    Parameters
-    ----------
-    run_ped: str
-        String with run number of the pedestal run
-    pedestal_output_file
-    history_file
-    max_events
-
-    Returns
-    -------
-    Return code
-
-    """
-    if options.simulate:
-        return 0
-
-    input_file = get_input_file(run_ped)
-
-    calib_configfile = "Default"
-    output_file = Path(options.directory) / pedestal_output_file
-
+def drs4_pedestal_command(
+        input_file: Path,
+        output_file: Path,
+        max_events=20000
+) -> list:
+    """Build the command to run the drs4 pedestal calibration."""
     command = "drs4_baseline"
-    command_args = [
+    return [
         cfg.get("lstchain", command),
         f"--input-file={input_file}",
         f"--output-file={output_file}",
@@ -125,28 +109,61 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000)
         "--overwrite"
     ]
 
+
+def drs4_pedestal(
+        run_ped: str,
+        pedestal_output_file: Path,
+        history_file: Path,
+        max_events=20000
+):
+    """
+    Create a DRS4 pedestal file for baseline correction.
+
+    Parameters
+    ----------
+    run_ped: str
+        String with run number of the pedestal run
+    pedestal_output_file: pathlib.Path
+        Path to the output file to be created
+    history_file: pathlib.Path
+        Path to the history file
+    max_events: int
+
+    Returns
+    -------
+    Return code
+    """
+    input_file = get_input_file(run_ped)
+    output_file = Path(options.directory) / pedestal_output_file
+    calib_configfile = "Default"
+
+    command_args = drs4_pedestal_command(input_file, output_file, max_events)
+
+    if options.simulate:
+        return 0
+
     try:
         log.info(f"Executing {stringify(command_args)}")
         rc = subprocess.call(command_args)
-    except OSError as error:
+    except OSError(1) as rc:
         history(
             run_ped,
             options.calib_prod_id,
-            command,
-            pedestal_output_file,
+            command_args[0],
+            pedestal_output_file.name,
             calib_configfile,
-            error,
+            rc,
             history_file,
         )
-        log.exception(f"Could not execute {stringify(command_args)}, error: {error}")
+        log.exception(f"Could not execute {stringify(command_args)}, error: {rc}")
     except subprocess.CalledProcessError as error:
-        log.exception(f"{error}, {rc}")
+        log.exception(error)
     else:
         history(
             run_ped,
             options.calib_prod_id,
-            command,
-            pedestal_output_file,
+            command_args[0],
+            pedestal_output_file.name,
             calib_configfile,
             rc,
             history_file,
@@ -155,23 +172,32 @@ def drs4_pedestal(run_ped, pedestal_output_file, history_file, max_events=20000)
     if rc != 0:
         sys.exit(rc)
 
-    analysis_log_directory = Path(options.directory) / "log"
-    plot_file = analysis_log_directory / f"drs4_pedestal.Run{run_ped}.0000.pdf"
-    log.info(f"Producing plots in {plot_file}")
-    drs4.plot_pedestals(input_file, output_file, run_ped, plot_file)
-    plt.close("all")
+    plot_drs4_pedestal_check(input_file, output_file, run_ped)
 
     return rc
 
 
+def plot_drs4_pedestal_check(
+        input_file: Path,
+        output_file: Path,
+        drs4_run: str
+) -> None:
+    """Plot the check for the drs4 baseline correction."""
+    analysis_log_directory = Path(options.directory) / "log"
+    plot_file = analysis_log_directory / f"drs4_pedestal.Run{drs4_run}.0000.pdf"
+    log.info(f"Producing plots in {plot_file}")
+    drs4.plot_pedestals(input_file, output_file, drs4_run, plot_file)
+    plt.close("all")
+
+
 def calibrate_charge(
-        run_ped,
-        calibration_run,
-        pedestal_file,
-        calibration_output_file,
-        run_summary,
-        history_file,
-):
+        run_ped: str,
+        calibration_run: str,
+        pedestal_file: Path,
+        calibration_output_file: Path,
+        run_summary: Path,
+        history_file: Path,
+) -> int:
     """
     Create a charge calibration file to transform from ADC counts to photo-electrons
 
@@ -182,7 +208,7 @@ def calibrate_charge(
     pedestal_file
     calibration_output_file
     history_file
-    run_summary: str
+    run_summary: pathlib.Path
         Path name of the run summary file
 
     Returns
@@ -190,17 +216,13 @@ def calibrate_charge(
     rc: str
         Return code
     """
-    if options.simulate:
-        return 0
-
     calibration_run_file = get_input_file(calibration_run)
-
     calib_configfile = Path(cfg.get("lstchain", "calibration_config_file"))
     ffactor_systematics = Path(cfg.get("lstchain", "ffactor_systematics"))
     drs4_pedestal_path = Path(options.directory) / pedestal_file
     calib_output_file = Path(options.directory) / calibration_output_file
     time_file = Path(options.directory) / f"time_{calibration_output_file}"
-    log_output_file = Path(options.directory) / "log" /\
+    log_output_file = Path(options.directory) / "log" / \
                       f"calibration.Run{calibration_run}.0000.log"
 
     command = "charge_calibration"
@@ -217,15 +239,18 @@ def calibrate_charge(
         f"--config={calib_configfile}"
     ]
 
+    if options.simulate:
+        return 0
+
     try:
         log.info(f"Executing {stringify(command_args)}")
         rc = subprocess.call(command_args)
-    except OSError as error:
+    except OSError(1) as error:
         history(
             calibration_run,
             options.calib_prod_id,
             command,
-            calibration_output_file,
+            calibration_output_file.name,
             calib_configfile.name,
             error,
             history_file,
@@ -238,7 +263,7 @@ def calibrate_charge(
             calibration_run,
             options.calib_prod_id,
             command,
-            calibration_output_file,
+            calibration_output_file.name,
             calib_configfile.name,
             rc,
             history_file,
@@ -247,51 +272,60 @@ def calibrate_charge(
     if rc != 0:
         sys.exit(rc)
 
+    plot_calibration_checks(calibration_run, run_ped, calibration_output_file)
+
+    return rc
+
+
+def plot_calibration_checks(
+        calibration_run: str,
+        drs4_run: str,
+        calibration_output_file: Path
+) -> None:
+    """Produce check plots."""
     analysis_log_directory = Path(options.directory) / "log"
-    plot_file = analysis_log_directory /\
-                f"calibration.Run{calibration_run}.0000.pedestal.Run{run_ped}.0000.pdf"
-    calib.read_file(calib_output_file, tel_id=1)
+    plot_file = analysis_log_directory / \
+                f"calibration.Run{calibration_run}.0000.pedestal.Run{drs4_run}.0000.pdf"
+    calib.read_file(calibration_output_file, tel_id=1)
     log.info(f"Producing plots in {plot_file}")
     calib.plot_all(
         calib.ped_data, calib.ff_data, calib.calib_data, calibration_run, plot_file
     )
     plt.close("all")
 
-    return rc
-
 
 def calibrate_time(
-        calibration_run,
-        pedestal_file,
-        calibration_output_file,
-        run_summary,
-        history_file
-):
+        calibration_run: str,
+        pedestal_file: Path,
+        calibration_output_file: Path,
+        run_summary: Path,
+        history_file: Path
+) -> int:
     """
     Create a time calibration file
 
     Parameters
     ----------
-    calibration_run
-    pedestal_file
-    calibration_output_file
-    run_summary
-    history_file
+    calibration_run: str
+        Run number of the calibration run
+    pedestal_file: pathlib.Path
+        Path to the pedestal file
+    calibration_output_file: pathlib.Path
+        Path to the output calibration file
+    run_summary: pathlib.Path
+        Path to the run summary file
+    history_file: pathlib.Path
+        Path to the history file
 
     Returns
     -------
     rc: int
         Return code
     """
-    if options.simulate:
-        return 0
-
     r0_path = Path(cfg.get("LST1", "RAWDIR")).absolute()
     calibration_data_file = f"{r0_path}/*/LST-1.1.Run{calibration_run}.000*.fits.fz"
-
     time_calibration_file = Path(options.directory) / f"time_{calibration_output_file}"
     pedestal_file_path = Path(options.directory) / pedestal_file
-
     calib_configfile = "Default"
 
     command = "time_calibration"
@@ -304,10 +338,13 @@ def calibrate_time(
         "--max-events=53000"
     ]
 
+    if options.simulate:
+        return 0
+
     try:
         log.info(f"Executing {stringify(command_args)}")
         rc = subprocess.call(command_args)
-    except OSError as error:
+    except OSError(1) as error:
         history(
             calibration_run,
             options.calib_prod_id,
@@ -331,45 +368,65 @@ def calibrate_time(
             history_file,
         )
 
-    if rc == 1:
+    if rc != 0:
         log.warning(
             "Not able to create time calibration file. Trying to use an existing file"
         )
-        # FIXME: take latest available time calibration file (eg from day before)
-        def_time_calib_run = int(cfg.get("LSTOSA", "DEFAULT-TIME-CALIB-RUN"))
-        calibpath = Path(cfg.get("LST1", "CALIBDIR"))
-        outputf = time_calibration_file
-        log.info(
-            f"Searching for file "
-            f"*/{options.calib_prod_id}/time_calibration.Run{def_time_calib_run:05d}*"
-        )
-        file_list = list(
-            calibpath.rglob(
-                f'*/{options.calib_prod_id}/'
-                f'time_calibration.Run{def_time_calib_run:05d}*'
-            )
+        rc = link_ref_time_calibration(
+            time_calibration_file,
+            calibration_run,
+            history_file
         )
 
-        if file_list:
-            log.info(
-                f"Creating a symlink to an already produce time calibration "
-                f"file corresponding to run {def_time_calib_run:05d}"
-            )
-            inputf = file_list[0]
-            os.symlink(inputf, outputf)
-            rc = 0
-            history(
-                calibration_run,
-                options.calib_prod_id,
-                command,
-                time_calibration_file.name,
-                calib_configfile,
-                rc,
-                history_file,
-            )
-        else:
-            log.error("Default time calibration file not found. Create it first.")
-            sys.exit(1)
+    return rc
+
+
+def link_ref_time_calibration(
+        time_calibration_file: Path,
+        calibration_run: str,
+        history_file: Path,
+        command="link_time_calibration",
+        calibration_configfile="Default",
+) -> int:
+    """
+    Link the reference time calibration file to the current time calibration file.
+    The reference time calibration file is defined in the cfg file.
+    """
+
+    ref_time_calibration_run = int(cfg.get("LSTOSA", "DEFAULT-TIME-CALIB-RUN"))
+    calibration_path = Path(cfg.get("LST1", "CALIBDIR"))
+    output_file = time_calibration_file
+    log.info(
+        f"Searching for file "
+        f"*/{options.calib_prod_id}/time_calibration.Run{ref_time_calibration_run:05d}*"
+    )
+    file_list = list(
+        calibration_path.rglob(
+            f'*/{options.calib_prod_id}/'
+            f'time_calibration.Run{ref_time_calibration_run:05d}*'
+        )
+    )
+
+    if file_list:
+        log.info(
+            f"Creating a symlink to an already produce time calibration "
+            f"file corresponding to run {ref_time_calibration_run:05d}"
+        )
+        ref_time_calibration_file = file_list[0]
+        os.symlink(ref_time_calibration_file, output_file)
+        rc = 0
+        history(
+            calibration_run,
+            options.calib_prod_id,
+            command,
+            time_calibration_file.name,
+            calibration_configfile,
+            rc,
+            history_file,
+        )
+    else:
+        log.error("Default time calibration file not found. Create it first.")
+        sys.exit(1)
 
     return rc
 
@@ -385,7 +442,7 @@ def main():
         calib_run_number,
         ped_run_number,
         run_summary,
-    ) = calibrationsequencecliparsing()
+    ) = calibration_sequence_cliparsing()
 
     if options.verbose:
         log.setLevel(logging.DEBUG)

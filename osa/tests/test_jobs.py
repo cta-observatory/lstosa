@@ -219,3 +219,17 @@ def test_set_cache_dirs():
     os.environ['CTAPIPE_SVC_PATH'] = '{cfg.get('CACHE', 'CTAPIPE_SVC_PATH')}'
     os.environ['MPLCONFIGDIR'] = '{cfg.get('CACHE', 'MPLCONFIGDIR')}'""")
     assert cache_dirs == cache
+
+
+def test_calibration_history_level():
+    from osa.job import check_history_level
+    levels = {
+        'drs4_pedestal': 2,
+        'time_calibration': 1,
+        'charge_calibration': 0
+    }
+    level, exit_status = check_history_level(
+        calibration_history_file, levels
+    )
+    assert level == 0
+    assert exit_status == 0

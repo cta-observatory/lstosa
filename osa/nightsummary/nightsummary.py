@@ -74,26 +74,13 @@ def run_summary_table(date):
     table : astropy.Table
         Table with the content of the run summary ECSV file.
     """
-
-    # options.nightsummary = True
-    # when executing the closer, 'options.nightsummary' is always True
-    # if not options.nightsummary:
-    #    # TODO: Run summary script should be launched here
-    #    rawdir = get_check_rawdir()
-    #    # TODO: Add this parameter to the cfg
-    #    command = config.cfg.get("lstchain", "run_summary_script")
-    #    log.debug("Executing command " + command)
-    #    if not options.simulate:
-    #        sp.run(command, rawdir)
-    # else:
-
-    nightsummary_file = get_runsummary_file(date)
-    log.debug(f"Looking for run summary file {nightsummary_file}")
-    if not os.path.isfile(nightsummary_file):
-        log.error(f"Run summary file {nightsummary_file} not found")
+    night_summary_file = get_runsummary_file(date)
+    log.debug(f"Looking for run summary file {night_summary_file}")
+    if not os.path.isfile(night_summary_file):
+        log.error(f"Run summary file {night_summary_file} not found")
         sys.exit(1)
 
-    table = Table.read(nightsummary_file)
+    table = Table.read(night_summary_file)
     table.add_index(["run_id"])
     return table
 

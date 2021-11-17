@@ -104,6 +104,7 @@ def test_time_to_seconds():
 
 def test_get_input_file(r0_data):
     from osa.utils.utils import get_input_file
-    run_number = "01805"
-    assert r0_data.exists()
-    assert get_input_file(run_number) == r0_data
+    runs = ["01805", "01806"]
+    for run, r0_file in zip(runs, r0_data):
+        assert r0_file.exists()
+        assert get_input_file(run) == r0_file

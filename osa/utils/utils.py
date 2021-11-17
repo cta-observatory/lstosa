@@ -565,7 +565,7 @@ def copy_files_datacheck_web(host, datedir, file_list) -> None:
             subprocess.run(cmd)
 
 
-def get_input_file(run_number):
+def get_input_file(run_number: str) -> Path:
     """
     Get the input file for the given run number.
 
@@ -576,7 +576,7 @@ def get_input_file(run_number):
 
     Returns
     -------
-    input_file: str
+    input_file: pathlib.Path
 
     Raises
     ------

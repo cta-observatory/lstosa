@@ -1,5 +1,6 @@
 import filecmp
 import logging
+import pathlib
 from os import remove, rename
 
 from osa.configs import options
@@ -58,7 +59,17 @@ def write_to_file(file, content):
     return True
 
 
-def append_to_file(file, content):
+def append_to_file(file: pathlib.Path, content: str) -> None:
+    """
+    Check if the file already exists and write the content in it.
+
+    Parameters
+    ----------
+    file: pathlib.Path
+        The file to write in.
+    content: str
+        The content to write in the file.
+    """
     if file.exists() and file.is_file():
         if options.simulate:
             log.debug(f"SIMULATE File {file} would be appended")
@@ -70,7 +81,6 @@ def append_to_file(file, content):
                     log.exception(f"{e.strerror} {e.filename}")
     else:
         write_to_file(file, content)
-    return True
 
 
 def sedsi(pattern, replace, file):

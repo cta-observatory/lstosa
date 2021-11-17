@@ -6,6 +6,7 @@ from textwrap import dedent
 import pytest
 
 from osa.configs import options
+from osa.configs.config import cfg
 from osa.scripts.closer import is_sequencer_successful, is_finished_check
 
 ALL_SCRIPTS = [
@@ -140,14 +141,18 @@ def test_datasequence(running_analysis_dir):
     assert output.returncode == 0
 
 
-def test_calibrationsequence(running_analysis_dir):
-    drs4_file = "drs4_pedestal.Run02005.0000.fits"
-    calib_file = "calibration.Run02006.0000.hdf5"
+def test_calibrationsequence(r0_data, running_analysis_dir):
+    drs4_file = "drs4_pedestal.Run01805.0000.fits"
+    calib_file = "calibration.Run01806.0000.hdf5"
     runsummary_file = "RunSummary_20200117.ecsv"
     prod_id = "v0.1.0_v01"
-    drs4_run_number = "02005"
-    pedcal_run_number = "02006"
+    drs4_run_number = "01805"
+    pedcal_run_number = "01806"
     options.directory = running_analysis_dir
+
+    # Check that the R0 files corresponding to calibration run exists
+    assert r0_data[0].exists()
+    assert r0_data[1].exists()
 
     output = run_program(
         "calibrationsequence",
@@ -171,3 +176,18 @@ def test_calibrationsequence(running_analysis_dir):
 def test_is_sequencer_successful(run_summary):
     seq_tuple = is_finished_check(run_summary)
     assert is_sequencer_successful(seq_tuple) is True
+
+
+def test_drs4_pedestal_command(r0_data, test_calibration_data):
+    from osa.scripts.calibrationsequence import drs4_pedestal_command
+    input_file = r0_data[0]
+    output_file = test_calibration_data[1]
+    command = drs4_pedestal_command(input_file, output_file)
+    expected_command = [
+        "lstchain_data_create_drs4_pedestal_file",
+        f"--input-file={input_file}",
+        f"--output-file={output_file}",
+        "--max-events=20000",
+        "--overwrite"
+    ]
+    assert command == expected_command
