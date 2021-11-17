@@ -171,8 +171,8 @@ activities:
 
            # - role: "Muons Collection"
            #   description: "Set of muons files for a given run"
-           #   entityName: MuonsCollectionRun
-           #   value: MuonsCollectionRun
+           #   entityName: MuonsCollection
+           #   value: MuonsCollection
            #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
            #   size: 128
 
@@ -196,8 +196,8 @@ activities:
 
             # - role: "DL1Check Collection Run"
             #   description: "Set of DL1Check files for a given run"
-            #   entityName: DL1CheckCollectionRun
-            #   value: DL1CheckCollectionRun
+            #   entityName: DL1CheckCollection
+            #   value: DL1CheckCollection
             #   filepath: /fefs/aswg/data/real/DL1/20210913/v0.7.5/tailcut84_dynamic_cleaning
             #   size: 128
 
@@ -253,8 +253,8 @@ activities:
 
            # - role: "DL2 Collection"
            #   description: "Set of DL2 files for a given run"
-           #   entityName: Dl1Collection
-           #   value: DL1Collection
+           #   entityName: DL2Collection
+           #   value: DL2Collection
            #   filepath: /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/tailcut84
            #   size: 128
 
@@ -312,14 +312,14 @@ entities:
         description: "Muons subrun file in FITS format"
         type: File
         contentType: application/fits
-    MuonsCollectionRun:
+    MuonsCollection:
         description: "Set of muons FITS files for a given run"
         type: SetCollection
     DL1CheckSubrunDataset:
         description: "DL1 check subrun file in HDF5 format"
         type: File
         contentType: application/x-hdf
-    DL1CheckCollectionRun:
+    DL1CheckCollection:
         description: "Set of DL1Check HDF5 files for a given run"
         type: SetCollection
     DL1CheckPDFFile:

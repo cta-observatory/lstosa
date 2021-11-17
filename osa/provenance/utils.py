@@ -63,7 +63,9 @@ def parse_variables(class_instance):
         calibration_path = Path(calib_dir) / nightdir / options.calib_prod_id
 
         # /fefs/aswg/data/real/R0/20200218/LST1.1.Run02006.0001.fits.fz
-        class_instance.R0SubrunDataset = f"{rawdir}/{class_instance.ObservationDate}/{r0_prefix}.Run{class_instance.args[5]}{fits}{fz}"
+        class_instance.R0SubrunDataset = (
+            f"{rawdir}/{class_instance.ObservationDate}/{r0_prefix}.Run{class_instance.args[5]}{fits}{fz}"
+        )
 
         class_instance.CoefficientsCalibrationFile = str(calibration_path / calibration_filename)
         class_instance.PedestalFile = str(calibration_path / pedestal_filename)
@@ -71,6 +73,7 @@ def parse_variables(class_instance):
         class_instance.PointingFile = class_instance.args[3]
         class_instance.RunSummaryFile = os.path.basename(class_instance.args[4])
 
+        # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
         running_analysis_dir = re.findall(r"(.*)sequence", class_instance.args[6])[0]
         outdir_dl1 = running_analysis_dir.replace("running_analysis", "DL1")
         class_instance.DL1SubrunDataset = (
@@ -90,10 +93,43 @@ def parse_variables(class_instance):
 
         class_instance.PedestalCleaning = "True"
         class_instance.StoreImage = cfg.getboolean("lstchain", "store_image_dl1ab")
+
+        # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
         running_analysis_dir = re.findall(r"(.*)sequence", class_instance.args[1])[0]
         outdir_dl1 = running_analysis_dir.replace("running_analysis", "DL1")
         class_instance.DL1SubrunDataset = (
             f"{outdir_dl1}{options.dl1_prod_id}/{dl1_prefix}.Run{class_instance.args[0]}{h5}"
+        )
+
+    if class_instance.__name__ == "dl1_datacheck":
+        # run_str       [0] 02006.0000
+        # historyfile   [1] /fefs/aswg/data/real/running_analysis/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt
+
+        class_instance.ObservationRun = class_instance.args[0].split(".")[0]
+        class_instance.ObservationDate = re.findall(r"running_analysis/(\d{8})/", class_instance.args[1])[0]
+        class_instance.SoftwareVersion = options.lstchain_version
+        class_instance.session_name = class_instance.ObservationRun
+        class_instance.ProcessingConfigFile = options.configfile
+
+        # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
+        running_analysis_dir = re.findall(r"(.*)sequence", class_instance.args[1])[0]
+        outdir_dl1 = running_analysis_dir.replace("running_analysis", "DL1")
+        class_instance.DL1SubrunDataset = (
+            f"{outdir_dl1}{options.dl1_prod_id}/{dl1_prefix}.Run{class_instance.args[0]}{h5}"
+        )
+        # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/muons_LST-1.Run02006.0001.fits
+        class_instance.MuonsSubrunDataset = f"{outdir_dl1}muons_LST-1.Run{class_instance.args[0]}{fits}"
+        # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/datacheck_dl1_LST-1.Run06269.0021.h5
+        class_instance.DL1CheckSubrunDataset = (
+            f"{outdir_dl1}{options.dl1_prod_id}/datacheck_{dl1_prefix}.Run{class_instance.args[0]}{h5}"
+        )
+        # /fefs/aswg/data/real/DL1/20210913/v0.7.5/tailcut84/datacheck_dl1_LST-1.Run06269.h5
+        class_instance.DL1CheckHDF5File = (
+            f"{outdir_dl1}{options.dl1_prod_id}/datacheck_{dl1_prefix}.Run{class_instance.ObservationRun}{h5}"
+        )
+        # /fefs/aswg/data/real/DL1/20210913/v0.7.5/tailcut84/datacheck_dl1_LST-1.Run06269.pdf
+        class_instance.DL1CheckPDFFile = (
+            f"{outdir_dl1}{options.dl1_prod_id}/datacheck_{dl1_prefix}.Run{class_instance.ObservationRun}.pdf"
         )
 
     if class_instance.__name__ == "dl1_to_dl2":
@@ -117,13 +153,9 @@ def parse_variables(class_instance):
         class_instance.DL1SubrunDataset = (
             f"{outdir_dl1}{options.dl1_prod_id}/{dl1_prefix}.Run{class_instance.args[0]}{h5}"
         )
-
         # /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/tailcut84/dl2_LST-1.Run02006.0001.h5
         outdir_dl2 = Path(options.directory) / options.dl2_prod_id
-        class_instance.DL2SubrunDataset = (
-            f"{outdir_dl2}/{dl2_prefix}.Run{class_instance.args[0]}{h5}"
-        )
-
+        class_instance.DL2SubrunDataset = f"{outdir_dl2}/{dl2_prefix}.Run{class_instance.args[0]}{h5}"
         # /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/tailcut84/dl2_LST-1.Run02006.h5
         class_instance.DL2MergedFile = f"{outdir_dl2}/{dl2_prefix}.Run{class_instance.ObservationRun}{h5}"
 
