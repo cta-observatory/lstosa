@@ -6,6 +6,7 @@ import hashlib
 import logging
 import logging.config
 import os
+import pkg_resources
 import platform
 import sys
 import uuid
@@ -331,6 +332,13 @@ def get_item_properties(nested, item):
     return properties
 
 
+def get_python_packages():
+    return [
+        {"name": p.project_name, "version": p.version, "path": p.module_path}
+        for p in sorted(pkg_resources.working_set, key=lambda p: p.project_name)
+    ]
+
+
 def log_prov_info(prov_dict):
     """Write a dictionary to the logger."""
 
@@ -626,6 +634,7 @@ def get_system_provenance():
             version=platform.python_version(),
             compiler=platform.python_compiler(),
             implementation=platform.python_implementation(),
+            packages=get_python_packages(),
         ),
         environment=get_env_vars(),
         arguments=sys.argv,
