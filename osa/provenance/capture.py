@@ -410,12 +410,13 @@ def get_derivation_records(class_instance, activity):
     for var, pair in traced_entities.items():
         entity_id, item = pair
         value = get_nested_value(class_instance, var)
-        new_id = get_entity_id(value, item)
-        if new_id != entity_id:
-            log_record = {"entity_id": new_id, "progenitor_id": entity_id}
-            records.append(log_record)
-            traced_entities[var] = (new_id, item)
-            logger.warning(f"Derivation detected in {activity} for {var}. ID: {new_id}")
+        if value:
+            new_id = get_entity_id(value, item)
+            if new_id != entity_id:
+                log_record = {"entity_id": new_id, "progenitor_id": entity_id}
+                records.append(log_record)
+                traced_entities[var] = (new_id, item)
+                logger.warning(f"Derivation detected in {activity} for {var}. ID: {new_id}")
     return records
 
 
