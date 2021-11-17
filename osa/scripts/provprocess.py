@@ -177,12 +177,20 @@ def parse_lines_run(filter_step, prov_lines, out):
             end_time_line = line
             size += 1
 
+        # remove duplicated merged DL2 files
+        if generated_role in container:
+            remove = True
+        if name == "DL2MergedFile":
+            container[name] = True
+        if "merged" in generated_role:
+            container[generated_role] = True
+
         # replace with new run-wise activity_id
         if activity_id:
             line["activity_id"] = id_activity_run
 
         # copy used files not subruns not RFs
-        if filepath and content_type != "application/x-spss-sav" and not remove:
+        if filepath and content_type != "application/x-spss-sav" and name != "DL2MergedFile" and not remove:
             copy_used_file(filepath, out)
 
         if not remove:
@@ -236,6 +244,7 @@ def parse_lines_run(filter_step, prov_lines, out):
             used.update({"generated_id": entity_id})
             used.update({"generated_role": "DL2 Collection"})
             working_lines.append(used)
+
     # remove start session line
     else:
         working_lines = []

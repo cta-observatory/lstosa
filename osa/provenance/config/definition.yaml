@@ -100,13 +100,13 @@ activities:
               description: "DL1 dataset produced from a given observation subrun"
               entityName: DL1SubrunDataset
               value: DL1SubrunDataset
-              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tauilcut84/dl1_LST-1.Run02006.0001.h5
+              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
 
             # - role: "DL1 Collection"
             #   description: "Set of DL1 files for a given run"
             #   entityName: Dl1Collection
             #   value: DL1Collection
-            #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
+            #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84
             #   size: 128
 
     dl1ab:
@@ -142,7 +142,7 @@ activities:
            #   description: "Set of DL1 files for a given run"
            #   entityName: Dl1Collection
            #   value: DL1Collection
-           #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
+           #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84
            #   size: 128
     dl1_to_dl2:
         description:
@@ -183,11 +183,23 @@ activities:
             #   size: 128
 
         generation:
+            - role: "DL2 merged file"
+              description: "DL2 file for a given run"
+              entityName: DL2MergedFile
+              value: DL2MergedFile
+              # filepath: /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.h5
             - role: "DL2 subrun dataset"
               description: "DL2 dataset produced from a given DL1 subrun"
               entityName: DL2SubrunDataset
               value: DL2SubrunDataset
               # filepath: /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.0001.h5
+
+           # - role: "DL2 Collection"
+           #   description: "Set of DL2 files for a given run"
+           #   entityName: Dl1Collection
+           #   value: DL1Collection
+           #   filepath: /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/tailcut84
+           #   size: 128
 
 entities:
     PythonObject:
@@ -254,3 +266,7 @@ entities:
     DL2Collection:
         description: "Set of DL2 files for a given run"
         type: SetCollection
+    DL2MergedFile:
+        description: "DL2 HDF5 table file for a run"
+        type: File
+        contentType: application/hdf5

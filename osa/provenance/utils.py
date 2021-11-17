@@ -77,7 +77,6 @@ def parse_variables(class_instance):
             f"{outdir_dl1}{options.dl1_prod_id}/{dl1_prefix}.Run{class_instance.args[5]}{h5}"
         )
 
-
     if class_instance.__name__ == "dl1ab":
         # run_str       [0] 02006.0000
         # historyfile   [1] /fefs/aswg/data/real/running_analysis/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt
@@ -124,6 +123,9 @@ def parse_variables(class_instance):
         class_instance.DL2SubrunDataset = (
             f"{outdir_dl2}/{dl2_prefix}.Run{class_instance.args[0]}{h5}"
         )
+
+        # /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/tailcut84/dl2_LST-1.Run02006.h5
+        class_instance.DL2MergedFile = f"{outdir_dl2}/{dl2_prefix}.Run{class_instance.ObservationRun}{h5}"
 
     return class_instance
 
