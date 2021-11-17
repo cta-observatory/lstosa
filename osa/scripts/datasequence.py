@@ -236,7 +236,7 @@ def dl1ab(run_str, historyfile):
             sys.exit(rc)
         return rc
 
-
+@trace
 def dl1_datacheck(run_str, historyfile):
     """
     Run datacheck script
