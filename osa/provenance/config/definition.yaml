@@ -107,6 +107,11 @@ activities:
               entityName: ProcessingConfigFile
               value: ProcessingConfigFile
               # filepath: /fefs/aswg/lstosa/cfg/sequencer.cfg
+            - role: "Run summary"
+              description: "Run summary configuration"
+              entityName: RunSummaryFile
+              value: RunSummaryFile
+              # filepath: /fefs/aswg/data/real/monitoring/RunSummary/RunSummary_20210913.ecsv
 
             # - role: "R0 Collection"
             #   description: "Set of subruns for a given run"
@@ -196,6 +201,10 @@ entities:
         description: "R0 subrun file in FITS format on the disk"
         type: File
         contentType: application/fits
+    RunSummaryFile:
+        description: "Run summary configuration file"
+        type: File
+        contentType: application/ecsv
     PointingFile:
         description: "Pointing text file on the disk"
         type: File

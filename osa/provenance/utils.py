@@ -77,6 +77,7 @@ def parse_variables(class_instance):
         class_instance.R0SubrunDataset = f"{rawdir}/{class_instance.ObservationDate}/{r0_prefix}.Run{class_instance.args[5]}{fits}{fz}"
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile
+        class_instance.RunSummaryFile = os.path.basename(class_instance.args[4])
 
     if class_instance.__name__ == "dl1_to_dl2":
         # run_str       [0] 02006.0000
