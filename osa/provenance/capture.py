@@ -371,10 +371,12 @@ def log_session(class_instance, start):
             "startTime": start,
             "system": system,
             # OSA specific
-            # "script": sys.argv[0]     # we could have different scripts in a session
             "software_version": class_instance.SoftwareVersion,
             "observation_date": class_instance.ObservationDate,
             "observation_run": class_instance.ObservationRun,  # a session is run-wise
+            "config_file": class_instance.ProcessingConfigFile,
+            "config_file_hash": get_file_hash(class_instance.ProcessingConfigFile, buffer="path"),
+            "config_file_hash_type": get_hash_method(),
         }
         log_prov_info(log_record)
     return session_id

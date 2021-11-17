@@ -189,7 +189,7 @@ def parse_lines_run(filter_step, prov_lines, out):
         if activity_id:
             line["activity_id"] = id_activity_run
 
-        # copy used files not subruns not RFs
+        # copy used files not subruns not RFs not mergedDL2
         if filepath and content_type != "application/x-spss-sav" and name != "DL2MergedFile" and not remove:
             copy_used_file(filepath, out)
 

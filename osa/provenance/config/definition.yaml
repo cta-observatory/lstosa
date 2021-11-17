@@ -233,10 +233,10 @@ entities:
         description: "LSTChain analysis configuration file in JSON format on the disk"
         type: File
         contentType: application/json
-    ProcessingConfigFile:
-        description: "LSTOSA processing configuration file on the disk"
-        type: File
-        contentType: text/plain
+#    ProcessingConfigFile:
+#        description: "LSTOSA processing configuration file on the disk"
+#        type: File
+#        contentType: text/plain
     DL1SubrunDataset:
         description: "DL1 subrun file produced in HDF5 format on the disk"
         type: File
