@@ -112,10 +112,10 @@ def check_history_level(history_file: Path, program_levels: dict):
         for line in file:
             program = line.split()[1]
             exit_status = int(line.split()[-1])
-            if program in program_levels:
-                if exit_status != 0:
-                    return level, exit_status
-
+            if program in program_levels and exit_status != 0:
+                level = program_levels[program]
+                return level, exit_status
+            elif program in program_levels and exit_status == 0:
                 level = program_levels[program]
                 continue
 

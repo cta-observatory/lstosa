@@ -28,7 +28,9 @@ __all__ = [
     "drs4_pedestal",
     "plot_calibration_checks",
     "plot_drs4_pedestal_check",
-    "drs4_pedestal_command"
+    "drs4_pedestal_command",
+    "calibration_file_command",
+    "time_calibration_command"
 ]
 
 log = myLogger(logging.getLogger())
@@ -100,13 +102,60 @@ def drs4_pedestal_command(
         max_events=20000
 ) -> list:
     """Build the command to run the drs4 pedestal calibration."""
-    command = "drs4_baseline"
     return [
-        cfg.get("lstchain", command),
+        cfg.get("calibration", "drs4_baseline"),
         f"--input-file={input_file}",
         f"--output-file={output_file}",
         f"--max-events={max_events}",
         "--overwrite"
+    ]
+
+
+def calibration_file_command(
+        calibration_run: str,
+        calibration_configfile: Path,
+        drs4_pedestal_path: Path,
+        calibration_output_file: Path,
+        run_summary_file: Path,
+) -> list:
+    """Build the command to run the calibration file creation."""
+    calibration_run_file = get_input_file(calibration_run)
+    ffactor_systematics = Path(cfg.get("calibration", "ffactor_systematics"))
+    time_file = Path(options.directory) / f"time_{calibration_output_file.name}"
+    log_dir = Path(options.directory) / "log"
+    log_file = log_dir / f"calibration.Run{calibration_run}.0000.log"
+
+    return [
+        cfg.get("calibration", "charge_calibration"),
+        f"--input_file={calibration_run_file}",
+        f"--output_file={calibration_output_file}",
+        "--EventSource.default_trigger_type=tib",
+        f"--LSTCalibrationCalculator.systematic_correction_path={ffactor_systematics}",
+        f"--LSTEventSource.EventTimeCalculator.run_summary_path={run_summary_file}",
+        f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file}",
+        f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={drs4_pedestal_path}",
+        f"--log-file={log_file}",
+        f"--config={calibration_configfile}"
+    ]
+
+
+def time_calibration_command(
+        calibration_run: str,
+        time_calibration_file: Path,
+        drs4_pedestal_file: Path,
+        run_summary: Path,
+) -> list:
+    """Build the command to run the time calibration."""
+    r0_path = Path(cfg.get("LST1", "RAWDIR")).absolute()
+    calibration_data_file = f"{r0_path}/*/LST-1.1.Run{calibration_run}.000*.fits.fz"
+
+    return [
+        cfg.get("calibration", "time_calibration"),
+        f"--input-file={calibration_data_file}",
+        f"--output-file={time_calibration_file}",
+        f"--pedestal-file={drs4_pedestal_file}",
+        f"--run-summary-path={run_summary}",
+        "--max-events=53000"
     ]
 
 
@@ -216,28 +265,14 @@ def calibrate_charge(
     rc: str
         Return code
     """
-    calibration_run_file = get_input_file(calibration_run)
-    calib_configfile = Path(cfg.get("lstchain", "calibration_config_file"))
-    ffactor_systematics = Path(cfg.get("lstchain", "ffactor_systematics"))
-    drs4_pedestal_path = Path(options.directory) / pedestal_file
-    calib_output_file = Path(options.directory) / calibration_output_file
-    time_file = Path(options.directory) / f"time_{calibration_output_file}"
-    log_output_file = Path(options.directory) / "log" / \
-                      f"calibration.Run{calibration_run}.0000.log"
-
-    command = "charge_calibration"
-    command_args = [
-        cfg.get("lstchain", command),
-        f"--input_file={calibration_run_file}",
-        f"--output_file={calib_output_file}",
-        "--EventSource.default_trigger_type=tib",
-        f"--LSTCalibrationCalculator.systematic_correction_path={ffactor_systematics}",
-        f"--LSTEventSource.EventTimeCalculator.run_summary_path={run_summary}",
-        f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file}",
-        f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={drs4_pedestal_path}",
-        f"--log-file={log_output_file}",
-        f"--config={calib_configfile}"
-    ]
+    calib_configfile = Path(cfg.get("calibration", "config_file"))
+    command_args = calibration_file_command(
+        calibration_run,
+        calib_configfile,
+        pedestal_file,
+        calibration_output_file,
+        run_summary
+    )
 
     if options.simulate:
         return 0
@@ -249,7 +284,7 @@ def calibrate_charge(
         history(
             calibration_run,
             options.calib_prod_id,
-            command,
+            command_args[0],
             calibration_output_file.name,
             calib_configfile.name,
             error,
@@ -262,7 +297,7 @@ def calibrate_charge(
         history(
             calibration_run,
             options.calib_prod_id,
-            command,
+            command_args[0],
             calibration_output_file.name,
             calib_configfile.name,
             rc,
@@ -322,21 +357,17 @@ def calibrate_time(
     rc: int
         Return code
     """
-    r0_path = Path(cfg.get("LST1", "RAWDIR")).absolute()
-    calibration_data_file = f"{r0_path}/*/LST-1.1.Run{calibration_run}.000*.fits.fz"
-    time_calibration_file = Path(options.directory) / f"time_{calibration_output_file}"
-    pedestal_file_path = Path(options.directory) / pedestal_file
-    calib_configfile = "Default"
+    time_calibration_file = Path(options.directory) / \
+                            f"time_{calibration_output_file.name}"
 
-    command = "time_calibration"
-    command_args = [
-        cfg.get("lstchain", command),
-        f"--input-file={calibration_data_file}",
-        f"--output-file={time_calibration_file}",
-        f"--pedestal-file={pedestal_file_path}",
-        f"--run-summary-path={run_summary}",
-        "--max-events=53000"
-    ]
+    command_args = time_calibration_command(
+        calibration_run,
+        time_calibration_file,
+        pedestal_file,
+        run_summary
+    )
+
+    calib_configfile = "Default"
 
     if options.simulate:
         return 0
@@ -348,7 +379,7 @@ def calibrate_time(
         history(
             calibration_run,
             options.calib_prod_id,
-            command,
+            command_args[0],
             time_calibration_file.name,
             calib_configfile,
             error,
@@ -361,7 +392,7 @@ def calibrate_time(
         history(
             calibration_run,
             options.calib_prod_id,
-            command,
+            command_args[0],
             time_calibration_file.name,
             calib_configfile,
             rc,
