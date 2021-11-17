@@ -7,7 +7,7 @@ import os
 import subprocess
 from datetime import datetime, timedelta
 from os import getpid, readlink, symlink
-from os.path import dirname, exists, islink, split
+from os.path import dirname, exists, islink
 from pathlib import Path
 from socket import gethostname
 
@@ -221,22 +221,21 @@ def create_lock(lockfile) -> bool:
     directory_lock = lockfile.parent
     if options.simulate:
         log.debug(f"SIMULATE Creation of lock file {lockfile}")
+    elif lockfile.exists() and lockfile.is_file():
+        with open(lockfile, "r") as f:
+            hostpid = f.readline()
+        log.error(f"Lock by a previous process {hostpid}, exiting!\n")
+        return True
     else:
-        if lockfile.exists() and lockfile.is_file():
-            with open(lockfile, "r") as f:
-                hostpid = f.readline()
-            log.error(f"Lock by a previous process {hostpid}, exiting!\n")
+        if not directory_lock.exists():
+            directory_lock.mkdir(exist_ok=True, parents=True)
+            log.debug(f"Creating parent directory {directory_lock} for lock file")
+            pid = str(getpid())
+            hostname = gethostname()
+            content = f"{hostname}:{pid}"
+            write_to_file(lockfile, content)
+            log.debug(f"Lock file {lockfile} created")
             return True
-        else:
-            if not directory_lock.exists():
-                directory_lock.mkdir(exist_ok=True, parents=True)
-                log.debug(f"Creating parent directory {directory_lock} for lock file")
-                pid = str(getpid())
-                hostname = gethostname()
-                content = f"{hostname}:{pid}"
-                write_to_file(lockfile, content)
-                log.debug(f"Lock file {lockfile} created")
-                return True
     return False
 
 
@@ -306,44 +305,6 @@ def lstdate_to_dir(date):
     if len(nightdir) != 3:
         log.error(f"Night directory structure could not be created from {nightdir}")
     return "".join(nightdir)
-
-
-def dir_to_lstdate(dir):
-    """
-    Function to change from WHATEVER/YYYY/MM/DD to YYYY_MM_DD
-
-    Parameters
-    ----------
-    dir
-
-    Returns
-    -------
-
-    """
-    sep = cfg.get("LST", "DATESEPARATOR")
-    dircopy = dir
-    nightdir = ["YYYY", "MM", "DD"]
-    for i in reversed(range(3)):
-        dircopy, nightdir[i] = split(dircopy)
-    night = sep.join(nightdir)
-    if len(night) != 10:
-        log.error(f"Error: night {night} could not be created from {dir}\n")
-    return night
-
-
-def build_lstbasename(prefix, suffix):
-    """
-
-    Parameters
-    ----------
-    prefix
-    suffix
-
-    Returns
-    -------
-
-    """
-    return f"{prefix}_{lstdate_to_number(options.date)}{suffix}"
 
 
 def is_defined(variable):
@@ -494,44 +455,41 @@ def destination_dir(concept, create_dir=True):
         Set it to True (default) if you want to create the directory.
         Otherwise it just return the path
 
+    Returns
+    -------
+    path : str
+        Path to the directory
     """
     nightdir = lstdate_to_dir(options.date)
 
     if concept == "MUON":
-        directory = os.path.join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id
-        )
+        directory = Path(cfg.get(options.tel_id, concept + "DIR")) /\
+                    nightdir / options.prod_id
     elif concept in ["DL1AB", "DATACHECK"]:
-        directory = os.path.join(
-            cfg.get(options.tel_id, concept + "DIR"),
-            nightdir,
-            options.prod_id,
-            options.dl1_prod_id,
-        )
+        directory = Path(cfg.get(options.tel_id, concept + "DIR")) /\
+                    nightdir / options.prod_id / options.dl1_prod_id
     elif concept == "DL2":
-        directory = os.path.join(
-            cfg.get(options.tel_id, concept + "DIR"),
-            nightdir,
-            options.prod_id,
-            options.dl2_prod_id,
-        )
+        directory = Path(cfg.get(options.tel_id, concept + "DIR")) /\
+            nightdir / options.prod_id / options.dl2_prod_id
     elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-        directory = os.path.join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id
-        )
+        directory = Path(cfg.get(options.tel_id, concept + "DIR")) /\
+                    nightdir / options.calib_prod_id
     else:
         log.warning(f"Concept {concept} not known")
+        directory = None
 
     if not options.simulate and create_dir:
         log.debug(f"Destination directory created for {concept}: {directory}")
-        os.makedirs(directory, exist_ok=True)
+        directory.mkdir(parents=True, exist_ok=True)
     else:
         log.debug(f"SIMULATING creation of final directory for {concept}")
+
     return directory
 
 
 def create_directories_datacheck_web(host, datedir, prod_id):
-    """Create directories for drs4, enf_calibration
+    """
+    Create directories for drs4, enf_calibration
     and dl1 products in the data-check webserver via ssh. It also copies
     the index.php file needed to build the directory tree structure.
 
@@ -544,15 +502,16 @@ def create_directories_datacheck_web(host, datedir, prod_id):
 
     # Create directory and copy the index.php to each directory
     for product in DATACHECK_PRODUCTS:
-        destination_dir = DATACHECK_BASEDIR / product / prod_id / datedir
-        cmd = ["ssh", host, "mkdir", "-p", destination_dir]
+        dest_directory = DATACHECK_BASEDIR / product / prod_id / datedir
+        cmd = ["ssh", host, "mkdir", "-p", dest_directory]
         subprocess.run(cmd, capture_output=True)
-        cmd = ["scp", cfg.get("WEBSERVER", "INDEXPHP"), f"{host}:{destination_dir}/."]
+        cmd = ["scp", cfg.get("WEBSERVER", "INDEXPHP"), f"{host}:{dest_directory}/."]
         subprocess.run(cmd, capture_output=True)
 
 
 def set_no_observations_flag(host, datedir, prod_id):
-    """Create a file indicating that are no observations
+    """
+    Create a file indicating that are no observations
     on a given date in the data-check webserver.
 
     Parameters
@@ -561,12 +520,11 @@ def set_no_observations_flag(host, datedir, prod_id):
     datedir
     prod_id
     """
-
     for product in DATACHECK_PRODUCTS:
         try:
             # Check if destination directory exists, otherwise create it
-            destination_dir = DATACHECK_BASEDIR / product / prod_id / datedir
-            no_observations_flag = destination_dir / "no_observations"
+            dest_directory = DATACHECK_BASEDIR / product / prod_id / datedir
+            no_observations_flag = dest_directory / "no_observations"
             cmd = ["ssh", host, "touch", no_observations_flag]
             subprocess.check_output(cmd)
         except subprocess.CalledProcessError as e:
@@ -590,20 +548,20 @@ def copy_files_datacheck_web(host, datedir, file_list) -> None:
     # Copy files to server
     for file_to_transfer in file_list:
         if "drs4" in str(file_to_transfer):
-            destination_dir = DATACHECK_BASEDIR / "drs4" / options.prod_id / datedir
-            cmd = ["scp", str(file_to_transfer), f"{host}:{destination_dir}/."]
+            dest_directory = DATACHECK_BASEDIR / "drs4" / options.prod_id / datedir
+            cmd = ["scp", str(file_to_transfer), f"{host}:{dest_directory}/."]
             subprocess.run(cmd)
 
         elif "calibration" in str(file_to_transfer):
-            destination_dir = (
+            dest_directory = (
                 DATACHECK_BASEDIR / "enf_calibration" / options.prod_id / datedir
             )
-            cmd = ["scp", file_to_transfer, f"{host}:{destination_dir}/."]
+            cmd = ["scp", file_to_transfer, f"{host}:{dest_directory}/."]
             subprocess.run(cmd)
 
         elif "datacheck" in str(file_to_transfer):
-            destination_dir = DATACHECK_BASEDIR / "dl1" / options.prod_id / datedir
-            cmd = ["scp", file_to_transfer, f"{host}:{destination_dir}/."]
+            dest_directory = DATACHECK_BASEDIR / "dl1" / options.prod_id / datedir
+            cmd = ["scp", file_to_transfer, f"{host}:{dest_directory}/."]
             subprocess.run(cmd)
 
 
@@ -632,9 +590,10 @@ def get_input_file(run_number):
         r0_path.rglob(f"*/{cfg.get('LSTOSA', 'R0PREFIX')}.Run{run_number}.0000*")
     )
 
-    if file_list:
-        return str(file_list[0])
-    raise IOError(f"Files corresponding to run {run_number} not found in {r0_path}.")
+    if not file_list:
+        raise IOError(f"Files corresponding to run {run_number} not found in {r0_path}.")
+    else:
+        return file_list[0]
 
 
 def stringify(args):

@@ -1,5 +1,5 @@
 import datetime
-import os
+from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -64,7 +64,8 @@ def test_destination_dir():
     options.dl2_prod_id = cfg.get("LST1", "DL2-PROD-ID")
     options.calib_prod_id = cfg.get("LST1", "CALIB-PROD-ID")
     options.prod_id = cfg.get("LST1", "PROD-ID")
-    basedir = cfg.get("LST1", "DIR")
+    base_directory = cfg.get("LST1", "DIR")
+    base_path = Path(base_directory)
 
     data_types = {
         "DL1AB": "DL1",
@@ -76,22 +77,19 @@ def test_destination_dir():
         "DL2": "DL2",
     }
 
-    for concept, dst in data_types.items():
+    for concept, dst_dir in data_types.items():
         directory = destination_dir(concept, create_dir=False)
         if concept in ["DL1AB", "DATACHECK"]:
-            expected_directory = os.path.join(
-                basedir, dst, datedir, options.prod_id, options.dl1_prod_id
-            )
+            expected_directory = base_path / dst_dir / datedir /\
+                                 options.prod_id / options.dl1_prod_id
         elif concept == "DL2":
-            expected_directory = os.path.join(
-                basedir, dst, datedir, options.prod_id, options.dl2_prod_id
-            )
+            expected_directory = base_path / dst_dir / datedir /\
+                                 options.prod_id / options.dl2_prod_id
         elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-            expected_directory = os.path.join(
-                basedir, dst, datedir, options.calib_prod_id
-            )
+            expected_directory = base_path / dst_dir / datedir / options.calib_prod_id
         else:
-            expected_directory = os.path.join(basedir, dst, datedir, options.prod_id)
+            expected_directory = base_path / dst_dir / datedir / options.prod_id
+
         assert directory == expected_directory
 
 
@@ -108,4 +106,4 @@ def test_get_input_file(r0_data):
     from osa.utils.utils import get_input_file
     run_number = "01805"
     assert r0_data.exists()
-    assert get_input_file(run_number) == str(r0_data)
+    assert get_input_file(run_number) == r0_data

@@ -2,6 +2,7 @@
 End-of-Night script and functions. Check that everything has been processed,
 collect results and merge them if needed.
 """
+
 import logging
 import os
 import re
@@ -15,6 +16,7 @@ from osa.configs.config import cfg
 from osa.job import are_all_jobs_correctly_finished
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import get_runsummary_file, run_summary_table
+from osa.provenance.utils import store_conda_env_export
 from osa.raw import get_check_rawdir
 from osa.report import start
 from osa.utils.cliopts import closercliparsing
@@ -126,10 +128,7 @@ def use_night_summary():
 
 
 def is_raw_data_available():
-    """
-    Get the rawdir and check existence.
-    This means the raw directory could be empty!
-    """
+    """Get the raw directory and check its existence."""
 
     answer = False
     if options.tel_id != "ST":
@@ -192,7 +191,8 @@ def ask_for_closing():
             if answer_user in {"n", "N"}:
                 # the user does not want to close
                 log.info(
-                    f"Day {options.date} for {options.tel_id} will remain open unless closing is forced"
+                    f"Day {options.date} for {options.tel_id} will "
+                    f"remain open unless closing is forced"
                 )
                 sys.exit(0)
             elif answer_user in {"y", "Y"}:
@@ -294,7 +294,8 @@ def register_found_pattern(file_path, seq_list, concept, destination_path):
                     # unlink(file)
             else:
                 log.debug(
-                    f"Original file {file} is not a link or is different than destination {new_dst}"
+                    f"Original file {file} is not a link or is different"
+                    f"than destination {new_dst}"
                 )
         else:
             log.debug(f"Destination file {new_dst} does not exists")
@@ -394,7 +395,8 @@ def is_finished_check(run_summary):
             sequence_success = True
         else:
             log.info(
-                "All raw files are transferred but the jobs did not correctly/yet finish",
+                "All raw files are transferred but the "
+                "jobs did not correctly/yet finish",
             )
 
     else:
@@ -429,13 +431,12 @@ def merge_dl1_datacheck(seq_list):
 
     log.debug("Merging dl1 datacheck files and producing PDFs")
     nightdir = lstdate_to_dir(options.date)
-    # Inside DL1 directory there are different subdirectories for each cleaning level.
-    # Muons fits files are in the base dl1 directory whereas the dl1 and datacheck files
-    # are in the corresponding subdirectory for each cleaning level.
-    dl1_base_directory = os.path.join(
-        cfg.get("LST1", "DL1DIR"), nightdir, options.prod_id
-    )
-    dl1_prod_id_directory = os.path.join(dl1_base_directory, options.dl1_prod_id)
+    # Inside DL1 directory there are different subdirectories for each
+    # cleaning level. Muons fits files are in the base dl1 directory whereas
+    # the dl1 and datacheck files are in the corresponding subdirectory for
+    # each cleaning level.
+    dl1_base_directory = Path(cfg.get("LST1", "DL1DIR")) / nightdir / options.prod_id
+    dl1_prod_id_directory = dl1_base_directory / options.dl1_prod_id
 
     for sequence in seq_list:
         if sequence.type == "DATA":
@@ -538,7 +539,7 @@ def merge_dl2(sequence_list):
 
     for sequence in sequence_list:
         if sequence.type == "DATA":
-            dl2_merged_file = os.path.join(dl2_dir, f"dl2_LST-1.Run{sequence.run:05d}.h5")
+            dl2_merged_file = Path(dl2_dir) / f"dl2_LST-1.Run{sequence.run:05d}.h5"
 
             cmd = [
                 "sbatch",
@@ -562,13 +563,6 @@ def merge_dl2(sequence_list):
                 log.debug("Simulate launching scripts")
 
             log.debug(f"Executing {stringify(cmd)}")
-
-
-def store_conda_env_export():
-    """Store file with `conda env export` output to log the packages versions used."""
-    conda_env_file = Path(options.directory) / "log" / "conda_env.yml"
-    conda_env_file.touch()
-    subprocess.run(["conda", "env", "export", "--file", str(conda_env_file)])
 
 
 if __name__ == "__main__":
