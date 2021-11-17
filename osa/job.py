@@ -19,6 +19,7 @@ from osa.configs.config import cfg
 from osa.utils.iofile import read_from_file, write_to_file
 from osa.utils.utils import date_in_yymmdd, lstdate_to_dir, time_to_seconds, stringify
 
+
 log = logging.getLogger(__name__)
 
 TAB = "\t".expandtabs(4)
@@ -36,7 +37,8 @@ __all__ = [
     "create_job_template",
     "set_cache_dirs",
     "setrunfromparent",
-    "submit_jobs"
+    "submit_jobs",
+    "check_history_level"
 ]
 
 
@@ -84,6 +86,42 @@ def are_all_jobs_correctly_finished(sequence_list):
     return flag
 
 
+def check_history_level(history_file: Path, program_levels: dict):
+    """
+    Check the history of the calibration sequence.
+
+    Parameters
+    ----------
+    history_file: pathlib.Path
+        Path to the history file
+    program_levels: dict
+        Dictionary with the program name and the level of the program
+
+    Returns
+    -------
+    level: int
+        Level of the history file
+    exit_status: int
+        Exit status pf the program according to the history file
+    """
+
+    # Check the program exit_status (last string of the line), if it is 0, go
+    # to the next level and check the next program. If exit_status is not 0, return the
+    # actual level and the exit status. Stop the iteration when reaching the level 0.
+    with open(history_file, "r") as file:
+        for line in file:
+            program = line.split()[1]
+            exit_status = int(line.split()[-1])
+            if program in program_levels:
+                if exit_status != 0:
+                    return level, exit_status
+
+                level = program_levels[program]
+                continue
+
+        return level, exit_status
+
+
 def historylevel(historyfile, data_type):
     """
     Returns the level from which the analysis should begin and
@@ -99,6 +137,9 @@ def historylevel(historyfile, data_type):
      - DL1->DL1AB is level 3->2
      - DATACHECK is level 2->1
      - DL1->DL2 is level 1->0 (sequence completed)
+
+     TODO: Create a dict with the program exit status and prod id to
+      take into account not only the last history line but also the others.
 
     Parameters
     ----------
@@ -120,9 +161,6 @@ def historylevel(historyfile, data_type):
     exit_status = 0
     if os.path.exists(historyfile):
         for line in read_from_file(historyfile).splitlines():
-            # FIXME: create a dict with the program, exit status
-            #  and prod id to take into account not only the last
-            #  history line but also the others.
             words = line.split()
             try:
                 program = words[1]
@@ -135,15 +173,9 @@ def historylevel(historyfile, data_type):
                 log.exception(f"Malformed history file {historyfile}, {err}")
             else:
                 if program == cfg.get("LSTOSA", "R0-DL1"):
-                    nonfatalrcs = [
-                        int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")
-                    ]
-                    level = 3 if exit_status in nonfatalrcs else 4
+                    level = 3 if exit_status == 0 else 4
                 elif program == "lstchain_dl1ab":
-                    nonfatalrcs = [
-                        int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")
-                    ]
-                    if (exit_status in nonfatalrcs) and (prod_id == options.dl1_prod_id):
+                    if (exit_status == 0) and (prod_id == options.dl1_prod_id):
                         log.debug(
                             f"DL1ab prod ID: {options.dl1_prod_id} already produced"
                         )
@@ -155,28 +187,22 @@ def historylevel(historyfile, data_type):
                         )
                         break
                 elif program == "lstchain_check_dl1":
-                    nonfatalrcs = [
-                        int(k) for k in cfg.get("NONFATALRCS", "R0-DL1").split(",")
-                    ]
-                    level = 1 if exit_status in nonfatalrcs else 2
+                    level = 1 if exit_status == 0 else 2
                 elif program == cfg.get("LSTOSA", "DL1-DL2"):
-                    nonfatalrcs = [
-                        int(k) for k in cfg.get("NONFATALRCS", "DL1-DL2").split(",")
-                    ]
-                    if (exit_status in nonfatalrcs) and (prod_id == options.dl2_prod_id):
+                    if (exit_status == 0) and (prod_id == options.dl2_prod_id):
                         log.debug(f"DL2 prod ID: {options.dl2_prod_id} already produced")
                         level = 0
                     else:
                         level = 1
                         log.debug(f"DL2 prod ID: {options.dl2_prod_id} not produced yet")
-                elif program == "drs4_pedestal":
+                elif program == "drs4_baseline":
                     level = 2 if exit_status == 0 else 3
                 elif program == "time_calibration":
                     level = 1 if exit_status == 0 else 2
                 elif program == "charge_calibration":
                     level = 0 if exit_status == 0 else 1
                 else:
-                    log.error(f"Programme name not identified {program}")
+                    log.warning(f"Program name not identified {program}")
 
     return level, exit_status
 
@@ -238,14 +264,12 @@ def sequence_calibration_filenames(sequence_list):
             calfile = f"calibration.Run{cal_run_string}.0000{calib_suffix}"
             timecalfile = f"time_calibration.Run{cal_run_string}.0000{calib_suffix}"
             ped_run_string = str(sequence.previousrun).zfill(5)
-            pedfile = f"drs4_pedestal.Run{ped_run_string}.0000{pedestal_suffix}"
         else:
             run_string = str(sequence.parent_list[0].run).zfill(5)
             ped_run_string = str(sequence.parent_list[0].previousrun).zfill(5)
             calfile = f"calibration.Run{run_string}.0000{calib_suffix}"
             timecalfile = f"time_calibration.Run{run_string}.0000{calib_suffix}"
-            pedfile = f"drs4_pedestal.Run{ped_run_string}.0000{pedestal_suffix}"
-
+        pedfile = f"drs4_pedestal.Run{ped_run_string}.0000{pedestal_suffix}"
         # Assign the calibration and drive files to the sequence object
         sequence.drive = drivefile
         sequence.calibration = Path(options.directory) / calfile
@@ -339,12 +363,10 @@ def job_header_template(sequence):
         String with job header template
     """
     python_shebang = "#!/bin/env python"
-    if not options.test:
-        sbatch_parameters = "\n".join(scheduler_env_variables(sequence))
-        header = python_shebang + 2 * "\n" + sbatch_parameters
-    else:
-        header = python_shebang
-    return header
+    if options.test:
+        return python_shebang
+    sbatch_parameters = "\n".join(scheduler_env_variables(sequence))
+    return python_shebang + 2 * "\n" + sbatch_parameters
 
 
 def set_cache_dirs():
@@ -538,7 +560,7 @@ def submit_jobs(sequence_list):
             # FIXME here s.jobid has not been redefined se it keeps the one
             #  from previous time sequencer was launched
         # Add the job dependencies after calibration sequence
-        if len(sequence.parent_list) != 0 and sequence.type == "DATA":
+        if sequence.parent_list and sequence.type == "DATA":
             if not options.simulate and not options.no_calib and not options.test:
                 log.debug("Adding dependencies to job submission")
                 depend_string = f"--dependency=afterok:{parent_jobid}"

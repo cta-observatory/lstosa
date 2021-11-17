@@ -192,12 +192,12 @@ def history(run, prod_id, program, input_file, input_card, rc, history_file) -> 
         Input card used for the lstchain executable.
     rc : str or int
         Return code of the lstchain executable.
-    history_file : str
+    history_file : pathlib.Path
         The history file that keeps track of the analysis steps.
     """
     now = datetime.utcnow()
-    datestring = now.strftime("%a %b %d %X UTC %Y")
-    stringtowrite = (
-        f"{run} {program} {prod_id} {datestring} {input_file} {input_card} {rc}\n"
+    date_string = now.strftime("%a %b %d %X UTC %Y")
+    string_to_write = (
+        f"{run} {program} {prod_id} {date_string} {input_file} {input_card} {rc}\n"
     )
-    append_to_file(history_file, stringtowrite)
+    append_to_file(history_file, string_to_write)

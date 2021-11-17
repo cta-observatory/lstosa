@@ -34,9 +34,11 @@ def r0_dir(base_test_dir):
 
 @pytest.fixture(scope="session")
 def r0_data(r0_dir):
-    r0_file = r0_dir / "LST-1.1.Run01805.0000.fits.fz"
-    r0_file.touch()
-    return r0_file
+    r0_file_1 = r0_dir / "LST-1.1.Run01805.0000.fits.fz"
+    r0_file_2 = r0_dir / "LST-1.1.Run01806.0000.fits.fz"
+    r0_file_1.touch()
+    r0_file_2.touch()
+    return r0_file_1, r0_file_2
 
 
 @pytest.fixture(scope="session")
