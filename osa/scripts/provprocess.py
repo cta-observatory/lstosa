@@ -213,12 +213,12 @@ def parse_lines_run(filter_step, prov_lines, out):
             dl1.update({"size": size})
             dl1.update({"filepath": dl1filepath_str})
             working_lines.append(dl1)
-        if dl1filepath_str and filter_step == "r0_to_dl1":
+        if dl1filepath_str and (filter_step == "r0_to_dl1" or filter_step == "dl1ab"):
             generated = {"activity_id": id_activity_run}
             generated.update({"generated_id": entity_id})
             generated.update({"generated_role": "DL1 Collection"})
             working_lines.append(generated)
-        if dl1filepath_str and filter_step == "dl1_to_dl2":
+        if dl1filepath_str and (filter_step == "dl1_to_dl2" or filter_step == "dl1ab"):
             used = {"activity_id": id_activity_run}
             used.update({"used_id": entity_id})
             used.update({"used_role": "DL1 Collection"})
@@ -290,14 +290,14 @@ def produce_provenance_files(processed_lines, paths):
 def produce_provenance():
     """Create run-wise provenance products as JSON logs and graphs according to granularity."""
 
-    linesR0DL1 = []
-    linesDL1DL2 = []
-
     if options.filter == "r0_to_dl1" or not options.filter:
         pathsR0DL1 = define_paths("r0_to_dl1", pathDL1, options.dl1_prod_id)
-        plines = parse_lines_run("r0_to_dl1", read_prov(filename=session_log_filename), str(pathsR0DL1["out_path"]))
-        linesR0DL1 = copy.deepcopy(plines)
-        produce_provenance_files(plines, pathsR0DL1)
+        plinesro = parse_lines_run("r0_to_dl1", read_prov(filename=session_log_filename), str(pathsR0DL1["out_path"]))
+        linesR0DL1 = copy.deepcopy(plinesro)
+        plinesab = parse_lines_run("dl1ab", read_prov(filename=session_log_filename), str(pathsR0DL1["out_path"]))
+        linesDL1AB = copy.deepcopy(plinesab)
+        DL1lines = linesR0DL1 + linesDL1AB[1:]
+        produce_provenance_files(plinesro + plinesab, pathsR0DL1)
 
     if options.filter == "dl1_to_dl2" or not options.filter:
         pathsDL1DL2 = define_paths("dl1_to_dl2", pathDL2, options.dl2_prod_id)
@@ -310,7 +310,8 @@ def produce_provenance():
 
     # create all steps products in last step path
     if not options.filter:
-        all_lines = linesR0DL1 + linesDL1DL2[1:]
+        all_lines = DL1lines + linesDL1DL2[1:]
+        # all_lines = linesR0DL1 + linesDL1DL2[1:]
         pathsR0DL2 = define_paths("r0_to_dl2", pathDL2, options.dl2_prod_id)
         produce_provenance_files(all_lines, pathsR0DL2)
 

@@ -56,21 +56,6 @@ activities:
         description:
             "Create DL1 files for an observation run and subrun"
         parameters:
-            - name: ObservationRun
-              description: "Observation run number"
-              value: ObservationRun
-            - name: ObservationSubRun
-              description: "Observation subrun number"
-              value: ObservationSubRun
-            - name: CalibrationRun
-              description: "Calibration run number"
-              value: CalibrationRun
-            - name: PedestalRun
-              description: "Pedestal run number"
-              value: PedestalRun
-            - name: ProdID
-              description: "Production ID"
-              value: ProdID
         usage:
             - role: "Observation subrun"
               description: "Observation subrun used"
@@ -97,16 +82,6 @@ activities:
               entityName: PointingFile
               value: PointingFile
               # filepath: /fefs/home/lapp/DrivePositioning/drive_log_20_02_18.txt
-            - role: "Analysis configuration file"
-              description: "LSTChain analysis configuration file"
-              entityName: AnalysisConfigFile
-              value: AnalysisConfigFile
-              # filepath: /fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/data/lstchain_standard_config.json
-            - role: "Processing configuration file"
-              description: "LSTOSA processing configuration file"
-              entityName: ProcessingConfigFile
-              value: ProcessingConfigFile
-              # filepath: /fefs/aswg/lstosa/cfg/sequencer.cfg
             - role: "Run summary"
               description: "Run summary configuration"
               entityName: RunSummaryFile
@@ -125,7 +100,7 @@ activities:
               description: "DL1 dataset produced from a given observation subrun"
               entityName: DL1SubrunDataset
               value: DL1SubrunDataset
-              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5
+              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tauilcut84/dl1_LST-1.Run02006.0001.h5
 
             # - role: "DL1 Collection"
             #   description: "Set of DL1 files for a given run"
@@ -134,30 +109,51 @@ activities:
             #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
             #   size: 128
 
+    dl1ab:
+        description:
+            "Create DL1AB files for an observation run"
+        parameters:
+            - name: PedestalCleaning
+              description: "Perform Pedestal Cleaning"
+              value: PedestalCleaning
+            - name: StoreImage
+              description: "Store DL1 Image"
+              value: StoreImage
+        usage:
+            - role: "DL1 subrun dataset"
+              description: "DL1 dataset produced from a given observation subrun"
+              entityName: DL1SubrunDataset
+              value: DL1SubrunDataset
+              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
+            - role: "Analysis configuration file"
+              description: "Configuration file for DL1"
+              entityName: AnalysisConfigFile
+              value: AnalysisConfigFileDL1
+              # filepath: /fefs/aswg/lstosa/config_files_lstchain/lstchain_standard_config.json
+
+        generation:
+            - role: "DL1AB subrun dataset"
+              description: "DL1AB dataset produced from a given observation subrun"
+              entityName: DL1SubrunDataset
+              value: DL1SubrunDataset
+              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
+
+           # - role: "DL1 Collection"
+           #   description: "Set of DL1 files for a given run"
+           #   entityName: Dl1Collection
+           #   value: DL1Collection
+           #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
+           #   size: 128
     dl1_to_dl2:
         description:
             "Create DL2 files for an DL1 run and subrun"
         parameters:
-            - name: ObservationRun
-              description: "Observation run number"
-              value: ObservationRun
-            - name: ObservationSubRun
-              description: "Observation subrun number"
-              value: ObservationSubRun
-            - name: DL1ProdID
-              description: "Production ID"
-              value: DL1ProdID
         usage:
             - role: "DL1 subrun dataset"
               description: "DL1 dataset produced from a given observation subrun"
               entityName: DL1SubrunDataset
               value: DL1SubrunDataset
               # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5
-            - role: "Analysis configuration file"
-              description: "LSTChain analysis configuration file"
-              entityName: AnalysisConfigFile
-              value: AnalysisConfigFile
-              # filepath: /fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/data/lstchain_standard_config.json
             - role: "RFModelEnergyFile"
               description: "Random Forest Model Energy File"
               entityName: RFModelEnergyFile
@@ -173,11 +169,11 @@ activities:
               entityName: RFModelGammanessFile
               value: RFModelGammanessFile
               # filepath: /fefs/aswg/data/models/20190415/south_pointing/20200316_v0.4.5__EG1/cls_gh.sav
-            - role: "Processing configuration file"
-              description: "Processing configuration file"
-              entityName: ProcessingConfigFile
-              value: ProcessingConfigFile
-              # filepath: /fefs/aswg/lstosa/cfg/sequencer.cfg
+            - role: "Analysis configuration file"
+              description: "LSTChain analysis configuration file"
+              entityName: AnalysisConfigFile
+              value: AnalysisConfigFileDL2
+              # filepath: /fefs/aswg/lstosa/config_files_lstchain/lstchain_standard_config_tailcut84_dynamic_cleaning_v075.json
 
             # - role: "DL1 Collection"
             #   description: "Set of DL1 files for a given run"

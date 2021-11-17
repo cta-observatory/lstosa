@@ -158,7 +158,7 @@ def r0_to_dl1(
             sys.exit(rc)
         return rc
 
-
+@trace
 def dl1ab(run_str, historyfile):
     """
     Prepare and launch the actual lstchain script that is performing
