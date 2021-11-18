@@ -6,6 +6,7 @@ Provenance post processing script for OSA pipeline
 import copy
 import logging
 import shutil
+import sys
 from pathlib import Path, PurePath
 
 import yaml
@@ -25,6 +26,9 @@ log = myLogger(logging.getLogger())
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 PROV_PREFIX = provconfig["PREFIX"]
+PATH_RO = cfg.get("LST1", "R0_DIR")
+PATH_DL1 = cfg.get("LST1", "DL1_DIR")
+PATH_DL2 = cfg.get("LST1", "DL2_DIR")
 
 
 def copy_used_file(src, outdir):
@@ -57,8 +61,7 @@ def copy_used_file(src, outdir):
             shutil.copyfile(src, str(destpath))
             log.info(f"copying {destpath}")
         except Exception as ex:
-            log.warning(f"could not copy {src} file into {str(destpath)}")
-            log.warning(f"{ex}")
+            log.warning(f"could not copy {src} file into {destpath}: {ex}")
 
 
 def parse_lines_log(filter_step, run_number):
@@ -73,7 +76,6 @@ def parse_lines_log(filter_step, run_number):
     Returns
     -------
     filtered
-
     """
     filtered = []
     with open(LOG_FILENAME, "r") as f:
@@ -100,7 +102,7 @@ def parse_lines_log(filter_step, run_number):
             if session_id and tag_run == run_number:
                 keep = True
             # remove parallel sessions
-            if session_id and len(filtered):
+            if session_id and filtered:
                 keep = False
             if keep:
                 filtered.append(line)
@@ -120,7 +122,6 @@ def parse_lines_run(filter_step, prov_lines, out):
     Returns
     -------
     working_lines
-
     """
     size = 0
     container = {}
@@ -191,7 +192,7 @@ def parse_lines_run(filter_step, prov_lines, out):
         if not remove:
             working_lines.append(line)
 
-    # append collection run used and generated at endtime line of last activitiy
+    # append collection run used and generated at endtime line of last activity
     if end_time_line:
         working_lines.append(end_time_line)
         if r0filepath_str and filter_step == "r0_to_dl1":
@@ -246,17 +247,24 @@ def parse_lines_run(filter_step, prov_lines, out):
     return working_lines
 
 
-def produce_provenance():
-    """Create run-wise provenance products as JSON logs and graphs according to granularity."""
+def produce_provenance(
+        base_filename: str,
+        session_log_filename: str,
+        granularity: dict
+):
+    """
+    Create run-wise provenance products as
+    JSON logs and graphs according to granularity.
+    """
 
     # create prov products for each granularity level
     r0_to_dl1_processed_lines = []
     dl1_to_dl2_processed_lines = []
-    for grain, fold in GRANULARITY.items():
+    for grain, fold in granularity.items():
 
         processed_lines = []
         # derive destination folder
-        if fold == pathDL2:
+        if fold == PATH_DL2:
             step_path = Path(fold) / options.date / options.prod_id / options.dl2_prod_id
         else:
             step_path = Path(fold) / options.date / options.prod_id / options.dl1_prod_id
@@ -311,14 +319,8 @@ def produce_provenance():
                 log.exception(f"problem while creating graph: {ex}")
 
 
-if __name__ == "__main__":
-
-    # provprocess.py
-    # 02006
-    # v0.4.3_v00
-    # -c cfg/sequencer.cfg
-    # -f r0_to_dl1
-    # -q
+def main():
+    """Extract the provenance information."""
     provprocessparsing()
 
     # Logging
@@ -327,12 +329,14 @@ if __name__ == "__main__":
     else:
         log.setLevel(logging.INFO)
 
-    pathRO = cfg.get("LST1", "RAWDIR")
-    pathDL1 = cfg.get("LST1", "DL1DIR")
-    pathDL2 = cfg.get("LST1", "DL2DIR")
-    GRANULARITY = {"r0_to_dl1": pathDL1, "dl1_to_dl2": pathDL2, "r0_to_dl2": pathDL2}
+    granularity = {
+        "r0_to_dl1": PATH_DL1,
+        "dl1_to_dl2": PATH_DL2,
+        "r0_to_dl2": PATH_DL2
+    }
+
     if options.filter:
-        GRANULARITY = {options.filter: GRANULARITY[options.filter]}
+        granularity = {options.filter: granularity[options.filter]}
 
     # check LOG_FILENAME exists
     if not Path(LOG_FILENAME).exists():
@@ -341,7 +345,7 @@ if __name__ == "__main__":
     # check LOG_FILENAME is not empty
     if not Path(LOG_FILENAME).stat().st_size:
         log.warning(f"file {LOG_FILENAME} is empty")
-        exit()
+        sys.exit(1)
 
     # build base_filename
     base_filename = f"{options.run}_prov"
@@ -357,7 +361,7 @@ if __name__ == "__main__":
 
     try:
         # create run-wise JSON logs and graphs for each
-        produce_provenance()
+        produce_provenance(base_filename, session_log_filename, granularity)
     finally:
         # remove temporal session log file
         remove_session_log_file = Path(session_log_filename)
@@ -367,3 +371,7 @@ if __name__ == "__main__":
     if options.quit:
         remove_log_file = Path(LOG_FILENAME)
         remove_log_file.unlink()
+
+
+if __name__ == "__main__":
+    main()

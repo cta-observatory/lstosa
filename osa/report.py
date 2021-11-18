@@ -6,7 +6,7 @@ from os.path import basename, getsize, join
 
 from osa.configs import config, options
 from osa.configs.config import cfg
-from osa.raw import getrawdir
+from osa.raw import get_raw_dir
 from osa.utils.iofile import append_to_file
 
 log = logging.getLogger(__name__)
@@ -123,14 +123,14 @@ def finished_assignments(sequence_list):
             "DATACHECK",
             "DL2",
         ]
-        rawdir = getrawdir()
+        rawdir = get_raw_dir()
         if sequence_list is not None:
             for s in sequence_list:
                 rawnum += s.subruns
         data_files = glob(
             join(
                 rawdir,
-                f'*{cfg.get("LSTOSA", "R0PREFIX")}*{cfg.get("LSTOSA", "R0SUFFIX")}*',
+                f'*{cfg.get("PATTERN", "R0PREFIX")}*{cfg.get("PATTERN", "R0SUFFIX")}*',
             )
         )
         disk_space = sum(getsize(d) for d in data_files)
@@ -142,7 +142,7 @@ def finished_assignments(sequence_list):
     ana_set = set(ana_files)
 
     for concept in concept_set:
-        pattern = f"{cfg.get('LSTOSA', concept + 'PREFIX')}*"
+        pattern = f"{cfg.get('PATTERN', concept + 'PREFIX')}*"
         log.debug(f"Trying with {concept} and searching {pattern}")
         file_no[concept] = 0
         delete_set = set()

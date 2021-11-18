@@ -268,7 +268,7 @@ def dl1_to_dl2(run_str: str, history_file: Path):
     dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
     dl2_subdirectory = Path(options.directory) / options.dl2_prod_id
     dl2_config_file = Path(cfg.get("lstchain", "dl2_config"))
-    rf_models_directory = Path(cfg.get("lstchain", "rf_models"))
+    rf_models_directory = Path(cfg.get("lstchain", "RF_MODELS"))
     dl1_file = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
 
     command = cfg.get("lstchain", "dl1_to_dl2")

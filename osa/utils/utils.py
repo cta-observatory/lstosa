@@ -99,7 +99,7 @@ def night_directory():
     log.debug(f"Getting analysis path for tel_id {options.tel_id}")
     date = lstdate_to_dir(options.date)
     options.prod_id = get_prod_id()
-    directory = Path(cfg.get(options.tel_id, "ANALYSISDIR")) / date / options.prod_id
+    directory = Path(cfg.get(options.tel_id, "ANALYSIS_DIR")) / date / options.prod_id
 
     if not directory.exists() and not options.simulate:
         directory.mkdir(parents=True, exist_ok=True)
@@ -134,8 +134,8 @@ def get_prod_id():
     prod_id: string
     """
     if not options.prod_id:
-        if cfg.get("LST1", "PROD-ID") is not None:
-            options.prod_id = cfg.get("LST1", "PROD-ID")
+        if cfg.get("LST1", "PROD_ID") is not None:
+            options.prod_id = cfg.get("LST1", "PROD_ID")
         else:
             options.prod_id = get_lstchain_version()
 
@@ -144,16 +144,11 @@ def get_prod_id():
     return options.prod_id
 
 
-def get_calib_prod_id():
-    """
-
-    Returns
-    -------
-
-    """
+def get_calib_prod_id() -> str:
+    """Build calibration production ID."""
     if not options.calib_prod_id:
-        if cfg.get("LST1", "CALIB-PROD-ID") is not None:
-            options.calib_prod_id = cfg.get("LST1", "CALIB-PROD-ID")
+        if cfg.get("LST1", "CALIB_PROD_ID") is not None:
+            options.calib_prod_id = cfg.get("LST1", "CALIB_PROD_ID")
         else:
             options.calib_prod_id = get_lstchain_version()
 
@@ -172,8 +167,8 @@ def get_dl1_prod_id():
     dl1_prod_id: string
     """
     if not options.dl1_prod_id:
-        if cfg.get("LST1", "DL1-PROD-ID") is not None:
-            options.dl1_prod_id = cfg.get("LST1", "DL1-PROD-ID")
+        if cfg.get("LST1", "DL1_PROD_ID") is not None:
+            options.dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
         else:
             options.dl1_prod_id = get_lstchain_version()
 
@@ -190,8 +185,8 @@ def get_dl2_prod_id():
 
     """
     if not options.dl2_prod_id:
-        if cfg.get("LST1", "DL2-PROD-ID") is not None:
-            options.dl2_prod_id = cfg.get("LST1", "DL2-PROD-ID")
+        if cfg.get("LST1", "DL2_PROD_ID") is not None:
+            options.dl2_prod_id = cfg.get("LST1", "DL2_PROD_ID")
         else:
             options.dl2_prod_id = get_lstchain_version()
 
@@ -244,7 +239,7 @@ def get_lock_file():
     """
     basename = cfg.get("LSTOSA", "end_of_activity")
     date = lstdate_to_dir(options.date)
-    close_directory = Path(cfg.get(options.tel_id, "CLOSERDIR"))
+    close_directory = Path(cfg.get(options.tel_id, "CLOSER_DIR"))
     lock_file = close_directory / date / options.prod_id / basename
     log.debug(f"Looking for lock file {lock_file}")
     return lock_file
@@ -448,16 +443,16 @@ def destination_dir(concept, create_dir=True):
     nightdir = lstdate_to_dir(options.date)
 
     if concept == "MUON":
-        directory = Path(cfg.get(options.tel_id, concept + "DIR")) /\
+        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
                     nightdir / options.prod_id
     elif concept in ["DL1AB", "DATACHECK"]:
-        directory = Path(cfg.get(options.tel_id, concept + "DIR")) /\
+        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
                     nightdir / options.prod_id / options.dl1_prod_id
     elif concept == "DL2":
-        directory = Path(cfg.get(options.tel_id, concept + "DIR")) /\
+        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
             nightdir / options.prod_id / options.dl2_prod_id
     elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-        directory = Path(cfg.get(options.tel_id, concept + "DIR")) /\
+        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
                     nightdir / options.calib_prod_id
     else:
         log.warning(f"Concept {concept} not known")
@@ -572,7 +567,7 @@ def get_input_file(run_number: str) -> Path:
 
     # Get raw data file.
     file_list = list(
-        r0_path.rglob(f"*/{cfg.get('LSTOSA', 'R0PREFIX')}.Run{run_number}.0000*")
+        r0_path.rglob(f"*/LST-1.1.Run{run_number}.0000*")
     )
 
     if not file_list:

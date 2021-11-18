@@ -76,9 +76,9 @@ def test_trace_r0_to_dl2(tmp_path):
     args_dl2 = make_args_dl1_to_dl2()
 
     options.date = "2020_01_17"
-    options.calib_prod_id = "v0.1.0_v01"
+    options.calib_prod_id = "v01"
     options.dl2_prod_id = "v0.1.0_v01"
-    options.prod_id = "v0.1.0_v01"
+    options.prod_id = "v0.1.0"
 
     # track prov
     r0_to_dl1(*args_dl1)

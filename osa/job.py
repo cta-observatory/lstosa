@@ -253,23 +253,20 @@ def sequence_calibration_filenames(sequence_list):
     """Build names of the calibration and drive files."""
     nightdir = lstdate_to_dir(options.date)
     yy_mm_dd = date_in_yymmdd(nightdir)
-    calib_suffix = cfg.get("LSTOSA", "CALIBSUFFIX")
-    pedestal_suffix = cfg.get("LSTOSA", "PEDESTALSUFFIX")
-    drive_suffix = cfg.get("LSTOSA", "DRIVESUFFIX")
-    drivefile = f"drive_log_{yy_mm_dd}{drive_suffix}"
+    drivefile = f"drive_log_{yy_mm_dd}.txt"
 
     for sequence in sequence_list:
         if not sequence.parent_list:
             cal_run_string = str(sequence.run).zfill(5)
-            calfile = f"calibration.Run{cal_run_string}.0000{calib_suffix}"
-            timecalfile = f"time_calibration.Run{cal_run_string}.0000{calib_suffix}"
+            calfile = f"calibration.Run{cal_run_string}.0000.h5"
+            timecalfile = f"time_calibration.Run{cal_run_string}.0000.h5"
             ped_run_string = str(sequence.previousrun).zfill(5)
         else:
             run_string = str(sequence.parent_list[0].run).zfill(5)
             ped_run_string = str(sequence.parent_list[0].previousrun).zfill(5)
-            calfile = f"calibration.Run{run_string}.0000{calib_suffix}"
-            timecalfile = f"time_calibration.Run{run_string}.0000{calib_suffix}"
-        pedfile = f"drs4_pedestal.Run{ped_run_string}.0000{pedestal_suffix}"
+            calfile = f"calibration.Run{run_string}.0000.h5"
+            timecalfile = f"time_calibration.Run{run_string}.0000.h5"
+        pedfile = f"drs4_pedestal.Run{ped_run_string}.0000.fits"
         # Assign the calibration and drive files to the sequence object
         sequence.drive = drivefile
         sequence.calibration = Path(options.directory) / calfile
@@ -313,9 +310,7 @@ def get_job_statistics():
 
 
 def scheduler_env_variables(sequence, scheduler="slurm"):
-    """
-    Return the environment variables for the scheduler.
-    """
+    """Return the environment variables for the scheduler."""
     # TODO: Create a class with the SBATCH variables we want to use in the pilot job
     #  and then use the string representation of the class to create the header.
     if scheduler != "slurm":
@@ -339,10 +334,10 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
             sbatch_parameters.append(f"--array=0-{subruns}")
 
         sbatch_parameters.append(
-            f"--partition={cfg.get('SLURM', f'PARTITION-{sequence.type}')}"
+            f"--partition={cfg.get('SLURM', f'PARTITION_{sequence.type}')}"
         )
         sbatch_parameters.append(
-            f"--mem-per-cpu={cfg.get('SLURM', f'MEMSIZE-{sequence.type}')}"
+            f"--mem-per-cpu={cfg.get('SLURM', f'MEMSIZE_{sequence.type}')}"
         )
 
         return ["#SBATCH " + line for line in sbatch_parameters]
@@ -416,7 +411,7 @@ def create_job_template(sequence, get_content=False):
     job_header = job_header_template(sequence)
 
     nightdir = lstdate_to_dir(options.date)
-    drivedir = cfg.get("LST1", "DRIVEDIR")
+    drivedir = cfg.get("LST1", "DRIVE_DIR")
     run_summary_dir = cfg.get("LST1", "RUN_SUMMARY_DIR")
 
     if sequence.type == "PEDCALIB":
@@ -436,8 +431,6 @@ def create_job_template(sequence, get_content=False):
     if options.configfile:
         commandargs.append("-c")
         commandargs.append(Path(options.configfile).resolve())
-    if options.compressed:
-        commandargs.append("-z")
     if sequence.type == "DATA" and options.no_dl2:
         commandargs.append("--no-dl2")
 

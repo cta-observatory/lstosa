@@ -103,7 +103,7 @@ def drs4_pedestal_command(
 ) -> list:
     """Build the command to run the drs4 pedestal calibration."""
     return [
-        cfg.get("calibration", "drs4_baseline"),
+        cfg.get("lstchain", "drs4_baseline"),
         f"--input-file={input_file}",
         f"--output-file={output_file}",
         f"--max-events={max_events}",
@@ -120,13 +120,13 @@ def calibration_file_command(
 ) -> list:
     """Build the command to run the calibration file creation."""
     calibration_run_file = get_input_file(calibration_run)
-    ffactor_systematics = Path(cfg.get("calibration", "ffactor_systematics"))
+    ffactor_systematics = Path(cfg.get("lstchain", "ffactor_systematics"))
     time_file = Path(options.directory) / f"time_{calibration_output_file.name}"
     log_dir = Path(options.directory) / "log"
     log_file = log_dir / f"calibration.Run{calibration_run}.0000.log"
 
     return [
-        cfg.get("calibration", "charge_calibration"),
+        cfg.get("lstchain", "charge_calibration"),
         f"--input_file={calibration_run_file}",
         f"--output_file={calibration_output_file}",
         "--EventSource.default_trigger_type=tib",
@@ -146,11 +146,11 @@ def time_calibration_command(
         run_summary: Path,
 ) -> list:
     """Build the command to run the time calibration."""
-    r0_path = Path(cfg.get("LST1", "R0_DIR")).absolute()
+    r0_path = Path(cfg.get("LST1", "R0_DIR")).resolve()
     calibration_data_file = f"{r0_path}/*/LST-1.1.Run{calibration_run}.000*.fits.fz"
 
     return [
-        cfg.get("calibration", "time_calibration"),
+        cfg.get("lstchain", "time_calibration"),
         f"--input-file={calibration_data_file}",
         f"--output-file={time_calibration_file}",
         f"--pedestal-file={drs4_pedestal_file}",
@@ -265,7 +265,7 @@ def calibrate_charge(
     rc: str
         Return code
     """
-    calib_configfile = Path(cfg.get("calibration", "config_file"))
+    calib_configfile = Path(cfg.get("lstchain", "calibration_config"))
     command_args = calibration_file_command(
         calibration_run,
         calib_configfile,
@@ -424,8 +424,10 @@ def link_ref_time_calibration(
     The reference time calibration file is defined in the cfg file.
     """
 
-    ref_time_calibration_run = int(cfg.get("calibration", "ref_time_calib_run"))
-    calibration_path = Path(cfg.get("LST1", "CALIBDIR"))
+    ref_time_calibration_run = int(
+        cfg.get("lstchain", "reference_time_calibration_run")
+    )
+    calibration_path = Path(cfg.get("LST1", "CALIB_DIR"))
     output_file = time_calibration_file
     log.info(
         f"Searching for file "

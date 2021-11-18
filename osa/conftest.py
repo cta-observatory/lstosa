@@ -8,7 +8,7 @@ from osa.nightsummary.nightsummary import run_summary_table
 from osa.scripts.tests.test_osa_scripts import run_program
 
 date = "20200117"
-prod_id = "v0.1.0_v01"
+prod_id = "v0.1.0"
 dl1_prod_id = "tailcut84"
 
 
@@ -52,13 +52,13 @@ def dl1b_subdir(running_analysis_dir):
 def test_calibration_data(running_analysis_dir):
     """Mock calibration files for testing."""
     fd, calib_file = tempfile.mkstemp(
-        prefix="calibration_", suffix=".hdf5", dir=running_analysis_dir
+        prefix="calibration_", suffix=".h5", dir=running_analysis_dir
     )
     fd, drs4_file = tempfile.mkstemp(
         prefix="drs4_", suffix=".fits", dir=running_analysis_dir
     )
     fd, time_file = tempfile.mkstemp(
-        prefix="time_calibration_", suffix=".hdf5", dir=running_analysis_dir
+        prefix="time_calibration_", suffix=".h5", dir=running_analysis_dir
     )
     return calib_file, drs4_file, time_file
 

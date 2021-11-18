@@ -7,10 +7,10 @@ from osa.utils.utils import lstdate_to_dir
 
 options.date = "2020_01_17"
 options.tel_id = "LST1"
-options.prod_id = "v0.1.0_v01"
+options.prod_id = "v0.1.0"
 
 
-def test_getcurrentdate():
+def test_get_current_date():
     from osa.utils.utils import getcurrentdate
 
     # Both having the same separator
@@ -45,7 +45,7 @@ def test_get_lstchain_version():
 def test_get_prod_id():
     from osa.utils.utils import get_prod_id
 
-    prod_id = cfg.get(options.tel_id, "PROD-ID")
+    prod_id = cfg.get(options.tel_id, "PROD_ID")
     assert get_prod_id() == prod_id
 
 
@@ -60,11 +60,11 @@ def test_destination_dir():
 
     options.date = "2020_01_17"
     datedir = lstdate_to_dir(options.date)
-    options.dl1_prod_id = cfg.get("LST1", "DL1-PROD-ID")
-    options.dl2_prod_id = cfg.get("LST1", "DL2-PROD-ID")
-    options.calib_prod_id = cfg.get("LST1", "CALIB-PROD-ID")
-    options.prod_id = cfg.get("LST1", "PROD-ID")
-    base_directory = cfg.get("LST1", "DIR")
+    options.dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
+    options.dl2_prod_id = cfg.get("LST1", "DL2_PROD_ID")
+    options.calib_prod_id = cfg.get("LST1", "CALIB_PROD_ID")
+    options.prod_id = cfg.get("LST1", "PROD_ID")
+    base_directory = cfg.get("LST1", "BASE")
     base_path = Path(base_directory)
 
     data_types = {

@@ -166,12 +166,10 @@ def closercliparsing():
     options.stdout = opts.stdout
     options.date = opts.date
     options.directory = opts.directory
-    options.nightsummary = opts.nightsum
     options.noninteractive = opts.noninteractive
     options.simulate = opts.simulate
     options.test = opts.test
     options.verbose = opts.verbose
-    options.warning = opts.warning
     options.reason = opts.reason
     options.seqtoclose = opts.seqtoclose
     options.tel_id = opts.tel_id
@@ -182,23 +180,19 @@ def closercliparsing():
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
     options.directory = set_default_directory_if_needed()
-
-    # setting on the usage of night summary
-    options.nightsummary = True
-
     options.prod_id = get_prod_id()
 
-    if cfg.get("LST1", "CALIB-PROD-ID") is not None:
+    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
         options.calib_prod_id = get_calib_prod_id()
     else:
         options.calib_prod_id = options.prod_id
 
-    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+    if cfg.get("LST1", "DL1_PROD_ID") is not None:
         options.dl1_prod_id = get_dl1_prod_id()
     else:
         options.dl1_prod_id = options.prod_id
 
-    if cfg.get("LST1", "DL2-PROD-ID") is not None:
+    if cfg.get("LST1", "DL2_PROD_ID") is not None:
         options.dl2_prod_id = get_dl2_prod_id()
     else:
         options.dl2_prod_id = options.prod_id
@@ -245,14 +239,6 @@ def calibration_sequence_argparser():
         dest="warning",
         default=False,
         help="show useful warnings",
-    )
-    parser.add_argument(
-        "-z",
-        "--rawzip",
-        action="store_true",
-        dest="compressed",
-        default=False,
-        help="Use input as compressed raw.gz files",
     )
     parser.add_argument(
         "--stderr",
@@ -323,8 +309,6 @@ def calibration_sequence_cliparsing():
     options.date = opts.date
     options.directory = opts.directory
     options.verbose = opts.verbose
-    options.warning = opts.warning
-    options.compressed = opts.compressed
     options.prod_id = opts.prod_id
     options.tel_id = opts.tel_id
     options.simulate = opts.simulate
@@ -334,7 +318,7 @@ def calibration_sequence_cliparsing():
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
     options.directory = set_default_directory_if_needed()
-    if cfg.get("LST1", "CALIB-PROD-ID") is not None:
+    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
         options.calib_prod_id = get_calib_prod_id()
     else:
         options.calib_prod_id = options.prod_id
@@ -380,22 +364,6 @@ def data_sequence_argparser():
         dest="verbose",
         default=False,
         help="make lots of noise for debugging",
-    )
-    parser.add_argument(
-        "-w",
-        "--warnings",
-        action="store_true",
-        dest="warning",
-        default=False,
-        help="show useful warnings",
-    )
-    parser.add_argument(
-        "-z",
-        "--rawzip",
-        action="store_true",
-        dest="compressed",
-        default=False,
-        help="Use input as compressed raw.gz files",
     )
     parser.add_argument(
         "--stderr",
@@ -474,8 +442,6 @@ def data_sequence_cli_parsing():
     options.date = opts.date
     options.directory = opts.directory
     options.verbose = opts.verbose
-    options.warning = opts.warning
-    options.compressed = opts.compressed
     options.simulate = opts.simulate
     options.prod_id = opts.prod_id
     options.nodl2 = opts.nodl2
@@ -487,17 +453,17 @@ def data_sequence_cli_parsing():
     options.date = set_default_date_if_needed()
     options.directory = set_default_directory_if_needed()
 
-    if cfg.get("LST1", "CALIB-PROD-ID") is not None:
+    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
         options.calib_prod_id = get_calib_prod_id()
     else:
         options.calib_prod_id = options.prod_id
 
-    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+    if cfg.get("LST1", "DL1_PROD_ID") is not None:
         options.dl1_prod_id = get_dl1_prod_id()
     else:
         options.dl1_prod_id = options.prod_id
 
-    if cfg.get("LST1", "DL2-PROD-ID") is not None:
+    if cfg.get("LST1", "DL2_PROD_ID") is not None:
         options.dl2_prod_id = get_dl2_prod_id()
     else:
         options.dl2_prod_id = options.prod_id
@@ -534,24 +500,7 @@ def sequencer_argparser():
         dest="date",
         help="observation ending date YYYY_MM_DD [default today]",
     )
-    parser.add_argument(
-        "-m",
-        "--mode",
-        action="store",
-        type=str,
-        dest="mode",
-        choices=["P"],
-        help="[Deprecated] mode to run dependant sequences:\n P=parallel [default]",
-    )
     # boolean options
-    parser.add_argument(
-        "-n",
-        "--usenightsummary",
-        action="store_true",
-        dest="nightsum",
-        default=False,
-        help="rely on existing nightsumary file",
-    )
     parser.add_argument(
         "-o",
         "--outputdir",
@@ -610,14 +559,6 @@ def sequencer_argparser():
         help="show useful warnings",
     )
     parser.add_argument(
-        "-z",
-        "--rawzip",
-        action="store_true",
-        dest="compressed",
-        default=False,
-        help="[Deprecated] Use input as compressed raw.gz files",
-    )
-    parser.add_argument(
         "--stderr",
         action="store",
         type=str,
@@ -650,39 +591,31 @@ def sequencer_cli_parsing():
     options.stdout = opts.stdout
     options.date = opts.date
     options.directory = opts.directory
-    options.mode = opts.mode
-    options.nightsummary = opts.nightsum
     options.simulate = opts.simulate
     options.test = opts.test
     options.no_submit = opts.no_submit
     options.no_calib = opts.no_calib
     options.no_dl2 = opts.no_dl2
     options.verbose = opts.verbose
-    options.warning = opts.warning
-    options.compressed = opts.compressed
     options.tel_id = opts.tel_id
 
     # the standardhandle has to be declared before here,
     # since verbose and warnings are options from the cli
     log.debug(f"the options are {opts}")
 
-    # set the default value for mode
-    if not opts.mode:
-        options.mode = "P"
-
     options.prod_id = get_prod_id()
 
-    if cfg.get("LST1", "CALIB-PROD-ID") is not None:
+    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
         options.calib_prod_id = get_calib_prod_id()
     else:
         options.calib_prod_id = options.prod_id
 
-    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+    if cfg.get("LST1", "DL1_PROD_ID") is not None:
         options.dl1_prod_id = get_dl1_prod_id()
     else:
         options.dl1_prod_id = options.prod_id
 
-    if cfg.get("LST1", "DL2-PROD-ID") is not None:
+    if cfg.get("LST1", "DL2_PROD_ID") is not None:
         options.dl2_prod_id = get_dl2_prod_id()
     else:
         options.dl2_prod_id = options.prod_id
@@ -733,14 +666,6 @@ def rawcopycliparsing():
         help="show useful warnings",
     )
     parser.add_argument(
-        "-z",
-        "--rawzip",
-        action="store_true",
-        dest="compressed",
-        default=False,
-        help="compress output into raw.gz files",
-    )
-    parser.add_argument(
         "--stderr",
         action="store",
         type=str,
@@ -765,8 +690,6 @@ def rawcopycliparsing():
     options.date = opts.date
     options.nocheck = opts.nocheck
     options.verbose = opts.verbose
-    options.warning = opts.warning
-    options.compressed = opts.compressed
 
     # the standardhandle has to be declared here,
     # since verbose and warnings are options from the cli
@@ -842,12 +765,12 @@ def provprocessparsing():
     options.quit = opts.quit
     options.lstchain_version = get_lstchain_version()
 
-    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+    if cfg.get("LST1", "DL1_PROD_ID") is not None:
         options.dl1_prod_id = get_dl1_prod_id()
     else:
         options.dl1_prod_id = options.prod_id
 
-    if cfg.get("LST1", "DL2-PROD-ID") is not None:
+    if cfg.get("LST1", "DL2_PROD_ID") is not None:
         options.dl2_prod_id = get_dl2_prod_id()
     else:
         options.dl2_prod_id = options.prod_id
@@ -939,7 +862,7 @@ def copy_datacheck_parsing():
     options.directory = set_default_directory_if_needed()
     options.prod_id = get_prod_id()
 
-    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+    if cfg.get("LST1", "DL1_PROD_ID") is not None:
         options.dl1_prod_id = get_dl1_prod_id()
     else:
         options.dl1_prod_id = options.prod_id

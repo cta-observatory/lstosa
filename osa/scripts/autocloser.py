@@ -88,7 +88,7 @@ def closedFlag(tel):
     if args.test:
         return f"./{tel}/NightFinished.txt"
     basename = cfg.get("LSTOSA", "end_of_activity")
-    return Path(cfg.get(tel, "CLOSERDIR")) / nightdir / prod_id / basename
+    return Path(cfg.get(tel, "CLOSER_DIR")) / nightdir / prod_id / basename
 
 
 def exampleSeq(tel):
@@ -646,7 +646,7 @@ if __name__ == "__main__":
     if is_night_time():
         sys.exit(1)
 
-    prod_id = cfg.get("LST1", "PROD-ID")
+    prod_id = cfg.get("LST1", "PROD_ID")
 
     # create telescope, sequence, problem and incidence objects
     log.info("Simulating sequencer...")

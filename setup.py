@@ -14,6 +14,7 @@ entry_points = {
         "datasequence = osa.scripts.datasequence:main",
         "sequencer_webmaker = osa.scripts.sequencer_webmaker:main",
         "show_run_summary = osa.scripts.show_run_summary:main",
+        "provprocess = osa.scripts.provprocess:main",
     ]
 }
 

@@ -20,7 +20,6 @@ verbose = None
 warning = None
 nocheck = None
 no_dl2 = None
-compressed = None
 lstchain_version = None
 prod_id = None
 calib_prod_id = None

@@ -1,7 +1,6 @@
 import logging
 import sys
-from glob import glob
-from os.path import exists, join
+from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -9,60 +8,53 @@ from osa.utils.utils import lstdate_to_dir
 
 log = logging.getLogger(__name__)
 
+__all__ = [
+    "are_raw_files_transferred",
+    "are_raw_files_transferred_for_tel",
+    "get_check_raw_dir",
+    "get_raw_dir"
+]
 
-def are_rawfiles_transferred_for_tel(tel_id):
-    nightdir = lstdate_to_dir(options.date)
-    dir = join(cfg.get(tel_id, "ENDOFRAWTRANSFERDIR"), nightdir)
-    flagfile = join(dir, cfg.get("LSTOSA", "end_of_activity"))
 
-    # FIXME: How can we check that all files are there?
-    if exists(flagfile):
+def are_raw_files_transferred_for_tel(tel_id):
+    night_dir = lstdate_to_dir(options.date)
+    end_of_transfer = Path(cfg.get(tel_id, "ENDOFRAWTRANSFERDIR")) / night_dir
+    flag_file = end_of_transfer / cfg.get("LSTOSA", "end_of_activity")
+
+    if flag_file.exists():
         log.info(f"Files for {options.date} {tel_id} are completely transferred to raid")
         return True
     else:
-        log.warning(f"File {flagfile} not found!")
+        log.warning(f"File {flag_file} not found!")
         log.info(
-            f"Files for {options.date} {tel_id} are not yet transferred to raid. Expecting more raw data"
+            f"Files for {options.date} {tel_id} are not yet "
+            f"transferred to raid. Expecting more raw data"
         )
         return False
 
 
-def are_rawfiles_transferred():
+def are_raw_files_transferred() -> bool:
     if options.tel_id != "ST":
-        return are_rawfiles_transferred_for_tel(options.tel_id)
-    return are_rawfiles_transferred_for_tel("LST1")
+        return are_raw_files_transferred_for_tel(options.tel_id)
+    return are_raw_files_transferred_for_tel("LST1")
 
 
-def get_check_rawdir():
-    rawdir = getrawdir()
-    rawsuffix = cfg.get("LSTOSA", "RAWSUFFIX")
-    log.debug(f"raw suffix = {rawsuffix}")
-    compressedsuffix = cfg.get("LSTOSA", "COMPRESSEDSUFFIX")
-    log.debug(f"raw compressed suffix = {rawsuffix + compressedsuffix}")
-    log.debug(f"Trying raw directory: {rawdir}")
+def get_check_raw_dir() -> Path:
+    raw_dir = get_raw_dir()
+    log.debug(f"Raw directory: {raw_dir}")
 
-    if not exists(rawdir):
-        log.error(f"Raw directory {rawdir} does not exist")
+    if not raw_dir.exists():
+        log.error(f"Raw directory {raw_dir} does not exist")
         sys.exit(1)
     else:
-        # check that it contains at least one raw or compressed-raw file and set compression flag
-        list = glob(join(rawdir, "*" + rawsuffix))
-        listz = glob(join(rawdir, "*" + rawsuffix + compressedsuffix))
-        if (len(list) + len(listz)) == 0:
-            log.error(f"Empty raw directory {rawdir}")
-        elif len(list) != 0 and len(listz) != 0:
-            log.warning(f"Both, compressed and not compressed filex co-existing in {rawdir}")
-        elif len(listz) != 0:
-            options.compressed = True
-            log.debug("Compressed option flag set")
-    log.debug(f"Raw directory: {rawdir}")
-    return rawdir
+        # check that it contains raw files
+        files = raw_dir.glob("*.fits.fz")
+        if not files:
+            log.error(f"Empty raw directory {raw_dir}")
+    return raw_dir
 
 
-def getrawdir():
-    nightdir = lstdate_to_dir(options.date)
-    return (
-        join(cfg.get(options.tel_id, "R0_DIR"), nightdir)
-        if options.tel_id in ["LST1", "LST2"]
-        else None
-    )
+def get_raw_dir() -> Path:
+    night_dir = lstdate_to_dir(options.date)
+    r0_dir = Path(cfg.get(options.tel_id, "R0_DIR")) / night_dir
+    return r0_dir if options.tel_id in ["LST1", "LST2"] else None

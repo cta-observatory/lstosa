@@ -8,7 +8,7 @@ from pathlib import Path
 from astropy.table import Table
 
 from osa.configs.config import cfg
-from osa.raw import are_rawfiles_transferred
+from osa.raw import are_raw_files_transferred
 from osa.utils.utils import lstdate_to_dir, stringify
 
 __all__ = ["build_external", "get_runsummary_file", "run_summary_table"]
@@ -33,7 +33,7 @@ def build_external(command, rawdir):
         The output of the create nightsummary script.
     """
     commandargs = [command]
-    if not are_rawfiles_transferred():
+    if not are_raw_files_transferred():
         # ask for an incomplete night summary
         commandargs.append("-i")
     commandargs.append(rawdir)

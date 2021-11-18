@@ -43,8 +43,8 @@ log = myLogger(logging.getLogger())
 def do_setup():
     """Set-up folder structure and check flags."""
 
-    pathDL1 = Path(cfg.get("LST1", "DL1DIR")) / options.directory
-    pathDL2 = Path(cfg.get("LST1", "DL2DIR")) / options.directory
+    pathDL1 = Path(cfg.get("LST1", "DL1_DIR")) / options.directory
+    pathDL2 = Path(cfg.get("LST1", "DL2_DIR")) / options.directory
     pathDL1sub = pathDL1 / options.prod_id
     pathDL2sub = pathDL2 / options.prod_id
 
@@ -121,8 +121,6 @@ def simulate_subrun_processing(args):
 
 def simulate_processing():
     """Simulate daily processing and capture provenance."""
-
-    options.mode = "P"
     options.simulate = True
     summary_table = run_summary_table(options.date)
 

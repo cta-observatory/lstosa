@@ -26,7 +26,6 @@ __all__ = [
     "extractsequences",
     "extractsequencesstereo",
     "generateworkflow",
-    "dependsonpreviousseq",
 ]
 
 
@@ -117,8 +116,8 @@ def extractruns(subrun_list):
 
 
 def extractsequences(run_list):
-    """This function depends on the selected mode (P, S, T)
-    It searches for sequences composed out of
+    """
+    Search for sequences composed out of
     a) Pedestal->Calibration->Data turns into independent runs
     b) Data[->Pedestal]->Data turns into dependent runs
     c) Otherwise orphan runs which are dismissed
@@ -207,10 +206,7 @@ def extractsequences(run_list):
                 if previoustype == "DATA":
                     # replace the first head element, keeping its previous run
                     # or requirement run, depending on mode
-                    if dependsonpreviousseq(previousrun, currentrun):
-                        whichreq = previousrun
-                    else:
-                        whichreq = previousreq
+                    whichreq = previousreq
                 elif previoustype == "DRS4":
                     # one pedestal after another, keep replacing
                     whichreq = None
@@ -233,16 +229,8 @@ def extractsequences(run_list):
                         store.append(currentrun)
                         require[currentrun] = previousreq
                 elif previoustype == "DATA":
-                    # it is the data->data case, replace and store
-                    # the whole policy has to be applied here:
-                    # if P=parallel, the dependence is previousreq
-                    # if S=sequential, the dependence is previousrun
-                    # if T=temperature-aware, the dependence has
-                    # to be evaluated by a function
-                    if dependsonpreviousseq(previousrun, currentrun):
-                        whichreq = previousrun
-                    else:
-                        whichreq = previousreq
+                    whichreq = previousreq
+
                     log.debug(f"D->D, "
                               f"replacing [{currentrun}, {currenttype}, {whichreq}]")
                     head[0] = [currentrun, currenttype, whichreq]
@@ -392,26 +380,3 @@ def generateworkflow(run_list, store, require):
     sequence_calibration_filenames(sequence_list)
     log.debug("Workflow completed")
     return sequence_list
-
-
-def dependsonpreviousseq(previous, current):
-    """
-
-    Parameters
-    ----------
-    previous
-    current
-
-    Returns
-    -------
-
-    """
-    if options.mode == "P":
-        return False
-    elif options.mode == "S":
-        return True
-    elif options.mode is None:
-        # not needed, let us assume easy parallel mode
-        return False
-    else:
-        log.error(f"mode {options.mode} not recognized")

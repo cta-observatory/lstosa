@@ -17,6 +17,7 @@ ALL_SCRIPTS = [
     "copy_datacheck",
     "datasequence",
     "show_run_summary",
+    "provprocess"
 ]
 
 
@@ -94,7 +95,7 @@ def test_autocloser(running_analysis_dir):
     )  # Check that the analysis directory exists
     assert result.stdout.split()[-1] == "Exit"
     assert os.path.exists(
-        "./test_osa/test_files0/running_analysis/20200117/v0.1.0_v01/"
+        "./test_osa/test_files0/running_analysis/20200117/v0.1.0/"
         "AutoCloser_Incidences_tmp.txt"
     )
 
@@ -106,8 +107,8 @@ def test_closer(r0_dir, running_analysis_dir, test_observed_data):
     assert os.path.exists(r0_dir)
     assert running_analysis_dir.exists()
     # Check that files have been moved to their final destinations
-    assert os.path.exists("./test_osa/test_files0/DL1/20200117/v0.1.0_v01/tailcut84")
-    assert os.path.exists("./test_osa/test_files0/DL2/20200117/v0.1.0_v01")
+    assert os.path.exists("./test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84")
+    assert os.path.exists("./test_osa/test_files0/DL2/20200117/v0.1.0")
     assert os.path.exists("./test_osa/test_files0/calibration/20200117/v01")
     assert os.path.exists(test_observed_data[1])
 
@@ -118,7 +119,7 @@ def test_datasequence(running_analysis_dir):
     timecalib_file = "time_calibration.Run00002.0000.hdf5"
     drive_file = "drive_log_20200117.txt"
     runsummary_file = "RunSummary_20200117.ecsv"
-    prod_id = "v0.1.0_v01"
+    prod_id = "v0.1.0"
     run_number = "00003.0000"
     options.directory = running_analysis_dir
 
@@ -146,7 +147,7 @@ def test_calibrationsequence(r0_data, running_analysis_dir):
     drs4_file = "drs4_pedestal.Run01805.0000.fits"
     calib_file = "calibration.Run01806.0000.hdf5"
     runsummary_file = "RunSummary_20200117.ecsv"
-    prod_id = "v0.1.0_v01"
+    prod_id = "v0.1.0"
     drs4_run_number = "01805"
     pedcal_run_number = "01806"
     options.directory = running_analysis_dir
@@ -201,8 +202,8 @@ def test_calibration_file_command(r0_data, test_calibration_data, running_analys
     input_file = r0_data[1]
     calibration_output_file = Path(test_calibration_data[0])
     drs4_pedestal_file = Path(test_calibration_data[1])
-    ffactor_systematics = cfg.get("calibration", "ffactor_systematics")
-    calib_config = cfg.get("calibration", "config_file")
+    ffactor_systematics = cfg.get("lstchain", "ffactor_systematics")
+    calib_config = cfg.get("lstchain", "calibration_config")
     run_summary = Path("extra/monitoring/RunSummary") / "RunSummary_20200117.ecsv"
     time_file_basename = Path(calibration_output_file).name.replace("calibration", "time_calibration")
     time_file = Path(running_analysis_dir) / time_file_basename

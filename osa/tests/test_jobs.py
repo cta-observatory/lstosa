@@ -80,7 +80,7 @@ def test_scheduler_env_variables(sequence_list, running_analysis_dir):
         '#SBATCH --output=log/slurm_01807.%4a_%A.out',
         '#SBATCH --error=log/slurm_01807.%4a_%A.err',
         '#SBATCH --array=0-18',
-        '#SBATCH --partition=short',
+        '#SBATCH --partition=long',
         '#SBATCH --mem-per-cpu=16GB'
     ]
 
@@ -115,7 +115,7 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     #SBATCH --output=log/slurm_01807.%4a_%A.out
     #SBATCH --error=log/slurm_01807.%4a_%A.err
     #SBATCH --array=0-18
-    #SBATCH --partition=short
+    #SBATCH --partition=long
     #SBATCH --mem-per-cpu=16GB""")
     assert header == output_string2
 
@@ -129,12 +129,12 @@ def test_create_job_template_scheduler(sequence_list):
 
     #SBATCH --job-name=LST1_01807
     #SBATCH --cpus-per-task=1
-    #SBATCH --chdir={Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0_v01
+    #SBATCH --chdir={Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0
     #SBATCH --output=log/slurm_01807.%4a_%A.out
     #SBATCH --error=log/slurm_01807.%4a_%A.err
     #SBATCH --array=0-18
-    #SBATCH --partition=short
-    #SBATCH --mem-per-cpu=16GB
+    #SBATCH --partition={cfg.get('SLURM', 'PARTITION_DATA')}
+    #SBATCH --mem-per-cpu={cfg.get('SLURM', 'MEMSIZE_DATA')}
 
     import os
     import subprocess
@@ -156,10 +156,10 @@ def test_create_job_template_scheduler(sequence_list):
             '-d',
             '2020_01_17',
             '--prod-id',
-            'v0.1.0_v01',
-            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0_v01/calibration.Run01805.0000.hdf5',
-            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0_v01/drs4_pedestal.Run01804.0000.fits',
-            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0_v01/time_calibration.Run01805.0000.hdf5',
+            'v0.1.0',
+            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/calibration.Run01805.0000.h5',
+            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/drs4_pedestal.Run01804.0000.fits',
+            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/time_calibration.Run01805.0000.h5',
             'extra/monitoring/DrivePositioning/drive_log_20_01_17.txt',
             'extra/monitoring/RunSummary/RunSummary_20200117.ecsv',
             '--stderr=log/sequence_LST1_01807.{{0}}_{{1}}.err'.format(str(subruns).zfill(4), str(job_id)),
@@ -196,10 +196,10 @@ def test_create_job_template_local(sequence_list):
             '-d',
             '2020_01_17',
             '--prod-id',
-            'v0.1.0_v01',
-            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0_v01/calibration.Run01805.0000.hdf5',
-            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0_v01/drs4_pedestal.Run01804.0000.fits',
-            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0_v01/time_calibration.Run01805.0000.hdf5',
+            'v0.1.0',
+            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/calibration.Run01805.0000.h5',
+            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/drs4_pedestal.Run01804.0000.fits',
+            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/time_calibration.Run01805.0000.h5',
             'extra/monitoring/DrivePositioning/drive_log_20_01_17.txt',
             'extra/monitoring/RunSummary/RunSummary_20200117.ecsv',
             '01807.{{0}}'.format(str(subruns).zfill(4)),

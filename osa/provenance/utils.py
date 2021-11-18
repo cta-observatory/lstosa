@@ -31,16 +31,13 @@ def parse_variables(class_instance):
 
     configfile = cfg.get("lstchain", "dl1ab_config")
     rawdir = cfg.get("LST1", "R0_DIR")
-    fits = cfg.get("LSTOSA", "FITSSUFFIX")
-    fz = cfg.get("LSTOSA", "COMPRESSEDSUFFIX")
-    h5 = cfg.get("LSTOSA", "H5SUFFIX")
-    r0_prefix = cfg.get("LSTOSA", "R0PREFIX")
-    dl1_prefix = cfg.get("LSTOSA", "DL1PREFIX")
-    dl2_prefix = cfg.get("LSTOSA", "DL2PREFIX")
+    r0_prefix = cfg.get("PATTERN", "R0PREFIX")
+    dl1_prefix = cfg.get("PATTERN", "DL1PREFIX")
+    dl2_prefix = cfg.get("PATTERN", "DL2PREFIX")
     rf_models_directory = cfg.get("lstchain", "RF_MODELS")
-    calib_dir = cfg.get("LST1", "CALIBDIR")
-    dl1_dir = cfg.get("LST1", "DL1DIR")
-    dl2_dir = cfg.get("LST1", "DL2DIR")
+    calib_dir = cfg.get("LST1", "CALIB_DIR")
+    dl1_dir = cfg.get("LST1", "DL1_DIR")
+    dl2_dir = cfg.get("LST1", "DL2_DIR")
     nightdir = lstdate_to_dir(options.date)
 
     if class_instance.__name__ == "r0_to_dl1":
@@ -78,13 +75,13 @@ def parse_variables(class_instance):
         )[0]
         outdir_dl1 = Path(dl1_dir) / nightdir / options.prod_id
         class_instance.DL1SubrunDataset = (
-            f"{outdir_dl1}{dl1_prefix}.Run{class_instance.args[5]}{h5}"
+            f"{outdir_dl1}{dl1_prefix}.Run{class_instance.args[5]}.h5"
         )
         # /fefs/aswg/data/real/R0/20200218/LST1.1.Run02006.0001.fits.fz
         class_instance.R0SubrunDataset = f"{rawdir}/" \
                                          f"{class_instance.ObservationDate}/" \
                                          f"{r0_prefix}." \
-                                         f"Run{class_instance.args[5]}{fits}{fz}"
+                                         f"Run{class_instance.args[5]}.fits.fz"
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile
 
@@ -113,10 +110,10 @@ def parse_variables(class_instance):
         # /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.0001.h5
         outdir_dl2 = Path(dl2_dir) / nightdir / options.dl2_prod_id
         class_instance.DL1SubrunDataset = (
-            f"{outdir_dl1}{dl1_prefix}.Run{class_instance.args[0]}{h5}"
+            f"{outdir_dl1}{dl1_prefix}.Run{class_instance.args[0]}.h5"
         )
         class_instance.DL2SubrunDataset = (
-            f"{outdir_dl2}/{dl2_prefix}.Run{class_instance.args[0]}{h5}"
+            f"{outdir_dl2}/{dl2_prefix}.Run{class_instance.args[0]}.h5"
         )
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile

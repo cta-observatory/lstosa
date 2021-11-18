@@ -90,14 +90,14 @@ def register_run_concept_files(run_string, concept):
         inputdir = join(options.directory, options.dl1_prod_id)
 
     outputdir = destination_dir(concept, create_dir=False)
-    type = cfg.get("LSTOSA", concept + "TYPE")
-    prefix = cfg.get("LSTOSA", concept + "PREFIX")
-    suffix = cfg.get("LSTOSA", concept + "SUFFIX")
-    log.debug(f"Registering {type} file for {prefix}*{run_string}*{suffix}")
+    data_level = cfg.get("PATTERN", concept + "TYPE")
+    prefix = cfg.get("PATTERN", concept + "PREFIX")
+    suffix = cfg.get("PATTERN", concept + "SUFFIX")
 
+    log.debug(f"Registering {data_level} file for {prefix}*{run_string}*{suffix}")
     if concept in [
         "DL1AB", "DATACHECK", "PEDESTAL", "CALIB", "TIMECALIB", "MUON", "DL2"
     ]:
-        register_files(type, run_string, inputdir, prefix, suffix, outputdir)
+        register_files(run_string, inputdir, prefix, suffix, outputdir)
     else:
         log.warning(f"Concept {concept} not known")

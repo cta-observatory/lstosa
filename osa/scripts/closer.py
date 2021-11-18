@@ -17,7 +17,7 @@ from osa.job import are_all_jobs_correctly_finished
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import get_runsummary_file, run_summary_table
 from osa.provenance.utils import store_conda_env_export
-from osa.raw import get_check_rawdir
+from osa.raw import get_check_raw_dir
 from osa.report import start
 from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import myLogger
@@ -38,7 +38,6 @@ __all__ = [
     "use_night_summary",
     "is_raw_data_available",
     "is_sequencer_successful",
-    "notify_sequencer_errors",
     "ask_for_closing",
     "post_process",
     "post_process_files",
@@ -100,8 +99,7 @@ def main():
             sequencer_tuple = is_finished_check(night_summary_table)
 
             if not is_sequencer_successful(sequencer_tuple):
-                # notify and ask for closing
-                notify_sequencer_errors()
+                log.info("Sequencer did not complete or finish unsuccessfully")
                 ask_for_closing()
         else:
             log.error("Never thought about this possibility, please check the code")
@@ -114,26 +112,21 @@ def main():
 
 def use_night_summary():
     """Check for the usage of night summary option and file existence."""
-
-    answer = False
-    if options.nightsummary:
-        night_summary_file = get_runsummary_file(options.date)
-        if os.path.exists(night_summary_file):
-            answer = True
-        else:
-            log.info("Night Summary expected but it does not exists.")
-            log.info("Please check it or use the -r option to give a reason.")
-            log.error("Night Summary missing and no reason option")
-    return answer
+    night_summary_file = get_runsummary_file(options.date)
+    if night_summary_file.exists():
+        return True
+    log.info("Night Summary expected but it does not exists.")
+    log.info("Please check it or use the -r option to give a reason.")
+    log.error("Night Summary missing and no reason option")
+    return False
 
 
 def is_raw_data_available():
     """Get the raw directory and check its existence."""
-
     answer = False
     if options.tel_id != "ST":
         # FIXME: adapt this function
-        raw_dir = get_check_rawdir()
+        raw_dir = get_check_raw_dir()
         if os.path.isdir(raw_dir):
             answer = True
     else:
@@ -142,23 +135,7 @@ def is_raw_data_available():
 
 
 def is_sequencer_successful(seq_tuple):
-    """
-
-    Parameters
-    ----------
-    seq_tuple
-
-    Returns
-    -------
-
-    """
     return seq_tuple[0]
-
-
-def notify_sequencer_errors():
-    """A good notification helps the user on deciding to close it or not."""
-
-    log.info("Sequencer did not complete or finish unsuccessfully")
 
 
 def ask_for_closing():
@@ -386,7 +363,7 @@ def is_finished_check(run_summary):
 
         # TODO: lines below could be used when sequencer is launched during datataking
         #       for the moment they are not useful
-        # if are_rawfiles_transferred():
+        # if are_raw_files_transferred():
         #     log.debug(f"Are files transferred? {sequence_list}")
         # else:
         #     log.info("More raw files are expected to appear")
@@ -435,7 +412,7 @@ def merge_dl1_datacheck(seq_list):
     # cleaning level. Muons fits files are in the base dl1 directory whereas
     # the dl1 and datacheck files are in the corresponding subdirectory for
     # each cleaning level.
-    dl1_base_directory = Path(cfg.get("LST1", "DL1DIR")) / nightdir / options.prod_id
+    dl1_base_directory = Path(cfg.get("LST1", "DL1_DIR")) / nightdir / options.prod_id
     dl1_prod_id_directory = dl1_base_directory / options.dl1_prod_id
 
     for sequence in seq_list:
@@ -519,7 +496,7 @@ def extract_provenance(seq_list):
                 options.directory,
                 "-o",
                 f"log/slurm_provenance_{sequence.run:05d}_%j.log",
-                f"{cfg.get('LSTOSA', 'SCRIPTSDIR')}/provprocess.py",
+                "provprocess",
                 "-c",
                 options.configfile,
                 f"{sequence.run:05d}",
