@@ -146,7 +146,7 @@ def time_calibration_command(
         run_summary: Path,
 ) -> list:
     """Build the command to run the time calibration."""
-    r0_path = Path(cfg.get("LST1", "RAWDIR")).absolute()
+    r0_path = Path(cfg.get("LST1", "R0_DIR")).absolute()
     calibration_data_file = f"{r0_path}/*/LST-1.1.Run{calibration_run}.000*.fits.fz"
 
     return [
@@ -424,7 +424,7 @@ def link_ref_time_calibration(
     The reference time calibration file is defined in the cfg file.
     """
 
-    ref_time_calibration_run = int(cfg.get("LSTOSA", "DEFAULT-TIME-CALIB-RUN"))
+    ref_time_calibration_run = int(cfg.get("calibration", "ref_time_calib_run"))
     calibration_path = Path(cfg.get("LST1", "CALIBDIR"))
     output_file = time_calibration_file
     log.info(

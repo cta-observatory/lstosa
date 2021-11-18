@@ -62,7 +62,7 @@ def get_check_rawdir():
 def getrawdir():
     nightdir = lstdate_to_dir(options.date)
     return (
-        join(cfg.get(options.tel_id, "RAWDIR"), nightdir)
+        join(cfg.get(options.tel_id, "R0_DIR"), nightdir)
         if options.tel_id in ["LST1", "LST2"]
         else None
     )

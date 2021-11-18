@@ -69,7 +69,7 @@ def getcurrentdate(sep):
         Date in string format using the given separator
 
     """
-    limitnight = int(cfg.get("LST", "NIGHTOFFSET"))
+    limitnight = int(cfg.get("DATE", "NIGHT_OFFSET"))
     now = datetime.utcnow()
     if (now.hour >= limitnight >= 0) or (now.hour < limitnight + 24 and limitnight < 0):
         # today, nothing to do
@@ -137,7 +137,7 @@ def get_prod_id():
         if cfg.get("LST1", "PROD-ID") is not None:
             options.prod_id = cfg.get("LST1", "PROD-ID")
         else:
-            options.prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
+            options.prod_id = get_lstchain_version()
 
     log.debug(f"Getting prod ID for the running analysis directory: {options.prod_id}")
 
@@ -155,9 +155,7 @@ def get_calib_prod_id():
         if cfg.get("LST1", "CALIB-PROD-ID") is not None:
             options.calib_prod_id = cfg.get("LST1", "CALIB-PROD-ID")
         else:
-            options.calib_prod_id = (
-                get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
-            )
+            options.calib_prod_id = get_lstchain_version()
 
     log.debug(f"Getting prod ID for calibration products: {options.calib_prod_id}")
 
@@ -177,9 +175,7 @@ def get_dl1_prod_id():
         if cfg.get("LST1", "DL1-PROD-ID") is not None:
             options.dl1_prod_id = cfg.get("LST1", "DL1-PROD-ID")
         else:
-            options.dl1_prod_id = (
-                get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
-            )
+            options.dl1_prod_id = get_lstchain_version()
 
     log.debug(f"Getting prod ID for DL1 products: {options.dl1_prod_id}")
 
@@ -197,9 +193,7 @@ def get_dl2_prod_id():
         if cfg.get("LST1", "DL2-PROD-ID") is not None:
             options.dl2_prod_id = cfg.get("LST1", "DL2-PROD-ID")
         else:
-            options.dl2_prod_id = (
-                get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
-            )
+            options.dl2_prod_id = get_lstchain_version()
 
     log.debug(f"Getting prod ID for DL2 products: {options.dl2_prod_id}")
 
@@ -269,7 +263,7 @@ def lstdate_to_number(night):
 
     """
     sepbar = ""
-    return night.replace(cfg.get("LST", "DATESEPARATOR"), sepbar)
+    return night.replace(cfg.get("DATE", "SEPARATOR"), sepbar)
 
 
 def lstdate_to_iso(night):
@@ -285,7 +279,7 @@ def lstdate_to_iso(night):
     Date in iso format YYYY-MM-DD
     """
     sepbar = "-"
-    return night.replace(cfg.get("LST", "DATESEPARATOR"), sepbar)
+    return night.replace(cfg.get("DATE", "SEPARATOR"), sepbar)
 
 
 def lstdate_to_dir(date):
@@ -301,23 +295,14 @@ def lstdate_to_dir(date):
     -------
     String with the date in YYYYMMDD format
     """
-    nightdir = date.split(cfg.get("LST", "DATESEPARATOR"))
+    nightdir = date.split(cfg.get("DATE", "SEPARATOR"))
     if len(nightdir) != 3:
         log.error(f"Night directory structure could not be created from {nightdir}")
     return "".join(nightdir)
 
 
 def is_defined(variable):
-    """
-
-    Parameters
-    ----------
-    variable
-
-    Returns
-    -------
-
-    """
+    """Check if a variable is already defined."""
     try:
         variable
     except NameError:
@@ -583,7 +568,7 @@ def get_input_file(run_number: str) -> Path:
     IOError
         If the input file cannot be found.
     """
-    r0_path = Path(cfg.get("LST1", "RAWDIR")).absolute()
+    r0_path = Path(cfg.get("LST1", "R0_DIR")).absolute()
 
     # Get raw data file.
     file_list = list(

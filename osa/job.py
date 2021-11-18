@@ -172,7 +172,7 @@ def historylevel(historyfile, data_type):
             except (IndexError, ValueError) as err:
                 log.exception(f"Malformed history file {historyfile}, {err}")
             else:
-                if program == cfg.get("LSTOSA", "R0-DL1"):
+                if program == cfg.get("lstchain", "r0_to_dl1"):
                     level = 3 if exit_status == 0 else 4
                 elif program == "lstchain_dl1ab":
                     if (exit_status == 0) and (prod_id == options.dl1_prod_id):
@@ -188,7 +188,7 @@ def historylevel(historyfile, data_type):
                         break
                 elif program == "lstchain_check_dl1":
                     level = 1 if exit_status == 0 else 2
-                elif program == cfg.get("LSTOSA", "DL1-DL2"):
+                elif program == cfg.get("lstchain", "dl1_to_dl2"):
                     if (exit_status == 0) and (prod_id == options.dl2_prod_id):
                         log.debug(f"DL2 prod ID: {options.dl2_prod_id} already produced")
                         level = 0
@@ -339,10 +339,10 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
             sbatch_parameters.append(f"--array=0-{subruns}")
 
         sbatch_parameters.append(
-            f"--partition={cfg.get('SBATCH', f'PARTITION-{sequence.type}')}"
+            f"--partition={cfg.get('SLURM', f'PARTITION-{sequence.type}')}"
         )
         sbatch_parameters.append(
-            f"--mem-per-cpu={cfg.get('SBATCH', f'MEMSIZE-{sequence.type}')}"
+            f"--mem-per-cpu={cfg.get('SLURM', f'MEMSIZE-{sequence.type}')}"
         )
 
         return ["#SBATCH " + line for line in sbatch_parameters]
@@ -521,7 +521,7 @@ def create_job_template(sequence, get_content=False):
         return content
 
 
-def submit_jobs(sequence_list):
+def submit_jobs(sequence_list, batch_command="sbatch"):
     """
     Submit the jobs to the cluster.
 
@@ -536,11 +536,10 @@ def submit_jobs(sequence_list):
         List of submitted job IDs.
     """
     job_list = []
-    command = cfg.get("ENV", "SBATCHBIN")
     no_display_backend = "--export=ALL,MPLBACKEND=Agg"
 
     for sequence in sequence_list:
-        commandargs = [command, "--parsable", no_display_backend]
+        commandargs = ["sbatch", "--parsable", no_display_backend]
         if sequence.type == "PEDCALIB":
             commandargs.append(sequence.script)
             if options.simulate or options.no_calib or options.test:
@@ -554,7 +553,7 @@ def submit_jobs(sequence_list):
                 except subprocess.CalledProcessError as error:
                     log.exception(error)
                 except OSError as error:
-                    log.exception(f"Command '{command}' not found, error {error}")
+                    log.exception(f"Command '{batch_command}' not found, error {error}")
             log.debug(commandargs)
 
             # FIXME here s.jobid has not been redefined se it keeps the one
@@ -654,10 +653,9 @@ def queue_job_list(sequence_list):
     if shutil.which('sacct') is None:
         log.warning("No job info available since sacct command is not available")
     else:
-        user = cfg.get("ENV", "USER")
         sacct_format = "--format=jobid%8,jobname%25,cputime,elapsed,state,exitcode"
         start_date = (datetime.date.today() - datetime.timedelta(weeks=1)).isoformat()
-        commandargs = ["sacct", "-u", user, "--starttime", start_date, sacct_format]
+        commandargs = ["sacct", "--starttime", start_date, sacct_format]
         queue_list = []
         try:
             sacct_output = subprocess.check_output(
@@ -669,6 +667,7 @@ def queue_job_list(sequence_list):
             log.exception(f"Command '{stringify(commandargs)}' failed, {error}")
         else:
             queue_header = sacct_output.splitlines()[0].split()
+            # FIXME: jobs are no longer named squeue_* but LST1*
             queue_lines = (
                 sacct_output.replace("+", "")
                 .replace("sequence_", "")
