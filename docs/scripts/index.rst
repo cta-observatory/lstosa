@@ -95,7 +95,7 @@ Usage
 -----
 .. argparse::
    :module: osa.utils.cliopts
-   :func: datasequence_argparser
+   :func: data_sequence_argparser
    :prog: datasequence.py
 
 API/References
