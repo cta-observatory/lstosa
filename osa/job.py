@@ -529,6 +529,8 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     ----------
     sequence_list: list
         List of sequences to submit.
+    batch_command: str
+        The batch command to submit the job (Default: sbatch)
 
     Returns
     -------
@@ -539,7 +541,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     no_display_backend = "--export=ALL,MPLBACKEND=Agg"
 
     for sequence in sequence_list:
-        commandargs = ["sbatch", "--parsable", no_display_backend]
+        commandargs = [batch_command, "--parsable", no_display_backend]
         if sequence.type == "PEDCALIB":
             commandargs.append(sequence.script)
             if options.simulate or options.no_calib or options.test:
@@ -628,9 +630,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
                     log.debug(f"Launching script {sequence.script}")
                     subprocess.check_output(commandargs, shell=False)
                 except subprocess.CalledProcessError as error:
-                    log.exception(error, 2)
-                except OSError as error:
-                    log.exception(f"Command '{command}' not found", error)
+                    log.exception(error)
             log.debug(commandargs)
         job_list.append(sequence.script)
 
