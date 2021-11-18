@@ -1,11 +1,9 @@
-"""
-It reads the night summary file
-"""
+"""Searches for the run summary file and reads it."""
 
 import logging
-import os
 import subprocess
 import sys
+from pathlib import Path
 
 from astropy.table import Table
 
@@ -54,7 +52,7 @@ def build_external(command, rawdir):
         return stdout
 
 
-def run_summary_table(date):
+def run_summary_table(date) -> Table:
     """
     Reads the run summary ECSV file containing an astropy
     Table with the following content:
@@ -76,7 +74,7 @@ def run_summary_table(date):
     """
     night_summary_file = get_runsummary_file(date)
     log.debug(f"Looking for run summary file {night_summary_file}")
-    if not os.path.isfile(night_summary_file):
+    if not night_summary_file.exists():
         log.error(f"Run summary file {night_summary_file} not found")
         sys.exit(1)
 
@@ -85,14 +83,14 @@ def run_summary_table(date):
     return table
 
 
-def get_runsummary_file(date):
+def get_runsummary_file(date) -> Path:
     """
     Builds the file name of the run summary ECSV file.
 
     Returns
     -------
-    runsummary_file : str
+    runsummary_file : pathlib.Path
         File name of the run summary ECSV file
     """
     nightdir = lstdate_to_dir(date)
-    return os.path.join(cfg.get("LST1", "RUN_SUMMARY_DIR"), f"RunSummary_{nightdir}.ecsv")
+    return Path(cfg.get("LST1", "RUN_SUMMARY_DIR")) / f"RunSummary_{nightdir}.ecsv"

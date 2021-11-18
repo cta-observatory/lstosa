@@ -25,7 +25,8 @@ __all__ = [
     "closer_argparser",
     "closercliparsing",
     "copy_datacheck_parsing",
-    "datasequencecliparsing",
+    "data_sequence_cli_parsing",
+    "data_sequence_argparser",
     "provprocessparsing",
     "rawcopycliparsing",
     "sequencer_argparser",
@@ -346,7 +347,7 @@ def calibration_sequence_cliparsing():
     )
 
 
-def datasequence_argparser():
+def data_sequence_argparser():
     parser = ArgumentParser()
     parser.add_argument(
         "-c",
@@ -431,14 +432,29 @@ def datasequence_argparser():
         default=False,
         help="Do not produce DL2 files (default False)",
     )
-    parser.add_argument("calib_file", help="Path of the calibration file")
-    parser.add_argument("drs4_ped_file", help="Path of the DRS4 pedestal file")
-    parser.add_argument("time_calib_file", help="Path of the time calibration file")
     parser.add_argument(
-        "drive_log_file", help="Path of drive log file with pointing information"
+        "calib_file",
+        type=Path,
+        help="Path of the calibration file"
+    )
+    parser.add_argument(
+        "drs4_ped_file",
+        type=Path,
+        help="Path of the DRS4 pedestal file"
+    )
+    parser.add_argument(
+        "time_calib_file",
+        type=Path,
+        help="Path of the time calibration file"
+    )
+    parser.add_argument(
+        "drive_log_file",
+        type=Path,
+        help="Path of drive log file with pointing information"
     )
     parser.add_argument(
         "run_summary_file",
+        type=Path,
         help="Path of run summary file with time reference information",
     )
     parser.add_argument("run_number", help="Number of the run to be processed")
@@ -446,10 +462,10 @@ def datasequence_argparser():
     return parser
 
 
-def datasequencecliparsing():
+def data_sequence_cli_parsing():
 
     # parse the command line
-    opts = datasequence_argparser().parse_args()
+    opts = data_sequence_argparser().parse_args()
 
     # set global variables
     options.configfile = opts.configfile
@@ -959,7 +975,7 @@ def set_default_date_if_needed():
     if is_defined(options.date):
         return options.date
 
-    return getcurrentdate(cfg.get("LST", "DATESEPARATOR"))
+    return getcurrentdate(cfg.get("DATE", "SEPARATOR"))
 
 
 def set_default_directory_if_needed():
