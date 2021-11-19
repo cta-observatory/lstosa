@@ -281,32 +281,42 @@ def get_job_statistics():
     the number of jobs running, the number of jobs queued.
     It will fetch the information from the sacct output.
     """
-    # Call sacct output and take information from it.
-    sacct_output = subprocess.check_output(
-        ["sacct", "-X", "-n", "-o", "JobID,JobName,State,Elapsed,MaxRSS,MaxVMSize"]
-    )
-    sacct_output = sacct_output.decode("utf-8")
-    sacct_output = sacct_output.split("\n")
-    sacct_output = sacct_output[1:]  # remove header
-    # Copy the information to a pandas dataframe.
-    job_information = pd.DataFrame(
-        columns=["JobID", "JobName", "State", "Elapsed", "MaxRSS", "MaxVMSize"]
-    )
-
-    # Plot the an 2D histogram of the memory use (MaxRSS) as a function of the
-    # elapsed time taking also into account the State of the job.
-    plt.figure(figsize=(10, 8))
-    plt.title("Elapsed time as a function of MaxRSS")
-    plt.xlabel("MaxRSS")
-    plt.ylabel("Elapsed time")
-    plt.grid(True)
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.tight_layout()
-    plt.hist2d(job_information["Elapsed"], job_information["MaxRSS"], bins=100)
-
     # TODO: this function will be called in the closer loop after all
     #  the jobs are done for a given production.
+
+    if shutil.which('sacct') is None:
+        log.warning("No job info available since sacct command is not available")
+    else:
+        sacct_output = subprocess.check_output(
+            [
+                "sacct",
+                "-X",
+                "-n",
+                "--parsable",
+                "--delimiter=,",
+                "-o",
+                "JobID,JobName,State,Elapsed,CPUTimeRAW,MaxRSS"
+            ],
+            universal_newlines=True
+        )
+        sacct_output_lines = sacct_output.split("\n")
+        job_information = pd.DataFrame(
+            [line.split(",") for line in sacct_output_lines],
+            columns=["JobID", "JobName", "State", "Elapsed", "CPUTimeRAW", "MaxRSS"]
+        )
+
+        # Plot the an 2D histogram of the used memory (MaxRSS) as a function of the
+        # elapsed time taking also into account the State of the job.
+        plt.figure(figsize=(10, 8))
+        plt.title("Elapsed time as a function of MaxRSS")
+        plt.xlabel("MaxRSS")
+        plt.ylabel("Elapsed time")
+        plt.grid(True)
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.tight_layout()
+        plt.hist2d(job_information["Elapsed"], job_information["MaxRSS"], bins=100)
+        plt.savefig("job_statistics.pdf")
 
 
 def scheduler_env_variables(sequence, scheduler="slurm"):
@@ -661,6 +671,8 @@ def queue_job_list(sequence_list):
         else:
             queue_header = sacct_output.splitlines()[0].split()
             # FIXME: jobs are no longer named squeue_* but LST1*
+            #  this can be further simplified with sacct --noheader
+            #  -X option to sacct and parsable output
             queue_lines = (
                 sacct_output.replace("+", "")
                 .replace("sequence_", "")
