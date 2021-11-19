@@ -2,7 +2,7 @@
 
 Scripts
 =======
-LSTOSA scrips to be executed from the command line are described below:
+Scrips to be executed from the command line are described below:
 
 * `sequencer.py`_
 * `calibrationsequence.py`_
@@ -18,7 +18,7 @@ LSTOSA scrips to be executed from the command line are described below:
 sequencer.py
 ++++++++++++
 
-The sequencer is the heart of LSTOSA. Right now can only executed
+The sequencer is the main script of ``lstosa``. Right now can only executed
 only for ``LST1`` telescope. It triggers the whole analysis chain,
 creating the **analysis folders** and sending jobs to the SLURM queue system.
 For each run/sequence it sends a job to the working nodes.
@@ -110,10 +110,9 @@ API/References
 closer.py
 +++++++++
 
-Closer script for OSA, check that all sequences are finished and
-completed, extract the provenance from the ``prov.log`` file and
-merge the DL1 data-check files. It also moves the analysis products
-to their final destinations.
+Checks that all sequences are finished and completed, extract the
+provenance from the ``prov.log`` file and merge the DL1 data-check files.
+It also moves the analysis products to their final destinations.
 
 .. warning::
 
