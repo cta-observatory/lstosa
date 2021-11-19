@@ -220,6 +220,7 @@ def dl1_datacheck(run_str: str, history_file: Path):
     """
     # Create a new subdirectory for the dl1ab output
     dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
+    dl1ab_config_file = Path(cfg.get("lstchain", "dl1ab_config"))
     input_dl1_datafile = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
     output_directory = Path(options.directory) / options.dl1_prod_id
     output_directory.mkdir(parents=True, exist_ok=True)
@@ -245,7 +246,7 @@ def dl1_datacheck(run_str: str, history_file: Path):
         options.dl1_prod_id,
         command,
         input_dl1_datafile,
-        None,
+        dl1ab_config_file,
     )
 
 
