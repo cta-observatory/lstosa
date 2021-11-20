@@ -174,7 +174,7 @@ def historylevel(historyfile, data_type):
             else:
                 if program == cfg.get("lstchain", "r0_to_dl1"):
                     level = 3 if exit_status == 0 else 4
-                elif program == "lstchain_dl1ab":
+                elif program == cfg.get("lstchain", "dl1ab"):
                     if (exit_status == 0) and (prod_id == options.dl1_prod_id):
                         log.debug(
                             f"DL1ab prod ID: {options.dl1_prod_id} already produced"
@@ -186,7 +186,7 @@ def historylevel(historyfile, data_type):
                             f"DL1ab prod ID: {options.dl1_prod_id} not produced yet"
                         )
                         break
-                elif program == "lstchain_check_dl1":
+                elif program == cfg.get("lstchain", "check_dl1"):
                     level = 1 if exit_status == 0 else 2
                 elif program == cfg.get("lstchain", "dl1_to_dl2"):
                     if (exit_status == 0) and (prod_id == options.dl2_prod_id):
@@ -195,11 +195,11 @@ def historylevel(historyfile, data_type):
                     else:
                         level = 1
                         log.debug(f"DL2 prod ID: {options.dl2_prod_id} not produced yet")
-                elif program == "drs4_baseline":
+                elif program == cfg.get("lstchain", "drs4_baseline"):
                     level = 2 if exit_status == 0 else 3
-                elif program == "time_calibration":
+                elif program == cfg.get("lstchain", "time_calibration"):
                     level = 1 if exit_status == 0 else 2
-                elif program == "charge_calibration":
+                elif program == cfg.get("lstchain", "charge_calibration"):
                     level = 0 if exit_status == 0 else 1
                 else:
                     log.warning(f"Program name not identified {program}")

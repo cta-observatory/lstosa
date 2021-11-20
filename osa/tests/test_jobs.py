@@ -224,9 +224,9 @@ def test_set_cache_dirs():
 def test_calibration_history_level():
     from osa.job import check_history_level
     levels = {
-        'drs4_pedestal': 2,
-        'time_calibration': 1,
-        'charge_calibration': 0
+        "lstchain_data_create_drs4_pedestal_file": 2,
+        "lstchain_data_create_time_calibration_file": 1,
+        "lstchain_create_calibration_file": 0
     }
     level, exit_status = check_history_level(
         calibration_history_file, levels
