@@ -14,7 +14,7 @@ def test_get_nightsummary_file():
 def test_run_summary_table():
     from osa.nightsummary.nightsummary import run_summary_table
 
-    date = "20200117"
+    date = "2020_01_17"
     summary = run_summary_table(date)
 
     assert "run_id" in summary.columns

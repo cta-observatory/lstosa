@@ -6,8 +6,11 @@ from osa.configs import options
 from osa.nightsummary.extract import extractruns, extractsubruns, extractsequences
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.scripts.tests.test_osa_scripts import run_program
+from osa.utils.utils import lstdate_to_dir
 
-date = "20200117"
+
+date = "2020_01_17"
+nightdir = lstdate_to_dir(date)
 prod_id = "v0.1.0"
 dl1_prod_id = "tailcut84"
 
@@ -20,14 +23,14 @@ def base_test_dir(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def running_analysis_dir(base_test_dir):
-    analysis_dir = base_test_dir / "running_analysis" / date / prod_id
+    analysis_dir = base_test_dir / "running_analysis" / nightdir / prod_id
     analysis_dir.mkdir(parents=True, exist_ok=True)
     return analysis_dir
 
 
 @pytest.fixture(scope="session")
 def r0_dir(base_test_dir):
-    r0_directory = base_test_dir / "R0" / date
+    r0_directory = base_test_dir / "R0" / nightdir
     r0_directory.mkdir(parents=True, exist_ok=True)
     return r0_directory
 

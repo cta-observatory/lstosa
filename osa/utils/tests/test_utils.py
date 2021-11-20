@@ -1,6 +1,8 @@
 import datetime
 from pathlib import Path
 
+import pytest
+
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.utils import lstdate_to_dir
@@ -29,12 +31,6 @@ def test_night_directory(running_analysis_dir):
     assert night_directory().resolve() == running_analysis_dir
 
 
-def test_lstdate_to_number():
-    from osa.utils.utils import lstdate_to_number
-
-    assert lstdate_to_number("2020_01_01") == "20200101"
-
-
 def test_get_lstchain_version():
     from osa.utils.utils import get_lstchain_version
     from lstchain import __version__
@@ -53,6 +49,13 @@ def test_date_in_yymmdd():
     from osa.utils.utils import date_in_yymmdd
 
     assert date_in_yymmdd("20200113") == "20_01_13"
+
+
+def test_lstdate_to_dir():
+    from osa.utils.utils import lstdate_to_dir
+    assert lstdate_to_dir("2020_01_17") == "20200117"
+    with pytest.raises(ValueError):
+        lstdate_to_dir("2020-01-17")
 
 
 def test_destination_dir():
@@ -91,15 +94,6 @@ def test_destination_dir():
             expected_directory = base_path / dst_dir / datedir / options.prod_id
 
         assert directory == expected_directory
-
-
-def test_time_to_seconds():
-    from osa.utils.utils import time_to_seconds
-
-    seconds_with_day = time_to_seconds("2-02:27:15")
-    assert seconds_with_day == 2 * 24 * 3600 + 2 * 3600 + 27 * 60 + 15
-    seconds = time_to_seconds("02:27:15")
-    assert seconds == 2 * 3600 + 27 * 60 + 15
 
 
 def test_get_input_file(r0_data):
