@@ -898,7 +898,7 @@ def set_default_date_if_needed():
     if is_defined(options.date):
         return options.date
 
-    return getcurrentdate(cfg.get("DATE", "SEPARATOR"))
+    return getcurrentdate()
 
 
 def set_default_directory_if_needed():

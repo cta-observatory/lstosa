@@ -24,14 +24,11 @@ __all__ = [
     "copy_files_datacheck_web",
     "lstdate_to_dir",
     "lstdate_to_iso",
-    "lstdate_to_number",
     "is_day_closed",
     "get_prod_id",
     "date_in_yymmdd",
     "destination_dir",
-    "time_to_seconds",
     "date_in_yymmdd",
-    "time_to_seconds",
     "get_lock_file",
     "is_defined",
     "destination_dir",
@@ -52,7 +49,7 @@ DATACHECK_PRODUCTS = ["drs4", "enf_calibration", "dl1"]
 DATACHECK_BASEDIR = Path(cfg.get("WEBSERVER", "DATACHECK"))
 
 
-def getcurrentdate(sep):
+def getcurrentdate(sep="_"):
     """
     Get current data following LST data-taking convention in which the date
     changes at 12:00 pm instead of 00:00 or 12:00 am to cover a natural
@@ -67,14 +64,14 @@ def getcurrentdate(sep):
     -------
     string_date: string
         Date in string format using the given separator
-
     """
-    limitnight = int(cfg.get("DATE", "NIGHT_OFFSET"))
+    limit_night = int(cfg.get("LSTOSA", "NIGHT_OFFSET"))
     now = datetime.utcnow()
-    if (now.hour >= limitnight >= 0) or (now.hour < limitnight + 24 and limitnight < 0):
+    if (now.hour >= limit_night >= 0) or \
+            (now.hour < limit_night + 24 and limit_night < 0):
         # today, nothing to do
         pass
-    elif limitnight >= 0:
+    elif limit_night >= 0:
         # yesterday
         gap = timedelta(hours=24)
         now = now - gap
@@ -82,8 +79,8 @@ def getcurrentdate(sep):
         # tomorrow
         gap = timedelta(hours=24)
         now = now + gap
-    string_date = now.strftime("%Y" + sep + "%m" + sep + "%d")
-    log.debug(f"stringdate by default {string_date}")
+    string_date = now.strftime(f"%Y{sep}%m{sep}%d")
+    log.debug(f"Date string by default {string_date}")
     return string_date
 
 
@@ -245,55 +242,18 @@ def get_lock_file():
     return lock_file
 
 
-def lstdate_to_number(night):
-    """
-    Function to change from YYYY_MM_DD to YYYYMMDD
-
-    Parameters
-    ----------
-    night
-
-    Returns
-    -------
-
-    """
-    sepbar = ""
-    return night.replace(cfg.get("DATE", "SEPARATOR"), sepbar)
+def lstdate_to_iso(date_string):
+    """Function to change from YYYY_MM_DD to YYYY-MM-DD."""
+    date_format = "%Y_%m_%d"
+    datetime.strptime(date_string, date_format)
+    return date_string.replace("_", "-")
 
 
-def lstdate_to_iso(night):
-    """
-    Function to change from YYYY_MM_DD to YYYY-MM-DD
-
-    Parameters
-    ----------
-    night: Date in YYYY_MM_DD format
-
-    Returns
-    -------
-    Date in iso format YYYY-MM-DD
-    """
-    sepbar = "-"
-    return night.replace(cfg.get("DATE", "SEPARATOR"), sepbar)
-
-
-def lstdate_to_dir(date):
-    """
-    Function to change from YYYY_MM_DD to YYYYMMDD.
-
-    Parameters
-    ----------
-    date: string
-        String with the date in YYYY_MM_DD format
-
-    Returns
-    -------
-    String with the date in YYYYMMDD format
-    """
-    nightdir = date.split(cfg.get("DATE", "SEPARATOR"))
-    if len(nightdir) != 3:
-        log.error(f"Night directory structure could not be created from {nightdir}")
-    return "".join(nightdir)
+def lstdate_to_dir(date_string):
+    """Function to change from YYYY_MM_DD to YYYYMMDD."""
+    date_format = "%Y_%m_%d"
+    datetime.strptime(date_string, date_format)
+    return date_string.replace("_", "")
 
 
 def is_defined(variable):
@@ -306,12 +266,7 @@ def is_defined(variable):
 
 
 def get_night_limit_timestamp():
-    """
-
-    Returns
-    -------
-
-    """
+    """Night limit timestamp for DB."""
     from dev.mysql import select_db
 
     night_limit = None
@@ -370,35 +325,6 @@ def is_day_closed():
     """Get the name and Check for the existence of the Closer flag file."""
     flag_file = get_lock_file()
     return bool(exists(flag_file))
-
-
-def time_to_seconds(timestring):
-    """Transform (D-)HH:MM:SS time format to seconds.
-
-    Parameters
-    ----------
-    timestring: str
-        Time in format (D-)HH:MM:SS
-
-    Returns
-    -------
-    Seconds that correspond to (D-)HH:MM:SS
-
-    """
-    if timestring is None:
-        timestring = "00:00:00"
-    if "-" in timestring:
-        # Day is also specified (D-)HH:MM:SS
-        days, hhmmss = timestring.split(
-            "-",
-        )
-        hours, minutes, seconds = hhmmss.split(":")
-        return (
-            int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
-        )
-
-    hours, minutes, seconds = timestring.split(":")
-    return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
 
 
 def date_in_yymmdd(date_string):

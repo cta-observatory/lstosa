@@ -17,7 +17,7 @@ from osa.nightsummary.nightsummary import run_summary_table
 from osa.provenance.utils import get_log_config
 from osa.utils.cliopts import simprocparsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_number
+from osa.utils.utils import lstdate_to_dir
 
 __all__ = [
     "parse_template",
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
     simprocparsing()
-    options.directory = lstdate_to_number(options.date)
+    options.directory = lstdate_to_dir(options.date)
 
     log.info("Running simulate processing")
 
