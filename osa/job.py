@@ -40,7 +40,7 @@ __all__ = [
 ]
 
 TAB = "\t".expandtabs(4)
-FORMAT_SLURM=[
+FORMAT_SLURM = [
     "JobID",
     "JobName",
     "CPUTime",
@@ -302,15 +302,20 @@ def plot_job_statistics(sacct_output: pd.DataFrame):
 
     # Plot the an 2D histogram of the used memory (MaxRSS) as a function of the
     # elapsed time taking also into account the State of the job.
-    plt.figure(figsize=(10, 8))
-    plt.title("Elapsed time as a function of MaxRSS")
-    plt.xlabel("MaxRSS")
-    plt.ylabel("Elapsed time")
-    plt.grid(True)
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.tight_layout()
-    plt.hist2d(sacct_output["Elapsed"], sacct_output["MaxRSS"], bins=100)
+    sacct_output_filter = sacct_output.copy()
+    sacct_output_filter = sacct_output_filter.dropna()
+    # Remove the G from MaxRSS value and convert to float
+    sacct_output_filter["MaxRSS"] = sacct_output_filter["MaxRSS"].\
+        str.strip("G").astype(float)
+
+    plt.figure()
+    plt.hist2d(
+        sacct_output_filter.MaxRSS,
+        sacct_output_filter.CPUTimeRAW / 3600,
+        bins=50
+    )
+    plt.xlabel("MaxRSS [GB]")
+    plt.ylabel("Elapsed time [h]")
     plt.savefig("job_statistics.pdf")
 
 
@@ -649,10 +654,10 @@ def get_sacct_output() -> pd.DataFrame:
         sacct_output = subprocess.check_output(
             [
                 "sacct",
-                "-X",
                 "-n",
                 "--parsable2",
                 "--delimiter=,",
+                "--units=G",
                 "--starttime",
                 start_date,
                 "-o",
@@ -661,10 +666,12 @@ def get_sacct_output() -> pd.DataFrame:
             universal_newlines=True
         )
         sacct_output_lines = sacct_output.splitlines()
-        return pd.DataFrame(
+        sacct_output = pd.DataFrame(
             [line.split(",") for line in sacct_output_lines],
             columns=FORMAT_SLURM
         )
+        sacct_output["JobID"] = sacct_output["JobID"].apply(lambda x: x.split("_")[0])
+        return sacct_output
 
 
 def filter_queue(sacct_output_info: pd.DataFrame, sequence_list: list):
