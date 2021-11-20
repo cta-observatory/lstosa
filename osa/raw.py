@@ -17,6 +17,9 @@ __all__ = [
 
 
 def are_raw_files_transferred_for_tel(tel_id):
+    """Check that there is a flag indicating the end of transferring raw data."""
+    # TODO: This function is to be removed. The raw files are not being transferred
+    #  to RAID. We should check for the end of observation instead (around 8:00 UTC)
     night_dir = lstdate_to_dir(options.date)
     end_of_transfer = Path(cfg.get(tel_id, "ENDOFRAWTRANSFERDIR")) / night_dir
     flag_file = end_of_transfer / cfg.get("LSTOSA", "end_of_activity")
@@ -36,7 +39,6 @@ def are_raw_files_transferred_for_tel(tel_id):
 def are_raw_files_transferred() -> bool:
     if options.tel_id != "ST":
         return are_raw_files_transferred_for_tel(options.tel_id)
-    return are_raw_files_transferred_for_tel("LST1")
 
 
 def get_check_raw_dir() -> Path:
