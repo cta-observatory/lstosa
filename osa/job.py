@@ -17,12 +17,9 @@ import pandas as pd
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.iofile import read_from_file, write_to_file
-from osa.utils.utils import date_in_yymmdd, lstdate_to_dir, time_to_seconds, stringify
-
+from osa.utils.utils import date_in_yymmdd, lstdate_to_dir
 
 log = logging.getLogger(__name__)
-
-TAB = "\t".expandtabs(4)
 
 __all__ = [
     "are_all_jobs_correctly_finished",
@@ -30,15 +27,29 @@ __all__ = [
     "prepare_jobs",
     "sequence_filenames",
     "sequence_calibration_filenames",
-    "queue_job_list",
-    "queue_values",
+    "set_queue_values",
     "job_header_template",
+    "plot_job_statistics",
     "scheduler_env_variables",
     "create_job_template",
     "set_cache_dirs",
     "setrunfromparent",
     "submit_jobs",
-    "check_history_level"
+    "check_history_level",
+    "get_sacct_output"
+]
+
+TAB = "\t".expandtabs(4)
+FORMAT_SLURM=[
+    "JobID",
+    "JobName",
+    "CPUTime",
+    "CPUTimeRAW",
+    "Elapsed",
+    "TotalCPU",
+    "MaxRSS",
+    "State",
+    "ExitCode"
 ]
 
 
@@ -56,6 +67,7 @@ def are_all_jobs_correctly_finished(sequence_list):
     -------
     flag: bool
     """
+    # FIXME: check based on squence.jobid exit status
     flag = True
     for sequence in sequence_list:
         history_files_list = glob(
@@ -127,12 +139,12 @@ def historylevel(historyfile, data_type):
     Returns the level from which the analysis should begin and
     the rc of the last executable given a certain history file.
 
-    For PEDCALIB sequences:
+    Workflow for PEDCALIB sequences:
      - DRS4->time calib is level 3->2
      - time calib->charge calib is level 2->1
      - charge calib 1->0 (sequence completed)
 
-    For DATA sequences:
+    Workflow for DATA sequences:
      - R0->DL1 is level 4->3
      - DL1->DL1AB is level 3->2
      - DATACHECK is level 2->1
@@ -274,49 +286,32 @@ def sequence_calibration_filenames(sequence_list):
         sequence.pedestal = Path(options.directory) / pedfile
 
 
-def get_job_statistics():
+def plot_job_statistics(sacct_output: pd.DataFrame):
     """
     Get statistics of the jobs. Check elapsed time used,
     the memory used, the number of jobs completed, the number of jobs failed,
     the number of jobs running, the number of jobs queued.
     It will fetch the information from the sacct output.
+
+    Parameters
+    ----------
+    sacct_output: pd.DataFrame
     """
     # TODO: this function will be called in the closer loop after all
     #  the jobs are done for a given production.
 
-    if shutil.which('sacct') is None:
-        log.warning("No job info available since sacct command is not available")
-    else:
-        sacct_output = subprocess.check_output(
-            [
-                "sacct",
-                "-X",
-                "-n",
-                "--parsable",
-                "--delimiter=,",
-                "-o",
-                "JobID,JobName,State,Elapsed,CPUTimeRAW,MaxRSS"
-            ],
-            universal_newlines=True
-        )
-        sacct_output_lines = sacct_output.split("\n")
-        job_information = pd.DataFrame(
-            [line.split(",") for line in sacct_output_lines],
-            columns=["JobID", "JobName", "State", "Elapsed", "CPUTimeRAW", "MaxRSS"]
-        )
-
-        # Plot the an 2D histogram of the used memory (MaxRSS) as a function of the
-        # elapsed time taking also into account the State of the job.
-        plt.figure(figsize=(10, 8))
-        plt.title("Elapsed time as a function of MaxRSS")
-        plt.xlabel("MaxRSS")
-        plt.ylabel("Elapsed time")
-        plt.grid(True)
-        plt.xscale("log")
-        plt.yscale("log")
-        plt.tight_layout()
-        plt.hist2d(job_information["Elapsed"], job_information["MaxRSS"], bins=100)
-        plt.savefig("job_statistics.pdf")
+    # Plot the an 2D histogram of the used memory (MaxRSS) as a function of the
+    # elapsed time taking also into account the State of the job.
+    plt.figure(figsize=(10, 8))
+    plt.title("Elapsed time as a function of MaxRSS")
+    plt.xlabel("MaxRSS")
+    plt.ylabel("Elapsed time")
+    plt.grid(True)
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.tight_layout()
+    plt.hist2d(sacct_output["Elapsed"], sacct_output["MaxRSS"], bins=100)
+    plt.savefig("job_statistics.pdf")
 
 
 def scheduler_env_variables(sequence, scheduler="slurm"):
@@ -436,8 +431,6 @@ def create_job_template(sequence, get_content=False):
 
     if options.verbose:
         commandargs.append("-v")
-    if options.warning:
-        commandargs.append("-w")
     if options.configfile:
         commandargs.append("-c")
         commandargs.append(Path(options.configfile).resolve())
@@ -640,122 +633,105 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     return job_list
 
 
-def queue_job_list(sequence_list):
+def get_sacct_output() -> pd.DataFrame:
     """
     Fetch the information of jobs in the queue using the sacct SLURM command
-
-    Parameters
-    ----------
-    sequence_list
+    and store it in a pandas dataframe.
 
     Returns
     -------
-    queue_list: list
-        List of jobs in the queue
+    queue_list: pd.DataFrame
     """
     if shutil.which('sacct') is None:
         log.warning("No job info available since sacct command is not available")
     else:
-        sacct_format = "--format=jobid%8,jobname%25,cputime,elapsed,state,exitcode"
         start_date = (datetime.date.today() - datetime.timedelta(weeks=1)).isoformat()
-        commandargs = ["sacct", "--starttime", start_date, sacct_format]
-        queue_list = []
-        try:
-            sacct_output = subprocess.check_output(
-                commandargs, universal_newlines=True, shell=False
-            )
-        except subprocess.CalledProcessError as error:
-            log.exception(f"Command '{stringify(commandargs)}' failed, {error}")
-        except OSError as error:
-            log.exception(f"Command '{stringify(commandargs)}' failed, {error}")
-        else:
-            queue_header = sacct_output.splitlines()[0].split()
-            # FIXME: jobs are no longer named squeue_* but LST1*
-            #  this can be further simplified with sacct --noheader
-            #  -X option to sacct and parsable output
-            queue_lines = (
-                sacct_output.replace("+", "")
-                .replace("sequence_", "")
-                .replace(".py", "")
-                .splitlines()[2:]
-            )
-            queue_sequences = [
-                line.split() for line in queue_lines if "batch" not in line
-            ]
-            queue_list = [
-                dict(zip(queue_header, sequence)) for sequence in queue_sequences
-            ]
-            queue_values(queue_list, sequence_list)
-
-        return queue_list
+        sacct_output = subprocess.check_output(
+            [
+                "sacct",
+                "-X",
+                "-n",
+                "--parsable2",
+                "--delimiter=,",
+                "--starttime",
+                start_date,
+                "-o",
+                ",".join(FORMAT_SLURM)
+            ],
+            universal_newlines=True
+        )
+        sacct_output_lines = sacct_output.splitlines()
+        return pd.DataFrame(
+            [line.split(",") for line in sacct_output_lines],
+            columns=FORMAT_SLURM
+        )
 
 
-def queue_values(queue_list, sequence_list):
+def filter_queue(sacct_output_info: pd.DataFrame, sequence_list: list):
+    """Filter the sacct output to get the values of the jobs in the queue."""
+    sequences_info = pd.DataFrame([vars(seq) for seq in sequence_list])
+    # Filter the jobs in the sacct output that are present in the sequence list
+    return sacct_output_info[
+        sacct_output_info['JobName'].isin(sequences_info['jobname'])
+    ]
+
+
+def set_queue_values(sacct_output_info: pd.DataFrame, sequence_list: list):
     """
     Extract queue values and fetch them into the table of sequences
 
     Parameters
     ----------
-    queue_list
-    sequence_list
+    sacct_output_info: pd.DataFrame
+    sequence_list: list[Sequence.Object]
     """
-    # Create data frames for sequence list and queue array
-    if not sequence_list:
-        return
-    sequences_df = pd.DataFrame([vars(seq) for seq in sequence_list])
-    df_queue = pd.DataFrame.from_dict(queue_list)
-    # Add column with elapsed seconds of the job run-time to be averaged
-    if "JobName" in df_queue.columns:
-        df_queue_filtered = df_queue[
-            df_queue["JobName"].isin(sequences_df["jobname"])
-        ].copy()
-        df_queue_filtered["DeltaTime"] = df_queue_filtered["CPUTime"].apply(
-            time_to_seconds
-        )
-        for sequence in sequence_list:
-            df_jobname = df_queue_filtered[
-                df_queue_filtered["JobName"] == sequence.jobname
-            ]
-            sequence.tries = len(df_jobname["JobID"].unique())
-            sequence.action = "Check"
-            try:
-                sequence.jobid = max(df_jobname["JobID"])  # Get latest JobID
-                df_jobid_filtered = df_jobname[df_jobname["JobID"] == sequence.jobid]
-                sequence.cputime = time.strftime(
-                    "%H:%M:%S", time.gmtime(df_jobid_filtered["DeltaTime"].median())
-                )
-                if (df_jobid_filtered.State.values == "COMPLETED").all():
-                    sequence.state = "COMPLETED"
-                    sequence.exit = df_jobid_filtered["ExitCode"].iloc[0]
-                elif (df_jobid_filtered.State.values == "PENDING").all():
-                    sequence.state = "PENDING"
-                    sequence.exit = None
-                elif (df_jobid_filtered.State.values == "FAILED").any():
-                    sequence.state = "FAILED"
-                    sequence.exit = df_jobid_filtered[
-                        df_jobid_filtered.State.values == "FAILED"
-                        ]["ExitCode"].iloc[0]
-                elif (df_jobid_filtered.State.values == "CANCELLED").any():
-                    sequence.state = "CANCELLED"
-                    sequence.exit = df_jobid_filtered[
-                        df_jobid_filtered.State.values == "CANCELLED"
-                        ]["ExitCode"].iloc[0]
-                elif (df_jobid_filtered.State.values == "TIMEOUT").any():
-                    sequence.state = "TIMEOUT"
-                    sequence.exit = "0:15"
-                else:
-                    sequence.state = "RUNNING"
-                    sequence.exit = None
-                log.debug(
-                    f"Queue attributes: sequence {sequence.seq},"
-                    f"JobName {sequence.jobname}, "
-                    f"JobID {sequence.jobid}, State {sequence.state}, "
-                    f"CPUTime {sequence.cputime}, Exit {sequence.exit} updated"
-                )
-            except ValueError:
-                log.debug(
-                    f"Queue attributes for sequence {sequence.seq} "
-                    f"not present in sacct output."
-                )
-    else:
-        log.debug("No jobs reported in sacct queue.")
+    if sacct_output_info is None or sequence_list is None:
+        return None
+
+    sacct_output_filtered = filter_queue(sacct_output_info, sequence_list)
+
+    for sequence in sequence_list:
+        df_jobname = sacct_output_filtered[
+            sacct_output_filtered["JobName"] == sequence.jobname
+        ]
+        sequence.tries = len(df_jobname["JobID"].unique())
+        sequence.action = "Check"
+        try:
+            sequence.jobid = max(df_jobname["JobID"])  # Get latest JobID
+            df_jobid_filtered = df_jobname[df_jobname["JobID"] == sequence.jobid]
+            sequence.cputime = time.strftime(
+                "%H:%M:%S", time.gmtime(df_jobid_filtered["CPUTimeRAW"].median())
+            )
+            if (df_jobid_filtered.State.values == "COMPLETED").all():
+                sequence.state = "COMPLETED"
+                sequence.exit = df_jobid_filtered["ExitCode"].iloc[0]
+            elif (df_jobid_filtered.State.values == "PENDING").all():
+                sequence.state = "PENDING"
+                sequence.exit = None
+            elif (df_jobid_filtered.State.values == "FAILED").any():
+                sequence.state = "FAILED"
+                sequence.exit = df_jobid_filtered[
+                    df_jobid_filtered.State.values == "FAILED"
+                    ]["ExitCode"].iloc[0]
+            elif (df_jobid_filtered.State.values == "CANCELLED").any():
+                sequence.state = "CANCELLED"
+                sequence.exit = df_jobid_filtered[
+                    df_jobid_filtered.State.values == "CANCELLED"
+                    ]["ExitCode"].iloc[0]
+            elif (df_jobid_filtered.State.values == "TIMEOUT").any():
+                sequence.state = "TIMEOUT"
+                sequence.exit = "0:15"
+            else:
+                sequence.state = "RUNNING"
+                sequence.exit = None
+            log.debug(
+                f"Queue attributes: sequence {sequence.seq},"
+                f"JobName {sequence.jobname}, "
+                f"JobID {sequence.jobid}, State {sequence.state}, "
+                f"CPUTime {sequence.cputime}, Exit {sequence.exit} updated"
+            )
+        except ValueError:
+            log.debug(
+                f"Queue attributes for sequence {sequence.seq} "
+                f"not present in sacct output."
+            )
