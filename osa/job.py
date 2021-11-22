@@ -18,7 +18,7 @@ import pandas as pd
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.iofile import read_from_file, write_to_file
-from osa.utils.utils import date_in_yymmdd, lstdate_to_dir
+from osa.utils.utils import date_in_yymmdd, lstdate_to_dir, time_to_seconds
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ __all__ = [
     "check_history_level",
     "get_sacct_output",
     "get_squeue_output",
-    "filter_jobs"
+    "filter_jobs",
 ]
 
 TAB = "\t".expandtabs(4)
@@ -646,7 +646,7 @@ def get_squeue_output() -> pd.DataFrame:
     Obtain the current job information from squeue output
     and return a pandas dataframe.
     """
-    out_fmt = "%i,%j,%T"  # jobid, jobname, state
+    out_fmt = "%i,%j,%T,%M"  # JOBID, NAME, STATE, TIME
     squeue_output = StringIO(
         subprocess.check_output(["squeue", "--me", "-o", out_fmt]).decode()
     )
@@ -657,7 +657,9 @@ def get_squeue_output() -> pd.DataFrame:
         'STATE': 'State',
         'JOBID': 'JobID',
         'NAME': 'JobName',
+        'TIME': 'CPUTime'
     })
+    df["CPUTimeRAW"] = df["CPUTime"].apply(time_to_seconds)
     return df
 
 
