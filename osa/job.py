@@ -28,8 +28,7 @@ __all__ = [
     "prepare_jobs",
     "sequence_filenames",
     "sequence_calibration_filenames",
-    "set_queue_values_from_squeue",
-    "set_queue_values_from_sacct",
+    "set_queue_values",
     "job_header_template",
     "plot_job_statistics",
     "scheduler_env_variables",
@@ -708,7 +707,11 @@ def filter_jobs(job_info: pd.DataFrame, sequence_list: list):
     ]
 
 
-def set_queue_values_from_sacct(sacct_info: pd.DataFrame, sequence_list: list) -> None:
+def set_queue_values(
+        sacct_info: pd.DataFrame,
+        squeue_info: pd.DataFrame,
+        sequence_list: list
+) -> None:
     """
     Extract job info from sacct output and
     fetch them into the table of sequences.
@@ -716,83 +719,61 @@ def set_queue_values_from_sacct(sacct_info: pd.DataFrame, sequence_list: list) -
     Parameters
     ----------
     sacct_info: pd.DataFrame
-    sequence_list: list[Sequence object]
-    """
-    if sacct_info is None or sequence_list is None:
-        return None
-
-    sacct_info_filtered = filter_jobs(sacct_info, sequence_list)
-
-    for sequence in sequence_list:
-        df_jobname = sacct_info_filtered[
-            sacct_info_filtered["JobName"] == sequence.jobname
-        ]
-        sequence.tries = len(df_jobname["JobID"].unique())
-        sequence.action = "Check"
-        try:
-            sequence.jobid = max(df_jobname["JobID"])  # Get latest JobID
-
-            df_jobid_filtered = df_jobname[df_jobname["JobID"] == sequence.jobid]
-            sequence.cputime = time.strftime(
-                "%H:%M:%S", time.gmtime(df_jobid_filtered["CPUTimeRAW"].median())
-            )
-            if (df_jobid_filtered.State.values == "COMPLETED").all():
-                sequence.state = "COMPLETED"
-                sequence.exit = df_jobid_filtered["ExitCode"].iloc[0]
-            elif (df_jobid_filtered.State.values == "PENDING").all():
-                sequence.state = "PENDING"
-                sequence.exit = None
-            elif (df_jobid_filtered.State.values == "FAILED").any():
-                sequence.state = "FAILED"
-                sequence.exit = df_jobid_filtered[
-                    df_jobid_filtered.State.values == "FAILED"
-                    ]["ExitCode"].iloc[0]
-            elif (df_jobid_filtered.State.values == "CANCELLED").any():
-                sequence.state = "CANCELLED"
-                sequence.exit = df_jobid_filtered[
-                    df_jobid_filtered.State.values == "CANCELLED"
-                    ]["ExitCode"].iloc[0]
-            elif (df_jobid_filtered.State.values == "TIMEOUT").any():
-                sequence.state = "TIMEOUT"
-                sequence.exit = "0:15"
-            else:
-                sequence.state = "RUNNING"
-                sequence.exit = None
-            log.debug(
-                f"Queue attributes: sequence {sequence.seq}, "
-                f"JobName {sequence.jobname}, "
-                f"JobID {sequence.jobid}, State {sequence.state}, "
-                f"CPUTime {sequence.cputime}, Exit {sequence.exit} updated"
-            )
-        except ValueError:
-            log.debug(
-                f"Queue attributes for sequence {sequence.seq} "
-                f"not present in sacct output."
-            )
-
-
-def set_queue_values_from_squeue(squeue_info: pd.DataFrame, sequence_list: list) -> None:
-    """
-    Extract job info from current squeue output
-    and fetch them into the table of sequences.
-
-    Parameters
-    ----------
     squeue_info: pd.DataFrame
     sequence_list: list[Sequence object]
     """
-    if squeue_info is None or sequence_list is None:
+    if sacct_info is None or squeue_info is None or \
+            sequence_list is None:
         return None
 
-    current_jobs = filter_jobs(squeue_info, sequence_list)
+    # Concatenate the sacct and squeue data frames
+    job_info = pd.concat([sacct_info, squeue_info])
+
+    # Filter the jobs in the sacct output that are present in the sequence list
+    job_info_filtered = filter_jobs(job_info, sequence_list)
 
     for sequence in sequence_list:
-        sequence_job = current_jobs[current_jobs["JobName"] == sequence.jobname]
+        df_jobname = job_info_filtered[
+            job_info_filtered["JobName"] == sequence.jobname
+            ]
+        sequence.tries = len(df_jobname["JobID"].unique())
+        sequence.action = "Check"
+
+        sequence.jobid = df_jobname["JobID"].max()  # Get latest JobID
+
+        df_jobid_filtered = df_jobname[df_jobname["JobID"] == sequence.jobid]
+
         try:
-            sequence.jobid = sequence_job["JobID"].values[0]
-            sequence.state = sequence_job["State"].values[0]
-        except IndexError:
-            sequence.state = None
+            sequence.cputime = time.strftime(
+                "%H:%M:%S", time.gmtime(
+                    df_jobid_filtered["CPUTimeRAW"].median(skipna=False)
+                )
+            )
+        except ValueError:
+            sequence.cputime = None
+
+        if (df_jobid_filtered.State.values == "COMPLETED").all():
+            sequence.state = "COMPLETED"
+            sequence.exit = df_jobid_filtered["ExitCode"].iloc[0]
+        elif (df_jobid_filtered.State.values == "PENDING").all():
+            sequence.state = "PENDING"
+            sequence.exit = None
+        elif (df_jobid_filtered.State.values == "FAILED").any():
+            sequence.state = "FAILED"
+            sequence.exit = df_jobid_filtered[
+                df_jobid_filtered.State.values == "FAILED"
+                ]["ExitCode"].iloc[0]
+        elif (df_jobid_filtered.State.values == "CANCELLED").any():
+            sequence.state = "CANCELLED"
+            sequence.exit = df_jobid_filtered[
+                df_jobid_filtered.State.values == "CANCELLED"
+                ]["ExitCode"].iloc[0]
+        elif (df_jobid_filtered.State.values == "TIMEOUT").any():
+            sequence.state = "TIMEOUT"
+            sequence.exit = "0:15"
+        else:
+            sequence.state = "RUNNING"
+            sequence.exit = None
         log.debug(
             f"Queue attributes: sequence {sequence.seq}, "
             f"JobName {sequence.jobname}, "

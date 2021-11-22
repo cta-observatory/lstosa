@@ -14,8 +14,7 @@ from os.path import join
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import (
-    set_queue_values_from_squeue,
-    set_queue_values_from_sacct,
+    set_queue_values,
     prepare_jobs,
     submit_jobs,
     get_sacct_output,
@@ -113,8 +112,11 @@ def single_process(telescope):
     prepare_jobs(sequence_list)
 
     if not options.test:
-        set_queue_values_from_squeue(get_squeue_output(), sequence_list)
-        set_queue_values_from_sacct(get_sacct_output(), sequence_list)
+        set_queue_values(
+            sacct_info=get_sacct_output(),
+            squeue_info=get_squeue_output(),
+            sequence_list=sequence_list
+        )
     getvetolist(sequence_list)
     getclosedlist(sequence_list)
     update_sequence_status(sequence_list)
@@ -159,8 +161,12 @@ def stereo_process(telescope, s1_list, s2_list):
     # write_workflow(sequence_list)
     # Adds the scripts
     prepare_jobs(sequence_list)
-    set_queue_values_from_squeue(get_squeue_output(), sequence_list)
-    set_queue_values_from_sacct(get_sacct_output(), sequence_list)
+    if not options.test:
+        set_queue_values(
+            sacct_info=get_sacct_output(),
+            squeue_info=get_squeue_output(),
+            sequence_list=sequence_list
+        )
     getvetolist(sequence_list)
     getclosedlist(sequence_list)
     update_sequence_status(sequence_list)
