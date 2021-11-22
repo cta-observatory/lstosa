@@ -754,17 +754,17 @@ def set_queue_values(
         elif (df_jobid_filtered.State.values == "PENDING").all():
             sequence.state = "PENDING"
             sequence.exit = None
-        elif (df_jobid_filtered.State.values == "FAILED").any():
+        elif any("FAIL" in job for job in df_jobid_filtered.State.values):
             sequence.state = "FAILED"
             sequence.exit = df_jobid_filtered[
                 df_jobid_filtered.State.values == "FAILED"
                 ]["ExitCode"].iloc[0]
-        elif (df_jobid_filtered.State.values == "CANCELLED").any():
+        elif any("CANCELLED" in job for job in df_jobid_filtered.State.values):
             sequence.state = "CANCELLED"
             sequence.exit = df_jobid_filtered[
                 df_jobid_filtered.State.values == "CANCELLED"
                 ]["ExitCode"].iloc[0]
-        elif (df_jobid_filtered.State.values == "TIMEOUT").any():
+        elif any("TIMEOUT" in job for job in df_jobid_filtered.State.values):
             sequence.state = "TIMEOUT"
             sequence.exit = "0:15"
         else:
