@@ -83,12 +83,17 @@ def data_sequence(
             log.info(f"Going to level {level}")
 
     if level == 1:
-        rc = dl1_to_dl2(run_str, history_file)
-        level -= 1
-        log.info(f"Going to level {level}")
+        if options.no_dl2:
+            level = 0
+            log.info(f"No DL2 are going to be produced. Going to level {level}")
+        else:
+            rc = dl1_to_dl2(run_str, history_file)
+            level -= 1
+            log.info(f"Going to level {level}")
 
     if level == 0:
         log.info(f"Job for sequence {run_str} finished without fatal errors")
+
     return rc
 
 
