@@ -18,7 +18,6 @@ from osa.job import (
     prepare_jobs,
     submit_jobs,
     get_sacct_output,
-    get_squeue_output,
 )
 from osa.nightsummary.extract import (
     extractruns,
@@ -114,7 +113,6 @@ def single_process(telescope):
     if not options.test:
         set_queue_values(
             sacct_info=get_sacct_output(),
-            squeue_info=get_squeue_output(),
             sequence_list=sequence_list
         )
     getvetolist(sequence_list)
@@ -164,7 +162,6 @@ def stereo_process(telescope, s1_list, s2_list):
     if not options.test:
         set_queue_values(
             sacct_info=get_sacct_output(),
-            squeue_info=get_squeue_output(),
             sequence_list=sequence_list
         )
     getvetolist(sequence_list)

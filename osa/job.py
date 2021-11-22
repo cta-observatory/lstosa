@@ -711,7 +711,6 @@ def filter_jobs(job_info: pd.DataFrame, sequence_list: list):
 
 def set_queue_values(
         sacct_info: pd.DataFrame,
-        squeue_info: pd.DataFrame,
         sequence_list: list
 ) -> None:
     """
@@ -721,18 +720,13 @@ def set_queue_values(
     Parameters
     ----------
     sacct_info: pd.DataFrame
-    squeue_info: pd.DataFrame
     sequence_list: list[Sequence object]
     """
-    if sacct_info is None or squeue_info is None or \
-            sequence_list is None:
+    if sacct_info is None or sequence_list is None:
         return None
 
-    # Concatenate the sacct and squeue data frames
-    job_info = pd.concat([sacct_info, squeue_info])
-
     # Filter the jobs in the sacct output that are present in the sequence list
-    job_info_filtered = filter_jobs(job_info, sequence_list)
+    job_info_filtered = filter_jobs(sacct_info, sequence_list)
 
     for sequence in sequence_list:
         df_jobname = job_info_filtered[
