@@ -654,12 +654,12 @@ def get_squeue_output() -> pd.DataFrame:
     df = pd.read_csv(squeue_output)
     # Remove the job array part of the jobid
     df["JOBID"] = df["JOBID"].apply(lambda x: x.split("_")[0]).astype("int")
+    df.rename(inplace=True, columns={
+        'STATE': 'State',
+        'JOBID': 'JobID',
+        'NAME': 'JobName',
+    })
     return df
-
-
-def squeue_state_job(jobid: int, squeue_info) -> str:
-    """Return the state of a job given its jobid."""
-    return squeue_info.loc[squeue_info["JobID"] == jobid, "State"].values[0]
 
 
 def get_sacct_output() -> pd.DataFrame:
