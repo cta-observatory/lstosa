@@ -102,3 +102,13 @@ def test_get_input_file(r0_data):
     for run, r0_file in zip(runs, r0_data):
         assert r0_file.exists()
         assert get_input_file(run) == r0_file
+
+
+def test_time_to_seconds():
+    from osa.utils.utils import time_to_seconds
+    seconds_with_day = time_to_seconds("2-02:27:15")
+    assert seconds_with_day == 2 * 24 * 3600 + 2 * 3600 + 27 * 60 + 15
+    seconds = time_to_seconds("02:27:15")
+    assert seconds == 2 * 3600 + 27 * 60 + 15
+    seconds = time_to_seconds("27:15")
+    assert seconds == 27 * 60 + 15

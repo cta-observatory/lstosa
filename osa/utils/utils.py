@@ -41,6 +41,7 @@ __all__ = [
     "get_dl1_prod_id",
     "get_dl2_prod_id",
     "get_night_limit_timestamp",
+    "time_to_seconds"
 ]
 
 log = logging.getLogger(__name__)
@@ -512,3 +513,34 @@ def gettag():
     parent_file = os.path.basename(inspect.stack()[1][1])
     parent_module = inspect.stack()[1][3]
     return f"{parent_file}({parent_module})"
+
+
+def time_to_seconds(timestring):
+    """Transform (D-)HH:MM:SS time format to seconds.
+    Parameters
+    ----------
+    timestring: str
+        Time in format (D-)HH:MM:SS
+    Returns
+    -------
+    Seconds that correspond to (D-)HH:MM:SS
+    """
+    if timestring is None:
+        timestring = "00:00:00"
+    if "-" in timestring:
+        # Day is also specified (D-)HH:MM:SS
+        days, hhmmss = timestring.split("-", )
+        hours, minutes, seconds = hhmmss.split(":")
+        return int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+    else:
+        split_time = timestring.split(":")
+        if len(split_time) == 2:
+            # MM:SS
+            minutes, seconds = split_time
+            hours = 0
+        elif len(split_time) == 3:
+            # HH:MM:SS
+            hours, minutes, seconds = split_time
+        else:
+            raise ValueError("Time format not recognized.")
+        return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
