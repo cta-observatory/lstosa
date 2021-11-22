@@ -8,6 +8,7 @@ import subprocess
 import sys
 import time
 from glob import glob
+from io import StringIO
 from pathlib import Path
 from textwrap import dedent
 
@@ -27,7 +28,8 @@ __all__ = [
     "prepare_jobs",
     "sequence_filenames",
     "sequence_calibration_filenames",
-    "set_queue_values",
+    "set_queue_values_from_squeue",
+    "set_queue_values_from_sacct",
     "job_header_template",
     "plot_job_statistics",
     "scheduler_env_variables",
@@ -36,7 +38,9 @@ __all__ = [
     "setrunfromparent",
     "submit_jobs",
     "check_history_level",
-    "get_sacct_output"
+    "get_sacct_output",
+    "get_squeue_output",
+    "filter_jobs"
 ]
 
 TAB = "\t".expandtabs(4)
@@ -638,6 +642,26 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     return job_list
 
 
+def get_squeue_output() -> pd.DataFrame:
+    """
+    Obtain the current job information from squeue output
+    and return a pandas dataframe.
+    """
+    out_fmt = "%i,%j,%T"  # jobid, jobname, state
+    squeue_output = StringIO(
+        subprocess.check_output(["squeue", "--me", "-o", out_fmt]).decode()
+    )
+    df = pd.read_csv(squeue_output)
+    # Remove the job array part of the jobid
+    df["JOBID"] = df["JOBID"].apply(lambda x: x.split("_")[0]).astype("int")
+    return df
+
+
+def squeue_state_job(jobid: int, squeue_info) -> str:
+    """Return the state of a job given its jobid."""
+    return squeue_info.loc[squeue_info["JobID"] == jobid, "State"].values[0]
+
+
 def get_sacct_output() -> pd.DataFrame:
     """
     Fetch the information of jobs in the queue using the sacct SLURM command
@@ -671,40 +695,43 @@ def get_sacct_output() -> pd.DataFrame:
             columns=FORMAT_SLURM
         )
         sacct_output["JobID"] = sacct_output["JobID"].apply(lambda x: x.split("_")[0])
+        sacct_output["JobID"] = sacct_output["JobID"].str.strip(".batch").astype(int)
         return sacct_output
 
 
-def filter_queue(sacct_output_info: pd.DataFrame, sequence_list: list):
-    """Filter the sacct output to get the values of the jobs in the queue."""
+def filter_jobs(job_info: pd.DataFrame, sequence_list: list):
+    """Filter the job info list to get the values of the jobs in the current queue."""
     sequences_info = pd.DataFrame([vars(seq) for seq in sequence_list])
     # Filter the jobs in the sacct output that are present in the sequence list
-    return sacct_output_info[
-        sacct_output_info['JobName'].isin(sequences_info['jobname'])
+    return job_info[
+        job_info['JobName'].isin(sequences_info['jobname'])
     ]
 
 
-def set_queue_values(sacct_output_info: pd.DataFrame, sequence_list: list):
+def set_queue_values_from_sacct(sacct_info: pd.DataFrame, sequence_list: list) -> None:
     """
-    Extract queue values and fetch them into the table of sequences
+    Extract job info from sacct output and
+    fetch them into the table of sequences.
 
     Parameters
     ----------
-    sacct_output_info: pd.DataFrame
-    sequence_list: list[Sequence.Object]
+    sacct_info: pd.DataFrame
+    sequence_list: list[Sequence object]
     """
-    if sacct_output_info is None or sequence_list is None:
+    if sacct_info is None or sequence_list is None:
         return None
 
-    sacct_output_filtered = filter_queue(sacct_output_info, sequence_list)
+    sacct_info_filtered = filter_jobs(sacct_info, sequence_list)
 
     for sequence in sequence_list:
-        df_jobname = sacct_output_filtered[
-            sacct_output_filtered["JobName"] == sequence.jobname
+        df_jobname = sacct_info_filtered[
+            sacct_info_filtered["JobName"] == sequence.jobname
         ]
         sequence.tries = len(df_jobname["JobID"].unique())
         sequence.action = "Check"
         try:
             sequence.jobid = max(df_jobname["JobID"])  # Get latest JobID
+
             df_jobid_filtered = df_jobname[df_jobname["JobID"] == sequence.jobid]
             sequence.cputime = time.strftime(
                 "%H:%M:%S", time.gmtime(df_jobid_filtered["CPUTimeRAW"].median())
@@ -732,7 +759,7 @@ def set_queue_values(sacct_output_info: pd.DataFrame, sequence_list: list):
                 sequence.state = "RUNNING"
                 sequence.exit = None
             log.debug(
-                f"Queue attributes: sequence {sequence.seq},"
+                f"Queue attributes: sequence {sequence.seq}, "
                 f"JobName {sequence.jobname}, "
                 f"JobID {sequence.jobid}, State {sequence.state}, "
                 f"CPUTime {sequence.cputime}, Exit {sequence.exit} updated"
@@ -742,3 +769,33 @@ def set_queue_values(sacct_output_info: pd.DataFrame, sequence_list: list):
                 f"Queue attributes for sequence {sequence.seq} "
                 f"not present in sacct output."
             )
+
+
+def set_queue_values_from_squeue(squeue_info: pd.DataFrame, sequence_list: list) -> None:
+    """
+    Extract job info from current squeue output
+    and fetch them into the table of sequences.
+
+    Parameters
+    ----------
+    squeue_info: pd.DataFrame
+    sequence_list: list[Sequence object]
+    """
+    if squeue_info is None or sequence_list is None:
+        return None
+
+    current_jobs = filter_jobs(squeue_info, sequence_list)
+
+    for sequence in sequence_list:
+        sequence_job = current_jobs[current_jobs["JobName"] == sequence.jobname]
+        try:
+            sequence.jobid = sequence_job["JobID"].values[0]
+            sequence.state = sequence_job["State"].values[0]
+        except IndexError:
+            sequence.state = None
+        log.debug(
+            f"Queue attributes: sequence {sequence.seq}, "
+            f"JobName {sequence.jobname}, "
+            f"JobID {sequence.jobid}, State {sequence.state}, "
+            f"CPUTime {sequence.cputime}, Exit {sequence.exit} updated"
+        )
