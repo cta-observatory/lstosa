@@ -146,7 +146,7 @@ def closer_argparser():
         help="If you only want to close a certain sequence",
     )
     parser.add_argument(
-        "--nodl2",
+        "--no-dl2",
         action="store_true",
         default=False,
         help="Do not produce DL2 files (default False)",
@@ -173,7 +173,7 @@ def closercliparsing():
     options.reason = opts.reason
     options.seqtoclose = opts.seqtoclose
     options.tel_id = opts.tel_id
-    options.nodl2 = opts.nodl2
+    options.no_dl2 = opts.no_dl2
 
     log.debug(f"the options are {opts}")
 
@@ -395,7 +395,7 @@ def data_sequence_argparser():
         help="Set the prod ID to define data directories",
     )
     parser.add_argument(
-        "--nodl2",
+        "--no-dl2",
         action="store_true",
         default=False,
         help="Do not produce DL2 files (default False)",
@@ -444,7 +444,7 @@ def data_sequence_cli_parsing():
     options.verbose = opts.verbose
     options.simulate = opts.simulate
     options.prod_id = opts.prod_id
-    options.nodl2 = opts.nodl2
+    options.no_dl2 = opts.no_dl2
     options.tel_id = opts.tel_id
 
     log.debug(f"The options and arguments are {opts}")
