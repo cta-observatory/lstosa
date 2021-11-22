@@ -704,13 +704,12 @@ def filter_jobs(job_info: pd.DataFrame, sequence_list: list):
     """Filter the job info list to get the values of the jobs in the current queue."""
     sequences_info = pd.DataFrame([vars(seq) for seq in sequence_list])
     # Filter the jobs in the sacct output that are present in the sequence list
-    return job_info[
-        job_info['JobName'].isin(sequences_info['jobname'])
-    ]
+    return job_info[job_info['JobName'].isin(sequences_info['jobname'])]
 
 
 def set_queue_values(
         sacct_info: pd.DataFrame,
+        squeue_info: pd.DataFrame,
         sequence_list: list
 ) -> None:
     """
@@ -720,13 +719,17 @@ def set_queue_values(
     Parameters
     ----------
     sacct_info: pd.DataFrame
+    squeue_info: pd.DataFrame
     sequence_list: list[Sequence object]
     """
-    if sacct_info is None or sequence_list is None:
+    if sacct_info is None or squeue_info is None or \
+            sequence_list is None:
         return None
 
+    job_info = pd.concat([sacct_info, squeue_info])
+
     # Filter the jobs in the sacct output that are present in the sequence list
-    job_info_filtered = filter_jobs(sacct_info, sequence_list)
+    job_info_filtered = filter_jobs(job_info, sequence_list)
 
     for sequence in sequence_list:
         df_jobname = job_info_filtered[
@@ -766,7 +769,7 @@ def set_queue_values(
         elif any("TIMEOUT" in job for job in df_jobid_filtered.State):
             sequence.state = "TIMEOUT"
             sequence.exit = "0:15"
-        else:
+        elif any("RUNNING" in job for job in df_jobid_filtered.State):
             sequence.state = "RUNNING"
             sequence.exit = None
         log.debug(
