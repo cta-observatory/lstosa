@@ -2,12 +2,10 @@
 
 import datetime
 import logging
-import os
 import shutil
 import subprocess
 import sys
 import time
-from glob import glob
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent
@@ -72,10 +70,9 @@ def are_all_jobs_correctly_finished(sequence_list):
     """
     # FIXME: check based on squence.jobid exit status
     flag = True
+    analysis_directory = Path(options.directory)
     for sequence in sequence_list:
-        history_files_list = glob(
-            rf"{options.directory}/*{sequence.run}*.history"
-        )
+        history_files_list = analysis_directory.rglob(f"*{sequence.seq}*.history")
         for history_file in history_files_list:
             # TODO: s.history should be SubRunObj attribute not RunObj
             # s.history only working for CALIBRATION sequence (run-wise), since it is
@@ -137,7 +134,7 @@ def check_history_level(history_file: Path, program_levels: dict):
         return level, exit_status
 
 
-def historylevel(historyfile, data_type):
+def historylevel(history_file: Path, data_type: str):
     """
     Returns the level from which the analysis should begin and
     the rc of the last executable given a certain history file.
@@ -158,7 +155,7 @@ def historylevel(historyfile, data_type):
 
     Parameters
     ----------
-    historyfile
+    history_file: pathlib.Path
     data_type: str
         Either 'DATA' or 'CALIBRATION'
 
@@ -174,8 +171,8 @@ def historylevel(historyfile, data_type):
         log.error("Type {data_type} not expected")
         sys.exit(1)
     exit_status = 0
-    if os.path.exists(historyfile):
-        for line in read_from_file(historyfile).splitlines():
+    if history_file.exists():
+        for line in read_from_file(history_file).splitlines():
             words = line.split()
             try:
                 program = words[1]
@@ -185,7 +182,7 @@ def historylevel(historyfile, data_type):
                     f"{program}, finished with error {exit_status} and prod ID {prod_id}"
                 )
             except (IndexError, ValueError) as err:
-                log.exception(f"Malformed history file {historyfile}, {err}")
+                log.exception(f"Malformed history file {history_file}, {err}")
             else:
                 if program == cfg.get("lstchain", "r0_to_dl1"):
                     level = 3 if exit_status == 0 else 4
@@ -460,7 +457,7 @@ def create_job_template(sequence, get_content=False):
         commandargs.append(Path(run_summary_dir) / f"RunSummary_{nightdir}.ecsv")
 
     if sequence.type == "DATA":
-        commandargs.append(os.path.abspath(sequence.calibration.resolve()))
+        commandargs.append(sequence.calibration.resolve())
         commandargs.append(sequence.pedestal.resolve())
         commandargs.append(sequence.time_calibration.resolve())
         commandargs.append(Path(drivedir) / sequence.drive)
