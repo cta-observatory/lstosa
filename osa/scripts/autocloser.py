@@ -134,7 +134,7 @@ class Telescope(object):
         self.sequences = []
 
         if self.is_closed():
-            log.warning(f"{self.telescope} is already closed! Ignoring {self.telescope}")
+            log.info(f"{self.telescope} is already closed! Ignoring {self.telescope}")
             return
         if not os.path.exists(analysis_path(self.telescope)):
             log.warning(
@@ -300,7 +300,8 @@ class Telescope(object):
 
 
 class Sequence(object):
-    """As for now the keys for the 'dictSequence' are:
+    """
+    As for now the keys for the 'dictSequence' are:
     (LST1) Tel Seq Parent Type Run Subruns Source Wobble Action Tries JobID
     State Host CPU_time Walltime Exit  DL1% MUONS% DATACHECK% DL2%
 
