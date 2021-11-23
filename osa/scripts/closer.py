@@ -293,8 +293,6 @@ def register_non_existing_file(file_path_str, concept, seq_list):
     """
 
     for s in seq_list:
-        log.debug(f"Looking for {s}")
-
         if s.type == "DATA":
             run_str_found = re.search(s.run_str, file_path_str)
 
