@@ -516,11 +516,14 @@ def gettag():
 
 
 def time_to_seconds(timestring):
-    """Transform (D-)HH:MM:SS time format to seconds.
+    """
+    Transform (D-)HH:MM:SS time format to seconds.
+
     Parameters
     ----------
     timestring: str
         Time in format (D-)HH:MM:SS
+
     Returns
     -------
     Seconds that correspond to (D-)HH:MM:SS
