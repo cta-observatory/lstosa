@@ -36,6 +36,10 @@ __all__ = [
     "simprocparsing",
     "sequencer_webmaker_argparser",
     "valid_date",
+    "get_prod_id",
+    "get_dl1_prod_id",
+    "get_dl2_prod_id",
+    "get_calib_prod_id",
 ]
 
 log = logging.getLogger(__name__)

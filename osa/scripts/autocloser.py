@@ -9,6 +9,7 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.utils.cliopts import get_prod_id
 from osa.utils.cliopts import set_default_directory_if_needed, valid_date
 from osa.utils.logging import myLogger
 from osa.utils.utils import set_no_observations_flag, create_directories_datacheck_web
@@ -343,7 +344,6 @@ class Sequence(object):
             and self.dictSequence["DL2%"] == "100"
         ):
             return True
-        return self.dictSequence["Tel"] == "ST" and self.dictSequence["DL3%"] == "100"
 
     def is_flawless(self):
         log.debug("Check if flawless")
@@ -646,7 +646,7 @@ if __name__ == "__main__":
     if is_night_time():
         sys.exit(1)
 
-    prod_id = cfg.get("LST1", "PROD_ID")
+    prod_id = get_prod_id()
 
     # create telescope, sequence, problem and incidence objects
     log.info("Simulating sequencer...")
