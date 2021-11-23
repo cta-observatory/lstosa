@@ -48,6 +48,9 @@ log = logging.getLogger(__name__)
 
 DATACHECK_PRODUCTS = ["drs4", "enf_calibration", "dl1"]
 DATACHECK_BASEDIR = Path(cfg.get("WEBSERVER", "DATACHECK"))
+# Sets the amount of hours after midnight for the default OSA date
+# to be the current date, eg 4: 04:00:00 UTC, -4: 20:00:00 UTC day before
+LIMIT_NIGHT = 12
 
 
 def getcurrentdate(sep="_"):
@@ -66,13 +69,12 @@ def getcurrentdate(sep="_"):
     string_date: string
         Date in string format using the given separator
     """
-    limit_night = int(cfg.get("LSTOSA", "NIGHT_OFFSET"))
     now = datetime.utcnow()
-    if (now.hour >= limit_night >= 0) or \
-            (now.hour < limit_night + 24 and limit_night < 0):
+    if (now.hour >= LIMIT_NIGHT >= 0) or \
+            (now.hour < LIMIT_NIGHT + 24 and LIMIT_NIGHT < 0):
         # today, nothing to do
         pass
-    elif limit_night >= 0:
+    elif LIMIT_NIGHT >= 0:
         # yesterday
         gap = timedelta(hours=24)
         now = now - gap
