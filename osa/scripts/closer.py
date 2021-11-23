@@ -61,7 +61,7 @@ PEDESTAL_RE = re.compile(r"drs4.*.fits")
 
 
 def main():
-    """Main function in charge of closing the sequences"""
+    """Main function in charge of closing the sequences."""
 
     # set the options through cli parsing
     closercliparsing()
@@ -134,7 +134,7 @@ def is_raw_data_available():
     return answer
 
 
-def is_sequencer_successful(seq_tuple):
+def is_sequencer_successful(seq_tuple: list):
     return seq_tuple[0]
 
 
@@ -193,8 +193,9 @@ def post_process(seq_tuple):
     # Extract the provenance info
     extract_provenance(seq_list)
 
-    # Merge DL2 files runwise
-    merge_dl2(seq_list)
+    # Merge DL2 files run-wise
+    if not options.no_dl2:
+        merge_dl2(seq_list)
 
     if options.seqtoclose is None:
         return set_closed_with_file()
@@ -349,7 +350,7 @@ def is_finished_check(run_summary):
 
     Returns
     -------
-    seq_finished, seq_list: bool, list
+    seq_finished, seq_list: tuple
     """
 
     sequence_success = False
@@ -378,7 +379,7 @@ def is_finished_check(run_summary):
         # empty file (no sensible data)
         sequence_success = True
         sequence_list = []
-    return [sequence_success, sequence_list]
+    return sequence_success, sequence_list
 
 
 def setclosedfilename(seq) -> None:
@@ -438,7 +439,7 @@ def merge_dl1_datacheck(seq_list):
             run_subprocess(cmd)
 
 
-def run_subprocess(cmd):
+def run_subprocess(cmd: list):
     """
     Run a subprocess and return the output
 
