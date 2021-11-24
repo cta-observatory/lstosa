@@ -44,10 +44,10 @@ def test_simulated_sequencer():
         "sequencer", "-c", "cfg/sequencer.cfg", "-d", "2020_01_17", "-s", "-t", "LST1"
     )
     assert rc.returncode == 0
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    assert dedent(
+    now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+    assert rc.stdout == dedent(
         f"""\
-        =========================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Night: 2020_01_17 ===========================
+        ================================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Night: 2020_01_17 ==================================
         Tel   Seq  Parent  Type      Run   Subruns  Source  Wobble  Action  Tries  JobID  State  Host  CPU_time  Walltime  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%  
         LST1    0  None    PEDCALIB  1805  5        None    None    None    None   None   None   None  None      None      None  None  None    None    None        None  
         LST1    1       0  DATA      1807  19       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
@@ -69,9 +69,8 @@ def test_simulated_sequencer():
         LST1   17       0  DATA      1824  79       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
         LST1   18       0  DATA      1825  69       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
         LST1   19       0  DATA      1826  6        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-        LST1   20       0  DATA      1827  1        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0 
-        """
-    )
+        LST1   20       0  DATA      1827  1        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        """)
 
 
 def test_sequencer(sequence_file):

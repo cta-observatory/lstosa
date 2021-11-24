@@ -40,6 +40,7 @@ class RunObj(Wobble):
 
 class SubrunObj(RunObj):
     def __init__(self):
+        super(SubrunObj, self).__init__()
         self.runobj = None
         self.subrun = None
         self.kind = None

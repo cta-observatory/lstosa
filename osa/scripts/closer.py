@@ -152,8 +152,8 @@ def ask_for_closing():
         except KeyboardInterrupt:
             log.warning("Program exited by user.")
             sys.exit(1)
-        except EOFError as ErrorValue:
-            log.exception(f"End of file not expected, {ErrorValue}")
+        except EOFError as error:
+            log.exception(f"End of file not expected, {error}")
         else:
             answer_check = True
             if answer_user in {"n", "N"}:
@@ -297,9 +297,6 @@ def is_finished_check(run_summary):
         sequence_success = True
         sequence_list = []
     return sequence_success, sequence_list
-
-
-
 
 
 def merge_dl1_datacheck(seq_list):

@@ -25,7 +25,7 @@ def start(parent_tag):
     now = datetime.utcnow()
     simple_parent_tag = parent_tag.rsplit("(")[0]
     header(
-        f"Starting {simple_parent_tag} at {now.strftime('%Y-%m-%d %H:%M:%S')} "
+        f"Starting {simple_parent_tag} at {now.strftime('%Y-%m-%d %H:%M')} "
         f"UTC for LST, Telescope: {options.tel_id}, Night: {options.date}"
     )
 

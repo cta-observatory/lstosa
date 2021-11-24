@@ -24,7 +24,7 @@ __all__ = [
     "extractruns",
     "extractsequences",
     "extractsequencesstereo",
-    "generateworkflow",
+    "generate_workflow",
 ]
 
 
@@ -127,7 +127,7 @@ def extractsequences(run_list):
 
     Returns
     -------
-    sequence_list
+    sequence_list: Iterable
     """
 
     # sequence_list = []  # this is the list of sequence objects to return
@@ -259,7 +259,7 @@ def extractsequences(run_list):
 
                 head[0] = [currentrun, currenttype, None]
 
-    sequence_list = generateworkflow(run_list_sorted, store, require)
+    sequence_list = generate_workflow(run_list_sorted, store, require)
     # ready to return the list of sequences
     log.debug("Sequence list extracted")
 
@@ -298,7 +298,7 @@ def extractsequencesstereo(seq1_list, seq2_list):
     return stereo_seq_list
 
 
-def generateworkflow(run_list, store, require):
+def generate_workflow(run_list, store, require):
     """
     Store correct data sequences to give sequence
     numbers and parent dependencies
@@ -320,8 +320,8 @@ def generateworkflow(run_list, store, require):
     parent = None
     for run in run_list:
         # the next seq value to assign (if this happens)
-        seq = len(sequence_list)
-        log.debug(f"trying to assign run {run.run}, type {run.type} to sequence {seq}")
+        n_seq = len(sequence_list)
+        log.debug(f"Trying to assign run {run.run}, type {run.type} to sequence {n_seq}")
         if run.type == "DATA":
             try:
                 store.index(run.run)
@@ -331,27 +331,27 @@ def generateworkflow(run_list, store, require):
                 log.warning(f"There is no sequence for data run {run.run}")
             else:
                 previousrun = require[run.run]
-                for seq in sequence_list:
-                    if seq.run == previousrun:
-                        parent = seq.seq
+                for sequence in sequence_list:
+                    if sequence.run == previousrun:
+                        parent = sequence.seq
                         break
                 log.debug(
-                    f"Sequence {seq} assigned to run {run.run} whose "
+                    f"Sequence {n_seq} assigned to run {run.run} whose "
                     f"parent is {parent} with run {previousrun}"
                 )
-                seq = SequenceData(run)
-                seq.seq = seq
-                seq.parent = parent
-                for seq_parent in sequence_list:
-                    if seq_parent.seq == parent:
-                        seq.parent_list.append(seq_parent)
+                sequence = SequenceData(run)
+                sequence.seq = n_seq
+                sequence.parent = parent
+                for parent_sequence in sequence_list:
+                    if parent_sequence.seq == parent:
+                        sequence.parent_list.append(parent_sequence)
                         break
 
-                seq.previousrun = previousrun
-                seq.jobname = f"{run.telescope}_{run.run:05d}"
-                sequence_filenames(seq)
-                if seq not in sequence_list:
-                    sequence_list.append(seq)
+                sequence.previousrun = previousrun
+                sequence.jobname = f"{run.telescope}_{run.run:05d}"
+                sequence_filenames(sequence)
+                if sequence not in sequence_list:
+                    sequence_list.append(sequence)
         elif run.type == "PEDCALIB":
             # calibration sequence are appended to the sequence
             # list if they are parent from data sequences
@@ -360,18 +360,18 @@ def generateworkflow(run_list, store, require):
                     previousrun = require[run.run]
 
                     # we found that this calibration is required
-                    seq = SequenceCalibration(run)
-                    seq.seq = seq
-                    seq.parent = None
-                    seq.previousrun = previousrun
-                    seq.jobname = f"{run.telescope}_{str(run.run).zfill(5)}"
-                    sequence_filenames(seq)
+                    sequence = SequenceCalibration(run)
+                    sequence.seq = n_seq
+                    sequence.parent = None
+                    sequence.previousrun = previousrun
+                    sequence.jobname = f"{run.telescope}_{str(run.run).zfill(5)}"
+                    sequence_filenames(sequence)
                     log.debug(
-                        f"Sequence {seq.seq} assigned to run {run.run} whose parent is"
-                        f" {seq.parent} with run {seq.previousrun}"
+                        f"Sequence {sequence.seq} assigned to run {run.run} whose parent is"
+                        f" {sequence.parent} with run {sequence.previousrun}"
                     )
-                    if seq not in sequence_list:
-                        sequence_list.append(seq)
+                    if sequence not in sequence_list:
+                        sequence_list.append(sequence)
                     break
 
     # insert the calibration file names

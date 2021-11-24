@@ -38,8 +38,8 @@ __all__ = [
     "stereo_process",
     "update_sequence_status",
     "get_status_for_sequence",
-    "prettyoutputmatrix",
-    "reportsequences",
+    "output_matrix",
+    "report_sequences",
 ]
 
 log = myLogger(logging.getLogger())
@@ -129,7 +129,7 @@ def single_process(telescope):
         # insert_if_new_activity_db(sequence_list)
         # updatesequencedb(sequence_list)
         # rule()
-        reportsequences(sequence_list)
+        report_sequences(sequence_list)
 
     # cleaning
     # options.directory = None
@@ -173,7 +173,7 @@ def stereo_process(telescope, s1_list, s2_list):
     submit_jobs(sequence_list)
     # finalizing report
     rule()
-    reportsequences(sequence_list)
+    report_sequences(sequence_list)
     # cleaning
     options.directory = None
     return sequence_list
@@ -255,13 +255,13 @@ def get_status_for_sequence(sequence, program):
     return number_of_files
 
 
-def reportsequences(seqlist):
+def report_sequences(sequence_list):
     """
     Update the status report table shown by the sequencer.
 
     Parameters
     ----------
-    seqlist: List of sequence objects
+    sequence_list: list
         List of sequences of a given date
     """
     matrix = []
@@ -291,41 +291,41 @@ def reportsequences(seqlist):
         header.append("DL2%")
 
     matrix.append(header)
-    for s in seqlist:
+    for sequence in sequence_list:
         row_list = [
-            s.telescope,
-            s.seq,
-            s.parent,
-            s.type,
-            s.run,
-            s.subruns,
-            s.source,
-            s.wobble,
-            s.action,
-            s.tries,
-            s.jobid,
-            s.state,
-            s.jobhost,
-            s.cputime,
-            s.walltime,
-            s.exit,
+            sequence.telescope,
+            sequence.seq,
+            sequence.parent,
+            sequence.type,
+            sequence.run,
+            sequence.subruns,
+            sequence.source,
+            sequence.wobble,
+            sequence.action,
+            sequence.tries,
+            sequence.jobid,
+            sequence.state,
+            sequence.jobhost,
+            sequence.cputime,
+            sequence.walltime,
+            sequence.exit,
         ]
-        if s.type in ["DRS4", "PEDCALIB"]:
+        if sequence.type in ["DRS4", "PEDCALIB"]:
             # repeat None for every data level
             row_list.append(None)
             row_list.append(None)
             row_list.append(None)
             row_list.append(None)
             row_list.append(None)
-        elif s.type == "DATA":
-            row_list.append(s.dl1status)
-            row_list.append(s.muonstatus)
-            row_list.append(s.dl1abstatus)
-            row_list.append(s.datacheckstatus)
-            row_list.append(s.dl2status)
+        elif sequence.type == "DATA":
+            row_list.append(sequence.dl1status)
+            row_list.append(sequence.muonstatus)
+            row_list.append(sequence.dl1abstatus)
+            row_list.append(sequence.datacheckstatus)
+            row_list.append(sequence.dl2status)
         matrix.append(row_list)
     padding = int(cfg.get("OUTPUT", "PADDING"))
-    prettyoutputmatrix(matrix, padding)
+    output_matrix(matrix, padding)
 
 
 # def insert_if_new_activity_db(sequence_list):
@@ -373,18 +373,18 @@ def reportsequences(seqlist):
 #     user = cfg.get('MYSQL', 'USER')
 #     database = cfg.get('MYSQL', 'DATABASE')
 #     table = cfg.get('MYSQL', 'SEQUENCETABLE')
-#     for s in seqlist:
+#     for sequence in seqlist:
 #         """ Fine tuning """
 #         hostname = None
 #         id_processor = None
-#         if s.jobhost is not None:
-#             hostname, id_processor = s.jobhost.split('/')
+#         if sequence.jobhost is not None:
+#             hostname, id_processor = sequence.jobhost.split('/')
 #         """ Select ID if exists """
 #         selections = ['ID']
 #         conditions = {
-#             'TELESCOPE': s.telescope,
-#             'NIGHT': s.night,
-#             'ID_NIGHTLY': s.seq
+#             'TELESCOPE': sequence.telescope,
+#             'NIGHT': sequence.night,
+#             'ID_NIGHTLY': sequence.seq
 #         }
 #         matrix = select_db(server, user, database, table, selections, conditions)
 #         id = None
@@ -392,45 +392,45 @@ def reportsequences(seqlist):
 #             id = matrix[0][0]
 #         log.debug(f"To this sequence corresponds an entry in the {table} with ID {id}")
 #         assignments = {
-#             'TELESCOPE': s.telescope,
-#             'NIGHT': s.night,
-#             'ID_NIGHTLY': s.seq,
-#             'TYPE': s.type,
-#             'RUN': s.run,
-#             'SUBRUNS': s.subruns,
-#             'SOURCEWOBBLE': s.sourcewobble,
-#             'ACTION': s.action,
-#             'TRIES': s.tries,
-#             'JOBID': s.jobid,
-#             'STATE': s.state,
+#             'TELESCOPE': sequence.telescope,
+#             'NIGHT': sequence.night,
+#             'ID_NIGHTLY': sequence.seq,
+#             'TYPE': sequence.type,
+#             'RUN': sequence.run,
+#             'SUBRUNS': sequence.subruns,
+#             'SOURCEWOBBLE': sequence.sourcewobble,
+#             'ACTION': sequence.action,
+#             'TRIES': sequence.tries,
+#             'JOBID': sequence.jobid,
+#             'STATE': sequence.state,
 #             'HOSTNAME': hostname,
 #             'ID_PROCESSOR': id_processor,
-#             'CPU_TIME': s.cputime,
-#             'WALL_TIME': s.walltime,
-#             'EXIT_STATUS': s.exit,
+#             'CPU_TIME': sequence.cputime,
+#             'WALL_TIME': sequence.walltime,
+#             'EXIT_STATUS': sequence.exit,
 #         }
 #
-#         if s.type == 'CALI':
-#             assignments.update({'PROGRESS_SCALIB': s.scalibstatus})
-#         elif s.type == 'DATA':
+#         if sequence.type == 'CALI':
+#             assignmentsequence.update({'PROGRESS_SCALIB': sequence.scalibstatus})
+#         elif sequence.type == 'DATA':
 #             # FIXME: translate to LST related stuff
-#             assignments.update({
-#                 'PROGRESS_SORCERER': s.sorcererstatus,
-#                 'PROGRESS_SSIGNAL': s.ssignalstatus,
-#                 'PROGRESS_MERPP': s.merppstatus,
-#                 'PROGRESS_STAR': s.starstatus,
-#                 'PROGRESS_STARHISTOGRAM': s.starhistogramstatus,
+#             assignmentsequence.update({
+#                 'PROGRESS_SORCERER': sequence.sorcererstatus,
+#                 'PROGRESS_SSIGNAL': sequence.ssignalstatus,
+#                 'PROGRESS_MERPP': sequence.merppstatus,
+#                 'PROGRESS_STAR': sequence.starstatus,
+#                 'PROGRESS_STARHISTOGRAM': sequence.starhistogramstatus,
 #             })
-#         elif s.type == 'STEREO':
-#             assignments.update({
-#                 'PROGRESS_SUPERSTAR': s.superstarstatus,
-#                 'PROGRESS_SUPERSTARHISTOGRAM': s.superstarhistogramstatus,
-#                 'PROGRESS_MELIBEA': s.melibeastatus,
-#                 'PROGRESS_MELIBEAHISTOGRAM': s.melibeahistogramstatus,
+#         elif sequence.type == 'STEREO':
+#             assignmentsequence.update({
+#                 'PROGRESS_SUPERSTAR': sequence.superstarstatus,
+#                 'PROGRESS_SUPERSTARHISTOGRAM': sequence.superstarhistogramstatus,
+#                 'PROGRESS_MELIBEA': sequence.melibeastatus,
+#                 'PROGRESS_MELIBEAHISTOGRAM': sequence.melibeahistogramstatus,
 #             })
 #
-#         if s.parent is not None:
-#             assignments['ID_NIGHTLY_PARENTS'] = f'{s.parent},'
+#         if sequence.parent is not None:
+#             assignments['ID_NIGHTLY_PARENTS'] = f'{sequence.parent},'
 #         if not id:
 #             conditions = {}
 #             insert_db(server, user, database, table, assignments, conditions)
@@ -439,31 +439,28 @@ def reportsequences(seqlist):
 #             update_db(server, user, database, table, assignments, conditions)
 
 
-def prettyoutputmatrix(m, paddingspace):
+def output_matrix(matrix: list, padding_space: int):
     """
     Build the status table shown by the sequencer.
 
     Parameters
     ----------
-    m
-    paddingspace
+    matrix: list
+    padding_space: int
     """
-    maxfieldlength = []
-    for i in range(len(m)):
-        row = m[i]
-        for j in range(len(row)):
-            col = row[j]
-            if m.index(row) == 0:
-                maxfieldlength.append(len(str(col)))
-            elif len(str(col)) > maxfieldlength[j]:
+    max_field_length = []
+    for i, row in enumerate(matrix):
+        for j, col in enumerate(row):
+            if matrix.index(row) == 0:
+                max_field_length.append(len(str(col)))
+            elif len(str(col)) > max_field_length[j]:
                 # Insert or update the first length
-                maxfieldlength[j] = len(str(col))
-    for row in m:
+                max_field_length[j] = len(str(col))
+    for row in matrix:
         stringrow = ""
-        for j in range(len(row)):
-            col = row[j]
-            lpadding = (maxfieldlength[j] - len(str(col))) * " "
-            rpadding = paddingspace * " "
+        for j, col in enumerate(row):
+            lpadding = (max_field_length[j] - len(str(col))) * " "
+            rpadding = padding_space * " "
             if isinstance(col, int):
                 # we got an integer, right aligned
                 stringrow += f"{lpadding}{col}{rpadding}"

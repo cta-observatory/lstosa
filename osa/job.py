@@ -9,7 +9,7 @@ import time
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent
-from typing import List
+from typing import List, Iterable
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -700,7 +700,7 @@ def get_sacct_output() -> pd.DataFrame:
         return sacct_output
 
 
-def filter_jobs(job_info: pd.DataFrame, sequence_list: list):
+def filter_jobs(job_info: pd.DataFrame, sequence_list: Iterable):
     """Filter the job info list to get the values of the jobs in the current queue."""
     sequences_info = pd.DataFrame([vars(seq) for seq in sequence_list])
     # Filter the jobs in the sacct output that are present in the sequence list
@@ -710,7 +710,7 @@ def filter_jobs(job_info: pd.DataFrame, sequence_list: list):
 def set_queue_values(
         sacct_info: pd.DataFrame,
         squeue_info: pd.DataFrame,
-        sequence_list: list
+        sequence_list: Iterable
 ) -> None:
     """
     Extract job info from sacct output and
@@ -734,7 +734,7 @@ def set_queue_values(
     for sequence in sequence_list:
         df_jobname = job_info_filtered[
             job_info_filtered["JobName"] == sequence.jobname
-            ]
+        ]
         sequence.tries = len(df_jobname["JobID"].unique())
         sequence.action = "Check"
 
