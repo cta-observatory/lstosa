@@ -166,4 +166,7 @@ def store_conda_env_export():
     analysis_log_dir = Path(options.directory) / "log"
     analysis_log_dir.mkdir(parents=True, exist_ok=True)
     conda_env_file = analysis_log_dir / "conda_env.yml"
-    subprocess.run(["conda", "env", "export", "--file", str(conda_env_file)])
+    subprocess.run(
+        ["conda", "env", "export", "--file", str(conda_env_file)],
+        check=True
+    )

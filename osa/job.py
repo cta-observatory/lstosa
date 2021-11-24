@@ -79,7 +79,7 @@ def are_all_jobs_correctly_finished(sequence_list):
             # looking for .../sequence_LST1_04180.history files
             # we need to check all the subrun wise history files
             # .../sequence_LST1_04180.XXXX.history
-            out, rc = historylevel(history_file, sequence.type)
+            out, _ = historylevel(history_file, sequence.type)
             if out == 0:
                 log.debug(f"Job {sequence.seq} ({sequence.type}) correctly finished")
                 continue
@@ -127,7 +127,7 @@ def check_history_level(history_file: Path, program_levels: dict):
             if program in program_levels and exit_status != 0:
                 level = program_levels[program]
                 return level, exit_status
-            elif program in program_levels and exit_status == 0:
+            if program in program_levels and exit_status == 0:
                 level = program_levels[program]
                 continue
 
@@ -251,9 +251,9 @@ def setrunfromparent(sequence_list):
 
 def sequence_filenames(sequence):
     """Build names of the script, veto and history files."""
-    script_suffix = cfg.get("LSTOSA", "SCRIPTSUFFIX")
-    history_suffix = cfg.get("LSTOSA", "HISTORYSUFFIX")
-    veto_suffix = cfg.get("LSTOSA", "VETOSUFFIX")
+    script_suffix = ".py"
+    history_suffix = ".history"
+    veto_suffix = ".veto"
     basename = f"sequence_{sequence.jobname}"
 
     sequence.script = Path(options.directory) / f"{basename}{script_suffix}"
@@ -326,31 +326,31 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
     if scheduler != "slurm":
         log.warning("No other schedulers are currently supported")
         return None
-    else:
-        sbatch_parameters = [
-            f"--job-name={sequence.jobname}",
-            "--cpus-per-task=1",
-            f"--chdir={options.directory}",
-            f"--output=log/slurm_{sequence.run:05d}.%4a_%A.out",
-            f"--error=log/slurm_{sequence.run:05d}.%4a_%A.err",
-        ]
 
-        # Get the number of subruns. The number of subruns starts counting from 0.
-        subruns = int(sequence.subrun_list[-1].subrun) - 1
+    sbatch_parameters = [
+        f"--job-name={sequence.jobname}",
+        "--cpus-per-task=1",
+        f"--chdir={options.directory}",
+        f"--output=log/slurm_{sequence.run:05d}.%4a_%A.out",
+        f"--error=log/slurm_{sequence.run:05d}.%4a_%A.err",
+    ]
 
-        # Depending on the type of sequence, we need to set
-        # different sbatch environment variables
-        if sequence.type == "DATA":
-            sbatch_parameters.append(f"--array=0-{subruns}")
+    # Get the number of subruns. The number of subruns starts counting from 0.
+    subruns = int(sequence.subrun_list[-1].subrun) - 1
 
-        sbatch_parameters.append(
-            f"--partition={cfg.get('SLURM', f'PARTITION_{sequence.type}')}"
-        )
-        sbatch_parameters.append(
-            f"--mem-per-cpu={cfg.get('SLURM', f'MEMSIZE_{sequence.type}')}"
-        )
+    # Depending on the type of sequence, we need to set
+    # different sbatch environment variables
+    if sequence.type == "DATA":
+        sbatch_parameters.append(f"--array=0-{subruns}")
 
-        return ["#SBATCH " + line for line in sbatch_parameters]
+    sbatch_parameters.append(
+        f"--partition={cfg.get('SLURM', f'PARTITION_{sequence.type}')}"
+    )
+    sbatch_parameters.append(
+        f"--mem-per-cpu={cfg.get('SLURM', f'MEMSIZE_{sequence.type}')}"
+    )
+
+    return ["#SBATCH " + line for line in sbatch_parameters]
 
 
 def job_header_template(sequence):

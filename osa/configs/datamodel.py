@@ -131,5 +131,5 @@ class SequenceStereo(Sequence):
     def set_unique(v_attr, w_attr):
         if v_attr == w_attr:
             return v_attr
-        else:
-            return None
+
+        return None

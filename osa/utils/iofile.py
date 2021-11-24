@@ -23,6 +23,7 @@ def read_from_file(file):
             return f.read()
     else:
         log.error(f"{file} does not exists or is not a file")
+        return None
 
 
 def write_to_file(file, content):
@@ -43,7 +44,8 @@ def write_to_file(file, content):
             if options.simulate:
                 remove(file_temp)
                 log.debug(
-                    f"SIMULATE File {file_temp} would replace {file}. Deleting {file_temp}"
+                    f"SIMULATE File {file_temp} would replace {file}."
+                    f"Deleting {file_temp}"
                 )
             else:
                 try:

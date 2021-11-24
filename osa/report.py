@@ -31,13 +31,8 @@ def start(parent_tag):
 
 
 def header(message):
-    """
-
-    Parameters
-    ----------
-    message
-    """
-    framesize = size()
+    """Print out a header of a given length."""
+    framesize = int(config.cfg.get("OUTPUT", "REPORTWIDTH"))
     if len(message) < framesize - 2:
         prettyframe = int((framesize - 2 - len(message)) / 2) * "="
     else:
@@ -46,18 +41,8 @@ def header(message):
 
 
 def rule():
-    prettyframe = size() * "-"
+    prettyframe = int(config.cfg.get("OUTPUT", "REPORTWIDTH")) * "-"
     log.info(prettyframe)
-
-
-def size():
-    """
-
-    Returns
-    -------
-
-    """
-    return int(config.cfg.get("OUTPUT", "REPORTWIDTH"))
 
 
 def finished_text(ana_dict):

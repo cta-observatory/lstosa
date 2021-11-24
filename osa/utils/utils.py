@@ -41,7 +41,7 @@ __all__ = [
     "get_dl1_prod_id",
     "get_dl2_prod_id",
     "get_night_limit_timestamp",
-    "time_to_seconds"
+    "time_to_seconds",
 ]
 
 log = logging.getLogger(__name__)
@@ -309,19 +309,19 @@ def get_md5sum_and_copy(inputf, outputf):
         linkto = readlink(inputf)
         symlink(linkto, outputf)
         return None
+
+    try:
+        with open(inputf, "rb") as f, open(outputf, "wb") as o:
+            block_size = 8192
+            for chunk in iter(lambda: f.read(128 * block_size), b""):
+                md5.update(chunk)
+                # got this error: write() argument must be str, not bytes
+                o.write(chunk)
+    # except IOError as (ErrorValue, ErrorName):
+    except IOError as error:
+        log.exception(f"{error}", 2)
     else:
-        try:
-            with open(inputf, "rb") as f, open(outputf, "wb") as o:
-                block_size = 8192
-                for chunk in iter(lambda: f.read(128 * block_size), b""):
-                    md5.update(chunk)
-                    # got this error: write() argument must be str, not bytes
-                    o.write(chunk)
-        # except IOError as (ErrorValue, ErrorName):
-        except IOError as error:
-            log.exception(f"{error}", 2)
-        else:
-            return md5.hexdigest()
+        return md5.hexdigest()
 
 
 def is_day_closed():
@@ -351,7 +351,7 @@ def date_in_yymmdd(date_string):
     return f"{year}_{month}_{day}"
 
 
-def destination_dir(concept, create_dir=True):
+def destination_dir(concept, create_dir=True) -> Path:
     """
     Create final destination directory for each data level.
     See Also osa.utils.register_run_concept_files
@@ -366,7 +366,7 @@ def destination_dir(concept, create_dir=True):
 
     Returns
     -------
-    path : str
+    path : pathlib.Path
         Path to the directory
     """
     nightdir = lstdate_to_dir(options.date)
@@ -413,9 +413,9 @@ def create_directories_datacheck_web(host, datedir, prod_id):
     for product in DATACHECK_PRODUCTS:
         dest_directory = DATACHECK_BASEDIR / product / prod_id / datedir
         cmd = ["ssh", host, "mkdir", "-p", dest_directory]
-        subprocess.run(cmd, capture_output=True)
+        subprocess.run(cmd, capture_output=True, check=True)
         cmd = ["scp", cfg.get("WEBSERVER", "INDEXPHP"), f"{host}:{dest_directory}/."]
-        subprocess.run(cmd, capture_output=True)
+        subprocess.run(cmd, capture_output=True, check=True)
 
 
 def set_no_observations_flag(host, datedir, prod_id):
@@ -436,8 +436,8 @@ def set_no_observations_flag(host, datedir, prod_id):
             no_observations_flag = dest_directory / "no_observations"
             cmd = ["ssh", host, "touch", no_observations_flag]
             subprocess.check_output(cmd)
-        except subprocess.CalledProcessError as e:
-            log.warning(f"Destination directory does not exists. {e}")
+        except subprocess.CalledProcessError as error:
+            log.warning(f"Destination directory does not exists. {error}")
 
 
 def copy_files_datacheck_web(host, datedir, file_list) -> None:
@@ -459,19 +459,19 @@ def copy_files_datacheck_web(host, datedir, file_list) -> None:
         if "drs4" in str(file_to_transfer):
             dest_directory = DATACHECK_BASEDIR / "drs4" / options.prod_id / datedir
             cmd = ["scp", str(file_to_transfer), f"{host}:{dest_directory}/."]
-            subprocess.run(cmd)
+            subprocess.run(cmd, check=True)
 
         elif "calibration" in str(file_to_transfer):
             dest_directory = (
                 DATACHECK_BASEDIR / "enf_calibration" / options.prod_id / datedir
             )
             cmd = ["scp", file_to_transfer, f"{host}:{dest_directory}/."]
-            subprocess.run(cmd)
+            subprocess.run(cmd, check=True)
 
         elif "datacheck" in str(file_to_transfer):
             dest_directory = DATACHECK_BASEDIR / "dl1" / options.prod_id / datedir
             cmd = ["scp", file_to_transfer, f"{host}:{dest_directory}/."]
-            subprocess.run(cmd)
+            subprocess.run(cmd, check=True)
 
 
 def get_input_file(run_number: str) -> Path:
@@ -501,8 +501,8 @@ def get_input_file(run_number: str) -> Path:
 
     if not file_list:
         raise IOError(f"Files corresponding to run {run_number} not found in {r0_path}.")
-    else:
-        return file_list[0]
+
+    return file_list[0]
 
 
 def stringify(args):
@@ -537,15 +537,15 @@ def time_to_seconds(timestring):
         days, hhmmss = timestring.split("-", )
         hours, minutes, seconds = hhmmss.split(":")
         return int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+
+    split_time = timestring.split(":")
+    if len(split_time) == 2:
+        # MM:SS
+        minutes, seconds = split_time
+        hours = 0
+    elif len(split_time) == 3:
+        # HH:MM:SS
+        hours, minutes, seconds = split_time
     else:
-        split_time = timestring.split(":")
-        if len(split_time) == 2:
-            # MM:SS
-            minutes, seconds = split_time
-            hours = 0
-        elif len(split_time) == 3:
-            # HH:MM:SS
-            hours, minutes, seconds = split_time
-        else:
-            raise ValueError("Time format not recognized.")
-        return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+        raise ValueError("Time format not recognized.")
+    return int(hours) * 3600 + int(minutes) * 60 + int(seconds)

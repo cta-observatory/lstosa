@@ -872,11 +872,11 @@ def copy_datacheck_parsing():
         options.dl1_prod_id = options.prod_id
 
 
-def valid_date(s):
+def valid_date(string):
     try:
-        return datetime.datetime.strptime(s, "%Y_%m_%d")
+        return datetime.datetime.strptime(string, "%Y_%m_%d")
     except ValueError:
-        msg = f"Not a valid date: '{s}'."
+        msg = f"Not a valid date: '{string}'."
         raise ArgumentTypeError(msg)
 
 

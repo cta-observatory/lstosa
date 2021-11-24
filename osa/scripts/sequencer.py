@@ -31,7 +31,7 @@ from osa.report import rule, start
 from osa.utils.cliopts import sequencer_cli_parsing, set_default_directory_if_needed
 from osa.utils.logging import myLogger
 from osa.utils.utils import is_day_closed, gettag
-from osa.veto import getclosedlist, getvetolist
+from osa.veto import get_closed_list, get_veto_list
 
 __all__ = [
     "single_process",
@@ -117,8 +117,8 @@ def single_process(telescope):
             squeue_info=get_squeue_output(),
             sequence_list=sequence_list
         )
-    getvetolist(sequence_list)
-    getclosedlist(sequence_list)
+    get_veto_list(sequence_list)
+    get_closed_list(sequence_list)
     update_sequence_status(sequence_list)
     # updatesequencedb(sequence_list)
     if not options.no_submit:
@@ -167,8 +167,8 @@ def stereo_process(telescope, s1_list, s2_list):
             squeue_info=get_squeue_output(),
             sequence_list=sequence_list
         )
-    getvetolist(sequence_list)
-    getclosedlist(sequence_list)
+    get_veto_list(sequence_list)
+    get_closed_list(sequence_list)
     update_sequence_status(sequence_list)
     submit_jobs(sequence_list)
     # finalizing report

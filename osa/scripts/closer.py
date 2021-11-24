@@ -8,7 +8,6 @@ import os
 import re
 import subprocess
 import sys
-from filecmp import cmp
 from pathlib import Path
 
 from osa.configs import options
@@ -21,7 +20,7 @@ from osa.raw import get_check_raw_dir
 from osa.report import start
 from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import myLogger
-from osa.utils.register import register_run_concept_files
+from osa.utils.register import register_found_pattern
 from osa.utils.utils import (
     get_lock_file,
     is_day_closed,
@@ -32,7 +31,7 @@ from osa.utils.utils import (
     create_lock,
     gettag,
 )
-from osa.veto import createclosed
+
 
 __all__ = [
     "use_night_summary",
@@ -41,7 +40,6 @@ __all__ = [
     "ask_for_closing",
     "post_process",
     "post_process_files",
-    "setclosedfilename",
     "is_finished_check",
     "extract_provenance",
     "merge_dl1_datacheck",
@@ -50,14 +48,6 @@ __all__ = [
 ]
 
 log = myLogger(logging.getLogger())
-
-DL1AB_RE = re.compile(fr"{options.dl1_prod_id}.*/dl1.*.(?:h5|hdf5|hdf)")
-DL2_RE = re.compile(fr"{options.dl2_prod_id}.*/dl2.*.(?:h5|hdf5|hdf)")
-MUONS_RE = re.compile(r"muons.*.fits")
-DATACHECK_RE = re.compile(r"datacheck_dl1.*.(?:h5|hdf5|hdf)")
-CALIB_RE = re.compile(r"/calibration.*.(?:h5|hdf5|hdf)")
-TIMECALIB_RE = re.compile(r"/time_calibration.*.(?:h5|hdf5|hdf)")
-PEDESTAL_RE = re.compile(r"drs4.*.fits")
 
 
 def main():
@@ -115,9 +105,8 @@ def use_night_summary():
     night_summary_file = get_runsummary_file(options.date)
     if night_summary_file.exists():
         return True
-    log.info("Night Summary expected but it does not exists.")
-    log.info("Please check it or use the -r option to give a reason.")
-    log.error("Night Summary missing and no reason option")
+    log.warning("Night Summary expected but it does not exists. "
+                "Please check it or use the -r option to give a reason.")
     return False
 
 
@@ -202,17 +191,26 @@ def post_process(seq_tuple):
     return False
 
 
-def post_process_files(seq_list):
+def post_process_files(seq_list: list):
     """
     Identify the different types of files, try to close the sequences
     and copy output files to corresponding data directories.
 
     Parameters
     ----------
-    seq_list: list of sequences
+    seq_list: list
+        list of sequences
     """
 
     output_files_set = set(Path(options.directory).rglob("*Run*"))
+
+    DL1AB_RE = re.compile(rf"{options.dl1_prod_id}/dl1.*.(?:h5|hdf5|hdf)")
+    DL2_RE = re.compile(f"{options.dl2_prod_id}" + r"/dl2.*.(?:h5|hdf5|hdf)")
+    MUONS_RE = re.compile(r"muons.*.fits")
+    DATACHECK_RE = re.compile(r"datacheck_dl1.*.(?:h5|hdf5|hdf)")
+    CALIB_RE = re.compile(r"/calibration.*.(?:h5|hdf5|hdf)")
+    TIMECALIB_RE = re.compile(r"/time_calibration.*.(?:h5|hdf5|hdf)")
+    PEDESTAL_RE = re.compile(r"drs4.*.fits")
 
     pattern_files = dict(
         [
@@ -229,7 +227,7 @@ def post_process_files(seq_list):
     for concept, pattern_re in pattern_files.items():
         log.debug(f"Processing {concept} files, {len(output_files_set)} files left")
 
-        dst_path = destination_dir(concept)
+        dst_path = destination_dir(concept, create_dir=True)
 
         log.debug(f"Checking if {concept} files need to be moved to {dst_path}")
         for file_path in output_files_set.copy():
@@ -241,89 +239,6 @@ def post_process_files(seq_list):
                     file_path, seq_list, concept, dst_path
                 )
                 output_files_set.remove(registered_file)
-
-
-def register_found_pattern(file_path, seq_list, concept, destination_path):
-    """
-
-    Parameters
-    ----------
-    file_path: pathlib.Path
-    seq_list
-    concept
-    destination_path
-    """
-    file = os.path.basename(file_path)
-    new_dst = os.path.join(destination_path, file)
-    log.debug(f"New file path {new_dst}")
-    if not options.simulate:
-        if os.path.exists(new_dst):
-            if os.path.islink(file):
-                # delete because the link has been correctly copied
-                log.debug(f"Original file {file} is just a link")
-                if options.seqtoclose is None:
-                    log.debug(f"Deleting {file}")
-                    # unlink(file)
-            elif os.path.exists(file) and cmp(file, new_dst):
-                # delete
-                log.debug(f"Destination file exists and it is equal to {file}")
-                if options.seqtoclose is None:
-                    log.debug(f"Deleting original{file}. Not activated yet.")
-                    # unlink(file)
-            else:
-                log.debug(
-                    f"Original file {file} is not a link or is different"
-                    f"than destination {new_dst}"
-                )
-        else:
-            log.debug(f"Destination file {new_dst} does not exists")
-            register_non_existing_file(str(file_path), concept, seq_list)
-
-    # Return filepath already registered to be deleted from the set of all files
-    return file_path
-
-
-def register_non_existing_file(file_path_str, concept, seq_list):
-    """
-
-    Parameters
-    ----------
-    file_path_str: str
-    concept
-    seq_list
-    """
-
-    for s in seq_list:
-        if s.type == "DATA":
-            run_str_found = re.search(s.run_str, file_path_str)
-
-            if run_str_found is not None:
-                # register and delete
-                log.debug(f"Registering file {run_str_found}")
-                register_run_concept_files(s.run_str, concept)
-                if options.seqtoclose is None and not os.path.exists(file_path_str):
-                    log.debug("File does not exists")
-
-        elif s.type in ["PEDCALIB", "DRS4"]:
-            calib_run_str_found = re.search(str(s.run), file_path_str)
-            drs4_run_str_found = re.search(str(s.previousrun), file_path_str)
-
-            if calib_run_str_found is not None:
-                # register and delete
-                log.debug(f"Registering file {calib_run_str_found}")
-                register_run_concept_files(str(s.run), concept)
-                if options.seqtoclose is None and not os.path.exists(file_path_str):
-                    log.debug("File does not exists")
-
-            if drs4_run_str_found is not None:
-                # register and delete
-                log.debug(f"Registering file {drs4_run_str_found}")
-                register_run_concept_files(str(s.previousrun), concept)
-                if options.seqtoclose is None and not os.path.exists(file_path_str):
-                    log.debug("File does not exists")
-
-        setclosedfilename(s)
-        createclosed(s.closed)
 
 
 def set_closed_with_file():
@@ -382,17 +297,7 @@ def is_finished_check(run_summary):
     return sequence_success, sequence_list
 
 
-def setclosedfilename(seq) -> None:
-    """
-    Close sequence and creates a .closed lock file.
 
-    Parameters
-    ----------
-    seq: Sequence Object
-    """
-    closed_suffix = cfg.get("LSTOSA", "CLOSEDSUFFIX")
-    basename = f"sequence_{seq.jobname}"
-    seq.closed = os.path.join(options.directory, basename + closed_suffix)
 
 
 def merge_dl1_datacheck(seq_list):
@@ -425,7 +330,8 @@ def merge_dl1_datacheck(seq_list):
                 "-e",
                 f"log/merge_dl1_datacheck_{sequence.run:05d}_%j.err",
                 "lstchain_check_dl1",
-                f"--input-file={dl1_prod_id_directory}/datacheck_dl1_LST-1.Run{sequence.run:05d}.*.h5",
+                f"--input-file={dl1_prod_id_directory}/ \
+                datacheck_dl1_LST-1.Run{sequence.run:05d}.*.h5",
                 f"--output-dir={dl1_prod_id_directory}",
                 f"--muons-dir={dl1_base_directory}",
             ]
@@ -494,7 +400,7 @@ def extract_provenance(seq_list):
                 "-D",
                 options.directory,
                 "-o",
-                f"log/slurm_provenance_{sequence.run:05d}_%j.log",
+                f"log/provenance_{sequence.run:05d}_%j.log",
                 "provprocess",
                 "-c",
                 options.configfile,
@@ -522,7 +428,7 @@ def merge_dl2(sequence_list):
                 "-D",
                 options.directory,
                 "-o",
-                f"log/slurm_merge_dl2_{sequence.run:05d}_%j.log",
+                f"log/merge_dl2_{sequence.run:05d}_%j.log",
                 "lstchain_merge_hdf5_files",
                 f"--input-dir={dl2_dir}",
                 f"--output-file={dl2_merged_file}",
