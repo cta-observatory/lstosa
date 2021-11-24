@@ -1,13 +1,13 @@
 .. _lstosa:
 
-lstosa: Onsite analysis pipeline for the CTA Large Size Telescope prototype
-===========================================================================
+Onsite analysis pipeline for the CTA Large Size Telescope prototype ``lstosa``
+==============================================================================
 
 .. image:: logo_lstosa.png
    :align: center
    :width: 70%
 
-LSTOSA is the on-site analysis pipeline of the CTA Large Size Telescope prototype (LST-1)
+``lstosa`` is the on-site analysis pipeline of the CTA Large Size Telescope prototype (LST-1)
 making use of the `cta-lstchain`_ analysis library.
 
 * Code: https://gitlab.cta-observatory.org/cta-array-elements/lst/analysis/lstosa
