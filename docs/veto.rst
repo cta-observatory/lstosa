@@ -9,4 +9,4 @@ the issue.
 Reference/API
 +++++++++++++
 
-.. automodapi:: osa.veto.veto
+.. automodapi:: osa.veto

@@ -1,142 +1,165 @@
+"""Identify files to be moved to their final destination directories"""
+
 import logging
-import os
+import re
 import shutil
-from filecmp import cmp
-from os.path import basename, exists, join
 from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.utils import destination_dir
+from osa.veto import set_closed_sequence
+
+__all__ = [
+    "register_files",
+    "register_run_concept_files",
+    "register_found_pattern",
+    "register_non_existing_file"
+]
 
 log = logging.getLogger(__name__)
 
 
-def register_files(type, run_str, inputdir, prefix, suffix, outputdir):
-    """Copy files into final data directory destination and register them into the DB (to be implemented).
+def register_files(run_str, analysis_dir, prefix, suffix, output_dir) -> None:
+    """
+    Copy files into final data directory destination and register
+    them into the DB (to be implemented).
 
     Parameters
     ----------
-    run_str:
-    inputdir: analysis directory
-    suffix: suffix of the data file
-    outputdir: final data directory
-    prefix: prefix of the data file
-    type : type of run for DB purposes
+    run_str: str
+        Run number
+    analysis_dir: pathlib.Path
+        analysis directory
+    suffix: str
+        suffix of the data file
+    output_dir: pathlib.Path
+        final data directory
+    prefix: str
+        prefix of the data file
     """
-    file_list = Path(inputdir).rglob(f"{prefix}*{run_str}*{suffix}")
-    log.debug(f"File list is {file_list}")
-    # hostname = gethostname()
-    # the default subrun index for most of the files
-    # run = int(run_str.lstrip("0"))
-    # subrun = 1
-    for inputf in file_list:
-        # next is the way of searching 3 digits after a dot in filenames
-        # subrunsearch = re.search("(?<=\.)\d\d\d_", basename(inputf))
-        # if subrunsearch:
-        # and strip the zeroes after getting the first 3 character
-        # subrun = subrunsearch.group(0)[0:3].lstrip("0")
-        outputf = join(outputdir, basename(inputf))
-        if exists(outputf) and cmp(inputf, outputf):
-            # do nothing than acknowledging
-            log.debug(
-                f"Nothing to do. Destination file {outputf} exists and it is identical to input"
-            )
-        else:
-            # there is no output file or it is different
-            log.debug(f"Moving file {outputf}")
-            shutil.move(inputf, outputf)
 
-            # Keeping DL1 and muons symlink in running_analysis
-            if prefix == "dl1_LST-1" and suffix == ".h5":
-                file_basename = os.path.basename(inputf)
-                dl1_filepath = os.path.join(options.directory, file_basename)
-                # Remove the original DL1 files pre DL1ab stage and keep only symlinks
-                if os.path.isfile(dl1_filepath) and not os.path.islink(dl1_filepath):
-                    os.remove(dl1_filepath)
-                if os.path.islink(dl1_filepath):
-                    # Link already produced
-                    pass
-                else:
-                    os.symlink(outputf, dl1_filepath)
-            if prefix == "muons_LST-1" and suffix == ".fits":
-                os.symlink(outputf, inputf)
+    file_list = analysis_dir.rglob(f"{prefix}*{run_str}*{suffix}")
 
-            # for the moment we are not interested in calculating the hash md5
-            # md5sum = get_md5sum_and_copy(inputf, outputf)
-            # log.debug("Resulting md5sum={0}".format(md5sum))
-            # mtime = datetime.fromtimestamp(getmtime(outputf))
-            # size = getsize(outputf)
+    for input_file in file_list:
+        output_file = output_dir / input_file.name
+        if not output_file.exists():
+            log.debug(f"Moving file {input_file} to {output_dir}")
+            shutil.move(input_file, output_file)
+            # Keep DL1 and muons symlink in running_analysis
+            create_symlinks(input_file, output_file, prefix, suffix)
 
-            # # DB config parameters
-            # s = cfg.get('MYSQL', 'SERVER')
-            # u = cfg.get('MYSQL', 'USER')
-            # d = cfg.get('MYSQL', 'DATABASE')
-            # daqtable = cfg.get('MYSQL', 'DAQTABLE')
-            # storagetable = cfg.get('MYSQL', 'STORAGETABLE')
-            # sequencetable = cfg.get('MYSQL', 'SEQUENCETABLE')
 
-            # Get the other values of parent files querying the database
-            # selections = ['ID', 'DAQ_ID', 'REPORT_ID']
-            # conditions = {'DAQ_ID': f"(SELECT ID FROM {daqtable} WHERE\
-            #  RUN={run} AND SUBRUN={subrun} AND TELESCOPE='{options.tel_id}')"}
+def create_symlinks(input_file, output_file, prefix, suffix):
+    """Keep DL1 and muons symlink in running_analysis for possible future re-use."""
+    analysis_dir = Path(options.directory)
 
-            # id_parent, daq_id, report_id = [None, None, None]
-            # querymatrix = select_db(s, u, d, storagetable, selections, conditions)
-            # It could be that they don't exists
-            # if len(querymatrix) != 0:
-            #     log.debug("Resulting query={0}".format(querymatrix[0]))
-            #     id_parent, daq_id, report_id = querymatrix[0]
-            #     log.debug(f"id_parent={id_parent}, daq_id={daq_id}, report_id={report_id}")
+    if prefix == "dl1_LST-1" and suffix == ".h5":
+        dl1_filepath = analysis_dir / input_file.name
+        # Remove the original DL1 files pre DL1ab stage and keep only symlinks
+        if dl1_filepath.is_file() and not dl1_filepath.is_symlink():
+            dl1_filepath.unlink()
+        if not dl1_filepath.is_symlink():
+            dl1_filepath.symlink_to(output_file.resolve())
 
-            # Get also de sequence id
-            # selections = ['ID']
-            # conditions = {'TELESCOPE': options.tel_id, 'RUN': run}
-            # querymatrix = select_db(s, u, d, sequencetable, selections, conditions)
-            # sequence_id = None
-            # if len(querymatrix) != 0:
-            #     sequence_id, = querymatrix[0]
-            #     log.debug("sequence_id={0}".format(sequence_id))
-            # Finally we update or insert the file
-            # night = lstdate_to_iso(options.date)
-            # assignments = {'ID_PARENT': id_parent, 'DAQ_ID': daq_id,
-            #                'REPORT_ID': report_id, 'SEQUENCE_ID': sequence_id,
-            #                'NIGHT': night, 'TELESCOPE': options.tel_id,
-            #                'HOSTNAME': hostname, 'FILE_TYPE': type, 'SIZE': size,
-            #                'M_TIME': mtime, 'MD5SUM': md5sum}
-            # conditions = {'FILE_PATH': outputf}
-            # update_or_insert_and_select_id_db(s, u, d, storagetable,
-            #                                   assignments, conditions)
+    if prefix == "muons_LST-1" and suffix == ".fits":
+        input_file.symlink_to(output_file.resolve())
 
 
 def register_run_concept_files(run_string, concept):
     """
     Prepare files to be moved to final destination directories
-    from the running_analysis original directory. DL1ab, datacheck
-    and DL2 are firstly stored in the corresponding subdirectory.
+    from the running_analysis original directory.
 
     Parameters
     ----------
-    run_string
-    concept
+    run_string: str
+    concept: str
     """
 
-    if concept in ["MUON", "PEDESTAL", "CALIB", "TIMECALIB"]:
-        inputdir = options.directory
+    initial_dir = Path(options.directory)
 
-    elif concept == "DL2":
-        inputdir = join(options.directory, options.dl2_prod_id)
+    if concept == "DL2":
+        initial_dir = initial_dir / options.dl2_prod_id
 
     elif concept in ["DL1AB", "DATACHECK"]:
-        inputdir = join(options.directory, options.dl1_prod_id)
+        initial_dir = initial_dir / options.dl1_prod_id
 
-    outputdir = destination_dir(concept, create_dir=False)
-    type = cfg.get("LSTOSA", concept + "TYPE")
-    prefix = cfg.get("LSTOSA", concept + "PREFIX")
-    suffix = cfg.get("LSTOSA", concept + "SUFFIX")
-    log.debug(f"Registering {type} file for {prefix}*{run_string}*{suffix}")
+    output_dir = destination_dir(concept, create_dir=False)
+    data_level = cfg.get("PATTERN", concept + "TYPE")
+    prefix = cfg.get("PATTERN", concept + "PREFIX")
+    suffix = cfg.get("PATTERN", concept + "SUFFIX")
 
-    if concept in ["DL1AB", "DATACHECK", "PEDESTAL", "CALIB", "TIMECALIB", "MUON", "DL2"]:
-        register_files(type, run_string, inputdir, prefix, suffix, outputdir)
+    log.debug(f"Registering {data_level} file for {prefix}*{run_string}*{suffix}")
+    if concept in [
+        "DL1AB", "DATACHECK", "PEDESTAL", "CALIB", "TIMECALIB", "MUON", "DL2"
+    ]:
+        register_files(run_string, initial_dir, prefix, suffix, output_dir)
     else:
         log.warning(f"Concept {concept} not known")
+
+
+def register_found_pattern(
+        file_path: Path,
+        seq_list: list,
+        concept: str,
+        destination_path: Path
+):
+    """
+
+    Parameters
+    ----------
+    file_path: pathlib.Path
+    seq_list: list
+    concept: str
+    destination_path: pathlib.Path
+    """
+    new_dst = destination_path / file_path.name
+    log.debug(f"New file path {new_dst}")
+    if not options.simulate:
+        if new_dst.exists():
+            log.debug("Destination file already exists")
+        else:
+            log.debug(f"Destination file {new_dst} does not exists")
+            register_non_existing_file(file_path, concept, seq_list)
+
+    # Return filepath already registered to be deleted from the set of all files
+    return file_path
+
+
+def register_non_existing_file(file_path, concept, seq_list):
+    """
+
+    Parameters
+    ----------
+    file_path: pathlib.Path
+    concept: str
+    seq_list: list
+    """
+    for sequence in seq_list:
+        if sequence.type == "DATA":
+            run_str_found = re.search(sequence.run_str, str(file_path))
+
+            if run_str_found is not None:
+                log.debug(f"Registering file {run_str_found}")
+                register_run_concept_files(sequence.run_str, concept)
+                if options.seqtoclose is None and not file_path.exists():
+                    log.debug("File does not exists")
+
+        elif sequence.type in ["PEDCALIB", "DRS4"]:
+            calib_run_str_found = re.search(str(sequence.run), str(file_path))
+            drs4_run_str_found = re.search(str(sequence.previousrun), str(file_path))
+
+            if calib_run_str_found is not None:
+                log.debug(f"Registering file {calib_run_str_found}")
+                register_run_concept_files(str(sequence.run), concept)
+                if options.seqtoclose is None and not file_path.exists():
+                    log.debug("File does not exists")
+
+            if drs4_run_str_found is not None:
+                log.debug(f"Registering file {drs4_run_str_found}")
+                register_run_concept_files(str(sequence.previousrun), concept)
+                if options.seqtoclose is None and not file_path.exists():
+                    log.debug("File does not exists")
+
+        set_closed_sequence(sequence)

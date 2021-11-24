@@ -2,7 +2,7 @@
 
 Scripts
 =======
-LSTOSA scrips to be executed from the command line are described below:
+Scrips to be executed from the command line are described below:
 
 * `sequencer.py`_
 * `calibrationsequence.py`_
@@ -18,23 +18,25 @@ LSTOSA scrips to be executed from the command line are described below:
 sequencer.py
 ++++++++++++
 
-The sequencer is the heart of LSTOSA. Right now can only executed only for ``LST1`` telescope.
-It triggers the whole analysis chain, creating the **analysis folders** and sending jobs to the SLURM queue system.
+The sequencer is the main script of ``lstosa``. Right now can only executed
+only for ``LST1`` telescope. It triggers the whole analysis chain,
+creating the **analysis folders** and sending jobs to the SLURM queue system.
 For each run/sequence it sends a job to the working nodes.
 
 In the analysis folders you will find several types of ``sequence_*`` files:
 
 ``sequence_*.sh``
    File submitted to the working nodes.
-   It calls either the :ref:`calibrationsequence.py` and the :ref:`datasequence.py` depending on the
-   arguments given to the sequencer and the type of sequence/run. You can submit these jobs manually by executing
-   ``sbatch sequence_*.py``.
+   It calls either the :ref:`calibrationsequence.py` and the
+   :ref:`datasequence.py` depending on the arguments given to
+   the sequencer and the type of sequence/run. You can submit
+   these jobs manually by executing ``sbatch sequence_*.py``.
 
 ``sequencer_*.txt``
    DEPRECATED. Specify the subruns of a sequence/run that will be analyzed by the sequencer.
 
 ``sequence_*.history``
-   This file keeps tracks of the :func:`execution history<osa.reports.report.history>` of a sequence/run.
+   This file keeps tracks of the :func:`execution history<osa.report.history>` of a sequence/run.
 
 ``sequence_*.{err,log,out}``
    These files are the logs of the job executed on the working nodes.
@@ -72,7 +74,7 @@ Usage
 -----
 .. argparse::
    :module: osa.utils.cliopts
-   :func: calibrationsequence_argparser
+   :func: calibration_sequence_argparser
    :prog: calibrationsequence.py
 
 API/References
@@ -93,7 +95,7 @@ Usage
 -----
 .. argparse::
    :module: osa.utils.cliopts
-   :func: datasequence_argparser
+   :func: data_sequence_argparser
    :prog: datasequence.py
 
 API/References
@@ -108,8 +110,8 @@ API/References
 closer.py
 +++++++++
 
-Closer script for OSA, check that all sequences are finished and completed,
-extract the provenance from the ``prov.log`` file and merge the DL1 data-check files.
+Checks that all sequences are finished and completed, extract the
+provenance from the ``prov.log`` file and merge the DL1 data-check files.
 It also moves the analysis products to their final destinations.
 
 .. warning::
@@ -135,8 +137,9 @@ API/References
 provprocess.py
 ++++++++++++++
 
-Extract the provenance information logged in to the ``prov.log`` file. It is executed within `closer.py`_.
-It produces the provenance graphs and ``.json`` files run-wise.
+Extract the provenance information logged in to the ``prov.log`` file.
+It is executed within `closer.py`_. It produces the provenance graphs
+and ``.json`` files run-wise.
 
 Usage
 -----
@@ -176,7 +179,8 @@ API/References
 simulate_processing.py
 ++++++++++++++++++++++
 
-It simulates the processing of the data sequence, generating the provenance products in the ``prov.log`` file.
+It simulates the processing of the data sequence, generating the
+provenance products in the ``prov.log`` file.
 
 Usage
 -----
@@ -190,5 +194,3 @@ API/References
 
 .. automodapi:: osa.scripts.simulate_processing
     :no-heading:
-
-

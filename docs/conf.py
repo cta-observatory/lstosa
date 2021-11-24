@@ -7,12 +7,13 @@
 # -- Path setup --------------------------------------------------------------
 
 import datetime
-
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import os
 import sys
+
+from osa import __version__
 
 sys.path.insert(0, os.path.abspath(".."))
 sys.argv.extend(["-c", "../cfg/sequencer.cfg"])
@@ -21,12 +22,13 @@ suppress_warnings = ["ref.citation"]  # ignore citation not referenced warnings
 
 # -- Project information -----------------------------------------------------
 
-project = "LSTOSA"
-author = "LSTOSA developers"
+project = "lstosa"
+author = "lstosa developers"
 copyright = f"{author}.  Last updated {datetime.datetime.now().strftime('%d %b %Y %H:%M')}"
 
 # The full version, including alpha/beta/rc tags
-release = "0.0.1"
+
+release = __version__
 
 # -- General configuration ---------------------------------------------------
 
@@ -38,11 +40,8 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx_automodapi.automodapi",
     "sphinxarg.ext",
-    "sphinx.ext.napoleon",
-    # 'autoapi.extension'
+    "numpydoc"
 ]
-
-# autoapi_dirs = ['../osa']
 
 numpydoc_show_class_members = False
 
@@ -68,7 +67,7 @@ html_theme = "sphinx_rtd_theme"
 html_static_path = []
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "LSTOSAdoc"
+htmlhelp_basename = "lstosa_docs"
 
 # Refer figures
 numfig = True

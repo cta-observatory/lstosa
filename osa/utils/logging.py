@@ -60,4 +60,3 @@ def myLogger(osalogger):
     handler.setFormatter(fmt)
     osalogger.addHandler(handler)
     return osalogger
-

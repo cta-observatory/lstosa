@@ -107,7 +107,15 @@ class SequenceData(Sequence):
 class SequenceStereo(Sequence):
     def __init__(self, v, w):
         super(SequenceStereo, self).__init__()
-        attr_list = ["run", "subrun_list", "subruns", "wobble", "sourcewobble", "source", "night"]
+        attr_list = [
+            "run",
+            "subrun_list",
+            "subruns",
+            "wobble",
+            "sourcewobble",
+            "source",
+            "night",
+        ]
         for a in attr_list:
             # this copies the unique attrs of both sequences
             self.__dict__.update({a: self.set_unique(v.__dict__[a], w.__dict__[a])})
@@ -123,5 +131,5 @@ class SequenceStereo(Sequence):
     def set_unique(v_attr, w_attr):
         if v_attr == w_attr:
             return v_attr
-        else:
-            return None
+
+        return None

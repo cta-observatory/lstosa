@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Main LSTOSA script. It creates and execute the calibration sequence and
+Orchestrator script that creates and execute the calibration sequence and
 prepares a SLURM job array which launches the data sequences for every subrun.
 """
 
@@ -13,7 +13,13 @@ from os.path import join
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.jobs.job import getqueuejoblist, preparejobs, preparestereojobs, submitjobs
+from osa.job import (
+    set_queue_values,
+    prepare_jobs,
+    submit_jobs,
+    get_sacct_output,
+    get_squeue_output
+)
 from osa.nightsummary.extract import (
     extractruns,
     extractsequences,
@@ -21,12 +27,11 @@ from osa.nightsummary.extract import (
     extractsubruns,
 )
 from osa.nightsummary.nightsummary import run_summary_table
-from osa.reports.report import rule, start
-from osa.utils.cliopts import sequencercliparsing, set_default_directory_if_needed
+from osa.report import rule, start
+from osa.utils.cliopts import sequencer_cli_parsing, set_default_directory_if_needed
 from osa.utils.logging import myLogger
-from osa.utils.standardhandle import gettag
-from osa.utils.utils import is_day_closed
-from osa.veto.veto import getclosedlist, getvetolist
+from osa.utils.utils import is_day_closed, gettag
+from osa.veto import get_closed_list, get_veto_list
 
 __all__ = [
     "single_process",
@@ -46,32 +51,23 @@ def main():
     the calibration sequence and afterward it prepares a SLURM job
     array which launches the data sequences for every subrun.
     """
-    # Set the options through parsing of the command line interface
-    sequencercliparsing()
+    sequencer_cli_parsing()
 
     if options.verbose:
         log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
 
-    process_mode = None
     single_array = ["LST1", "LST2"]
     tag = gettag()
     start(tag)
     if options.tel_id in single_array:
-        process_mode = "single"
-        single_process(options.tel_id, process_mode)
+        single_process(options.tel_id)
     else:
-        if options.tel_id == "all":
-            process_mode = "complete"
-        elif options.tel_id == "ST":
-            process_mode = "stereo"
-        sequence_lst1 = single_process("LST1", process_mode)
-        sequence_lst2 = single_process("LST2", process_mode)
-        # stereo_process is missing right now
+        log.error("Process mode not supported yet")
 
 
-def single_process(telescope, process_mode):
+def single_process(telescope):
     """
     Runs the single process for a single telescope
 
@@ -79,8 +75,6 @@ def single_process(telescope, process_mode):
     ----------
     telescope : str
         Options: 'LST1', 'LST2' or 'ST'
-    process_mode : str
-        Options: 'single', 'stereo' or 'complete'
 
     Returns
     -------
@@ -98,18 +92,11 @@ def single_process(telescope, process_mode):
 
     is_report_needed = True
 
-    if process_mode == "single":
-        if is_day_closed():
-            log.info(f"Day {options.date} for {options.tel_id} already closed")
-            return sequence_list
-    else:
-        if process_mode == "stereo":
-            # only simulation for single array required
-            options.nightsummary = True
-            options.simulate = True
-            is_report_needed = False
+    if is_day_closed():
+        log.info(f"Day {options.date} for {options.tel_id} already closed")
+        return sequence_list
 
-    # building the sequences
+    # Build the sequences
     summary_table = run_summary_table(options.date)
     subrun_list = extractsubruns(summary_table)
     run_list = extractruns(subrun_list)
@@ -119,22 +106,23 @@ def single_process(telescope, process_mode):
     # FIXME: Does this makes sense or should be removed?
     # workflow and submission
     # if not options.simulate:
-    #     writeworkflow(sequence_list)
+    #     write_workflow(sequence_list)
 
     # adds the scripts
-    preparejobs(sequence_list)
+    prepare_jobs(sequence_list)
 
-    # if test in order to be able to run it locally
     if not options.test:
-        queue_list = getqueuejoblist(sequence_list)
-    veto_list = getvetolist(sequence_list)
-    closed_list = getclosedlist(sequence_list)
+        set_queue_values(
+            sacct_info=get_sacct_output(),
+            squeue_info=get_squeue_output(),
+            sequence_list=sequence_list
+        )
+    get_veto_list(sequence_list)
+    get_closed_list(sequence_list)
     update_sequence_status(sequence_list)
     # updatesequencedb(sequence_list)
-    # actually, submitjobs does not need the queue_list nor veto_list
-    # job_list = submitjobs(sequence_list, queue_list, veto_list)
-
-    job_list = submitjobs(sequence_list)
+    if not options.no_submit:
+        submit_jobs(sequence_list)
 
     # report
     if is_report_needed:
@@ -169,16 +157,20 @@ def stereo_process(telescope, s1_list, s2_list):
 
     # building the sequences
     sequence_list = extractsequencesstereo(s1_list, s2_list)
-    # workflow and Submission
-    # writeworkflow(sequence_list)
-    # adds the scripts
-    preparestereojobs(sequence_list)
-    queue_list = getqueuejoblist(sequence_list)
-    veto_list = getvetolist(sequence_list)
-    closed_list = getclosedlist(sequence_list)
+    # Workflow and Submission
+    # write_workflow(sequence_list)
+    # Adds the scripts
+    prepare_jobs(sequence_list)
+    if not options.test:
+        set_queue_values(
+            sacct_info=get_sacct_output(),
+            squeue_info=get_squeue_output(),
+            sequence_list=sequence_list
+        )
+    get_veto_list(sequence_list)
+    get_closed_list(sequence_list)
     update_sequence_status(sequence_list)
-    # actually, submitjobs does not need the queue_list nor veto_list
-    job_list = submitjobs(sequence_list)
+    submit_jobs(sequence_list)
     # finalizing report
     rule()
     reportsequences(sequence_list)
@@ -203,15 +195,21 @@ def update_sequence_status(seq_list):
                 Decimal(get_status_for_sequence(seq, "CALIB") * 100) / seq.subruns
             )
         elif seq.type == "DATA":
-            seq.dl1status = int(Decimal(get_status_for_sequence(seq, "DL1") * 100) / seq.subruns)
+            seq.dl1status = int(
+                Decimal(get_status_for_sequence(seq, "DL1") * 100) / seq.subruns
+            )
             seq.dl1abstatus = int(
                 Decimal(get_status_for_sequence(seq, "DL1AB") * 100) / seq.subruns
             )
             seq.datacheckstatus = int(
                 Decimal(get_status_for_sequence(seq, "DATACHECK") * 100) / seq.subruns
             )
-            seq.muonstatus = int(Decimal(get_status_for_sequence(seq, "MUON") * 100) / seq.subruns)
-            seq.dl2status = int(Decimal(get_status_for_sequence(seq, "DL2") * 100) / seq.subruns)
+            seq.muonstatus = int(
+                Decimal(get_status_for_sequence(seq, "MUON") * 100) / seq.subruns
+            )
+            seq.dl2status = int(
+                Decimal(get_status_for_sequence(seq, "DL2") * 100) / seq.subruns
+            )
 
 
 def get_status_for_sequence(sequence, program):
@@ -227,36 +225,33 @@ def get_status_for_sequence(sequence, program):
     Returns
     -------
     number_of_files : int
-
     """
     if program == "DL1AB":
         # Search for files in the dl1ab subdirectory
-        prefix = cfg.get("LSTOSA", "DL1PREFIX")
-        suffix = cfg.get("LSTOSA", "DL1SUFFIX")
         dl1ab_subdirectory = os.path.join(options.directory, options.dl1_prod_id)
-        files = glob(join(dl1ab_subdirectory, f"{prefix}*{sequence.run}*{suffix}"))
+        files = glob(join(dl1ab_subdirectory, f"dl1_LST-1*{sequence.run}*.h5"))
 
     elif program == "DL2":
         # Search for files in the dl1ab subdirectory
-        prefix = cfg.get("LSTOSA", "DL2PREFIX")
-        suffix = cfg.get("LSTOSA", "DL2SUFFIX")
         dl1ab_subdirectory = os.path.join(options.directory, options.dl2_prod_id)
-        files = glob(join(dl1ab_subdirectory, f"{prefix}*{sequence.run}*{suffix}"))
+        files = glob(join(dl1ab_subdirectory, f"dl2_LST-1*{sequence.run}*.h5"))
 
     elif program == "DATACHECK":
         # Search for files in the dl1ab subdirectory
-        prefix = cfg.get("LSTOSA", program + "PREFIX")
-        suffix = cfg.get("LSTOSA", program + "SUFFIX")
         datacheck_subdirectory = os.path.join(options.directory, options.dl1_prod_id)
-        files = glob(join(datacheck_subdirectory, f"{prefix}*{sequence.run}*{suffix}"))
+        files = glob(
+            join(datacheck_subdirectory, f"datacheck_dl1_LST-1*{sequence.run}*.h5")
+        )
 
     else:
-        prefix = cfg.get("LSTOSA", program + "PREFIX")
-        suffix = cfg.get("LSTOSA", program + "SUFFIX")
+        prefix = cfg.get("PATTERN", program + "PREFIX")
+        suffix = cfg.get("PATTERN", program + "SUFFIX")
         files = glob(join(options.directory, f"{prefix}*{sequence.run}*{suffix}"))
 
     number_of_files = len(files)
-    log.debug(f"Found {number_of_files} {program} files for sequence name {sequence.jobname}")
+    log.debug(
+        f"Found {number_of_files} {program} files for sequence name {sequence.jobname}"
+    )
     return number_of_files
 
 

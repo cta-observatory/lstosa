@@ -11,13 +11,13 @@ import yaml
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.configs.datamodel import SequenceData
-from osa.jobs.job import createjobtemplate
+from osa.job import create_job_template
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.provenance.utils import get_log_config
 from osa.utils.cliopts import simprocparsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_number
+from osa.utils.utils import lstdate_to_dir
 
 __all__ = [
     "parse_template",
@@ -43,8 +43,8 @@ log = myLogger(logging.getLogger())
 def do_setup():
     """Set-up folder structure and check flags."""
 
-    pathDL1 = Path(cfg.get("LST1", "DL1DIR")) / options.directory
-    pathDL2 = Path(cfg.get("LST1", "DL2DIR")) / options.directory
+    pathDL1 = Path(cfg.get("LST1", "DL1_DIR")) / options.directory
+    pathDL2 = Path(cfg.get("LST1", "DL2_DIR")) / options.directory
     pathDL1sub = pathDL1 / options.prod_id
     pathDL2sub = pathDL2 / options.prod_id
 
@@ -52,11 +52,15 @@ def do_setup():
         CONFIG_FLAGS["Go"] = False
         log.info(f"File {LOG_FILENAME} already exists.")
         log.info(f"You must rename/remove {LOG_FILENAME} to produce a clean provenance.")
-        log.info(f"You can also set --append flag to append captured provenance.")
+        log.info("You can also set --append flag to append captured provenance.")
         return
 
-    CONFIG_FLAGS["TearSubDL1"] = False if pathDL1sub.exists() or options.provenance else pathDL1sub
-    CONFIG_FLAGS["TearSubDL2"] = False if pathDL2sub.exists() or options.provenance else pathDL2sub
+    CONFIG_FLAGS["TearSubDL1"] = (
+        False if pathDL1sub.exists() or options.provenance else pathDL1sub
+    )
+    CONFIG_FLAGS["TearSubDL2"] = (
+        False if pathDL2sub.exists() or options.provenance else pathDL2sub
+    )
     CONFIG_FLAGS["TearDL1"] = False if pathDL1.exists() or options.provenance else pathDL1
     CONFIG_FLAGS["TearDL2"] = False if pathDL2.exists() or options.provenance else pathDL2
 
@@ -68,7 +72,7 @@ def do_setup():
             CONFIG_FLAGS["Go"] = False
             log.info(f"Folder {pathDL2sub} already exist.")
         if not CONFIG_FLAGS["Go"]:
-            log.info(f"You must enforce provenance files overwrite with --force flag.")
+            log.info("You must enforce provenance files overwrite with --force flag.")
             return
 
     pathDL1sub.mkdir(parents=True, exist_ok=True)
@@ -117,8 +121,6 @@ def simulate_subrun_processing(args):
 
 def simulate_processing():
     """Simulate daily processing and capture provenance."""
-
-    options.mode = "P"
     options.simulate = True
     summary_table = run_summary_table(options.date)
 
@@ -136,7 +138,7 @@ def simulate_processing():
                 continue
             with mp.Pool() as pool:
                 args_ds = [
-                    parse_template(createjobtemplate(s, get_content=True), subrun_idx)
+                    parse_template(create_job_template(s, get_content=True), subrun_idx)
                     for subrun_idx in range(sl.subrun)
                 ]
                 processed = pool.map(simulate_subrun_processing, args_ds)
@@ -161,9 +163,9 @@ if __name__ == "__main__":
     log.setLevel(logging.INFO)
 
     simprocparsing()
-    options.directory = lstdate_to_number(options.date)
+    options.directory = lstdate_to_dir(options.date)
 
-    log.info(f"Running simulate processing")
+    log.info("Running simulate processing")
 
     do_setup()
     if CONFIG_FLAGS["Go"]:

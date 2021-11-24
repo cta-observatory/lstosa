@@ -17,7 +17,6 @@ mkdir -p $WORK_DIR
 DL1DIR="/fefs/aswg/data/real/DL1"
 CURRENT_DIRECTORY=`pwd`/
 
-prod_id="v0.7.1"
 dl1_prod_id=tailcut84
 
 # Check if tmp dir was created
@@ -34,9 +33,9 @@ trap 'rm -rf "$WORK_DIR"' EXIT
 echo Start copy: `date +%FT%T`
 # Copy files month by month: muons files subrun-wise and dl1 datacheck run-wise
 # FIXME: loop over months or directories without having to assume any prior month list.
-#for month in 201911 202001 202002 202006 202007 202008 202009 202010 202011 202012 202101 202102 202103 202104 202105
-for month in 202007 202008 202009 202010 202011 202012 202101 202102 202103 202104 202105 202106 202107 202108 202109 202110
-do
+months="202007 202008 202009 202010 202011 202012 202101 202102 202103 202104 202105 202106 202107 202108 202109 202110"
+
+for month in $months; do
     cp $DL1DIR/${month}*/v0.7.{1,3}/$dl1_prod_id/datacheck_dl1_LST-1.Run?????.h5 $WORK_DIR/.
     cp $DL1DIR/${month}*/v0.7.{1,3}/muons_LST-1.Run*.fits $WORK_DIR/.
 done

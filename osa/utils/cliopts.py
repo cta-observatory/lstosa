@@ -1,8 +1,10 @@
+"""Command line argument parser for lstosa scripts."""
+
 import datetime
 import logging
 import os
 from argparse import ArgumentParser, ArgumentTypeError
-from optparse import OptionParser
+from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -13,25 +15,31 @@ from osa.utils.utils import (
     get_lstchain_version,
     get_prod_id,
     getcurrentdate,
-    getnightdirectory,
+    night_directory,
     is_defined,
 )
 
 __all__ = [
-    "calibrationsequencecliparsing",
+    "calibration_sequence_cliparsing",
+    "calibration_sequence_argparser",
     "closer_argparser",
     "closercliparsing",
     "copy_datacheck_parsing",
-    "datasequencecliparsing",
+    "data_sequence_cli_parsing",
+    "data_sequence_argparser",
     "provprocessparsing",
     "rawcopycliparsing",
     "sequencer_argparser",
-    "sequencercliparsing",
+    "sequencer_cli_parsing",
     "set_default_date_if_needed",
     "set_default_directory_if_needed",
     "simprocparsing",
-    "stereosequencecliparsing",
-    "sequencer_webmaker_argparser"
+    "sequencer_webmaker_argparser",
+    "valid_date",
+    "get_prod_id",
+    "get_dl1_prod_id",
+    "get_dl2_prod_id",
+    "get_calib_prod_id",
 ]
 
 log = logging.getLogger(__name__)
@@ -142,7 +150,7 @@ def closer_argparser():
         help="If you only want to close a certain sequence",
     )
     parser.add_argument(
-        "--nodl2",
+        "--no-dl2",
         action="store_true",
         default=False,
         help="Do not produce DL2 files (default False)",
@@ -162,45 +170,39 @@ def closercliparsing():
     options.stdout = opts.stdout
     options.date = opts.date
     options.directory = opts.directory
-    options.nightsummary = opts.nightsum
     options.noninteractive = opts.noninteractive
     options.simulate = opts.simulate
     options.test = opts.test
     options.verbose = opts.verbose
-    options.warning = opts.warning
     options.reason = opts.reason
     options.seqtoclose = opts.seqtoclose
     options.tel_id = opts.tel_id
-    options.nodl2 = opts.nodl2
+    options.no_dl2 = opts.no_dl2
 
     log.debug(f"the options are {opts}")
 
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
     options.directory = set_default_directory_if_needed()
-
-    # setting on the usage of night summary
-    options.nightsummary = True
-
     options.prod_id = get_prod_id()
 
-    if cfg.get("LST1", "CALIB-PROD-ID") is not None:
+    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
         options.calib_prod_id = get_calib_prod_id()
     else:
         options.calib_prod_id = options.prod_id
 
-    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+    if cfg.get("LST1", "DL1_PROD_ID") is not None:
         options.dl1_prod_id = get_dl1_prod_id()
     else:
         options.dl1_prod_id = options.prod_id
 
-    if cfg.get("LST1", "DL2-PROD-ID") is not None:
+    if cfg.get("LST1", "DL2_PROD_ID") is not None:
         options.dl2_prod_id = get_dl2_prod_id()
     else:
         options.dl2_prod_id = options.prod_id
 
 
-def calibrationsequence_argparser():
+def calibration_sequence_argparser():
     parser = ArgumentParser()
     parser.add_argument(
         "-c",
@@ -243,14 +245,6 @@ def calibrationsequence_argparser():
         help="show useful warnings",
     )
     parser.add_argument(
-        "-z",
-        "--rawzip",
-        action="store_true",
-        dest="compressed",
-        default=False,
-        help="Use input as compressed raw.gz files",
-    )
-    parser.add_argument(
         "--stderr",
         action="store",
         type=str,
@@ -279,18 +273,38 @@ def calibrationsequence_argparser():
         default=False,
         help="do not submit sequences as jobs",
     )
-    parser.add_argument("pedoutfile", help="Full path of the DRS4 pedestal file to be created")
-    parser.add_argument("caloutfile", help="Full path of the calibration file to be created")
-    parser.add_argument("calib_run_number", help="Calibration run number")
-    parser.add_argument("ped_run_number", help="DRS4 pedestal run number")
-    parser.add_argument("run_summary_file", help="Run summary file")
-    parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
+    parser.add_argument(
+        "drs4_pedestal_file",
+        type=Path,
+        help="Full path of the DRS4 pedestal file to be created"
+    )
+    parser.add_argument(
+        "calibration_file",
+        type=Path,
+        help="Full path of the calibration file to be created"
+    )
+    parser.add_argument(
+        "calibration_run_number",
+        type=str,
+        help="Calibration run number"
+    )
+    parser.add_argument(
+        "drs4_pedestal_run_number",
+        type=str,
+        help="DRS4 pedestal run number"
+    )
+    parser.add_argument(
+        "run_summary_file",
+        type=Path,
+        help="Run summary file"
+    )
+    parser.add_argument("tel_id", choices=["LST1"])
 
     return parser
 
 
-def calibrationsequencecliparsing():
-    opts = calibrationsequence_argparser().parse_args()
+def calibration_sequence_cliparsing():
+    opts = calibration_sequence_argparser().parse_args()
 
     # set global variables
     options.configfile = opts.configfile
@@ -299,31 +313,29 @@ def calibrationsequencecliparsing():
     options.date = opts.date
     options.directory = opts.directory
     options.verbose = opts.verbose
-    options.warning = opts.warning
-    options.compressed = opts.compressed
     options.prod_id = opts.prod_id
     options.tel_id = opts.tel_id
     options.simulate = opts.simulate
 
-    log.debug(f"the options and arguments are {opts}")
+    log.debug(f"The options and arguments are {opts}")
 
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
     options.directory = set_default_directory_if_needed()
-    if cfg.get("LST1", "CALIB-PROD-ID") is not None:
+    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
         options.calib_prod_id = get_calib_prod_id()
     else:
         options.calib_prod_id = options.prod_id
     return (
-        opts.pedoutfile,
-        opts.caloutfile,
-        opts.calib_run_number,
-        opts.ped_run_number,
+        opts.drs4_pedestal_file,
+        opts.calibration_file,
+        opts.calibration_run_number,
+        opts.drs4_pedestal_run_number,
         opts.run_summary_file,
     )
 
 
-def datasequence_argparser():
+def data_sequence_argparser():
     parser = ArgumentParser()
     parser.add_argument(
         "-c",
@@ -358,22 +370,6 @@ def datasequence_argparser():
         help="make lots of noise for debugging",
     )
     parser.add_argument(
-        "-w",
-        "--warnings",
-        action="store_true",
-        dest="warning",
-        default=False,
-        help="show useful warnings",
-    )
-    parser.add_argument(
-        "-z",
-        "--rawzip",
-        action="store_true",
-        dest="compressed",
-        default=False,
-        help="Use input as compressed raw.gz files",
-    )
-    parser.add_argument(
         "--stderr",
         action="store",
         type=str,
@@ -403,27 +399,45 @@ def datasequence_argparser():
         help="Set the prod ID to define data directories",
     )
     parser.add_argument(
-        "--nodl2",
+        "--no-dl2",
         action="store_true",
         default=False,
         help="Do not produce DL2 files (default False)",
     )
-    parser.add_argument("calib_file", help="Path of the calibration file")
-    parser.add_argument("drs4_ped_file", help="Path of the DRS4 pedestal file")
-    parser.add_argument("time_calib_file", help="Path of the time calibration file")
-    parser.add_argument("drive_log_file", help="Path of drive log file with pointing information")
     parser.add_argument(
-        "run_summary_file", help="Path of run summary file with time reference information"
+        "calib_file",
+        type=Path,
+        help="Path of the calibration file"
+    )
+    parser.add_argument(
+        "drs4_ped_file",
+        type=Path,
+        help="Path of the DRS4 pedestal file"
+    )
+    parser.add_argument(
+        "time_calib_file",
+        type=Path,
+        help="Path of the time calibration file"
+    )
+    parser.add_argument(
+        "drive_log_file",
+        type=Path,
+        help="Path of drive log file with pointing information"
+    )
+    parser.add_argument(
+        "run_summary_file",
+        type=Path,
+        help="Path of run summary file with time reference information",
     )
     parser.add_argument("run_number", help="Number of the run to be processed")
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
     return parser
 
 
-def datasequencecliparsing():
+def data_sequence_cli_parsing():
 
     # parse the command line
-    opts = datasequence_argparser().parse_args()
+    opts = data_sequence_argparser().parse_args()
 
     # set global variables
     options.configfile = opts.configfile
@@ -432,11 +446,9 @@ def datasequencecliparsing():
     options.date = opts.date
     options.directory = opts.directory
     options.verbose = opts.verbose
-    options.warning = opts.warning
-    options.compressed = opts.compressed
     options.simulate = opts.simulate
     options.prod_id = opts.prod_id
-    options.nodl2 = opts.nodl2
+    options.no_dl2 = opts.no_dl2
     options.tel_id = opts.tel_id
 
     log.debug(f"The options and arguments are {opts}")
@@ -445,17 +457,17 @@ def datasequencecliparsing():
     options.date = set_default_date_if_needed()
     options.directory = set_default_directory_if_needed()
 
-    if cfg.get("LST1", "CALIB-PROD-ID") is not None:
+    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
         options.calib_prod_id = get_calib_prod_id()
     else:
         options.calib_prod_id = options.prod_id
 
-    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+    if cfg.get("LST1", "DL1_PROD_ID") is not None:
         options.dl1_prod_id = get_dl1_prod_id()
     else:
         options.dl1_prod_id = options.prod_id
 
-    if cfg.get("LST1", "DL2-PROD-ID") is not None:
+    if cfg.get("LST1", "DL2_PROD_ID") is not None:
         options.dl2_prod_id = get_dl2_prod_id()
     else:
         options.dl2_prod_id = options.prod_id
@@ -472,104 +484,8 @@ def datasequencecliparsing():
     )
 
 
-def stereosequencecliparsing():
-    message = "usage: %prog  [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-o OUTPUTDIR] [-z] <RUN>"
-    parser = OptionParser(usage=message)
-    parser.add_option(
-        "-c",
-        "--config",
-        action="store",
-        dest="configfile",
-        default=None,
-        help="use specific config file [default cfg/sequencer.cfg]",
-    )
-    parser.add_option(
-        "-d",
-        "--date",
-        action="store",
-        type=str,
-        dest="date",
-        help="observation ending date YYYY_MM_DD [default today]",
-    )
-    parser.add_option(
-        "-o",
-        "--outputdir",
-        action="store",
-        type=str,
-        dest="directory",
-        help="analysis output directory",
-    )
-    parser.add_option(
-        "-v",
-        "--verbose",
-        action="store_true",
-        dest="verbose",
-        default=False,
-        help="make lots of noise for debugging",
-    )
-    parser.add_option(
-        "-w",
-        "--warnings",
-        action="store_true",
-        dest="warning",
-        default=False,
-        help="show useful warnings",
-    )
-    parser.add_option(
-        "-z",
-        "--rawzip",
-        action="store_true",
-        dest="compressed",
-        default=False,
-        help="Use input as compressed raw.gz files",
-    )
-    parser.add_option(
-        "--stderr",
-        action="store",
-        type=str,
-        dest="stderr",
-        help="file for standard error",
-    )
-    parser.add_option(
-        "--stdout",
-        action="store",
-        type=str,
-        dest="stdout",
-        help="file for standard output",
-    )
-
-    # parse the command line
-    (opts, args) = parser.parse_args()
-
-    # set global variables
-    options.configfile = opts.configfile
-    options.stderr = opts.stderr
-    options.stdout = opts.stdout
-    options.date = opts.date
-    options.directory = opts.directory
-    options.verbose = opts.verbose
-    options.warning = opts.warning
-    options.compressed = opts.compressed
-
-    # the standardhandle has to be declared here, since verbose and warnings are options from the cli
-    log.debug(f"the options are {opts}")
-    log.debug(f"the argument is {args}")
-
-    # checking arguments
-    if len(args) != 1:
-        log.error("incorrect number of arguments, type -h for help")
-
-    # mapping the telescope argument to an option parameter (it might become an option in the future)
-    options.tel_id = "ST"
-
-    # setting the default date and directory if needed
-    options.date = set_default_date_if_needed()
-    options.directory = set_default_directory_if_needed()
-
-    return args
-
-
 def sequencer_argparser():
+    """Argument parser for sequencer script."""
     parser = ArgumentParser()
     # options which define variables
     parser.add_argument(
@@ -588,24 +504,7 @@ def sequencer_argparser():
         dest="date",
         help="observation ending date YYYY_MM_DD [default today]",
     )
-    parser.add_argument(
-        "-m",
-        "--mode",
-        action="store",
-        type=str,
-        dest="mode",
-        choices=["P", "S", "T"],
-        help="mode to run dependant sequences:\n P=parallel [default], S=Sequential, T=temperature-aware",
-    )
     # boolean options
-    parser.add_argument(
-        "-n",
-        "--usenightsummary",
-        action="store_true",
-        dest="nightsum",
-        default=False,
-        help="rely on existing nightsumary file",
-    )
     parser.add_argument(
         "-o",
         "--outputdir",
@@ -618,7 +517,6 @@ def sequencer_argparser():
         "-s",
         "--simulate",
         action="store_true",
-        dest="simulate",
         default=False,
         help="do not submit sequences as jobs",
     )
@@ -626,20 +524,24 @@ def sequencer_argparser():
         "-t",
         "--test",
         action="store_true",
-        dest="test",
         default=False,
-        help="test LSTOSA locally outside the CTA-N IT container avoiding interaction with SLURM",
+        help="Test locally avoiding interaction with job scheduler",
     )
     parser.add_argument(
-        "--nocalib",
+        "--no-submit",
         action="store_true",
-        dest="nocalib",
         default=False,
-        help="Skip calibration sequence. Run data sequences assuming calib "
-        "products already produced (default False)",
+        help="Produce job files but do not submit them",
     )
     parser.add_argument(
-        "--nodl2",
+        "--no-calib",
+        action="store_true",
+        default=False,
+        help="Skip calibration sequence. Run data sequences assuming "
+             "calibration products already produced (default False)",
+    )
+    parser.add_argument(
+        "--no-dl2",
         action="store_true",
         default=False,
         help="Do not produce DL2 files (default False)",
@@ -650,7 +552,7 @@ def sequencer_argparser():
         action="store_true",
         dest="verbose",
         default=False,
-        help="make lots of noise for debugging",
+        help="Increase verbosity for debugging",
     )
     parser.add_argument(
         "-w",
@@ -659,14 +561,6 @@ def sequencer_argparser():
         dest="warning",
         default=False,
         help="show useful warnings",
-    )
-    parser.add_argument(
-        "-z",
-        "--rawzip",
-        action="store_true",
-        dest="compressed",
-        default=False,
-        help="Use input as compressed raw.gz files, compulsory if using -n and raw.gz files",
     )
     parser.add_argument(
         "--stderr",
@@ -691,7 +585,7 @@ def sequencer_argparser():
     return parser
 
 
-def sequencercliparsing():
+def sequencer_cli_parsing():
     # parse the command line
     opts = sequencer_argparser().parse_args()
 
@@ -701,37 +595,31 @@ def sequencercliparsing():
     options.stdout = opts.stdout
     options.date = opts.date
     options.directory = opts.directory
-    options.mode = opts.mode
-    options.nightsummary = opts.nightsum
     options.simulate = opts.simulate
     options.test = opts.test
-    options.nocalib = opts.nocalib
-    options.nodl2 = opts.nodl2
+    options.no_submit = opts.no_submit
+    options.no_calib = opts.no_calib
+    options.no_dl2 = opts.no_dl2
     options.verbose = opts.verbose
-    options.warning = opts.warning
-    options.compressed = opts.compressed
     options.tel_id = opts.tel_id
 
-    # the standardhandle has to be declared before here, since verbose and warnings are options from the cli
+    # the standardhandle has to be declared before here,
+    # since verbose and warnings are options from the cli
     log.debug(f"the options are {opts}")
-
-    # set the default value for mode
-    if not opts.mode:
-        options.mode = "P"
 
     options.prod_id = get_prod_id()
 
-    if cfg.get("LST1", "CALIB-PROD-ID") is not None:
+    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
         options.calib_prod_id = get_calib_prod_id()
     else:
         options.calib_prod_id = options.prod_id
 
-    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+    if cfg.get("LST1", "DL1_PROD_ID") is not None:
         options.dl1_prod_id = get_dl1_prod_id()
     else:
         options.dl1_prod_id = options.prod_id
 
-    if cfg.get("LST1", "DL2-PROD-ID") is not None:
+    if cfg.get("LST1", "DL2_PROD_ID") is not None:
         options.dl2_prod_id = get_dl2_prod_id()
     else:
         options.dl2_prod_id = options.prod_id
@@ -741,11 +629,8 @@ def sequencercliparsing():
 
 
 def rawcopycliparsing():
-    message = (
-        "usage: %prog [-vw] [--stderr=FILE] [--stdout=FILE] [-c CONFIGFILE] [-d DATE] [-z] <TEL_ID>"
-    )
-    parser = OptionParser(usage=message)
-    parser.add_option(
+    parser = ArgumentParser()
+    parser.add_argument(
         "-c",
         "--config",
         action="store",
@@ -753,7 +638,7 @@ def rawcopycliparsing():
         default=None,
         help="use specific config file [default rawcopy.cfg]",
     )
-    parser.add_option(
+    parser.add_argument(
         "-d",
         "--date",
         action="store",
@@ -761,14 +646,14 @@ def rawcopycliparsing():
         dest="date",
         help="observation ending date YYYY_MM_DD [default today]",
     )
-    parser.add_option(
+    parser.add_argument(
         "--nocheck",
         action="store_true",
         dest="nocheck",
         default=False,
         help="Skip checking if the daily activity is set over",
     )
-    parser.add_option(
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -776,7 +661,7 @@ def rawcopycliparsing():
         default=False,
         help="make lots of noise for debugging",
     )
-    parser.add_option(
+    parser.add_argument(
         "-w",
         "--warnings",
         action="store_true",
@@ -784,22 +669,14 @@ def rawcopycliparsing():
         default=False,
         help="show useful warnings",
     )
-    parser.add_option(
-        "-z",
-        "--rawzip",
-        action="store_true",
-        dest="compressed",
-        default=False,
-        help="compress output into raw.gz files",
-    )
-    parser.add_option(
+    parser.add_argument(
         "--stderr",
         action="store",
         type=str,
         dest="stderr",
         help="file for standard error",
     )
-    parser.add_option(
+    parser.add_argument(
         "--stdout",
         action="store",
         type=str,
@@ -817,14 +694,14 @@ def rawcopycliparsing():
     options.date = opts.date
     options.nocheck = opts.nocheck
     options.verbose = opts.verbose
-    options.warning = opts.warning
-    options.compressed = opts.compressed
 
-    # the standardhandle has to be declared here, since verbose and warnings are options from the cli
+    # the standardhandle has to be declared here,
+    # since verbose and warnings are options from the cli
     log.debug(f"the options are {opts}")
     log.debug(f"the argument is {args}")
 
-    # mapping the telescope argument to an option parameter (it might become an option in the future)
+    # mapping the telescope argument to an option
+    # parameter (it might become an option in the future)
     if len(args) != 1:
         log.error("incorrect number of arguments, type -h for help")
     elif args[0] == "ST":
@@ -863,8 +740,12 @@ def provprocess_argparser():
         dest="quit",
         help="use this flag to reset session and remove log file",
     )
-    parser.add_argument("run", help="Number of the run whose provenance is to be extracted")
-    parser.add_argument("date", action="store", type=str, help="Observation starting date YYYYMMDD")
+    parser.add_argument(
+        "run", help="Number of the run whose provenance is to be extracted"
+    )
+    parser.add_argument(
+        "date", action="store", type=str, help="Observation starting date YYYYMMDD"
+    )
     parser.add_argument("prod_id", action="store", type=str, help="Production ID")
 
     return parser
@@ -888,12 +769,12 @@ def provprocessparsing():
     options.quit = opts.quit
     options.lstchain_version = get_lstchain_version()
 
-    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+    if cfg.get("LST1", "DL1_PROD_ID") is not None:
         options.dl1_prod_id = get_dl1_prod_id()
     else:
         options.dl1_prod_id = options.prod_id
 
-    if cfg.get("LST1", "DL2-PROD-ID") is not None:
+    if cfg.get("LST1", "DL2_PROD_ID") is not None:
         options.dl2_prod_id = get_dl2_prod_id()
     else:
         options.dl2_prod_id = options.prod_id
@@ -985,22 +866,24 @@ def copy_datacheck_parsing():
     options.directory = set_default_directory_if_needed()
     options.prod_id = get_prod_id()
 
-    if cfg.get("LST1", "DL1-PROD-ID") is not None:
+    if cfg.get("LST1", "DL1_PROD_ID") is not None:
         options.dl1_prod_id = get_dl1_prod_id()
     else:
         options.dl1_prod_id = options.prod_id
 
 
-def valid_date(s):
+def valid_date(string):
     try:
-        return datetime.datetime.strptime(s, "%Y_%m_%d")
+        return datetime.datetime.strptime(string, "%Y_%m_%d")
     except ValueError:
-        msg = f"Not a valid date: '{s}'."
+        msg = f"Not a valid date: '{string}'."
         raise ArgumentTypeError(msg)
 
 
 def sequencer_webmaker_argparser():
-    parser = ArgumentParser(description="Script to make an xhtml from LSTOSA sequencer output")
+    parser = ArgumentParser(
+        description="Script to make an xhtml from LSTOSA sequencer output"
+    )
     parser.add_argument("-d", "--date", help="Date - format YYYY_MM_DD", type=valid_date)
     parser.add_argument(
         "-c",
@@ -1018,12 +901,12 @@ def sequencer_webmaker_argparser():
 def set_default_date_if_needed():
     if is_defined(options.date):
         return options.date
-    else:
-        return getcurrentdate(cfg.get("LST", "DATESEPARATOR"))
+
+    return getcurrentdate()
 
 
 def set_default_directory_if_needed():
     if is_defined(options.directory):
         return options.directory
-    else:
-        return getnightdirectory()
+
+    return night_directory()
