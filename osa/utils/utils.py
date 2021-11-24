@@ -536,7 +536,8 @@ def time_to_seconds(timestring):
         # Day is also specified (D-)HH:MM:SS
         days, hhmmss = timestring.split("-", )
         hours, minutes, seconds = hhmmss.split(":")
-        return int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+        return (int(days) * 24 * 3600 + int(hours) * 3600
+                + int(minutes) * 60 + int(seconds))
 
     split_time = timestring.split(":")
     if len(split_time) == 2:

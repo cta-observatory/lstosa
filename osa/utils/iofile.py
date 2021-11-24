@@ -17,7 +17,6 @@ __all__ = [
 
 def read_from_file(file):
     """Read the content of a file."""
-
     if file.exists() and file.is_file():
         with open(file, "r") as f:
             return f.read()
@@ -28,7 +27,6 @@ def read_from_file(file):
 
 def write_to_file(file, content):
     """Check if the file already exists and write the content in it."""
-
     file_temp = f"{file}.tmp"
     try:
         with open(file_temp, "w") as file_handle:
