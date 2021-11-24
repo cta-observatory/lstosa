@@ -1,18 +1,17 @@
-import tempfile
-
 import pytest
 
 from osa.configs import options
+from osa.configs.config import cfg
 from osa.nightsummary.extract import extractruns, extractsubruns, extractsequences
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.scripts.tests.test_osa_scripts import run_program
 from osa.utils.utils import lstdate_to_dir
 
-
 date = "2020_01_17"
 nightdir = lstdate_to_dir(date)
 prod_id = "v0.1.0"
-dl1_prod_id = "tailcut84"
+dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
+dl2_prod_id = cfg.get("LST1", "DL2_PROD_ID")
 
 
 @pytest.fixture(scope="session")
@@ -52,32 +51,37 @@ def dl1b_subdir(running_analysis_dir):
 
 
 @pytest.fixture(scope="session")
+def dl2_subdir(running_analysis_dir):
+    dl2_directory = running_analysis_dir / dl2_prod_id
+    dl2_directory.mkdir(parents=True, exist_ok=True)
+    return dl2_directory
+
+
+@pytest.fixture(scope="session")
 def test_calibration_data(running_analysis_dir):
     """Mock calibration files for testing."""
-    fd, calib_file = tempfile.mkstemp(
-        prefix="calibration_", suffix=".h5", dir=running_analysis_dir
-    )
-    fd, drs4_file = tempfile.mkstemp(
-        prefix="drs4_", suffix=".fits", dir=running_analysis_dir
-    )
-    fd, time_file = tempfile.mkstemp(
-        prefix="time_calibration_", suffix=".h5", dir=running_analysis_dir
-    )
+    calib_file = running_analysis_dir / "calibration.Run01805.0000.h5"
+    drs4_file = running_analysis_dir / "drs4_pedestal.Run01804.0000.fits"
+    time_file = running_analysis_dir / "time_calibration.Run01805.0000.h5"
+    calib_file.touch()
+    drs4_file.touch()
+    time_file.touch()
     return calib_file, drs4_file, time_file
 
 
 @pytest.fixture(scope="session")
-def test_observed_data(running_analysis_dir, dl1b_subdir):
+def test_observed_data(running_analysis_dir, dl1b_subdir, dl2_subdir):
     """Mock observed data files for testing."""
-    fd, dl1_file = tempfile.mkstemp(prefix="dl1_", suffix=".h5", dir=running_analysis_dir)
-    fd, dl1ab_file = tempfile.mkstemp(prefix="dl1_", suffix=".h5", dir=dl1b_subdir)
-    fd, dl2_file = tempfile.mkstemp(prefix="dl2_", suffix=".h5", dir=running_analysis_dir)
-    fd, muons_file = tempfile.mkstemp(
-        prefix="muons_", suffix=".fits", dir=running_analysis_dir
-    )
-    fd, datacheck_file = tempfile.mkstemp(
-        prefix="datacheck_dl1_", suffix=".h5", dir=dl1b_subdir
-    )
+    dl1_file = running_analysis_dir / "dl1_LST-1.Run01808.0011.h5"
+    muons_file = running_analysis_dir / "muons_LST-1.Run01808.0011.fits"
+    dl1ab_file = dl1b_subdir / "dl1_LST-1.Run01808.0011.h5"
+    datacheck_file = dl1b_subdir / "datacheck_dl1_LST-1.Run01808.0011.h5"
+    dl2_file = dl2_subdir / "dl2_LST-1.Run01808.0011.h5"
+    dl1_file.touch()
+    muons_file.touch()
+    dl1ab_file.touch()
+    datacheck_file.touch()
+    dl2_file.touch()
     return dl1_file, dl1ab_file, dl2_file, muons_file, datacheck_file
 
 

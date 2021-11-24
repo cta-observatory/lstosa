@@ -100,17 +100,55 @@ def test_autocloser(running_analysis_dir):
     )
 
 
-def test_closer(r0_dir, running_analysis_dir, test_observed_data):
+def test_closer(r0_dir, running_analysis_dir, test_observed_data, test_calibration_data):
+    # First assure that the end of night flag is not set and remove it otherwise
+    night_finished_flag = Path("./test_osa/test_files0/OSA/Closer/20200117/v0.1.0/NightFinished.txt")
+    if night_finished_flag.exists():
+        night_finished_flag.unlink()
+
+    assert r0_dir.exists()
+    assert running_analysis_dir.exists()
+    for cal_file in test_calibration_data:
+        assert cal_file.exists()
+    for obs_file in test_observed_data:
+        assert obs_file.exists()
+
     run_program(
         "closer", "-c", "cfg/sequencer.cfg", "-y", "-v", "-t", "-d", "2020_01_17", "LST1"
     )
-    assert os.path.exists(r0_dir)
-    assert running_analysis_dir.exists()
+    conda_env_export = running_analysis_dir / "log" / "conda_env.yml"
+    closed_seq_file = running_analysis_dir / "sequence_LST1_01805.closed"
+
     # Check that files have been moved to their final destinations
-    assert os.path.exists("./test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84")
-    assert os.path.exists("./test_osa/test_files0/DL2/20200117/v0.1.0")
-    assert os.path.exists("./test_osa/test_files0/calibration/20200117/v01")
-    assert os.path.exists(test_observed_data[1])
+    assert os.path.exists(
+        "./test_osa/test_files0/DL1/20200117/v0.1.0/muons_LST-1.Run01808.0011.fits"
+    )
+    assert os.path.exists(
+        "./test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84/dl1_LST-1.Run01808.0011.h5"
+    )
+    assert os.path.exists(
+        "./test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84/"
+        "datacheck_dl1_LST-1.Run01808.0011.h5"
+    )
+    assert os.path.exists(
+        "./test_osa/test_files0/DL2/20200117/v0.1.0/tailcut84_model1/"
+        "dl2_LST-1.Run01808.0011.h5"
+    )
+    assert os.path.exists("./test_osa/test_files0/calibration/20200117/v01/"
+                          "drs4_pedestal.Run01804.0000.fits")
+    assert os.path.exists("./test_osa/test_files0/calibration/20200117/v01/"
+                          "calibration.Run01805.0000.h5")
+    assert os.path.exists("./test_osa/test_files0/calibration/20200117/"
+                          "v01/time_calibration.Run01805.0000.h5")
+    # Assert that the link to dl1 and muons files have been created
+    assert os.path.islink("./test_osa/test_files0/running_analysis"
+                          "/20200117/v0.1.0/muons_LST-1.Run01808.0011.fits")
+    assert os.path.islink("./test_osa/test_files0/running_analysis"
+                          "/20200117/v0.1.0/dl1_LST-1.Run01808.0011.h5")
+
+    assert night_finished_flag.exists()
+    assert conda_env_export.exists()
+    assert closed_seq_file.exists()
 
 
 def test_datasequence(running_analysis_dir):
