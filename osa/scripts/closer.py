@@ -1,5 +1,5 @@
 """
-End-of-Night script and functions. Check that everything has been processed,
+End-of-night script and functions. Check that everything has been processed,
 collect results and merge them if needed.
 """
 
@@ -105,8 +105,10 @@ def use_night_summary():
     night_summary_file = get_runsummary_file(options.date)
     if night_summary_file.exists():
         return True
-    log.warning("Night Summary expected but it does not exists. "
-                "Please check it or use the -r option to give a reason.")
+    log.warning(
+        "Night Summary expected but it does not exists. "
+        "Please check it or use the -r option to give a reason."
+    )
     return False
 
 
