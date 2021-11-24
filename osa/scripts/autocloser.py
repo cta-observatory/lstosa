@@ -138,7 +138,8 @@ class Telescope(object):
             return
         if not os.path.exists(analysis_path(self.telescope)):
             log.warning(
-                f"'Analysis' folder does not exist for {self.telescope}! Ignoring {self.telescope}"
+                f"'Analysis' folder does not exist for {self.telescope}! "
+                f"Ignoring {self.telescope}"
             )
             return
         if not self.lockAutomaticSequencer() and not args.ignorecronlock:
@@ -146,15 +147,19 @@ class Telescope(object):
             return
         if not self.simulate_sequencer():
             log.warning(
-                f"Simulation of the sequencer failed for {self.telescope}! Ignoring {self.telescope}"
+                f"Simulation of the sequencer failed "
+                f"for {self.telescope}! Ignoring {self.telescope}"
             )
             return
 
         self.parse_sequencer()
 
-        # Create directories in the webserver to copy datacheck products
-        log.debug("Setting up the directories in the datacheck webserver")
-        create_directories_datacheck_web(cfg.get("WEBSERVER", "HOST"), nightdir, prod_id)
+        if not args.test:
+            # Create directories in the webserver to copy datacheck products
+            log.debug("Setting up the directories in the datacheck webserver")
+            create_directories_datacheck_web(
+                cfg.get("WEBSERVER", "HOST"), nightdir, prod_id
+            )
 
         if not self.build_Sequences():
             log.warning(

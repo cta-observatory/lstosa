@@ -22,7 +22,7 @@ ALL_SCRIPTS = [
 
 
 def run_program(*args):
-    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8")
+    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8", check=True)
 
     if result.returncode != 0:
         raise ValueError(
@@ -90,9 +90,7 @@ def test_autocloser(running_analysis_dir):
         "-t",
         "LST1",
     )
-    assert os.path.exists(
-        running_analysis_dir
-    )  # Check that the analysis directory exists
+    assert os.path.exists(running_analysis_dir)
     assert result.stdout.split()[-1] == "Exit"
     assert os.path.exists(
         "./test_osa/test_files0/running_analysis/20200117/v0.1.0/"
@@ -102,7 +100,9 @@ def test_autocloser(running_analysis_dir):
 
 def test_closer(r0_dir, running_analysis_dir, test_observed_data, test_calibration_data):
     # First assure that the end of night flag is not set and remove it otherwise
-    night_finished_flag = Path("./test_osa/test_files0/OSA/Closer/20200117/v0.1.0/NightFinished.txt")
+    night_finished_flag = Path(
+        "./test_osa/test_files0/OSA/Closer/20200117/v0.1.0/NightFinished.txt"
+    )
     if night_finished_flag.exists():
         night_finished_flag.unlink()
 
@@ -134,17 +134,27 @@ def test_closer(r0_dir, running_analysis_dir, test_observed_data, test_calibrati
         "./test_osa/test_files0/DL2/20200117/v0.1.0/tailcut84_model1/"
         "dl2_LST-1.Run01808.0011.h5"
     )
-    assert os.path.exists("./test_osa/test_files0/calibration/20200117/v01/"
-                          "drs4_pedestal.Run01804.0000.fits")
-    assert os.path.exists("./test_osa/test_files0/calibration/20200117/v01/"
-                          "calibration.Run01805.0000.h5")
-    assert os.path.exists("./test_osa/test_files0/calibration/20200117/"
-                          "v01/time_calibration.Run01805.0000.h5")
+    assert os.path.exists(
+        "./test_osa/test_files0/calibration/20200117/v01/"
+        "drs4_pedestal.Run01804.0000.fits"
+    )
+    assert os.path.exists(
+        "./test_osa/test_files0/calibration/20200117/v01/"
+        "calibration.Run01805.0000.h5"
+    )
+    assert os.path.exists(
+        "./test_osa/test_files0/calibration/20200117/"
+        "v01/time_calibration.Run01805.0000.h5"
+    )
     # Assert that the link to dl1 and muons files have been created
-    assert os.path.islink("./test_osa/test_files0/running_analysis"
-                          "/20200117/v0.1.0/muons_LST-1.Run01808.0011.fits")
-    assert os.path.islink("./test_osa/test_files0/running_analysis"
-                          "/20200117/v0.1.0/dl1_LST-1.Run01808.0011.h5")
+    assert os.path.islink(
+        "./test_osa/test_files0/running_analysis/20200117/"
+        "v0.1.0/muons_LST-1.Run01808.0011.fits"
+    )
+    assert os.path.islink(
+        "./test_osa/test_files0/running_analysis/20200117/"
+        "v0.1.0/dl1_LST-1.Run01808.0011.h5"
+    )
 
     assert night_finished_flag.exists()
     assert conda_env_export.exists()

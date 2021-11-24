@@ -47,14 +47,13 @@ def register_files(run_str, analysis_dir, prefix, suffix, output_dir) -> None:
             log.debug(f"Moving file {input_file} to {output_dir}")
             shutil.move(input_file, output_file)
             # Keep DL1 and muons symlink in running_analysis
-            create_symlinks(input_file, output_file, prefix, suffix, analysis_dir)
+            create_symlinks(input_file, output_file, prefix, suffix)
 
 
-def create_symlinks(input_file, output_file, prefix, suffix, analysis_dir):
-    """
-    Keep DL1 and muons symlink in running_analysis for
-    possible future re-use.
-    """
+def create_symlinks(input_file, output_file, prefix, suffix):
+    """Keep DL1 and muons symlink in running_analysis for possible future re-use."""
+    analysis_dir = Path(options.directory)
+
     if prefix == "dl1_LST-1" and suffix == ".h5":
         dl1_filepath = analysis_dir / input_file.name
         # Remove the original DL1 files pre DL1ab stage and keep only symlinks
@@ -62,6 +61,7 @@ def create_symlinks(input_file, output_file, prefix, suffix, analysis_dir):
             dl1_filepath.unlink()
         if not dl1_filepath.is_symlink():
             dl1_filepath.symlink_to(output_file.resolve())
+
     if prefix == "muons_LST-1" and suffix == ".fits":
         input_file.symlink_to(output_file.resolve())
 
@@ -77,13 +77,13 @@ def register_run_concept_files(run_string, concept):
     concept: str
     """
 
-    input_dir = Path(options.directory)
+    initial_dir = Path(options.directory)
 
     if concept == "DL2":
-        input_dir = input_dir / options.dl2_prod_id
+        initial_dir = initial_dir / options.dl2_prod_id
 
     elif concept in ["DL1AB", "DATACHECK"]:
-        input_dir = input_dir / options.dl1_prod_id
+        initial_dir = initial_dir / options.dl1_prod_id
 
     output_dir = destination_dir(concept, create_dir=False)
     data_level = cfg.get("PATTERN", concept + "TYPE")
@@ -94,7 +94,7 @@ def register_run_concept_files(run_string, concept):
     if concept in [
         "DL1AB", "DATACHECK", "PEDESTAL", "CALIB", "TIMECALIB", "MUON", "DL2"
     ]:
-        register_files(run_string, input_dir, prefix, suffix, output_dir)
+        register_files(run_string, initial_dir, prefix, suffix, output_dir)
     else:
         log.warning(f"Concept {concept} not known")
 
