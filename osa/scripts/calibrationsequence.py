@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import historylevel
+from osa.job import historylevel, run_program_with_history_logging
 from osa.report import history
 from osa.utils.cliopts import calibration_sequence_cliparsing
 from osa.utils.logging import myLogger
@@ -184,41 +184,22 @@ def drs4_pedestal(
     """
     input_file = get_input_file(run_ped)
     output_file = Path(options.directory) / pedestal_output_file
-    calib_configfile = "Default"
+    calib_configfile = Path(cfg.get("lstchain", "calibration_config"))
 
     command_args = drs4_pedestal_command(input_file, output_file, max_events)
 
     if options.simulate:
         return 0
 
-    try:
-        log.info(f"Executing {stringify(command_args)}")
-        rc = subprocess.run(command_args, check=True).returncode
-    except subprocess.CalledProcessError as error:
-        rc = error.returncode
-        history(
-            run_ped,
-            options.calib_prod_id,
-            command_args[0],
-            pedestal_output_file.name,
-            calib_configfile,
-            rc,
-            history_file,
-        )
-        log.exception(f"Could not execute {stringify(command_args)}, error: {rc}")
-    else:
-        history(
-            run_ped,
-            options.calib_prod_id,
-            command_args[0],
-            pedestal_output_file.name,
-            calib_configfile,
-            rc,
-            history_file,
-        )
-
-    if rc != 0:
-        sys.exit(rc)
+    rc = run_program_with_history_logging(
+        command_args,
+        history_file,
+        run_ped,
+        options.calib_prod_id,
+        command_args[0],
+        pedestal_output_file,
+        calib_configfile,
+    )
 
     plot_drs4_pedestal_check(input_file, output_file, run_ped)
 
@@ -276,31 +257,15 @@ def calibrate_charge(
     if options.simulate:
         return 0
 
-    try:
-        log.info(f"Executing {stringify(command_args)}")
-        rc = subprocess.run(command_args, check=True).returncode
-    except subprocess.CalledProcessError as error:
-        rc = error.returncode
-        history(
-            calibration_run,
-            options.calib_prod_id,
-            command_args[0],
-            calibration_output_file.name,
-            calib_configfile.name,
-            rc,
-            history_file,
-        )
-        log.exception(f"Could not execute {stringify(command_args)}, error: {error}")
-    else:
-        history(
-            calibration_run,
-            options.calib_prod_id,
-            command_args[0],
-            calibration_output_file.name,
-            calib_configfile.name,
-            rc,
-            history_file,
-        )
+    rc = run_program_with_history_logging(
+        command_args,
+        history_file,
+        calibration_run,
+        options.calib_prod_id,
+        command_args[0],
+        calibration_output_file,
+        calib_configfile,
+    )
 
     if rc != 0:
         sys.exit(rc)
@@ -317,8 +282,8 @@ def plot_calibration_checks(
 ) -> None:
     """Produce check plots."""
     analysis_log_directory = Path(options.directory) / "log"
-    plot_file = analysis_log_directory / \
-                f"calibration.Run{calibration_run}.0000.pedestal.Run{drs4_run}.0000.pdf"
+    plot_file = analysis_log_directory / f"calibration.Run{calibration_run}." \
+                                         f"0000.pedestal.Run{drs4_run}.0000.pdf"
     calib.read_file(calibration_output_file, tel_id=1)
     log.info(f"Producing plots in {plot_file}")
     calib.plot_all(
@@ -356,7 +321,7 @@ def calibrate_time(
         Return code
     """
     time_calibration_file = Path(options.directory) / \
-                            f"time_{calibration_output_file.name}"
+        f"time_{calibration_output_file.name}"
 
     command_args = time_calibration_command(
         calibration_run,
@@ -384,9 +349,7 @@ def calibrate_time(
             rc,
             history_file,
         )
-        log.exception(
-            f"Could not execute {stringify(command_args)}, error: {rc}"
-        )
+        log.exception(f"Could not execute {stringify(command_args)}, error: {error}")
     else:
         history(
             calibration_run,
