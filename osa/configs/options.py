@@ -1,7 +1,4 @@
-"""
-Command line arguments shared variables across all modules. In order to
-modify them, import cliopts right after import options in the code.
-"""
+"""Command line arguments shared variables across all modules."""
 
 configfile = "cfg/sequencer.cfg"
 stdout = None
