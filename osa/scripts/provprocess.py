@@ -147,7 +147,7 @@ def parse_lines_run(filter_step, prov_lines, out):
 
         # filter grain
         session_tag = line.get("session_tag", "0:0")
-        tag_activity, tag_run = session_tag.split(":")
+        tag_activity, _ = session_tag.split(":")
         if tag_activity != filter_step and not session_id:
             continue
 

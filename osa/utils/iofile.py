@@ -11,7 +11,6 @@ __all__ = [
     "read_from_file",
     "write_to_file",
     "append_to_file",
-    "sedsi",
 ]
 
 
@@ -81,9 +80,3 @@ def append_to_file(file: pathlib.Path, content: str) -> None:
                     log.exception(f"{e.strerror} {e.filename}")
     else:
         write_to_file(file, content)
-
-
-def sedsi(pattern, replace, file):
-    old_content = read_from_file(file)
-    new_content = old_content.replace(pattern, replace)
-    write_to_file(file, new_content)
