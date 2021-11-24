@@ -1,6 +1,5 @@
-"""
-Extract subrun, run, sequence list and build corresponding objects.
-"""
+"""Extract subrun, run, sequence list and build corresponding objects."""
+
 import logging
 import sys
 
@@ -144,11 +143,11 @@ def extractsequences(run_list):
     run_list_sorted = []
     pending = []
 
-    for r in run_list:
+    for run in run_list:
         # extract the basic info
-        currentsrc = r.source
-        currentrun = r.run
-        currenttype = r.type
+        currentsrc = run.source
+        currentrun = run.run
+        currenttype = run.type
 
         # skip runs not belonging to this telescope ID
         # if (r.telescope!=options.tel_id): continue
@@ -162,11 +161,11 @@ def extractsequences(run_list):
         if currenttype == "DRS4":
             log.debug(f"Detected a new DRS4 run {currentrun} for {currentsrc}")
             hasped = True
-            run_list_sorted.append(r)
+            run_list_sorted.append(run)
         elif currenttype == "PEDCALIB":
             log.debug(f"Detected a new PEDCALIB run {currentrun} for {currentsrc}")
             hascal = True
-            run_list_sorted.append(r)
+            run_list_sorted.append(run)
 
         if currenttype == "DATA":
             if hasped is False or hascal is False:
@@ -174,11 +173,11 @@ def extractsequences(run_list):
                     f"Detected a new DATA run {currentrun} for "
                     f"{currentsrc}, but still no PED/CAL"
                 )
-                pending.append(r)
+                pending.append(run)
             else:
                 # normal case, we have the PED, the SUB, then append the DATA
                 log.debug(f"Detected a new DATA run {currentrun} for {currentsrc}")
-                run_list_sorted.append(r)
+                run_list_sorted.append(run)
     if pending:
         # we reached the end, we can add the pending runs
         log.debug("Adding the pending runs")
@@ -270,34 +269,33 @@ def extractsequences(run_list):
     return sequence_list
 
 
-def extractsequencesstereo(s1_list, s2_list):
+def extractsequencesstereo(seq1_list, seq2_list):
     """
+    Build stereo sequences from two lists of single-telescope sequences.
 
     Parameters
     ----------
-    s1_list
-    s2_list
+    seq1_list
+    seq2_list
 
     Returns
     -------
-    ss_list
-        Stereo sequence
-
+    stereo_seq_list: list
+        Stereo sequences list
     """
-    ss_list = []
-    for s1 in s1_list:
-        ss = None
-        if s1.type == "DATA":
-            for s2 in s2_list:
-                if s2.type == "DATA" and s2.run == s1.run:
-                    ss = SequenceStereo(s1, s2)
-                    ss.seq = len(ss_list)
-                    ss.jobname = f"{ss.telescope}_{ss.run:05d}"
-                    sequence_filenames(ss)
-                    ss_list.append(ss)
+    stereo_seq_list = []
+    for seq1 in seq1_list:
+        if seq1.type == "DATA":
+            for seq2 in seq2_list:
+                if seq2.type == "DATA" and seq2.run == seq1.run:
+                    stereo_seq = SequenceStereo(seq1, seq2)
+                    stereo_seq.seq = len(stereo_seq_list)
+                    stereo_seq.jobname = f"{stereo_seq.telescope}_{stereo_seq.run:05d}"
+                    sequence_filenames(stereo_seq)
+                    stereo_seq_list.append(stereo_seq)
                     break
-    log.debug(f"Appended {len(ss_list)} stereo sequences")
-    return ss_list
+    log.debug(f"Appended {len(stereo_seq_list)} stereo sequences")
+    return stereo_seq_list
 
 
 def generateworkflow(run_list, store, require):
@@ -333,27 +331,27 @@ def generateworkflow(run_list, store, require):
                 log.warning(f"There is no sequence for data run {run.run}")
             else:
                 previousrun = require[run.run]
-                for s in sequence_list:
-                    if s.run == previousrun:
-                        parent = s.seq
+                for seq in sequence_list:
+                    if seq.run == previousrun:
+                        parent = seq.seq
                         break
                 log.debug(
                     f"Sequence {seq} assigned to run {run.run} whose "
                     f"parent is {parent} with run {previousrun}"
                 )
-                s = SequenceData(run)
-                s.seq = seq
-                s.parent = parent
-                for p in sequence_list:
-                    if p.seq == parent:
-                        s.parent_list.append(p)
+                seq = SequenceData(run)
+                seq.seq = seq
+                seq.parent = parent
+                for seq_parent in sequence_list:
+                    if seq_parent.seq == parent:
+                        seq.parent_list.append(seq_parent)
                         break
 
-                s.previousrun = previousrun
-                s.jobname = f"{run.telescope}_{run.run:05d}"
-                sequence_filenames(s)
-                if s not in sequence_list:
-                    sequence_list.append(s)
+                seq.previousrun = previousrun
+                seq.jobname = f"{run.telescope}_{run.run:05d}"
+                sequence_filenames(seq)
+                if seq not in sequence_list:
+                    sequence_list.append(seq)
         elif run.type == "PEDCALIB":
             # calibration sequence are appended to the sequence
             # list if they are parent from data sequences
@@ -362,18 +360,18 @@ def generateworkflow(run_list, store, require):
                     previousrun = require[run.run]
 
                     # we found that this calibration is required
-                    s = SequenceCalibration(run)
-                    s.seq = seq
-                    s.parent = None
-                    s.previousrun = previousrun
-                    s.jobname = f"{run.telescope}_{str(run.run).zfill(5)}"
-                    sequence_filenames(s)
+                    seq = SequenceCalibration(run)
+                    seq.seq = seq
+                    seq.parent = None
+                    seq.previousrun = previousrun
+                    seq.jobname = f"{run.telescope}_{str(run.run).zfill(5)}"
+                    sequence_filenames(seq)
                     log.debug(
-                        f"Sequence {s.seq} assigned to run {run.run} whose parent is"
-                        f" {s.parent} with run {s.previousrun}"
+                        f"Sequence {seq.seq} assigned to run {run.run} whose parent is"
+                        f" {seq.parent} with run {seq.previousrun}"
                     )
-                    if s not in sequence_list:
-                        sequence_list.append(s)
+                    if seq not in sequence_list:
+                        sequence_list.append(seq)
                     break
 
     # insert the calibration file names

@@ -342,12 +342,13 @@ class Sequence(object):
         return self.dictSequence["State"] == "PENDING"
 
     def is_100(self):
+        """Check that all analysis products are 100% complete."""
         if (
             self.dictSequence["Tel"] != "ST"
-            and self.dictSequence["DL1%"] == "100"
-            and self.dictSequence["DL1AB%"] == "100"
-            and self.dictSequence["MUONS%"] == "100"
-            and self.dictSequence["DL2%"] == "100"
+                and self.dictSequence["DL1%"] == "100"
+                and self.dictSequence["DL1AB%"] == "100"
+                and self.dictSequence["MUONS%"] == "100"
+                and self.dictSequence["DL2%"] == "100"
         ):
             return True
 
@@ -355,20 +356,20 @@ class Sequence(object):
         log.debug("Check if flawless")
         if (
             self.dictSequence["Type"] == "DATA"
-            and self.dictSequence["Exit"] == "0:0"
-            and self.is_100()
-            and self.dictSequence["State"] == "COMPLETED"
-            and int(self.dictSequence["Subruns"]) > 0
+                and self.dictSequence["Exit"] == "0:0"
+                and self.is_100()
+                and self.dictSequence["State"] == "COMPLETED"
+                and int(self.dictSequence["Subruns"]) > 0
         ):
             return True
         if (
             self.dictSequence["Type"] == "PEDCALIB"
-            and self.dictSequence["Exit"] == "0:0"
-            and self.dictSequence["DL1%"] == "None"
-            and self.dictSequence["DATACHECK%"] == "None"
-            and self.dictSequence["MUONS%"] == "None"
-            and self.dictSequence["DL2%"] == "None"
-            and self.dictSequence["State"] == "COMPLETED"
+                and self.dictSequence["Exit"] == "0:0"
+                and self.dictSequence["DL1%"] == "None"
+                and self.dictSequence["DATACHECK%"] == "None"
+                and self.dictSequence["MUONS%"] == "None"
+                and self.dictSequence["DL2%"] == "None"
+                and self.dictSequence["State"] == "COMPLETED"
         ):
             return True
 

@@ -9,18 +9,21 @@ import time
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent
+from typing import List
 
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.report import history
 from osa.utils.iofile import read_from_file, write_to_file
-from osa.utils.utils import date_in_yymmdd, lstdate_to_dir, time_to_seconds
+from osa.utils.utils import date_in_yymmdd, lstdate_to_dir, time_to_seconds, stringify
 
 log = logging.getLogger(__name__)
 
 __all__ = [
+    "run_program_with_history_logging",
     "are_all_jobs_correctly_finished",
     "historylevel",
     "prepare_jobs",
@@ -554,9 +557,9 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
                         commandargs, universal_newlines=True, shell=False
                     ).split()[0]
                 except subprocess.CalledProcessError as error:
-                    log.exception(error)
-                except OSError as error:
-                    log.exception(f"Command '{batch_command}' not found, error {error}")
+                    rc = error.returncode
+                    log.exception(f"Command '{batch_command}' not found, error {rc}")
+
             log.debug(commandargs)
 
             # FIXME here s.jobid has not been redefined se it keeps the one
@@ -775,3 +778,64 @@ def set_queue_values(
             f"JobID {sequence.jobid}, State {sequence.state}, "
             f"CPUTime {sequence.cputime}, Exit {sequence.exit} updated"
         )
+
+
+def run_program_with_history_logging(
+        command_args: List[str],
+        history_file: Path,
+        run: str,
+        prod_id: str,
+        command: str,
+        input_file: Path,
+        config_file: Path
+):
+    """
+    Run the program and log the output in the history file
+
+    Parameters
+    ----------
+    command_args: List[str]
+    history_file: pathlib.Path
+    run: str
+    prod_id: str
+    command: str
+    input_file: pathlib.Path
+    config_file: pathlib.Path
+
+    Returns
+    -------
+    rc: int
+        Return code of the program
+    """
+    try:
+        log.info(f"Executing {stringify(command_args)}")
+        rc = subprocess.run(command_args, check=True).returncode
+    except subprocess.CalledProcessError as error:
+        rc = error.returncode
+        history(
+            run,
+            prod_id,
+            command,
+            input_file.name,
+            config_file.name,
+            rc,
+            history_file
+        )
+        log.exception(
+            f"Could not execute {stringify(command_args)}, error: {error}"
+        )
+    else:
+        history(
+            run,
+            prod_id,
+            command,
+            input_file.name,
+            config_file.name,
+            rc,
+            history_file
+        )
+        if rc != 0:
+            sys.exit(rc)
+        return rc
+
+    return None

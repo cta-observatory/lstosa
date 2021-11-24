@@ -1,3 +1,5 @@
+"""Handle the list of closed and vetoed sequences."""
+
 import logging
 import os
 from pathlib import Path
@@ -44,14 +46,14 @@ def set_veto_action(name, sequence_list):
 
 def update_vetoes(sequence_list):
     """Create a .veto file for a given sequence if reached maximum number of trials."""
-    for s in sequence_list:
+    for sequence in sequence_list:
         if (
-            not os.path.exists(s.veto)
-            and os.path.exists(s.history)
-            and failed_history(s.history, int(cfg.get("LSTOSA", "MAXTRYFAILED")))
+                not os.path.exists(sequence.veto)
+                and os.path.exists(sequence.history)
+                and failed_history(sequence.history, int(cfg.get("LSTOSA", "MAX_FAIL")))
         ):
-            Path(s.veto).touch()
-            log.debug(f"Created veto file {s.veto}")
+            Path(sequence.veto).touch()
+            log.debug(f"Created veto file {sequence.veto}")
 
 
 def failed_history(historyfile: str, max_trials: int) -> bool:
@@ -71,7 +73,7 @@ def failed_history(historyfile: str, max_trials: int) -> bool:
             exit_status.append(int(words[-1]))
         except ValueError as error:
             log.exception(f"Malformed file {historyfile}, {error}")
-        log.debug("extracting line: {0}".format(line))
+        log.debug(f"extracting line: {line}")
     lsize = len(exit_status)
     if lsize >= max_trials and (goal[-1] != "new_calib"):
         strike = 0
@@ -80,10 +82,10 @@ def failed_history(historyfile: str, max_trials: int) -> bool:
             # m += f"{card[i]=={card[lsize-1]}, {programme[i]}=={programme[lsize-1]}"
             # log.debug(f"comparing {m}")
             if (
-                (exit_status[i] != 0)
-                and (exit_status[i] == exit_status[lsize - 1])
-                and (card[i] == card[lsize - 1])
-                and (programme[i] == programme[lsize - 1])
+                    (exit_status[i] != 0)
+                    and (exit_status[i] == exit_status[lsize - 1])
+                    and (card[i] == card[lsize - 1])
+                    and (programme[i] == programme[lsize - 1])
             ):
                 strike += 1
                 if strike == max_trials - 1:

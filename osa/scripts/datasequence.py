@@ -1,19 +1,16 @@
 """Script called from the batch scheduler to process a run."""
 
 import logging
-import subprocess
 import sys
 from pathlib import Path
-from typing import List
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import historylevel
+from osa.job import historylevel, run_program_with_history_logging
 from osa.provenance.capture import trace
-from osa.report import history
 from osa.utils.cliopts import data_sequence_cli_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_dir, stringify
+from osa.utils.utils import lstdate_to_dir
 
 __all__ = ["data_sequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
 
@@ -148,7 +145,7 @@ def r0_to_dl1(
     if options.simulate:
         return 0
 
-    return run_program_with_logging(
+    return run_program_with_history_logging(
         command_args,
         history_file,
         run_str,
@@ -199,7 +196,7 @@ def dl1ab(run_str: str, history_file: Path):
     if options.simulate:
         return 0
 
-    return run_program_with_logging(
+    return run_program_with_history_logging(
         command_args,
         history_file,
         run_str,
@@ -244,7 +241,7 @@ def dl1_datacheck(run_str: str, history_file: Path):
     if options.simulate:
         return 0
 
-    return run_program_with_logging(
+    return run_program_with_history_logging(
         command_args,
         history_file,
         run_str,
@@ -289,7 +286,7 @@ def dl1_to_dl2(run_str: str, history_file: Path):
     if options.simulate:
         return 0
 
-    return run_program_with_logging(
+    return run_program_with_history_logging(
         command_args,
         history_file,
         run_str,
@@ -298,57 +295,6 @@ def dl1_to_dl2(run_str: str, history_file: Path):
         dl1_file,
         dl2_config_file,
     )
-
-
-def run_program_with_logging(
-        command_args: List[str],
-        history_file: Path,
-        run: str,
-        prod_id: str,
-        command: str,
-        input_file: Path,
-        config_file: Path
-):
-    """
-    Run the program and log the output in the history file
-
-    Parameters
-    ----------
-    command_args: List[str]
-    history_file: pathlib.Path
-    run: str
-    prod_id: str
-    command: str
-    input_file: pathlib.Path
-    config_file: pathlib.Path
-
-    Returns
-    -------
-    rc: int
-        Return code of the program
-    """
-    try:
-        log.info(f"Executing {stringify(command_args)}")
-        rc = subprocess.call(command_args)
-    except subprocess.CalledProcessError as error:
-        log.exception(f"Subprocess error: {error}")
-    except OSError as error:
-        log.exception(f"Command {stringify(command_args)} failed, {error}")
-    else:
-        history(
-            run,
-            prod_id,
-            command,
-            input_file.name,
-            config_file.name,
-            rc,
-            history_file
-        )
-        if rc != 0:
-            sys.exit(rc)
-        return rc
-
-    return None
 
 
 def main():

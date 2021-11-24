@@ -40,6 +40,8 @@ def are_raw_files_transferred() -> bool:
     if options.tel_id != "ST":
         return are_raw_files_transferred_for_tel(options.tel_id)
 
+    return False
+
 
 def get_check_raw_dir() -> Path:
     raw_dir = get_raw_dir()

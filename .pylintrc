@@ -141,7 +141,9 @@ disable=print-statement,
         comprehension-escape,
         too-many-arguments,
         too-many-locals,
-        W1203
+        W1203,
+        C0103,
+        B603
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

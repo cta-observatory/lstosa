@@ -1,6 +1,5 @@
-"""
-Simulate executions of data processing pipeline and produce provenance
-"""
+"""Simulate executions of data processing pipeline and produce provenance."""
+
 import logging
 import multiprocessing as mp
 import subprocess
@@ -42,7 +41,6 @@ log = myLogger(logging.getLogger())
 
 def do_setup():
     """Set-up folder structure and check flags."""
-
     pathDL1 = Path(cfg.get("LST1", "DL1_DIR")) / options.directory
     pathDL2 = Path(cfg.get("LST1", "DL2_DIR")) / options.directory
     pathDL1sub = pathDL1 / options.prod_id
@@ -93,7 +91,6 @@ def tear_down():
 
 def parse_template(template, idx):
     """Parse batch templates."""
-
     args = []
     keep = False
     for line in template.splitlines():
@@ -155,7 +152,7 @@ def simulate_processing():
                 options.prod_id,
             ]
             log.info(f"Processing provenance for run {s.run_str}")
-            subprocess.run(args_pp)
+            subprocess.run(args_pp, check=True)
 
 
 if __name__ == "__main__":
