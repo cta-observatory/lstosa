@@ -57,13 +57,12 @@ def set_content(assignments):
     content += "Content-type: text/plain; charset=utf-8\n"
     content += "Content-Transfer-Encoding: quoted-printable\n"
     keys = ["From", "To", "Cc", "Bcc", "Reply-to", "Subject", "Content", "Signature"]
-    if len(assignments) != 0:
-        for key in keys:
-            if key in assignments.keys():
-                if key == "Content" or key == "Signature":
-                    content += "\n{1}".format(key, assignments[key])
-                else:
-                    content += "{0}: {1}\n".format(key, assignments[key])
-        return content
-    else:
+    if len(assignments) == 0:
         return None
+    for key in keys:
+        if key in assignments.keys():
+            if key in ["Content", "Signature"]:
+                content += "\n{1}".format(key, assignments[key])
+            else:
+                content += "{0}: {1}\n".format(key, assignments[key])
+    return content
