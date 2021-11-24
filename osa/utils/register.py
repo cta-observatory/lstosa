@@ -1,23 +1,26 @@
+"""Identify files to be moved to their final destination directories"""
+
 import logging
-import os
+import re
 import shutil
-from filecmp import cmp
-from os.path import basename, exists, join
 from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.utils import destination_dir
+from osa.veto import set_closed_sequence
 
 __all__ = [
     "register_files",
-    "register_run_concept_files"
+    "register_run_concept_files",
+    "register_found_pattern",
+    "register_non_existing_file"
 ]
 
 log = logging.getLogger(__name__)
 
 
-def register_files(run_str, input_dir, prefix, suffix, output_dir):
+def register_files(run_str, analysis_dir, prefix, suffix, output_dir) -> None:
     """
     Copy files into final data directory destination and register
     them into the DB (to be implemented).
@@ -26,70 +29,63 @@ def register_files(run_str, input_dir, prefix, suffix, output_dir):
     ----------
     run_str: str
         Run number
-    input_dir: analysis directory
-    suffix: suffix of the data file
-    output_dir: final data directory
-    prefix: prefix of the data file
+    analysis_dir: pathlib.Path
+        analysis directory
+    suffix: str
+        suffix of the data file
+    output_dir: pathlib.Path
+        final data directory
+    prefix: str
+        prefix of the data file
     """
-    file_list = Path(input_dir).rglob(f"{prefix}*{run_str}*{suffix}")
-    log.debug(f"File list is {file_list}")
-    # hostname = gethostname()
-    # the default subrun index for most of the files
-    # run = int(run_str.lstrip("0"))
-    # subrun = 1
-    for inputf in file_list:
-        # next is the way of searching 3 digits after a dot in filenames
-        # subrunsearch = re.search("(?<=\.)\d\d\d_", basename(inputf))
-        # if subrunsearch:
-        # and strip the zeroes after getting the first 3 character
-        # subrun = subrunsearch.group(0)[0:3].lstrip("0")
-        outputf = join(output_dir, basename(inputf))
-        if exists(outputf) and cmp(inputf, outputf):
-            # do nothing than acknowledging
-            log.debug(
-                f"Nothing to do. Destination file {outputf} exists and "
-                f"it is identical to input"
-            )
-        else:
-            # there is no output file or it is different
-            log.debug(f"Moving file {outputf}")
-            shutil.move(inputf, outputf)
 
-            # Keeping DL1 and muons symlink in running_analysis
-            if prefix == "dl1_LST-1" and suffix == ".h5":
-                file_basename = os.path.basename(inputf)
-                dl1_filepath = os.path.join(options.directory, file_basename)
-                # Remove the original DL1 files pre DL1ab stage and keep only symlinks
-                if os.path.isfile(dl1_filepath) and not os.path.islink(dl1_filepath):
-                    os.remove(dl1_filepath)
-                if not os.path.islink(dl1_filepath):
-                    os.symlink(outputf, dl1_filepath)
-            if prefix == "muons_LST-1" and suffix == ".fits":
-                os.symlink(outputf, inputf)
+    file_list = analysis_dir.rglob(f"{prefix}*{run_str}*{suffix}")
+
+    for input_file in file_list:
+        output_file = output_dir / input_file.name
+        if not output_file.exists():
+            log.debug(f"Moving file {input_file} to {output_dir}")
+            shutil.move(input_file, output_file)
+            # Keep DL1 and muons symlink in running_analysis
+            create_symlinks(input_file, output_file, prefix, suffix, analysis_dir)
+
+
+def create_symlinks(input_file, output_file, prefix, suffix, analysis_dir):
+    """
+    Keep DL1 and muons symlink in running_analysis for
+    possible future re-use.
+    """
+    if prefix == "dl1_LST-1" and suffix == ".h5":
+        dl1_filepath = analysis_dir / input_file.name
+        # Remove the original DL1 files pre DL1ab stage and keep only symlinks
+        if dl1_filepath.is_file() and not dl1_filepath.is_symlink():
+            dl1_filepath.unlink()
+        if not dl1_filepath.is_symlink():
+            dl1_filepath.symlink_to(output_file.resolve())
+    if prefix == "muons_LST-1" and suffix == ".fits":
+        input_file.symlink_to(output_file.resolve())
 
 
 def register_run_concept_files(run_string, concept):
     """
     Prepare files to be moved to final destination directories
-    from the running_analysis original directory. DL1ab, datacheck
-    and DL2 are firstly stored in the corresponding subdirectory.
+    from the running_analysis original directory.
 
     Parameters
     ----------
-    run_string
-    concept
+    run_string: str
+    concept: str
     """
 
-    if concept in ["MUON", "PEDESTAL", "CALIB", "TIMECALIB"]:
-        inputdir = options.directory
+    input_dir = Path(options.directory)
 
-    elif concept == "DL2":
-        inputdir = join(options.directory, options.dl2_prod_id)
+    if concept == "DL2":
+        input_dir = input_dir / options.dl2_prod_id
 
     elif concept in ["DL1AB", "DATACHECK"]:
-        inputdir = join(options.directory, options.dl1_prod_id)
+        input_dir = input_dir / options.dl1_prod_id
 
-    outputdir = destination_dir(concept, create_dir=False)
+    output_dir = destination_dir(concept, create_dir=False)
     data_level = cfg.get("PATTERN", concept + "TYPE")
     prefix = cfg.get("PATTERN", concept + "PREFIX")
     suffix = cfg.get("PATTERN", concept + "SUFFIX")
@@ -98,6 +94,72 @@ def register_run_concept_files(run_string, concept):
     if concept in [
         "DL1AB", "DATACHECK", "PEDESTAL", "CALIB", "TIMECALIB", "MUON", "DL2"
     ]:
-        register_files(run_string, inputdir, prefix, suffix, outputdir)
+        register_files(run_string, input_dir, prefix, suffix, output_dir)
     else:
         log.warning(f"Concept {concept} not known")
+
+
+def register_found_pattern(
+        file_path: Path,
+        seq_list: list,
+        concept: str,
+        destination_path: Path
+):
+    """
+
+    Parameters
+    ----------
+    file_path: pathlib.Path
+    seq_list: list
+    concept: str
+    destination_path: pathlib.Path
+    """
+    new_dst = destination_path / file_path.name
+    log.debug(f"New file path {new_dst}")
+    if not options.simulate:
+        if new_dst.exists():
+            log.debug("Destination file already exists")
+        else:
+            log.debug(f"Destination file {new_dst} does not exists")
+            register_non_existing_file(file_path, concept, seq_list)
+
+    # Return filepath already registered to be deleted from the set of all files
+    return file_path
+
+
+def register_non_existing_file(file_path, concept, seq_list):
+    """
+
+    Parameters
+    ----------
+    file_path: pathlib.Path
+    concept: str
+    seq_list: list
+    """
+    for sequence in seq_list:
+        if sequence.type == "DATA":
+            run_str_found = re.search(sequence.run_str, str(file_path))
+
+            if run_str_found is not None:
+                log.debug(f"Registering file {run_str_found}")
+                register_run_concept_files(sequence.run_str, concept)
+                if options.seqtoclose is None and not file_path.exists():
+                    log.debug("File does not exists")
+
+        elif sequence.type in ["PEDCALIB", "DRS4"]:
+            calib_run_str_found = re.search(str(sequence.run), str(file_path))
+            drs4_run_str_found = re.search(str(sequence.previousrun), str(file_path))
+
+            if calib_run_str_found is not None:
+                log.debug(f"Registering file {calib_run_str_found}")
+                register_run_concept_files(str(sequence.run), concept)
+                if options.seqtoclose is None and not file_path.exists():
+                    log.debug("File does not exists")
+
+            if drs4_run_str_found is not None:
+                log.debug(f"Registering file {drs4_run_str_found}")
+                register_run_concept_files(str(sequence.previousrun), concept)
+                if options.seqtoclose is None and not file_path.exists():
+                    log.debug("File does not exists")
+
+        set_closed_sequence(sequence)
