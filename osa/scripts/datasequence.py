@@ -46,7 +46,7 @@ def data_sequence(
         Return code of the last executed command.
     """
     history_file = Path(options.directory) / \
-                   f"sequence_{options.tel_id}_{run_str}.history"
+        f"sequence_{options.tel_id}_{run_str}.history"
     level, rc = (4, 0) if options.simulate else historylevel(history_file, "DATA")
     log.info(f"Going to level {level}")
 
