@@ -329,7 +329,7 @@ def run_program_with_logging(
     """
     try:
         log.info(f"Executing {stringify(command_args)}")
-        rc = subprocess.call(command_args)
+        rc = subprocess.run(command_args, check=True).returncode
     except subprocess.CalledProcessError as error:
         log.exception(f"Subprocess error: {error}")
     except OSError as error:

@@ -193,8 +193,9 @@ def drs4_pedestal(
 
     try:
         log.info(f"Executing {stringify(command_args)}")
-        rc = subprocess.call(command_args)
-    except OSError(1) as rc:
+        rc = subprocess.run(command_args, check=True).returncode
+    except subprocess.CalledProcessError as error:
+        rc = error.returncode
         history(
             run_ped,
             options.calib_prod_id,
@@ -205,8 +206,6 @@ def drs4_pedestal(
             history_file,
         )
         log.exception(f"Could not execute {stringify(command_args)}, error: {rc}")
-    except subprocess.CalledProcessError as error:
-        log.exception(error)
     else:
         history(
             run_ped,
@@ -279,20 +278,19 @@ def calibrate_charge(
 
     try:
         log.info(f"Executing {stringify(command_args)}")
-        rc = subprocess.call(command_args)
-    except OSError(1) as error:
+        rc = subprocess.run(command_args, check=True).returncode
+    except subprocess.CalledProcessError as error:
+        rc = error.returncode
         history(
             calibration_run,
             options.calib_prod_id,
             command_args[0],
             calibration_output_file.name,
             calib_configfile.name,
-            error,
+            rc,
             history_file,
         )
         log.exception(f"Could not execute {stringify(command_args)}, error: {error}")
-    except subprocess.CalledProcessError as error:
-        log.exception(f"{error}, {rc}")
     else:
         history(
             calibration_run,
@@ -374,20 +372,21 @@ def calibrate_time(
 
     try:
         log.info(f"Executing {stringify(command_args)}")
-        rc = subprocess.call(command_args)
-    except OSError(1) as error:
+        rc = subprocess.run(command_args, check=True).returncode
+    except subprocess.CalledProcessError as error:
+        rc = error.returncode
         history(
             calibration_run,
             options.calib_prod_id,
             command_args[0],
             time_calibration_file.name,
             calib_configfile,
-            error,
+            rc,
             history_file,
         )
-        log.exception(f"Could not execute {stringify(command_args)}, error: {error}")
-    except subprocess.CalledProcessError as error:
-        log.exception(f"{error}, {rc}")
+        log.exception(
+            f"Could not execute {stringify(command_args)}, error: {rc}"
+        )
     else:
         history(
             calibration_run,

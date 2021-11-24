@@ -554,9 +554,9 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
                         commandargs, universal_newlines=True, shell=False
                     ).split()[0]
                 except subprocess.CalledProcessError as error:
-                    log.exception(error)
-                except OSError as error:
-                    log.exception(f"Command '{batch_command}' not found, error {error}")
+                    rc = error.returncode
+                    log.exception(f"Command '{batch_command}' not found, error {rc}")
+
             log.debug(commandargs)
 
             # FIXME here s.jobid has not been redefined se it keeps the one

@@ -1,4 +1,5 @@
-"""Command line arguments shared by all modules.
+"""
+Command line arguments shared by all modules.
 
 We share all these command line options as variables across different modules
 In order to modify them, import cliopts right after import options in the code.
