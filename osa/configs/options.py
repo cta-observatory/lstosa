@@ -1,7 +1,8 @@
 """
-We share all these command line options as variables across different modules
-In order to modify them, import cliopts right after import options in the code
+Option parameters shared by all modules.
 
+We share all these command line options as variables across different modules
+In order to modify them, import cliopts right after import options in the code.
 This is the recommended way to share variables according to
 https://docs.python.org/3/faq/programming.html#how-do-i-share-global-variables-across-modules
 """
@@ -10,7 +11,6 @@ configfile = "cfg/sequencer.cfg"
 stdout = None
 stderr = None
 date = None
-mode = None
 tel_id = None
 nightsummary = True
 reason = None
