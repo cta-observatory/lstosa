@@ -30,17 +30,16 @@ def parse_variables(class_instance):
     # LST1
 
     configfileDL1 = cfg.get("lstchain", "dl1ab_config")
-    configfileDL2 = cfg.get("LSTOSA", "DL2CONFIGFILE")
+    configfileDL2 = cfg.get("lstchain", "dl2_config")
     rawdir = cfg.get("LST1", "R0_DIR")
-    r0_prefix = cfg.get("PATTERN", "R0PREFIX")
-    dl1_prefix = cfg.get("PATTERN", "DL1PREFIX")
-    dl2_prefix = cfg.get("PATTERN", "DL2PREFIX")
     rf_models_directory = cfg.get("lstchain", "RF_MODELS")
     calib_dir = cfg.get("LST1", "CALIB_DIR")
     dl1_dir = cfg.get("LST1", "DL1_DIR")
     dl2_dir = cfg.get("LST1", "DL2_DIR")
-
     nightdir = lstdate_to_dir(options.date)
+    analysis_dir = Path(cfg.get("LST1", "ANALYSIS_DIR")) / nightdir / options.prod_id
+    outdir_dl1 = Path(dl1_dir) / nightdir / options.prod_id / options.dl1_prod_id
+    outdir_dl2 = Path(dl2_dir) / nightdir / options.prod_id / options.dl2_prod_id
 
     if class_instance.__name__ == "r0_to_dl1":
         # calibrationfile   [0] /fefs/aswg/data/real/calibration/20200218/v00/calibration.Run02006.0000.hdf5
@@ -52,7 +51,7 @@ def parse_variables(class_instance):
         # historyfile       [6] /fefs/aswg/data/real/running_analysis/20200218/v0.4.3_v00/sequence_LST1_02006.0000.history
 
         class_instance.ObservationRun = class_instance.args[5].split(".")[0]
-        class_instance.ObservationDate = re.findall(r"running_analysis/(\d{8})/", class_instance.args[6])[0]
+        class_instance.ObservationDate = nightdir
         class_instance.SoftwareVersion = options.lstchain_version
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile
@@ -61,23 +60,22 @@ def parse_variables(class_instance):
         pedestal_filename = os.path.basename(class_instance.args[1])
         timecalibration_filename = os.path.basename(class_instance.args[2])
         calibration_path = Path(calib_dir) / nightdir / options.calib_prod_id
-
-        # /fefs/aswg/data/real/R0/20200218/LST1.1.Run02006.0001.fits.fz
         class_instance.R0SubrunDataset = (
-            f"{rawdir}/{class_instance.ObservationDate}/{r0_prefix}.Run{class_instance.args[5]}.fits.fz"
+            f"{rawdir}/{nightdir}/LST-1.1.Run{class_instance.args[5]}.fits.fz"
         )
-
-        class_instance.CoefficientsCalibrationFile = str(calibration_path / calibration_filename)
-        class_instance.PedestalFile = str(calibration_path / pedestal_filename)
-        class_instance.TimeCalibrationFile = str(calibration_path / timecalibration_filename)
+        class_instance.CoefficientsCalibrationFile = str(
+            calibration_path / calibration_filename
+        )
+        class_instance.PedestalFile = str(
+            calibration_path / pedestal_filename
+        )
+        class_instance.TimeCalibrationFile = str(
+            calibration_path / timecalibration_filename
+        )
         class_instance.PointingFile = class_instance.args[3]
         class_instance.RunSummaryFile = os.path.basename(class_instance.args[4])
-
-        # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
-        running_analysis_dir = re.findall(r"(.*)sequence", class_instance.args[6])[0]
-        outdir_dl1 = running_analysis_dir.replace("running_analysis", "DL1")
         class_instance.DL1SubrunDataset = (
-            f"{outdir_dl1}{options.dl1_prod_id}/{dl1_prefix}.Run{class_instance.args[5]}{h5}"
+            f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[5]}.h5"
         )
 
     if class_instance.__name__ == "dl1ab":
@@ -86,7 +84,7 @@ def parse_variables(class_instance):
 
         class_instance.AnalysisConfigFileDL1 = configfileDL1
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
-        class_instance.ObservationDate = re.findall(r"running_analysis/(\d{8})/", class_instance.args[1])[0]
+        class_instance.ObservationDate = nightdir
         class_instance.SoftwareVersion = options.lstchain_version
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile
@@ -94,11 +92,8 @@ def parse_variables(class_instance):
         class_instance.PedestalCleaning = "True"
         class_instance.StoreImage = cfg.getboolean("lstchain", "store_image_dl1ab")
 
-        # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
-        running_analysis_dir = re.findall(r"(.*)sequence", class_instance.args[1])[0]
-        outdir_dl1 = running_analysis_dir.replace("running_analysis", "DL1")
         class_instance.DL1SubrunDataset = (
-            f"{outdir_dl1}{options.dl1_prod_id}/{dl1_prefix}.Run{class_instance.args[0]}{h5}"
+            f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[0]}.h5"
         )
 
     if class_instance.__name__ == "dl1_datacheck":
@@ -107,46 +102,29 @@ def parse_variables(class_instance):
 
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
         class_instance.ObservationDate = nightdir
-        class_instance.SoftwareVersion = options.lstchain_version        
-        class_instance.ObservationSubRun = class_instance.args[5].split(".")[0]
-        class_instance.ProdID = options.prod_id
-        class_instance.CalibrationRun = re.findall(
-            r"Run(\d{5}).", calibration_filename
-        )[0]
-        class_instance.PedestalRun = re.findall(
-            r"Run(\d{5}).", pedestal_filename
-        )[0]
-        outdir_dl1 = Path(dl1_dir) / nightdir / options.prod_id
-        class_instance.DL1SubrunDataset = (
-            f"{outdir_dl1}{dl1_prefix}.Run{class_instance.args[5]}.h5"
-        )
-        # /fefs/aswg/data/real/R0/20200218/LST1.1.Run02006.0001.fits.fz
-        class_instance.R0SubrunDataset = f"{rawdir}/" \
-                                         f"{class_instance.ObservationDate}/" \
-                                         f"{r0_prefix}." \
-                                         f"Run{class_instance.args[5]}.fits.fz"
+        class_instance.SoftwareVersion = options.lstchain_version
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile
 
         # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
-        running_analysis_dir = re.findall(r"(.*)sequence", class_instance.args[1])[0]
-        outdir_dl1 = running_analysis_dir.replace("running_analysis", "DL1")
         class_instance.DL1SubrunDataset = (
-            f"{outdir_dl1}{options.dl1_prod_id}/{dl1_prefix}.Run{class_instance.args[0]}{h5}"
+            f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[0]}.h5"
         )
         # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/muons_LST-1.Run02006.0001.fits
-        class_instance.MuonsSubrunDataset = f"{outdir_dl1}muons_LST-1.Run{class_instance.args[0]}{fits}"
+        class_instance.MuonsSubrunDataset = (
+            f"{analysis_dir}/muons_LST-1.Run{class_instance.args[0]}.fits"
+        )
         # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/datacheck_dl1_LST-1.Run06269.0021.h5
         class_instance.DL1CheckSubrunDataset = (
-            f"{outdir_dl1}{options.dl1_prod_id}/datacheck_{dl1_prefix}.Run{class_instance.args[0]}{h5}"
+            f"{outdir_dl1}/datacheck_dl1_LST-1.Run{class_instance.args[0]}.h5"
         )
         # /fefs/aswg/data/real/DL1/20210913/v0.7.5/tailcut84/datacheck_dl1_LST-1.Run06269.h5
         class_instance.DL1CheckHDF5File = (
-            f"{outdir_dl1}{options.dl1_prod_id}/datacheck_{dl1_prefix}.Run{class_instance.ObservationRun}{h5}"
+            f"{outdir_dl1}/datacheck_dl1_LST-1.Run{class_instance.ObservationRun}.h5"
         )
         # /fefs/aswg/data/real/DL1/20210913/v0.7.5/tailcut84/datacheck_dl1_LST-1.Run06269.pdf
         class_instance.DL1CheckPDFFile = (
-            f"{outdir_dl1}{options.dl1_prod_id}/datacheck_{dl1_prefix}.Run{class_instance.ObservationRun}.pdf"
+            f"{outdir_dl1}/datacheck_dl1_LST-1.Run{class_instance.ObservationRun}.pdf"
         )
 
     if class_instance.__name__ == "dl1_to_dl2":
@@ -157,44 +135,28 @@ def parse_variables(class_instance):
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
         class_instance.ObservationDate = nightdir
         class_instance.SoftwareVersion = options.lstchain_version
-
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile
 
         class_instance.RFModelEnergyFile = str(Path(rf_models_directory) / "reg_energy.sav")
-        class_instance.RFModelDispFile = str(Path(rf_models_directory) / "reg_disp_vector.sav")
+        class_instance.RFModelDispFile = str(Path(rf_models_directory) / "reg_disp_norm.sav")
         class_instance.RFModelGammanessFile = str(Path(rf_models_directory) / "cls_gh.sav")
-
-        # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
-        running_analysis_dir = re.findall(r"(.*)sequence", class_instance.args[1])[0]
-        
-        # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5
-        outdir_dl1 = Path(dl1_dir) / nightdir / options.prod_id
         
         class_instance.DL1SubrunDataset = (
-            f"{outdir_dl1}{dl1_prefix}.Run{class_instance.args[0]}.h5"
+            f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[0]}.h5"
         )
         class_instance.DL2SubrunDataset = (
-            f"{outdir_dl2}/{dl2_prefix}.Run{class_instance.args[0]}.h5"
-
-        class_instance.DL1ProdID = options.prod_id
-        class_instance.DL2ProdID = options.dl2_prod_id
-        
-        
-        # /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.0001.h5
-        outdir_dl2 = Path(dl2_dir) / nightdir / options.dl2_prod_id
-
-        class_instance.DL2SubrunDataset = f"{outdir_dl2}/{dl2_prefix}.Run{class_instance.args[0]}{h5}"
+            f"{outdir_dl2}/dl2_LST-1.Run{class_instance.args[0]}.h5"
+        )
         # /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/tailcut84/dl2_LST-1.Run02006.h5
-        class_instance.DL2MergedFile = f"{outdir_dl2}/{dl2_prefix}.Run{class_instance.ObservationRun}{h5}"
+        class_instance.DL2MergedFile = f"{outdir_dl2}/dl2_LST-1.Run{class_instance.ObservationRun}.h5"
 
     return class_instance
 
 
 def get_log_config():
     """Get logging configuration from an OSA config file."""
-
-    # default config filename value
+    # Default config filename value
     config_file = Path(__file__).resolve().parent / ".." / ".." / options.configfile
     std_logger_file = Path(__file__).resolve().parent / "config" / "logger.yaml"
 
