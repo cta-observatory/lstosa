@@ -1,4 +1,4 @@
-lstosa |ci| |docs| |coverage| |precommit|
+lstosa |ci| |docs| |coverage| |precommit| |quality|
 ============================================================
 
 .. |docs| image:: https://readthedocs.org/projects/lstosa-test2/badge/?version=latest 
@@ -13,6 +13,8 @@ lstosa |ci| |docs| |coverage| |precommit|
   
 .. |precommit| image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
 
+.. |quality| image:: https://app.codacy.com/project/badge/Grade/5b660e2b9de84a839085923a2b052d47
+  :target: https://www.codacy.com/gh/gae-ucm/lstosa/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gae ucm/lstosa&amp;utm_campaign=Badge_Grade
 
 
 On-Site analysis pipeline of the the Large Size Telescope prototype of CTA_ (Cherenkov Telescope Array).
@@ -29,7 +31,7 @@ This code is a prototype data processing framework under development.
 
 Install
 -------
-* You will need to install anaconda first.
+* Install miniconda first.
 * Create and activate the conda environment including lstchain_ and ctapipe_io_lst_:
 
 .. code-block:: bash
