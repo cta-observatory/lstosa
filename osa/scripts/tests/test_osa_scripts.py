@@ -17,7 +17,8 @@ ALL_SCRIPTS = [
     "copy_datacheck",
     "datasequence",
     "show_run_summary",
-    "provprocess"
+    "provprocess",
+    "simulate_processing"
 ]
 
 

@@ -9,7 +9,6 @@ import yaml
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.configs.datamodel import SequenceData
 from osa.job import create_job_template
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import run_summary_table
@@ -43,7 +42,7 @@ log = myLogger(logging.getLogger())
 
 def do_setup():
     """Set-up folder structure and check flags."""
-    pathAnalysis = Path(cfg.get("LST1", "ANALYSISDIR")) / options.directory
+    pathAnalysis = Path(cfg.get("LST1", "ANALYSIS_DIR")) / options.directory
     pathDL1 = Path(cfg.get("LST1", "DL1_DIR")) / options.directory
     pathDL2 = Path(cfg.get("LST1", "DL2_DIR")) / options.directory
     pathSubAnalysis = pathAnalysis / options.prod_id
@@ -57,12 +56,24 @@ def do_setup():
         log.info("You can also set --append flag to append captured provenance.")
         return
 
-    CONFIG_FLAGS["TearSubAnalysis"] = False if pathSubAnalysis.exists() or options.provenance else pathSubAnalysis
-    CONFIG_FLAGS["TearAnalysis"] = False if pathAnalysis.exists() or options.provenance else pathAnalysis
-    CONFIG_FLAGS["TearSubDL1"] = False if pathDL1sub.exists() or options.provenance else pathDL1sub
-    CONFIG_FLAGS["TearSubDL2"] = False if pathDL2sub.exists() or options.provenance else pathDL2sub
-    CONFIG_FLAGS["TearDL1"] = False if pathDL1.exists() or options.provenance else pathDL1
-    CONFIG_FLAGS["TearDL2"] = False if pathDL2.exists() or options.provenance else pathDL2
+    CONFIG_FLAGS["TearSubAnalysis"] = (
+        False if pathSubAnalysis.exists() or options.provenance else pathSubAnalysis
+    )
+    CONFIG_FLAGS["TearAnalysis"] = (
+        False if pathAnalysis.exists() or options.provenance else pathAnalysis
+    )
+    CONFIG_FLAGS["TearSubDL1"] = (
+        False if pathDL1sub.exists() or options.provenance else pathDL1sub
+    )
+    CONFIG_FLAGS["TearSubDL2"] = (
+        False if pathDL2sub.exists() or options.provenance else pathDL2sub
+    )
+    CONFIG_FLAGS["TearDL1"] = (
+        False if pathDL1.exists() or options.provenance else pathDL1
+    )
+    CONFIG_FLAGS["TearDL2"] = (
+        False if pathDL2.exists() or options.provenance else pathDL2
+    )
 
     if options.provenance and not options.force:
         if pathSubAnalysis.exists():
@@ -121,7 +132,7 @@ def parse_template(template, idx):
 
 def simulate_calibration(args):
     """Simulate calibration."""
-    log.info(f"Simulating calibration call")
+    log.info("Simulating calibration call")
     subprocess.run(args)
 
 
@@ -142,50 +153,44 @@ def simulate_processing():
     sequence_list = extractsequences(run_list)
 
     # skip drs4 and calibration
-    for s in sequence_list:
+    for sequence in sequence_list:
         processed = False
-        for sl in s.subrun_list:
-            if sl.runobj.type != "DATA":
-                args_cal = parse_template(createjobtemplate(s, get_content=True), 0)
+        for sub_list in sequence.subrun_list:
+            if sub_list.runobj.type != "DATA":
+                args_cal = parse_template(create_job_template(sequence, get_content=True), 0)
                 simulate_calibration(args_cal)
             else:
                 with mp.Pool() as poolproc:
                     args_proc = [
-                        parse_template(createjobtemplate(s, get_content=True), subrun_idx)
-                        for subrun_idx in range(sl.subrun)
+                        parse_template(create_job_template(sequence, get_content=True), subrun_idx)
+                        for subrun_idx in range(sub_list.subrun)
                     ]
                     processed = poolproc.map(simulate_subrun_processing, args_proc)
 
         # produce prov if overwrite prov arg
         if processed and options.provenance:
-            command = Path(cfg.get("LSTOSA", "SCRIPTSDIR")) / "provprocess.py"
+            command = "provprocess"
             args_pp = [
-                "python",
                 command,
                 "-c",
                 options.configfile,
-                s.run_str,
+                sequence.run_str,
                 options.directory,
                 options.prod_id,
             ]
-            log.info(f"Processing provenance for run {s.run_str}")
+            log.info(f"Processing provenance for run {sequence.run_str}")
             subprocess.run(args_pp, check=True)
 
 
-if __name__ == "__main__":
-
+def main():
     log.setLevel(logging.INFO)
 
     simprocparsing()
 
     # date and tel_id hardcoded for the moment
-    #
     options.date = "2020_01_17"
     options.tel_id = "LST1"
-    #
-
-    options.directory = lstdate_to_number(options.date)
-
+    options.directory = lstdate_to_dir(options.date)
 
     log.info("Running simulate processing")
 
@@ -193,3 +198,7 @@ if __name__ == "__main__":
     if CONFIG_FLAGS["Go"]:
         simulate_processing()
     tear_down()
+
+
+if __name__ == "__main__":
+    main()
