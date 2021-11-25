@@ -190,9 +190,10 @@ def get_file_hash(str_path, buffer=get_hash_buffer(), method=get_hash_method()):
             file_hash = hash_func.hexdigest()
             logger.debug(f"File entity {str_path} has {method} hash {file_hash}")
             return file_hash
-        else:
-            logger.warning(f"File entity {str_path} not found")
-            return str_path
+
+        logger.warning(f"File entity {str_path} not found")
+        return str_path
+
     if not file_hash:
         hash_func.update(str(full_path).encode())
         return hash_func.hexdigest()
@@ -359,7 +360,9 @@ def log_session(class_instance, start):
             "observation_date": class_instance.ObservationDate,
             "observation_run": class_instance.ObservationRun,  # a session is run-wise
             "config_file": class_instance.ProcessingConfigFile,
-            "config_file_hash": get_file_hash(class_instance.ProcessingConfigFile, buffer="path"),
+            "config_file_hash": get_file_hash(
+                class_instance.ProcessingConfigFile, buffer="path"
+            ),
             "config_file_hash_type": get_hash_method(),
         }
         log_prov_info(log_record)
@@ -397,7 +400,9 @@ def get_derivation_records(class_instance, activity):
                 log_record = {"entity_id": new_id, "progenitor_id": entity_id}
                 records.append(log_record)
                 traced_entities[var] = (new_id, item)
-                logger.warning(f"Derivation detected in {activity} for {var}. ID: {new_id}")
+                logger.warning(
+                    f"Derivation detected in {activity} for {var}. ID: {new_id}"
+                )
     return records
 
 

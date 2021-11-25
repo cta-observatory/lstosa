@@ -66,9 +66,7 @@ def parse_variables(class_instance):
         class_instance.CoefficientsCalibrationFile = str(
             calibration_path / calibration_filename
         )
-        class_instance.PedestalFile = str(
-            calibration_path / pedestal_filename
-        )
+        class_instance.PedestalFile = str(calibration_path / pedestal_filename)
         class_instance.TimeCalibrationFile = str(
             calibration_path / timecalibration_filename
         )
@@ -138,10 +136,16 @@ def parse_variables(class_instance):
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile
 
-        class_instance.RFModelEnergyFile = str(Path(rf_models_directory) / "reg_energy.sav")
-        class_instance.RFModelDispFile = str(Path(rf_models_directory) / "reg_disp_norm.sav")
-        class_instance.RFModelGammanessFile = str(Path(rf_models_directory) / "cls_gh.sav")
-        
+        class_instance.RFModelEnergyFile = str(
+            Path(rf_models_directory) / "reg_energy.sav"
+        )
+        class_instance.RFModelDispFile = str(
+            Path(rf_models_directory) / "reg_disp_norm.sav"
+        )
+        class_instance.RFModelGammanessFile = str(
+            Path(rf_models_directory) / "cls_gh.sav"
+        )
+
         class_instance.DL1SubrunDataset = (
             f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[0]}.h5"
         )
@@ -149,7 +153,9 @@ def parse_variables(class_instance):
             f"{outdir_dl2}/dl2_LST-1.Run{class_instance.args[0]}.h5"
         )
         # /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/tailcut84/dl2_LST-1.Run02006.h5
-        class_instance.DL2MergedFile = f"{outdir_dl2}/dl2_LST-1.Run{class_instance.ObservationRun}.h5"
+        class_instance.DL2MergedFile = (
+            f"{outdir_dl2}/dl2_LST-1.Run{class_instance.ObservationRun}.h5"
+        )
 
     return class_instance
 
@@ -198,7 +204,4 @@ def store_conda_env_export():
     analysis_log_dir = Path(options.directory) / "log"
     analysis_log_dir.mkdir(parents=True, exist_ok=True)
     conda_env_file = analysis_log_dir / "conda_env.yml"
-    subprocess.run(
-        ["conda", "env", "export", "--file", str(conda_env_file)],
-        check=True
-    )
+    subprocess.run(["conda", "env", "export", "--file", str(conda_env_file)], check=True)

@@ -31,7 +31,7 @@ def dl1_to_dl2(
 
 def select_config(tmp_path):
     config_file = (
-            Path(__file__).resolve().parent / ".." / ".." / ".." / options.configfile
+        Path(__file__).resolve().parent / ".." / ".." / ".." / options.configfile
     )
     in_config_arg = False
     for args in sys.argv:
@@ -55,8 +55,10 @@ def make_args_r0_to_dl1():
         Path("drivefile"),
         Path("RunSummary_20200101.ecsv"),
         "02006.0002",
-        Path("/fefs/aswg/data/real/running_analysis/20200218/"
-             "v0.4.3_v00/sequence_LST1_02006.0000.history"),
+        Path(
+            "/fefs/aswg/data/real/running_analysis/20200218/"
+            "v0.4.3_v00/sequence_LST1_02006.0000.history"
+        ),
     )
 
 
@@ -64,8 +66,10 @@ def make_args_dl1_to_dl2():
 
     return (
         "02006.0002",
-        Path("/fefs/aswg/data/real/running_analysis/20200218/"
-             "v0.4.3_v00/sequence_LST1_02006.0000.history"),
+        Path(
+            "/fefs/aswg/data/real/running_analysis/20200218/"
+            "v0.4.3_v00/sequence_LST1_02006.0000.history"
+        ),
     )
 
 
