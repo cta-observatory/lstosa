@@ -1,6 +1,10 @@
 lstosa |ci| |docs| |coverage| |precommit|
 ============================================================
 
+.. image:: https://api.codacy.com/project/badge/Grade/c780036131ed44218dc5e3d96650c580
+   :alt: Codacy Badge
+   :target: https://app.codacy.com/gh/gae-ucm/lstosa?utm_source=github.com&utm_medium=referral&utm_content=gae-ucm/lstosa&utm_campaign=Badge_Grade_Settings
+
 .. |docs| image:: https://readthedocs.org/projects/lstosa-test2/badge/?version=latest 
   :target: https://lstosa-test2.readthedocs.io/en/latest/?badge=latest 
   :alt: Documentation Status
