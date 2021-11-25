@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
-"""
-Provenance post processing script for OSA pipeline
-"""
+"""Provenance post processing script for OSA pipeline."""
+
 import copy
 import logging
 import shutil
@@ -156,17 +155,17 @@ def parse_lines_run(filter_step, prov_lines, out):
             continue
 
         # remove subruns info
-        if name == "DL1SubrunDataset":
+        if name == "DL1CheckSubrunDataset":
+            checkfilepath_str = filepath
+
+        elif name == "DL1SubrunDataset":
             dl1filepath_str = filepath
         elif name == "DL2SubrunDataset":
             dl2filepath_str = filepath
-        elif name == "R0SubrunDataset":
-            r0filepath_str = filepath
         elif name == "MuonsSubrunDataset":
             muonsfilepath_str = filepath
-        elif name == "DL1CheckSubrunDataset":
-            checkfilepath_str = filepath
-
+        elif name == "R0SubrunDataset":
+            r0filepath_str = filepath
         if "Subrun" in name or "subrun" in used_role or "subrun" in generated_role:
             remove = True
         if parameters and "ObservationSubRun" in parameters:
@@ -211,7 +210,12 @@ def parse_lines_run(filter_step, prov_lines, out):
             line["activity_id"] = id_activity_run
 
         # copy used files not subruns not RFs not mergedDL2
-        if filepath and content_type != "application/x-spss-sav" and name != "DL2MergedFile" and not remove:
+        if (
+                filepath
+                and content_type != "application/x-spss-sav"
+                and name != "DL2MergedFile"
+                and not remove
+        ):
             copy_used_file(filepath, out)
         if session_id and osa_cfg and not osa_config_copied:
             copy_used_file(osa_cfg, out)
@@ -220,8 +224,7 @@ def parse_lines_run(filter_step, prov_lines, out):
         if not remove:
             working_lines.append(line)
 
-
-    # append collections used and generated at endtime line of last activitiy
+    # append collections used and generated at endtime line of last activity
     if end_time_line:
         working_lines.append(end_time_line)
         if r0filepath_str and filter_step == "r0_to_dl1":
@@ -246,18 +249,20 @@ def parse_lines_run(filter_step, prov_lines, out):
             dl1.update({"size": size})
             dl1.update({"filepath": dl1filepath_str})
             working_lines.append(dl1)
-        if dl1filepath_str and (filter_step == "r0_to_dl1" or filter_step == "dl1ab"):
+        if dl1filepath_str and filter_step in ["r0_to_dl1", "dl1ab"]:
             generated = {"activity_id": id_activity_run}
             generated.update({"generated_id": entity_id})
             generated.update({"generated_role": "DL1 Collection"})
             working_lines.append(generated)
-        if dl1filepath_str and (filter_step == "dl1_to_dl2" or filter_step == "dl1ab"):
+        if dl1filepath_str and filter_step in ["dl1_to_dl2", "dl1ab"]:
             used = {"activity_id": id_activity_run}
             used.update({"used_id": entity_id})
             used.update({"used_role": "DL1 Collection"})
             working_lines.append(used)
         if muonsfilepath_str and filter_step == "dl1_datacheck":
-            muonsfilepath_str = muonsfilepath_str.replace(PurePath(muonsfilepath_str).name, "")
+            muonsfilepath_str = muonsfilepath_str.replace(
+                PurePath(muonsfilepath_str).name, ""
+            )
             entity_id = get_file_hash(muonsfilepath_str, buffer="path")
             muons = {"entity_id": entity_id}
             muons.update({"name": "MuonsCollectionRun"})
@@ -270,7 +275,9 @@ def parse_lines_run(filter_step, prov_lines, out):
             used.update({"used_role": "Muons Collection"})
             working_lines.append(used)
         if checkfilepath_str and filter_step == "dl1_datacheck":
-            checkfilepath_str = checkfilepath_str.replace(PurePath(checkfilepath_str).name, "")
+            checkfilepath_str = checkfilepath_str.replace(
+                PurePath(checkfilepath_str).name, ""
+            )
             entity_id = get_file_hash(checkfilepath_str, buffer="path")
             dl1check = {"entity_id": entity_id}
             dl1check.update({"name": "DL1CheckCollection"})
@@ -284,7 +291,9 @@ def parse_lines_run(filter_step, prov_lines, out):
             working_lines.append(generated)
         if dl2filepath_str and filter_step == "dl1_to_dl2":
             entity_id = get_file_hash(dl2filepath_str, buffer="path")
-            dl2filepath_str = dl2filepath_str.replace(PurePath(dl2filepath_str).name, "")
+            dl2filepath_str = dl2filepath_str.replace(
+                PurePath(dl2filepath_str).name, ""
+            )
             used = {"entity_id": entity_id}
             used.update({"name": "DL2Collection"})
             used.update({"type": "SetCollection"})
@@ -296,14 +305,13 @@ def parse_lines_run(filter_step, prov_lines, out):
             used.update({"generated_role": "DL2 Collection"})
             working_lines.append(used)
 
-    # remove start session line
     else:
         working_lines = []
 
     return working_lines
 
 
-def define_paths(grain, start_path, end_path):
+def define_paths(grain, start_path, end_path, base_filename):
     """Define target folders according to granularity."""
     paths = {}
 
@@ -326,7 +334,6 @@ def define_paths(grain, start_path, end_path):
 
 def produce_provenance_files(processed_lines, paths):
     """Create provenance products as JSON logs and graphs."""
-
     with open(paths["log_path"], "w") as f:
         for line in processed_lines:
             f.write(f"{line}\n")
@@ -347,23 +354,52 @@ def produce_provenance_files(processed_lines, paths):
         log.exception(f"problem while creating graph: {ex}")
 
 
-def produce_provenance():
-    """Create run-wise provenance products as JSON logs and graphs according to granularity."""
+def produce_provenance(session_log_filename, base_filename):
+    """
+    Create run-wise provenance products as JSON logs
+    and graphs according to granularity.
+    """
 
     if options.filter == "r0_to_dl1" or not options.filter:
-        pathsR0DL1 = define_paths("r0_to_dl1", pathDL1, options.dl1_prod_id)
-        plinesR0 = parse_lines_run("r0_to_dl1", read_prov(filename=session_log_filename), str(pathsR0DL1["out_path"]))
+        pathsR0DL1 = define_paths(
+            "r0_to_dl1",
+            PATH_DL1,
+            options.dl1_prod_id,
+            base_filename
+        )
+        plinesR0 = parse_lines_run(
+            "r0_to_dl1",
+            read_prov(filename=session_log_filename),
+            str(pathsR0DL1["out_path"])
+        )
         linesR0DL1 = copy.deepcopy(plinesR0)
-        plinesAB = parse_lines_run("dl1ab", read_prov(filename=session_log_filename), str(pathsR0DL1["out_path"]))
+        plinesAB = parse_lines_run(
+            "dl1ab",
+            read_prov(filename=session_log_filename),
+            str(pathsR0DL1["out_path"])
+        )
         linesDL1AB = copy.deepcopy(plinesAB)
         DL1lines = linesR0DL1 + linesDL1AB[1:]
         produce_provenance_files(plinesR0 + plinesAB[1:], pathsR0DL1)
 
     if options.filter == "dl1_to_dl2" or not options.filter:
-        pathsDL1DL2 = define_paths("dl1_to_dl2", pathDL2, options.dl2_prod_id)
-        plinesCHECK = parse_lines_run("dl1_datacheck", read_prov(filename=session_log_filename), str(pathsDL1DL2["out_path"]))
+        pathsDL1DL2 = define_paths(
+            "dl1_to_dl2",
+            PATH_DL2,
+            options.dl2_prod_id,
+            base_filename
+        )
+        plinesCHECK = parse_lines_run(
+            "dl1_datacheck",
+            read_prov(filename=session_log_filename),
+            str(pathsDL1DL2["out_path"])
+        )
         linesCHECK = copy.deepcopy(plinesCHECK)
-        plinesDL2 = parse_lines_run("dl1_to_dl2", read_prov(filename=session_log_filename), str(pathsDL1DL2["out_path"]))
+        plinesDL2 = parse_lines_run(
+            "dl1_to_dl2",
+            read_prov(filename=session_log_filename),
+            str(pathsDL1DL2["out_path"])
+        )
         linesDL2 = copy.deepcopy(plinesDL2)
         DL1DL2lines = linesCHECK + linesDL2[1:]
 
@@ -374,41 +410,12 @@ def produce_provenance():
     # create all steps products in last step path
     if not options.filter:
         all_lines = DL1lines + DL1DL2lines[1:]
-        pathsR0DL2 = define_paths("r0_to_dl2", pathDL2, options.dl2_prod_id)
-        produce_provenance_files(all_lines, pathsR0DL2)
-
-
-def produce_provenance(
-        base_filename: str,
-        session_log_filename: str,
-        granularity: dict
-):
-    """Create run-wise provenance products as JSON logs and graphs according to granularity."""
-    if options.filter == "r0_to_dl1" or not options.filter:
-        pathsR0DL1 = define_paths("r0_to_dl1", pathDL1, options.dl1_prod_id)
-        plinesR0 = parse_lines_run("r0_to_dl1", read_prov(filename=session_log_filename), str(pathsR0DL1["out_path"]))
-        linesR0DL1 = copy.deepcopy(plinesR0)
-        plinesAB = parse_lines_run("dl1ab", read_prov(filename=session_log_filename), str(pathsR0DL1["out_path"]))
-        linesDL1AB = copy.deepcopy(plinesAB)
-        DL1lines = linesR0DL1 + linesDL1AB[1:]
-        produce_provenance_files(plinesR0 + plinesAB[1:], pathsR0DL1)
-
-    if options.filter == "dl1_to_dl2" or not options.filter:
-        pathsDL1DL2 = define_paths("dl1_to_dl2", pathDL2, options.dl2_prod_id)
-        plinesCHECK = parse_lines_run("dl1_datacheck", read_prov(filename=session_log_filename), str(pathsDL1DL2["out_path"]))
-        linesCHECK = copy.deepcopy(plinesCHECK)
-        plinesDL2 = parse_lines_run("dl1_to_dl2", read_prov(filename=session_log_filename), str(pathsDL1DL2["out_path"]))
-        linesDL2 = copy.deepcopy(plinesDL2)
-        DL1DL2lines = linesCHECK + linesDL2[1:]
-
-        # create last step products only if filtering
-        if options.filter == "dl1_to_dl2":
-            produce_provenance_files(plinesCHECK + plinesDL2[1:], pathsDL1DL2)
-
-    # create all steps products in last step path
-    if not options.filter:
-        all_lines = DL1lines + DL1DL2lines[1:]
-        pathsR0DL2 = define_paths("r0_to_dl2", pathDL2, options.dl2_prod_id)
+        pathsR0DL2 = define_paths(
+            "r0_to_dl2",
+            PATH_DL2,
+            options.dl2_prod_id,
+            base_filename
+        )
         produce_provenance_files(all_lines, pathsR0DL2)
 
 
@@ -421,15 +428,6 @@ def main():
         log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
-
-    granularity = {
-        "r0_to_dl1": PATH_DL1,
-        "dl1_to_dl2": PATH_DL2,
-        "r0_to_dl2": PATH_DL2
-    }
-
-    if options.filter:
-        granularity = {options.filter: granularity[options.filter]}
 
     # check LOG_FILENAME exists
     if not Path(LOG_FILENAME).exists():
@@ -454,7 +452,7 @@ def main():
 
     try:
         # create run-wise JSON logs and graphs for each
-        produce_provenance(base_filename, session_log_filename, granularity)
+        produce_provenance(session_log_filename, base_filename)
     finally:
         # remove temporal session log file
         remove_session_log_file = Path(session_log_filename)
