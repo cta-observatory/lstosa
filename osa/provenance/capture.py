@@ -1,6 +1,5 @@
-"""
-Provenance capture functions
-"""
+"""Provenance capture functions."""
+
 import datetime
 import hashlib
 import logging
@@ -62,7 +61,6 @@ session_tag = ""
 
 def setup_logging():
     """Setup logging configuration."""
-
     log = logging.getLogger(__name__)
 
     try:
@@ -84,7 +82,6 @@ def setup_logging():
 
 def trace(func):
     """Trace and capture provenance info inside a method /function."""
-
     setup_logging()
 
     @wraps(func)
@@ -135,7 +132,6 @@ def trace(func):
 
 def log_is_active(class_instance, activity):
     """Check if provenance option is enabled in configuration settings."""
-
     active = True
     if activity not in definition["activities"].keys():
         active = False
@@ -155,7 +151,6 @@ def get_activity_id():
 
 def get_hash_method():
     """Helper function that returns hash method used."""
-
     try:
         method = provconfig["HASH_METHOD"]
     except KeyError:
@@ -168,7 +163,6 @@ def get_hash_method():
 
 def get_hash_buffer():
     """Helper function that returns buffer content to be used in hash method used."""
-
     try:
         buffer = provconfig["HASH_TYPE"]
     except KeyError:
@@ -181,7 +175,6 @@ def get_hash_buffer():
 
 def get_file_hash(str_path, buffer=get_hash_buffer(), method=get_hash_method()):
     """Helper function that returns hash of the content of a file."""
-
     file_hash = ""
     full_path = Path(str_path)
     hash_func = getattr(hashlib, method)()
@@ -206,7 +199,6 @@ def get_file_hash(str_path, buffer=get_hash_buffer(), method=get_hash_method()):
 
 def get_entity_id(value, item):
     """Helper function that makes the id of an entity, depending on its type."""
-
     try:
         entity_name = item["entityName"]
         entity_type = definition["entities"][entity_name]["type"]
@@ -240,7 +232,6 @@ def get_entity_id(value, item):
 
 def get_nested_value(nested, branch):
     """Helper function that gets a specific value in a nested dictionary or class."""
-
     list_branch = branch.split(".")
     leaf = list_branch.pop(0)
     # return value of leaf
@@ -281,7 +272,6 @@ def get_nested_value(nested, branch):
 
 def get_item_properties(nested, item):
     """Helper function that returns properties of an entity or member."""
-
     try:
         entity_name = item["entityName"]
         entity_type = definition["entities"][entity_name]["type"]
@@ -289,7 +279,6 @@ def get_item_properties(nested, item):
         logger.warning(f"{ex} in {item}")
         entity_name = ""
         entity_type = ""
-    value = ""
     properties = {}
     if "id" in item:
         item_id = str(get_nested_value(nested, item["id"]))
@@ -299,8 +288,7 @@ def get_item_properties(nested, item):
         properties["id"] = item_id
     if "location" in item:
         properties["location"] = get_nested_value(nested, item["location"])
-    if "value" in item:
-        value = get_nested_value(nested, item["value"])
+    value = get_nested_value(nested, item["value"]) if "value" in item else ""
     if not value and "location" in properties:
         value = properties["location"]
     if "overwrite" in item:
@@ -333,7 +321,6 @@ def get_item_properties(nested, item):
 
 def log_prov_info(prov_dict):
     """Write a dictionary to the logger."""
-
     prov_dict["session_tag"] = session_tag  # OSA specific session tag
     record_date = datetime.datetime.now().isoformat()
     logger.info(f"{PROV_PREFIX}{record_date}{PROV_PREFIX}{prov_dict}")
@@ -341,7 +328,6 @@ def log_prov_info(prov_dict):
 
 def log_session(class_instance, start):
     """Log start of a session."""
-
     # OSA specific
     # prov session is outside scripting and is run-wise
     # we may have different sessions/runs in the same log file
@@ -372,7 +358,6 @@ def log_session(class_instance, start):
 
 def log_start_activity(activity, activity_id, session_id, start):
     """Log start of an activity."""
-
     log_record = {
         "activity_id": activity_id,
         "name": activity,
@@ -386,14 +371,12 @@ def log_start_activity(activity, activity_id, session_id, start):
 
 def log_finish_activity(activity_id, end):
     """Log end of an activity."""
-
     log_record = {"activity_id": activity_id, "endTime": end}
     log_prov_info(log_record)
 
 
 def get_derivation_records(class_instance, activity):
     """Get log records for potentially derived entity."""
-
     records = []
     for var, pair in traced_entities.items():
         entity_id, item = pair
@@ -409,7 +392,6 @@ def get_derivation_records(class_instance, activity):
 
 def get_parameters_records(class_instance, activity, activity_id):
     """Get log records for parameters of the activity."""
-
     records = []
     parameter_list = definition["activities"][activity]["parameters"] or []
     if parameter_list:
@@ -427,7 +409,6 @@ def get_parameters_records(class_instance, activity, activity_id):
 
 def get_usage_records(class_instance, activity, activity_id):
     """Get log records for each usage of the activity."""
-
     records = []
     usage_list = definition["activities"][activity]["usage"] or []
     for item in usage_list:
@@ -456,7 +437,6 @@ def get_usage_records(class_instance, activity, activity_id):
 
 def log_generation(class_instance, activity, activity_id):
     """Log generated entities."""
-
     generation_list = definition["activities"][activity]["generation"] or []
     for item in generation_list:
         props = get_item_properties(class_instance, item)
@@ -489,7 +469,6 @@ def log_generation(class_instance, activity, activity_id):
 
 def log_members(entity_id, subitem, class_instance):
     """Log members of and entity."""
-
     if "list" in subitem:
         member_list = get_nested_value(class_instance, subitem["list"]) or []
     else:
@@ -517,7 +496,6 @@ def log_members(entity_id, subitem, class_instance):
 
 def log_progenitors(entity_id, subitem, class_instance):
     """Log progenitors of and entity."""
-
     if "list" in subitem:
         progenitor_list = get_nested_value(class_instance, subitem["list"]) or []
     else:
@@ -596,7 +574,10 @@ def log_progenitors(entity_id, subitem, class_instance):
 #
 #
 def get_system_provenance():
-    """Return JSON string containing provenance for all things that are fixed during the runtime."""
+    """
+    Return JSON string containing provenance for all
+    things that are fixed during the runtime.
+    """
 
     bits, linkage = platform.architecture()
 
@@ -633,8 +614,4 @@ def get_system_provenance():
 
 def get_env_vars():
     """Return env vars defined at the main scope of the script."""
-
-    envvars = {}
-    for var in _interesting_env_vars:
-        envvars[var] = os.getenv(var, None)
-    return envvars
+    return {var: os.getenv(var, None) for var in _interesting_env_vars}
