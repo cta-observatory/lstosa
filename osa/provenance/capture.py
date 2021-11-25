@@ -463,9 +463,7 @@ def log_generation(class_instance, activity, activity_id):
             if "role" in item:
                 log_record.update({"generated_role": item["role"]})
             # record entity
-            log_record_ent = {
-                "entity_id": entity_id,
-            }
+            log_record_ent = {"entity_id": entity_id}
             if "entityName" in item:
                 log_record_ent.update({"name": item["entityName"]})
             for prop in props:
@@ -494,9 +492,7 @@ def log_members(entity_id, subitem, class_instance):
                 "member_id": mem_id,
             }
             # record entity
-            log_record_ent = {
-                "entity_id": mem_id,
-            }
+            log_record_ent = {"entity_id": mem_id}
             if "entityName" in subitem:
                 log_record_ent.update({"name": subitem["entityName"]})
             for prop in props:
@@ -521,9 +517,7 @@ def log_progenitors(entity_id, subitem, class_instance):
                 "progenitor_id": progen_id,
             }
             # record entity
-            log_record_ent = {
-                "entity_id": progen_id,
-            }
+            log_record_ent = {"entity_id": progen_id}
             for prop in props:
                 log_record_ent.update({prop: props[prop]})
             log_prov_info(log_record_ent)
