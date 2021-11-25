@@ -1,6 +1,9 @@
 """
+Display summary of the observations for a given date.
+
 Show the run summary for a given date containing the number of subruns,
-the start and end time of the run and type pf the run: DATA, DRS4, PEDCALIB."""
+the start and end time of the run and type pf the run: DATA, DRS4, PEDCALIB.
+"""
 
 import argparse
 import logging
