@@ -1,5 +1,11 @@
 .pytest_cache
 
+# Test
+test_osa
+testfiles
+prov.log
+docs/prov.log
+
 # Compiled files
 *.py[co]
 *.a
@@ -16,6 +22,7 @@ __pycache__
 */cython_version.py
 htmlcov
 .coverage
+.coverage.*
 MANIFEST
 
 # Sphinx

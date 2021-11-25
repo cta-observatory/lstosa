@@ -24,7 +24,7 @@ and finally published and hosted in `Read the Docs`_.
 .. _`GitLab CI/CD`: https://docs.gitlab.com/ee/ci/README.html
 .. _`Read the Docs`: https://readthedocs.org/
 
-To build the docs locally on your machine, you need to activate the ``osa``
+To build the docs locally on your machine, you need to activate the ``osa-dev``
 environment first. This conda environment can be created using the ``environment.yml``
 file from the repository containing packages needed to generate the documentation:
 
@@ -38,7 +38,7 @@ Once the environment is activated just run following command inside the ``docs``
 
 .. code:: bash
 
-    make html
+    make clean html
 
 or for a clean rebuild:
 

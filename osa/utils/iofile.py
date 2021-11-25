@@ -1,72 +1,84 @@
+"""Handle the writing, reading and appending strings to files."""
+
 import filecmp
 import logging
+import pathlib
 from os import remove, rename
-from os.path import exists, isfile
 
 from osa.configs import options
 
 log = logging.getLogger(__name__)
 
+__all__ = [
+    "read_from_file",
+    "write_to_file",
+    "append_to_file",
+]
 
-def readfromfile(file):
-    if exists(file):
-        if isfile(file):
-            try:
-                with open(file, "r") as f:
-                    return f.read()
-            except (IOError, OSError) as e:
-                log.exception(f"{e.strerror} {e.filename}")
-        else:
-            log.error(f"{file} is not a file")
+
+def read_from_file(file):
+    """Read the content of a file."""
+    if file.exists() and file.is_file():
+        with open(file, "r") as f:
+            return f.read()
     else:
-        log.error(f"File does not exists {file}")
+        log.error(f"{file} does not exists or is not a file")
+        return None
 
 
-def writetofile(f, content):
-    ftemp = f + ".tmp"
+def write_to_file(file, content):
+    """Check if the file already exists and write the content in it."""
+    file_temp = f"{file}.tmp"
     try:
-        with open(ftemp, "w") as filehandle:
-            filehandle.write(f"{content}")
+        with open(file_temp, "w") as file_handle:
+            file_handle.write(f"{content}")
     except (IOError, OSError) as e:
         log.exception(f"{e.strerror} {e.filename}")
 
-    if exists(f):
-        if filecmp.cmp(f, ftemp):
-            remove(ftemp)
+    if file.exists() and file.is_file():
+        if filecmp.cmp(file, file_temp):
+            remove(file_temp)
             return False
-        else:
-            if options.simulate:
-                remove(ftemp)
-                log.debug(f"SIMULATE File {ftemp} would replace {f}. Deleting {ftemp}")
-            else:
-                try:
-                    rename(ftemp, f)
-                except (IOError, OSError) as e:
-                    log.exception(f"{e.strerror} {e.filename}")
-    else:
+
         if options.simulate:
-            log.debug(f"SIMULATE File {ftemp} would be written as {f}. Deleting {ftemp}")
+            remove(file_temp)
+            log.debug(
+                f"SIMULATE File {file_temp} would replace {file}."
+                f"Deleting {file_temp}"
+            )
         else:
-            rename(ftemp, f)
+            try:
+                rename(file_temp, file)
+            except (IOError, OSError) as e:
+                log.exception(f"{e.strerror} {e.filename}")
+    elif options.simulate:
+        log.debug(
+            f"SIMULATE File {file_temp} would be written as {file}. Deleting {file_temp}"
+        )
+    else:
+        rename(file_temp, file)
     return True
 
 
-def appendtofile(f, content):
-    if exists(f) and isfile(f):
+def append_to_file(file: pathlib.Path, content: str) -> None:
+    """
+    Check if the file already exists and write the content in it.
+
+    Parameters
+    ----------
+    file: pathlib.Path
+        The file to write in.
+    content: str
+        The content to write in the file.
+    """
+    if file.exists() and file.is_file():
         if options.simulate:
-            log.debug(f"SIMULATE File {f} would be appended")
+            log.debug(f"SIMULATE File {file} would be appended")
         else:
-            with open(f, "a") as filehandle:
+            with open(file, "a") as file_handle:
                 try:
-                    filehandle.write(content)
+                    file_handle.write(content)
                 except IOError as e:
                     log.exception(f"{e.strerror} {e.filename}")
     else:
-        writetofile(f, content)
-    return True
-
-
-def sedsi(pattern, replace, file):
-    old_content = readfromfile(file)
-    new_content = old_content.replace(pattern, replace)
-    writetofile(file, new_content)
+        write_to_file(file, content)

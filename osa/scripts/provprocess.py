@@ -6,6 +6,7 @@ Provenance post processing script for OSA pipeline
 import copy
 import logging
 import shutil
+import sys
 from pathlib import Path, PurePath
 
 import yaml
@@ -25,6 +26,9 @@ log = myLogger(logging.getLogger())
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 PROV_PREFIX = provconfig["PREFIX"]
+PATH_RO = cfg.get("LST1", "R0_DIR")
+PATH_DL1 = cfg.get("LST1", "DL1_DIR")
+PATH_DL2 = cfg.get("LST1", "DL2_DIR")
 
 
 def copy_used_file(src, outdir):
@@ -57,8 +61,7 @@ def copy_used_file(src, outdir):
             shutil.copyfile(src, str(destpath))
             log.info(f"copying {destpath}")
         except Exception as ex:
-            log.warning(f"could not copy {src} file into {str(destpath)}")
-            log.warning(f"{ex}")
+            log.warning(f"could not copy {src} file into {destpath}: {ex}")
 
 
 def parse_lines_log(filter_step, run_number):
@@ -79,7 +82,9 @@ def parse_lines_log(filter_step, run_number):
         for line in f.readlines():
             ll = line.split(PROV_PREFIX)
             if len(ll) != 3:
-                log.warning(f"format {PROV_PREFIX} mismatch in log file {LOG_FILENAME}\n{line}")
+                log.warning(
+                    f"format {PROV_PREFIX} mismatch in log file {LOG_FILENAME}\n{line}"
+                )
                 continue
             prov_str = ll.pop()
             prov_dict = yaml.safe_load(prov_str)
@@ -97,7 +102,7 @@ def parse_lines_log(filter_step, run_number):
             if session_id and tag_run == run_number:
                 keep = True
             # remove parallel sessions
-            if session_id and len(filtered):
+            if session_id and filtered:
                 keep = False
             if keep:
                 filtered.append(line)
@@ -117,7 +122,6 @@ def parse_lines_run(filter_step, prov_lines, out):
     Returns
     -------
     working_lines
-
     """
     size = 0
     container = {}
@@ -147,7 +151,7 @@ def parse_lines_run(filter_step, prov_lines, out):
 
         # filter grain
         session_tag = line.get("session_tag", "0:0")
-        tag_activity, tag_run = session_tag.split(":")
+        tag_activity, _ = session_tag.split(":")
         if tag_activity != filter_step and not session_id:
             continue
 
@@ -215,6 +219,7 @@ def parse_lines_run(filter_step, prov_lines, out):
 
         if not remove:
             working_lines.append(line)
+
 
     # append collections used and generated at endtime line of last activitiy
     if end_time_line:
@@ -373,14 +378,42 @@ def produce_provenance():
         produce_provenance_files(all_lines, pathsR0DL2)
 
 
-if __name__ == "__main__":
+def produce_provenance(
+        base_filename: str,
+        session_log_filename: str,
+        granularity: dict
+):
+    """Create run-wise provenance products as JSON logs and graphs according to granularity."""
+    if options.filter == "r0_to_dl1" or not options.filter:
+        pathsR0DL1 = define_paths("r0_to_dl1", pathDL1, options.dl1_prod_id)
+        plinesR0 = parse_lines_run("r0_to_dl1", read_prov(filename=session_log_filename), str(pathsR0DL1["out_path"]))
+        linesR0DL1 = copy.deepcopy(plinesR0)
+        plinesAB = parse_lines_run("dl1ab", read_prov(filename=session_log_filename), str(pathsR0DL1["out_path"]))
+        linesDL1AB = copy.deepcopy(plinesAB)
+        DL1lines = linesR0DL1 + linesDL1AB[1:]
+        produce_provenance_files(plinesR0 + plinesAB[1:], pathsR0DL1)
 
-    # provprocess.py
-    # 02006
-    # v0.4.3_v00
-    # -c cfg/sequencer.cfg
-    # -f r0_to_dl1
-    # -q
+    if options.filter == "dl1_to_dl2" or not options.filter:
+        pathsDL1DL2 = define_paths("dl1_to_dl2", pathDL2, options.dl2_prod_id)
+        plinesCHECK = parse_lines_run("dl1_datacheck", read_prov(filename=session_log_filename), str(pathsDL1DL2["out_path"]))
+        linesCHECK = copy.deepcopy(plinesCHECK)
+        plinesDL2 = parse_lines_run("dl1_to_dl2", read_prov(filename=session_log_filename), str(pathsDL1DL2["out_path"]))
+        linesDL2 = copy.deepcopy(plinesDL2)
+        DL1DL2lines = linesCHECK + linesDL2[1:]
+
+        # create last step products only if filtering
+        if options.filter == "dl1_to_dl2":
+            produce_provenance_files(plinesCHECK + plinesDL2[1:], pathsDL1DL2)
+
+    # create all steps products in last step path
+    if not options.filter:
+        all_lines = DL1lines + DL1DL2lines[1:]
+        pathsR0DL2 = define_paths("r0_to_dl2", pathDL2, options.dl2_prod_id)
+        produce_provenance_files(all_lines, pathsR0DL2)
+
+
+def main():
+    """Extract the provenance information."""
     provprocessparsing()
 
     # Logging
@@ -389,9 +422,14 @@ if __name__ == "__main__":
     else:
         log.setLevel(logging.INFO)
 
-    pathRO = cfg.get("LST1", "RAWDIR")
-    pathDL1 = cfg.get("LST1", "DL1DIR")
-    pathDL2 = cfg.get("LST1", "DL2DIR")
+    granularity = {
+        "r0_to_dl1": PATH_DL1,
+        "dl1_to_dl2": PATH_DL2,
+        "r0_to_dl2": PATH_DL2
+    }
+
+    if options.filter:
+        granularity = {options.filter: granularity[options.filter]}
 
     # check LOG_FILENAME exists
     if not Path(LOG_FILENAME).exists():
@@ -400,7 +438,7 @@ if __name__ == "__main__":
     # check LOG_FILENAME is not empty
     if not Path(LOG_FILENAME).stat().st_size:
         log.warning(f"file {LOG_FILENAME} is empty")
-        exit()
+        sys.exit(1)
 
     # build base_filename
     base_filename = f"{options.run}_prov"
@@ -416,7 +454,7 @@ if __name__ == "__main__":
 
     try:
         # create run-wise JSON logs and graphs for each
-        produce_provenance()
+        produce_provenance(base_filename, session_log_filename, granularity)
     finally:
         # remove temporal session log file
         remove_session_log_file = Path(session_log_filename)
@@ -426,3 +464,7 @@ if __name__ == "__main__":
     if options.quit:
         remove_log_file = Path(LOG_FILENAME)
         remove_log_file.unlink()
+
+
+if __name__ == "__main__":
+    main()

@@ -10,6 +10,6 @@ keeping the history of all the different steps.
 Reference/API
 -------------
 
-.. automodule:: osa.jobs.job
+.. automodule:: osa.job
    :members:
 

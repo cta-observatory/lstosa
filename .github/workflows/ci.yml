@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: [ 3.7, 3.8 ]
 
     steps:
       - uses: actions/checkout@v2
@@ -34,9 +34,17 @@ jobs:
           echo "Creating conda env"
           conda env create -n ci -f environment.yml
           conda activate ci
+          pip install pyflakes
           echo "Installing additional pip packages"
           echo "pip install ."
           pip install .
+
+      - name: Run pyflakes
+        # need to use a login shell for the conda setup to work
+        run: |
+          . $CONDA/etc/profile.d/conda.sh
+          conda activate ci
+          pyflakes osa
 
       - name: Tests
         run: |
@@ -44,7 +52,7 @@ jobs:
           # activate our env again
           source $CONDA/etc/profile.d/conda.sh
           conda activate ci
-          pytest -v --cov --cov-report=xml
+          pytest --basetemp=test_osa -v --cov --cov-report=xml
 
       - name: Codecov
         uses: codecov/codecov-action@v2

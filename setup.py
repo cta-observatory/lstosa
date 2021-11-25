@@ -9,29 +9,35 @@ entry_points = {
     "console_scripts": [
         "sequencer = osa.scripts.sequencer:main",
         "closer = osa.scripts.closer:main",
-        # "autocloser = osa.scripts.autocloser:main",
-        # "calibrationsequence = osa.scripts.calibrationsequence:main",
+        "calibrationsequence = osa.scripts.calibrationsequence:main",
         "copy_datacheck = osa.scripts.copy_datacheck:main",
-        # "datasequence = osa.scripts.datasequence:main",
-        # "provprocess = osa.scripts.provprocess:main",
-        # "simulate_processing = osa.scripts.simulate_processing:main",
+        "datasequence = osa.scripts.datasequence:main",
         "sequencer_webmaker = osa.scripts.sequencer_webmaker:main",
         "show_run_summary = osa.scripts.show_run_summary:main",
+        "provprocess = osa.scripts.provprocess:main",
     ]
 }
 
-extras_require = {
-    "docs": [
-        "sphinx",
-        "sphinx_rtd_theme",
-        "sphinx_automodapi",
-        "sphinx_argparse",
-        "sphinx-autoapi",
-    ],
-    "tests": ["pytest", "pytest-cov", "pytest-runner", "pytest-order"],
-}
+docs_require = [
+    "sphinx",
+    "sphinx_rtd_theme",
+    "sphinx_automodapi",
+    "sphinx_argparse",
+    "sphinx-autoapi",
+    "numpydoc"
+]
+tests_require = [
+    "pytest",
+    "pytest-cov",
+    "pytest-runner",
+    "pytest-order"
+]
 
-extras_require["all"] = list(set(extras_require["tests"] + extras_require["docs"]))
+extras_require = {
+    "all": tests_require + docs_require,
+    "tests": tests_require,
+    "docs": docs_require,
+}
 
 setup(
     version=__version__,
@@ -48,7 +54,7 @@ setup(
         "pydot",
         "pydotplus",
         "psutil",
-        "traitlets==5.0.5"
+        "traitlets~=5.0.5"
     ],
     package_data={
         'osa': [

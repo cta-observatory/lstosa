@@ -1,49 +1,59 @@
-"""
-Functions to deal with dates, directories and prod IDs
-"""
+"""Functions to deal with dates, directories and prod IDs."""
 
 import hashlib
+import inspect
 import logging
 import os
 import subprocess
 from datetime import datetime, timedelta
 from os import getpid, readlink, symlink
-from os.path import dirname, exists, isdir, isfile, islink, join, split
+from os.path import dirname, exists, islink
 from pathlib import Path
 from socket import gethostname
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.iofile import writetofile
+from osa.utils.iofile import write_to_file
 
 __all__ = [
     "getcurrentdate",
-    "getnightdirectory",
+    "night_directory",
     "get_lstchain_version",
     "create_directories_datacheck_web",
     "set_no_observations_flag",
     "copy_files_datacheck_web",
     "lstdate_to_dir",
+    "lstdate_to_iso",
     "is_day_closed",
     "get_prod_id",
     "date_in_yymmdd",
     "destination_dir",
-    "time_to_seconds",
     "date_in_yymmdd",
-    "time_to_seconds",
-    "getlockfile",
+    "get_lock_file",
     "is_defined",
     "destination_dir",
-    "createlock"
+    "create_lock",
+    "get_input_file",
+    "stringify",
+    "gettag",
+    "get_calib_prod_id",
+    "get_md5sum_and_copy",
+    "get_dl1_prod_id",
+    "get_dl2_prod_id",
+    "get_night_limit_timestamp",
+    "time_to_seconds",
 ]
 
 log = logging.getLogger(__name__)
 
 DATACHECK_PRODUCTS = ["drs4", "enf_calibration", "dl1"]
 DATACHECK_BASEDIR = Path(cfg.get("WEBSERVER", "DATACHECK"))
+# Sets the amount of hours after midnight for the default OSA date
+# to be the current date, eg 4: 04:00:00 UTC, -4: 20:00:00 UTC day before
+LIMIT_NIGHT = 12
 
 
-def getcurrentdate(sep):
+def getcurrentdate(sep="_"):
     """
     Get current data following LST data-taking convention in which the date
     changes at 12:00 pm instead of 00:00 or 12:00 am to cover a natural
@@ -56,16 +66,15 @@ def getcurrentdate(sep):
 
     Returns
     -------
-    stringdate: string
+    string_date: string
         Date in string format using the given separator
-
     """
-    limitnight = int(cfg.get("LST", "NIGHTOFFSET"))
     now = datetime.utcnow()
-    if (now.hour >= limitnight >= 0) or (now.hour < limitnight + 24 and limitnight < 0):
+    if (now.hour >= LIMIT_NIGHT >= 0) or \
+            (now.hour < LIMIT_NIGHT + 24 and LIMIT_NIGHT < 0):
         # today, nothing to do
         pass
-    elif limitnight >= 0:
+    elif LIMIT_NIGHT >= 0:
         # yesterday
         gap = timedelta(hours=24)
         now = now - gap
@@ -73,43 +82,41 @@ def getcurrentdate(sep):
         # tomorrow
         gap = timedelta(hours=24)
         now = now + gap
-    stringdate = now.strftime("%Y" + sep + "%m" + sep + "%d")
-    log.debug(f"stringdate by default {stringdate}")
-    return stringdate
+    string_date = now.strftime(f"%Y{sep}%m{sep}%d")
+    log.debug(f"Date string by default {string_date}")
+    return string_date
 
 
-def getnightdirectory():
+def night_directory():
     """
-    Get the path of the running_analysis directory for a certain night
+    Path of the running_analysis directory for a certain night
 
     Returns
     -------
     directory
         Path of the running_analysis directory for a certain night
-
     """
     log.debug(f"Getting analysis path for tel_id {options.tel_id}")
-    nightdir = lstdate_to_dir(options.date)
+    date = lstdate_to_dir(options.date)
     options.prod_id = get_prod_id()
-    directory = join(cfg.get(options.tel_id, "ANALYSISDIR"), nightdir, options.prod_id)
+    directory = Path(cfg.get(options.tel_id, "ANALYSIS_DIR")) / date / options.prod_id
 
-    if not exists(directory):
-        if options.nightsummary and options.tel_id != "ST":
-            log.error(f"Analysis directory {directory} does not exists!")
-        elif options.simulate:
-            log.debug("SIMULATE the creation of the analysis directory.")
-        else:
-            os.makedirs(directory, exist_ok=True)
+    if not directory.exists() and not options.simulate:
+        directory.mkdir(parents=True, exist_ok=True)
+    else:
+        log.debug("SIMULATE the creation of the analysis directory.")
+
     log.debug(f"Analysis directory: {directory}")
     return directory
 
 
 def get_lstchain_version():
     """
+    Get the lstchain version.
 
     Returns
     -------
-
+    lstchain_version: string
     """
     from lstchain import __version__
 
@@ -119,34 +126,31 @@ def get_lstchain_version():
 
 def get_prod_id():
     """
+    Get production ID from the configuration file if it is defined.
+    Otherwise, it takes the lstchain version used.
 
     Returns
     -------
-
+    prod_id: string
     """
     if not options.prod_id:
-        if cfg.get("LST1", "PROD-ID") is not None:
-            options.prod_id = cfg.get("LST1", "PROD-ID")
+        if cfg.get("LST1", "PROD_ID") is not None:
+            options.prod_id = cfg.get("LST1", "PROD_ID")
         else:
-            options.prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
+            options.prod_id = get_lstchain_version()
 
-    log.debug(f"Getting the prod ID for the running analysis directory: {options.prod_id}")
+    log.debug(f"Getting prod ID for the running analysis directory: {options.prod_id}")
 
     return options.prod_id
 
 
-def get_calib_prod_id():
-    """
-
-    Returns
-    -------
-
-    """
+def get_calib_prod_id() -> str:
+    """Build calibration production ID."""
     if not options.calib_prod_id:
-        if cfg.get("LST1", "CALIB-PROD-ID") is not None:
-            options.calib_prod_id = cfg.get("LST1", "CALIB-PROD-ID")
+        if cfg.get("LST1", "CALIB_PROD_ID") is not None:
+            options.calib_prod_id = cfg.get("LST1", "CALIB_PROD_ID")
         else:
-            options.calib_prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
+            options.calib_prod_id = get_lstchain_version()
 
     log.debug(f"Getting prod ID for calibration products: {options.calib_prod_id}")
 
@@ -155,16 +159,18 @@ def get_calib_prod_id():
 
 def get_dl1_prod_id():
     """
+    Get the prod ID for the dl1 products provided
+    it is defined in the configuration file.
 
     Returns
     -------
-
+    dl1_prod_id: string
     """
     if not options.dl1_prod_id:
-        if cfg.get("LST1", "DL1-PROD-ID") is not None:
-            options.dl1_prod_id = cfg.get("LST1", "DL1-PROD-ID")
+        if cfg.get("LST1", "DL1_PROD_ID") is not None:
+            options.dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
         else:
-            options.dl1_prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
+            options.dl1_prod_id = get_lstchain_version()
 
     log.debug(f"Getting prod ID for DL1 products: {options.dl1_prod_id}")
 
@@ -179,167 +185,82 @@ def get_dl2_prod_id():
 
     """
     if not options.dl2_prod_id:
-        if cfg.get("LST1", "DL2-PROD-ID") is not None:
-            options.dl2_prod_id = cfg.get("LST1", "DL2-PROD-ID")
+        if cfg.get("LST1", "DL2_PROD_ID") is not None:
+            options.dl2_prod_id = cfg.get("LST1", "DL2_PROD_ID")
         else:
-            options.dl2_prod_id = get_lstchain_version() + "_" + cfg.get("LST1", "VERSION")
+            options.dl2_prod_id = get_lstchain_version()
 
     log.debug(f"Getting prod ID for DL2 products: {options.dl2_prod_id}")
 
     return options.dl2_prod_id
 
 
-def createlock(lockfile):
+def create_lock(lockfile) -> bool:
     """
+    Create a lock file to prevent multiple instances of the same analysis.
 
     Parameters
     ----------
-    lockfile
+    lockfile: pathlib.Path
 
     Returns
     -------
-
+    bool
     """
-    dir = dirname(lockfile)
+    directory_lock = lockfile.parent
     if options.simulate:
         log.debug(f"SIMULATE Creation of lock file {lockfile}")
+    elif lockfile.exists() and lockfile.is_file():
+        with open(lockfile, "r") as f:
+            hostpid = f.readline()
+        log.error(f"Lock by a previous process {hostpid}, exiting!\n")
         return True
     else:
-        if exists(lockfile) and isfile(lockfile):
-            with open(lockfile, "r") as f:
-                hostpid = f.readline()
-            log.error(f"Lock by a previous process {hostpid}, exiting!\n")
-        else:
-            if not exists(dir):
-                os.makedirs(dir, exist_ok=True)
-                log.debug(f"Creating parent directory {dir} for lock file")
-            if isdir(dir):
-                pid = str(getpid())
-                hostname = gethostname()
-                content = f"{hostname}:{pid}"
-                writetofile(lockfile, content)
-                log.debug(f"Lock file {lockfile} created")
-                return True
-            else:
-                log.error(f"Expecting {dir} to be a directory, not a file")
+        if not directory_lock.exists():
+            directory_lock.mkdir(exist_ok=True, parents=True)
+            log.debug(f"Creating parent directory {directory_lock} for lock file")
+            pid = str(getpid())
+            hostname = gethostname()
+            content = f"{hostname}:{pid}"
+            write_to_file(lockfile, content)
+            log.debug(f"Lock file {lockfile} created")
+            return True
+    return False
 
 
-def getlockfile():
+def get_lock_file():
     """
+    Create night-is-finished lock file.
 
     Returns
     -------
-
+    lockfile: pathlib.Path
+        Path of the lock file
     """
-    basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get("LSTOSA", "TEXTSUFFIX")
-    dir = join(
-        cfg.get(options.tel_id, "CLOSERDIR"),
-        lstdate_to_dir(options.date),
-        options.prod_id,
-    )
-    lockfile = join(dir, basename)
-    log.debug(f"Lock file is {lockfile}")
-    return lockfile
+    basename = cfg.get("LSTOSA", "end_of_activity")
+    date = lstdate_to_dir(options.date)
+    close_directory = Path(cfg.get(options.tel_id, "CLOSER_DIR"))
+    lock_file = close_directory / date / options.prod_id / basename
+    log.debug(f"Looking for lock file {lock_file}")
+    return lock_file
 
 
-def lstdate_to_number(night):
-    """
-    Function to change from YYYY_MM_DD to YYYYMMDD
-
-    Parameters
-    ----------
-    night
-
-    Returns
-    -------
-
-    """
-    sepbar = ""
-    return night.replace(cfg.get("LST", "DATESEPARATOR"), sepbar)
+def lstdate_to_iso(date_string):
+    """Function to change from YYYY_MM_DD to YYYY-MM-DD."""
+    date_format = "%Y_%m_%d"
+    datetime.strptime(date_string, date_format)
+    return date_string.replace("_", "-")
 
 
-def lstdate_to_iso(night):
-    """
-    Function to change from YYYY_MM_DD to YYYY-MM-DD
-
-    Parameters
-    ----------
-    night: Date in YYYY_MM_DD format
-
-    Returns
-    -------
-    Date in iso format YYYY-MM-DD
-    """
-    sepbar = "-"
-    return night.replace(cfg.get("LST", "DATESEPARATOR"), sepbar)
-
-
-def lstdate_to_dir(night):
-    """Function to change from YYYY_MM_DD to YYYY/MM/DD
-
-    Parameters
-    ----------
-    night
-
-    Returns
-    -------
-
-    """
-    nightdir = night.split(cfg.get("LST", "DATESEPARATOR"))
-    if len(nightdir) != 3:
-        log.error(f"Night directory structure could not be created from {nightdir}")
-    return "".join(nightdir)
-
-
-def dir_to_lstdate(dir):
-    """
-    Function to change from WHATEVER/YYYY/MM/DD to YYYY_MM_DD
-
-    Parameters
-    ----------
-    dir
-
-    Returns
-    -------
-
-    """
-    sep = cfg.get("LST", "DATESEPARATOR")
-    dircopy = dir
-    nightdir = ["YYYY", "MM", "DD"]
-    for i in reversed(range(3)):
-        dircopy, nightdir[i] = split(dircopy)
-    night = sep.join(nightdir)
-    if len(night) != 10:
-        log.error(f"Error: night {night} could not be created from {dir}\n")
-    return night
-
-
-def build_lstbasename(prefix, suffix):
-    """
-
-    Parameters
-    ----------
-    prefix
-    suffix
-
-    Returns
-    -------
-
-    """
-    return f"{prefix}_{lstdate_to_number(options.date)}{suffix}"
+def lstdate_to_dir(date_string):
+    """Function to change from YYYY_MM_DD to YYYYMMDD."""
+    date_format = "%Y_%m_%d"
+    datetime.strptime(date_string, date_format)
+    return date_string.replace("_", "")
 
 
 def is_defined(variable):
-    """
-
-    Parameters
-    ----------
-    variable
-
-    Returns
-    -------
-
-    """
+    """Check if a variable is already defined."""
     try:
         variable
     except NameError:
@@ -348,12 +269,7 @@ def is_defined(variable):
 
 
 def get_night_limit_timestamp():
-    """
-
-    Returns
-    -------
-
-    """
+    """Night limit timestamp for DB."""
     from dev.mysql import select_db
 
     night_limit = None
@@ -393,74 +309,49 @@ def get_md5sum_and_copy(inputf, outputf):
         linkto = readlink(inputf)
         symlink(linkto, outputf)
         return None
+
+    try:
+        with open(inputf, "rb") as f, open(outputf, "wb") as o:
+            block_size = 8192
+            for chunk in iter(lambda: f.read(128 * block_size), b""):
+                md5.update(chunk)
+                # got this error: write() argument must be str, not bytes
+                o.write(chunk)
+    # except IOError as (ErrorValue, ErrorName):
+    except IOError as error:
+        log.exception(f"{error}", 2)
     else:
-        try:
-            with open(inputf, "rb") as f, open(outputf, "wb") as o:
-                block_size = 8192
-                for chunk in iter(lambda: f.read(128 * block_size), b""):
-                    md5.update(chunk)
-                    # got this error: write() argument must be str, not bytes
-                    o.write(chunk)
-        # except IOError as (ErrorValue, ErrorName):
-        except IOError as error:
-            log.exception(f"{error}", 2)
-        else:
-            return md5.hexdigest()
+        return md5.hexdigest()
 
 
 def is_day_closed():
     """Get the name and Check for the existence of the Closer flag file."""
-    flag_file = getlockfile()
+    flag_file = get_lock_file()
     return bool(exists(flag_file))
 
 
-def time_to_seconds(timestring):
-    """Transform (D-)HH:MM:SS time format to seconds.
-
-    Parameters
-    ----------
-    timestring: str
-        Time in format (D-)HH:MM:SS
-
-    Returns
-    -------
-    Seconds that correspond to (D-)HH:MM:SS
-
-    """
-    if timestring is None:
-        timestring = "00:00:00"
-    if "-" in timestring:
-        # Day is also specified (D-)HH:MM:SS
-        days, hhmmss = timestring.split("-", )
-        hours, minutes, seconds = hhmmss.split(":")
-        return int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
-    else:
-        hours, minutes, seconds = timestring.split(":")
-        return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
-
-
-def date_in_yymmdd(datestring):
+def date_in_yymmdd(date_string):
     """
     Convert date string YYYYMMDD into YY_MM_DD format to be used for
     drive log file names.
 
     Parameters
     ----------
-    datestring: in format YYYYMMDD
+    date_string: in format YYYYMMDD
 
     Returns
     -------
-    yy_mm_dd: datestring in format YY_MM_DD
+    yy_mm_dd: date_string in format YY_MM_DD
 
     """
-    date = list(datestring)
-    yy = "".join(date[2:4])
-    mm = "".join(date[4:6])
-    dd = "".join(date[6:8])
-    return f"{yy}_{mm}_{dd}"
+    date = list(date_string)
+    year = "".join(date[2:4])
+    month = "".join(date[4:6])
+    day = "".join(date[6:8])
+    return f"{year}_{month}_{day}"
 
 
-def destination_dir(concept, create_dir=True):
+def destination_dir(concept, create_dir=True) -> Path:
     """
     Create final destination directory for each data level.
     See Also osa.utils.register_run_concept_files
@@ -473,41 +364,41 @@ def destination_dir(concept, create_dir=True):
         Set it to True (default) if you want to create the directory.
         Otherwise it just return the path
 
+    Returns
+    -------
+    path : pathlib.Path
+        Path to the directory
     """
     nightdir = lstdate_to_dir(options.date)
 
     if concept == "MUON":
-        directory = os.path.join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id
-        )
+        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
+                    nightdir / options.prod_id
     elif concept in ["DL1AB", "DATACHECK"]:
-        directory = os.path.join(
-            cfg.get(options.tel_id, concept + "DIR"),
-            nightdir,
-            options.prod_id,
-            options.dl1_prod_id,
-        )
+        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
+                    nightdir / options.prod_id / options.dl1_prod_id
     elif concept == "DL2":
-        directory = os.path.join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.prod_id, options.dl2_prod_id
-        )
+        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
+            nightdir / options.prod_id / options.dl2_prod_id
     elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-        directory = os.path.join(
-            cfg.get(options.tel_id, concept + "DIR"), nightdir, options.calib_prod_id
-        )
+        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
+                    nightdir / options.calib_prod_id
     else:
         log.warning(f"Concept {concept} not known")
+        directory = None
 
     if not options.simulate and create_dir:
         log.debug(f"Destination directory created for {concept}: {directory}")
-        os.makedirs(directory, exist_ok=True)
+        directory.mkdir(parents=True, exist_ok=True)
     else:
         log.debug(f"SIMULATING creation of final directory for {concept}")
+
     return directory
 
 
 def create_directories_datacheck_web(host, datedir, prod_id):
-    """Create directories for drs4, enf_calibration
+    """
+    Create directories for drs4, enf_calibration
     and dl1 products in the data-check webserver via ssh. It also copies
     the index.php file needed to build the directory tree structure.
 
@@ -520,15 +411,16 @@ def create_directories_datacheck_web(host, datedir, prod_id):
 
     # Create directory and copy the index.php to each directory
     for product in DATACHECK_PRODUCTS:
-        destination_dir = DATACHECK_BASEDIR / product / prod_id / datedir
-        cmd = ["ssh", host, "mkdir", "-p", destination_dir]
-        subprocess.run(cmd, capture_output=True)
-        cmd = ["scp", cfg.get("WEBSERVER", "INDEXPHP"), f"{host}:{destination_dir}/."]
-        subprocess.run(cmd, capture_output=True)
+        dest_directory = DATACHECK_BASEDIR / product / prod_id / datedir
+        cmd = ["ssh", host, "mkdir", "-p", dest_directory]
+        subprocess.run(cmd, capture_output=True, check=True)
+        cmd = ["scp", cfg.get("WEBSERVER", "INDEXPHP"), f"{host}:{dest_directory}/."]
+        subprocess.run(cmd, capture_output=True, check=True)
 
 
 def set_no_observations_flag(host, datedir, prod_id):
-    """Create a file indicating that are no observations
+    """
+    Create a file indicating that are no observations
     on a given date in the data-check webserver.
 
     Parameters
@@ -537,41 +429,124 @@ def set_no_observations_flag(host, datedir, prod_id):
     datedir
     prod_id
     """
-
     for product in DATACHECK_PRODUCTS:
         try:
             # Check if destination directory exists, otherwise create it
-            destination_dir = DATACHECK_BASEDIR / product / prod_id / datedir
-            no_observations_flag = destination_dir / "no_observations"
+            dest_directory = DATACHECK_BASEDIR / product / prod_id / datedir
+            no_observations_flag = dest_directory / "no_observations"
             cmd = ["ssh", host, "touch", no_observations_flag]
             subprocess.check_output(cmd)
-        except subprocess.CalledProcessError as e:
-            log.warning(f"Destination directory does not exists. {e}")
+        except subprocess.CalledProcessError as error:
+            log.warning(f"Destination directory does not exists. {error}")
 
 
-def copy_files_datacheck_web(host, datedir, file_list):
+def copy_files_datacheck_web(host, datedir, file_list) -> None:
     """
+    Copy files to the data-check webserver via scp.
 
     Parameters
     ----------
-    host
-    datedir
-    file_list
+    host: str
+        Hostname of the webserver
+    datedir: str
+        Date directory in the webserver
+    file_list: list
+        List of files to be copied
     """
     # FIXME: Check if files exists already at webserver CHECK HASH
     # Copy files to server
     for file_to_transfer in file_list:
         if "drs4" in str(file_to_transfer):
-            destination_dir = DATACHECK_BASEDIR / "drs4" / options.prod_id / datedir
-            cmd = ["scp", str(file_to_transfer), f"{host}:{destination_dir}/."]
-            subprocess.run(cmd)
+            dest_directory = DATACHECK_BASEDIR / "drs4" / options.prod_id / datedir
+            cmd = ["scp", str(file_to_transfer), f"{host}:{dest_directory}/."]
+            subprocess.run(cmd, check=True)
 
         elif "calibration" in str(file_to_transfer):
-            destination_dir = DATACHECK_BASEDIR / "enf_calibration" / options.prod_id / datedir
-            cmd = ["scp", file_to_transfer, f"{host}:{destination_dir}/."]
-            subprocess.run(cmd)
+            dest_directory = (
+                DATACHECK_BASEDIR / "enf_calibration" / options.prod_id / datedir
+            )
+            cmd = ["scp", file_to_transfer, f"{host}:{dest_directory}/."]
+            subprocess.run(cmd, check=True)
 
         elif "datacheck" in str(file_to_transfer):
-            destination_dir = DATACHECK_BASEDIR / "dl1" / options.prod_id / datedir
-            cmd = ["scp", file_to_transfer, f"{host}:{destination_dir}/."]
-            subprocess.run(cmd)
+            dest_directory = DATACHECK_BASEDIR / "dl1" / options.prod_id / datedir
+            cmd = ["scp", file_to_transfer, f"{host}:{dest_directory}/."]
+            subprocess.run(cmd, check=True)
+
+
+def get_input_file(run_number: str) -> Path:
+    """
+    Get the input file for the given run number.
+
+    Parameters
+    ----------
+    run_number: str
+        String with the run number
+
+    Returns
+    -------
+    input_file: pathlib.Path
+
+    Raises
+    ------
+    IOError
+        If the input file cannot be found.
+    """
+    r0_path = Path(cfg.get("LST1", "R0_DIR")).absolute()
+
+    # Get raw data file.
+    file_list = list(
+        r0_path.rglob(f"*/LST-1.1.Run{run_number}.0000*")
+    )
+
+    if not file_list:
+        raise IOError(f"Files corresponding to run {run_number} not found in {r0_path}.")
+
+    return file_list[0]
+
+
+def stringify(args):
+    """Join a list of arguments in a string."""
+    return " ".join(map(str, args))
+
+
+def gettag():
+    """Get the name of the script currently being used."""
+    parent_file = os.path.basename(inspect.stack()[1][1])
+    parent_module = inspect.stack()[1][3]
+    return f"{parent_file}({parent_module})"
+
+
+def time_to_seconds(timestring):
+    """
+    Transform (D-)HH:MM:SS time format to seconds.
+
+    Parameters
+    ----------
+    timestring: str
+        Time in format (D-)HH:MM:SS
+
+    Returns
+    -------
+    Seconds that correspond to (D-)HH:MM:SS
+    """
+    if timestring is None:
+        timestring = "00:00:00"
+    if "-" in timestring:
+        # Day is also specified (D-)HH:MM:SS
+        days, hhmmss = timestring.split("-", )
+        hours, minutes, seconds = hhmmss.split(":")
+        return (int(days) * 24 * 3600 + int(hours) * 3600
+                + int(minutes) * 60 + int(seconds))
+
+    split_time = timestring.split(":")
+    if len(split_time) == 2:
+        # MM:SS
+        minutes, seconds = split_time
+        hours = 0
+    elif len(split_time) == 3:
+        # HH:MM:SS
+        hours, minutes, seconds = split_time
+    else:
+        raise ValueError("Time format not recognized.")
+    return int(hours) * 3600 + int(minutes) * 60 + int(seconds)

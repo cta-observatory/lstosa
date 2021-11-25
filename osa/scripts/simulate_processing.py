@@ -1,6 +1,5 @@
-"""
-Simulate executions of data processing pipeline and produce provenance
-"""
+"""Simulate executions of data processing pipeline and produce provenance."""
+
 import logging
 import multiprocessing as mp
 import subprocess
@@ -10,13 +9,14 @@ import yaml
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.jobs.job import createjobtemplate
+from osa.configs.datamodel import SequenceData
+from osa.job import create_job_template
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.provenance.utils import get_log_config
 from osa.utils.cliopts import simprocparsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_number
+from osa.utils.utils import lstdate_to_dir
 
 __all__ = [
     "parse_template",
@@ -43,10 +43,9 @@ log = myLogger(logging.getLogger())
 
 def do_setup():
     """Set-up folder structure and check flags."""
-
     pathAnalysis = Path(cfg.get("LST1", "ANALYSISDIR")) / options.directory
-    pathDL1 = Path(cfg.get("LST1", "DL1DIR")) / options.directory
-    pathDL2 = Path(cfg.get("LST1", "DL2DIR")) / options.directory
+    pathDL1 = Path(cfg.get("LST1", "DL1_DIR")) / options.directory
+    pathDL2 = Path(cfg.get("LST1", "DL2_DIR")) / options.directory
     pathSubAnalysis = pathAnalysis / options.prod_id
     pathDL1sub = pathDL1 / options.prod_id
     pathDL2sub = pathDL2 / options.prod_id
@@ -55,7 +54,7 @@ def do_setup():
         CONFIG_FLAGS["Go"] = False
         log.info(f"File {LOG_FILENAME} already exists.")
         log.info(f"You must rename/remove {LOG_FILENAME} to produce a clean provenance.")
-        log.info(f"You can also set --append flag to append captured provenance.")
+        log.info("You can also set --append flag to append captured provenance.")
         return
 
     CONFIG_FLAGS["TearSubAnalysis"] = False if pathSubAnalysis.exists() or options.provenance else pathSubAnalysis
@@ -76,7 +75,7 @@ def do_setup():
             CONFIG_FLAGS["Go"] = False
             log.info(f"Folder {pathDL2sub} already exist.")
         if not CONFIG_FLAGS["Go"]:
-            log.info(f"You must enforce provenance files overwrite with --force flag.")
+            log.info("You must enforce provenance files overwrite with --force flag.")
             return
 
     pathSubAnalysis.mkdir(parents=True, exist_ok=True)
@@ -102,7 +101,6 @@ def tear_down():
 
 def parse_template(template, idx):
     """Parse batch templates."""
-
     args = []
     keep = False
     for line in template.splitlines():
@@ -136,8 +134,6 @@ def simulate_subrun_processing(args):
 
 def simulate_processing():
     """Simulate daily processing and capture provenance."""
-
-    options.mode = "P"
     options.simulate = True
     summary_table = run_summary_table(options.date)
 
@@ -173,7 +169,7 @@ def simulate_processing():
                 options.prod_id,
             ]
             log.info(f"Processing provenance for run {s.run_str}")
-            subprocess.run(args_pp)
+            subprocess.run(args_pp, check=True)
 
 
 if __name__ == "__main__":
@@ -190,7 +186,8 @@ if __name__ == "__main__":
 
     options.directory = lstdate_to_number(options.date)
 
-    log.info(f"Running simulate processing")
+
+    log.info("Running simulate processing")
 
     do_setup()
     if CONFIG_FLAGS["Go"]:

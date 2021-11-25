@@ -1,14 +1,9 @@
-# We share all these command line options as variables across different modules
-# In order to modify them, import cliopts right after import options in the code
-#
-# This is the recommended way to share variables according to
-# http://docs.python.org/faq/programming.html#how-do-i-share-global-variables-across-modules
-#
+"""Command line arguments shared variables across all modules."""
+
 configfile = "cfg/sequencer.cfg"
 stdout = None
 stderr = None
 date = None
-mode = None
 tel_id = None
 nightsummary = True
 reason = None
@@ -19,8 +14,7 @@ noninteractive = None
 verbose = None
 warning = None
 nocheck = None
-nodl2 = None
-compressed = None
+no_dl2 = None
 lstchain_version = None
 prod_id = None
 calib_prod_id = None
@@ -32,6 +26,7 @@ force = None
 filter = None
 quit = None
 test = False
-nocalib = False
+no_calib = False
+no_submit = False
 seqtoclose = None
 run = None

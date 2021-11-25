@@ -1,3 +1,4 @@
+#!/bin/bash
 # Set in a unique way the cache and config directories for the python packages
 # involved in the processing. These are matplotlib, astropy and ctapipe.
 export XDG_CACHE_HOME="/fefs/aswg/lstanalyzer/"

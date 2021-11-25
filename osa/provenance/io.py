@@ -1,6 +1,5 @@
-"""
-Provenance i/o conversion functions
-"""
+"""Provenance i/o conversion functions."""
+
 import datetime
 from pathlib import Path
 
@@ -21,7 +20,10 @@ __all__ = ["provlist2provdoc", "provdoc2graph", "provdoc2json", "read_prov"]
 
 
 def provlist2provdoc(provlist):
-    """Convert a list of provenance dictionaries to a provdoc W3C PROV compliant structure."""
+    """
+    Convert a list of provenance dictionaries to
+    a provdoc W3C PROV compliant structure.
+    """
 
     pdoc = ProvDocument()
     pdoc.set_default_namespace("param:")
@@ -63,10 +65,14 @@ def provlist2provdoc(provlist):
                 act.add_attributes({"script": provdict.pop("script")})
             # activity start
             if "startTime" in provdict:
-                act.set_time(startTime=datetime.datetime.fromisoformat(provdict.pop("startTime")))
+                act.set_time(
+                    startTime=datetime.datetime.fromisoformat(provdict.pop("startTime"))
+                )
             # activity end
             if "endTime" in provdict:
-                act.set_time(endTime=datetime.datetime.fromisoformat(provdict.pop("endTime")))
+                act.set_time(
+                    endTime=datetime.datetime.fromisoformat(provdict.pop("endTime"))
+                )
             # in session?
             # if "in_session" in provdict:
             #     sess_id = DEFAULT_NS + ":" + str(provdict.pop("in_session"])
@@ -188,7 +194,6 @@ def provlist2provdoc(provlist):
 
 def provdoc2graph(provdoc, filename, fmt):
     """Create a graph of a provenance workflow session."""
-
     dot = prov_to_dot(
         provdoc,
         use_labels=True,
@@ -208,13 +213,8 @@ def provdoc2json(provdoc, filename):
 
 def read_prov(filename="prov.log", start=None, end=None):
     """Read a list of provenance dictionaries from the logfile."""
-
-    start_dt = None
-    end_dt = None
-    if start:
-        start_dt = datetime.datetime.fromisoformat(start)
-    if end:
-        end_dt = datetime.datetime.fromisoformat(end)
+    start_dt = datetime.datetime.fromisoformat(start) if start else None
+    end_dt = datetime.datetime.fromisoformat(end) if end else None
     prov_list = []
     with open(filename, "r") as f:
         for line in f.readlines():

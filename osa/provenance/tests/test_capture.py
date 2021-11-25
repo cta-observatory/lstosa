@@ -4,7 +4,7 @@ from pathlib import Path, PurePath
 
 from osa.configs import options
 from osa.provenance.capture import trace
-from osa.provenance.io import *
+from osa.provenance.io import read_prov, provlist2provdoc, provdoc2json, provdoc2graph
 
 
 @trace
@@ -29,8 +29,9 @@ def dl1_to_dl2(
 
 
 def select_config(tmp_path):
-
-    config_file = Path(__file__).resolve().parent / ".." / ".." / ".." / options.configfile
+    config_file = (
+            Path(__file__).resolve().parent / ".." / ".." / ".." / options.configfile
+    )
     in_config_arg = False
     for args in sys.argv:
         if in_config_arg:
@@ -75,9 +76,9 @@ def test_trace_r0_to_dl2(tmp_path):
     args_dl2 = make_args_dl1_to_dl2()
 
     options.date = "2020_01_17"
-    options.calib_prod_id = "v0.1.0_v01"
+    options.calib_prod_id = "v01"
     options.dl2_prod_id = "v0.1.0_v01"
-    options.prod_id = "v0.1.0_v01"
+    options.prod_id = "v0.1.0"
 
     # track prov
     r0_to_dl1(*args_dl1)

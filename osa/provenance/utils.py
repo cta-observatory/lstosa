@@ -1,9 +1,9 @@
-"""
-Utility functions for OSA pipeline provenance
-"""
+"""Utility functions for OSA pipeline provenance."""
+
 import logging
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -11,7 +11,7 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.utils import lstdate_to_dir
 
-__all__ = ["parse_variables", "get_log_config"]
+__all__ = ["parse_variables", "get_log_config", "store_conda_env_export"]
 
 
 def parse_variables(class_instance):
@@ -29,17 +29,17 @@ def parse_variables(class_instance):
     # 02006.0000
     # LST1
 
-    configfileDL1 = cfg.get("LSTOSA", "CONFIGFILE")
+    configfileDL1 = cfg.get("lstchain", "dl1ab_config")
     configfileDL2 = cfg.get("LSTOSA", "DL2CONFIGFILE")
-    rawdir = cfg.get("LST1", "RAWDIR")
-    fits = cfg.get("LSTOSA", "FITSSUFFIX")
-    fz = cfg.get("LSTOSA", "COMPRESSEDSUFFIX")
-    h5 = cfg.get("LSTOSA", "H5SUFFIX")
-    r0_prefix = cfg.get("LSTOSA", "R0PREFIX")
-    dl1_prefix = cfg.get("LSTOSA", "DL1PREFIX")
-    dl2_prefix = cfg.get("LSTOSA", "DL2PREFIX")
-    rf_models_directory = cfg.get("LSTOSA", "RF-MODELS-DIR")
-    calib_dir = cfg.get("LST1", "CALIBDIR")
+    rawdir = cfg.get("LST1", "R0_DIR")
+    r0_prefix = cfg.get("PATTERN", "R0PREFIX")
+    dl1_prefix = cfg.get("PATTERN", "DL1PREFIX")
+    dl2_prefix = cfg.get("PATTERN", "DL2PREFIX")
+    rf_models_directory = cfg.get("lstchain", "RF_MODELS")
+    calib_dir = cfg.get("LST1", "CALIB_DIR")
+    dl1_dir = cfg.get("LST1", "DL1_DIR")
+    dl2_dir = cfg.get("LST1", "DL2_DIR")
+
     nightdir = lstdate_to_dir(options.date)
 
     if class_instance.__name__ == "r0_to_dl1":
@@ -64,7 +64,7 @@ def parse_variables(class_instance):
 
         # /fefs/aswg/data/real/R0/20200218/LST1.1.Run02006.0001.fits.fz
         class_instance.R0SubrunDataset = (
-            f"{rawdir}/{class_instance.ObservationDate}/{r0_prefix}.Run{class_instance.args[5]}{fits}{fz}"
+            f"{rawdir}/{class_instance.ObservationDate}/{r0_prefix}.Run{class_instance.args[5]}.fits.fz"
         )
 
         class_instance.CoefficientsCalibrationFile = str(calibration_path / calibration_filename)
@@ -106,8 +106,25 @@ def parse_variables(class_instance):
         # historyfile   [1] /fefs/aswg/data/real/running_analysis/20200218/v0.4.3_v00/sequence_LST1_02006.0000.txt
 
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
-        class_instance.ObservationDate = re.findall(r"running_analysis/(\d{8})/", class_instance.args[1])[0]
-        class_instance.SoftwareVersion = options.lstchain_version
+        class_instance.ObservationDate = nightdir
+        class_instance.SoftwareVersion = options.lstchain_version        
+        class_instance.ObservationSubRun = class_instance.args[5].split(".")[0]
+        class_instance.ProdID = options.prod_id
+        class_instance.CalibrationRun = re.findall(
+            r"Run(\d{5}).", calibration_filename
+        )[0]
+        class_instance.PedestalRun = re.findall(
+            r"Run(\d{5}).", pedestal_filename
+        )[0]
+        outdir_dl1 = Path(dl1_dir) / nightdir / options.prod_id
+        class_instance.DL1SubrunDataset = (
+            f"{outdir_dl1}{dl1_prefix}.Run{class_instance.args[5]}.h5"
+        )
+        # /fefs/aswg/data/real/R0/20200218/LST1.1.Run02006.0001.fits.fz
+        class_instance.R0SubrunDataset = f"{rawdir}/" \
+                                         f"{class_instance.ObservationDate}/" \
+                                         f"{r0_prefix}." \
+                                         f"Run{class_instance.args[5]}.fits.fz"
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile
 
@@ -138,8 +155,9 @@ def parse_variables(class_instance):
 
         class_instance.AnalysisConfigFileDL2 = configfileDL2
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
-        class_instance.ObservationDate = re.findall(r"running_analysis/(\d{8})/", class_instance.args[1])[0]
+        class_instance.ObservationDate = nightdir
         class_instance.SoftwareVersion = options.lstchain_version
+
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile
 
@@ -149,12 +167,23 @@ def parse_variables(class_instance):
 
         # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
         running_analysis_dir = re.findall(r"(.*)sequence", class_instance.args[1])[0]
-        outdir_dl1 = running_analysis_dir.replace("running_analysis", "DL1")
+        
+        # /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5
+        outdir_dl1 = Path(dl1_dir) / nightdir / options.prod_id
+        
         class_instance.DL1SubrunDataset = (
-            f"{outdir_dl1}{options.dl1_prod_id}/{dl1_prefix}.Run{class_instance.args[0]}{h5}"
+            f"{outdir_dl1}{dl1_prefix}.Run{class_instance.args[0]}.h5"
         )
-        # /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/tailcut84/dl2_LST-1.Run02006.0001.h5
-        outdir_dl2 = Path(options.directory) / options.dl2_prod_id
+        class_instance.DL2SubrunDataset = (
+            f"{outdir_dl2}/{dl2_prefix}.Run{class_instance.args[0]}.h5"
+
+        class_instance.DL1ProdID = options.prod_id
+        class_instance.DL2ProdID = options.dl2_prod_id
+        
+        
+        # /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.0001.h5
+        outdir_dl2 = Path(dl2_dir) / nightdir / options.dl2_prod_id
+
         class_instance.DL2SubrunDataset = f"{outdir_dl2}/{dl2_prefix}.Run{class_instance.args[0]}{h5}"
         # /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/tailcut84/dl2_LST-1.Run02006.h5
         class_instance.DL2MergedFile = f"{outdir_dl2}/{dl2_prefix}.Run{class_instance.ObservationRun}{h5}"
@@ -163,7 +192,7 @@ def parse_variables(class_instance):
 
 
 def get_log_config():
-    """Get logging configuration from an OSA config file"""
+    """Get logging configuration from an OSA config file."""
 
     # default config filename value
     config_file = Path(__file__).resolve().parent / ".." / ".." / options.configfile
@@ -175,7 +204,7 @@ def get_log_config():
         if in_config_arg:
             config_file = arg
             in_config_arg = False
-        if arg == "-c" or arg == "--config":
+        if arg in ["-c", "--config"]:
             in_config_arg = True
 
     # parse configuration
@@ -200,3 +229,14 @@ def get_log_config():
         log_config = std_logger_file.read_text()
 
     return log_config
+
+
+def store_conda_env_export():
+    """Store file with `conda env export` output to log the packages versions used."""
+    analysis_log_dir = Path(options.directory) / "log"
+    analysis_log_dir.mkdir(parents=True, exist_ok=True)
+    conda_env_file = analysis_log_dir / "conda_env.yml"
+    subprocess.run(
+        ["conda", "env", "export", "--file", str(conda_env_file)],
+        check=True
+    )

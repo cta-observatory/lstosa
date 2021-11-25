@@ -1,7 +1,4 @@
-"""
-Tweaks for logging module.
-Custom formatter for the different logging levels.
-"""
+"""Tweaks for logging module. Custom formatter for the different logging levels."""
 
 import logging
 
@@ -13,10 +10,7 @@ __all__ = ["myLogger"]
 
 
 class MyFormatter(logging.Formatter):
-    """
-    Customize formatter of info logging level.
-    """
-
+    """Customize formatter of info logging level."""
     info_fmt = "%(message)s"
 
     def __init__(self):
@@ -51,13 +45,9 @@ class MyFormatter(logging.Formatter):
 
 
 def myLogger(osalogger):
-    """
-    Creates a logger with a customized formatted handler
-    """
-
+    """Creates a logger with a customized formatted handler."""
     fmt = MyFormatter()
     handler = logging.StreamHandler()
     handler.setFormatter(fmt)
     osalogger.addHandler(handler)
     return osalogger
-

@@ -41,16 +41,3 @@ Reference/API
 +++++++++++++
 .. automodule:: osa.utils.iofile
    :members:
-
-Logging
--------
-``osa.utils.standardhandle`` was the own LSTOSA logging system that we used to use. Now LSTOSA makes uses of the
-standard ``logging`` module slightly tweaked in ``osa.utils.logging``
-
-Reference/API
-+++++++++++++
-.. automodule:: osa.utils.standardhandle
-   :members:
-   :undoc-members:
-.. automodule:: osa.utils.logging
-   :members:

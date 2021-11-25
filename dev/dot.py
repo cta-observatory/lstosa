@@ -1,19 +1,20 @@
-from osa.utils import options
-from osa.utils.standardhandle import error, gettag, verbose, warning
+import logging
+
+from osa.configs import options
+
+log = logging.getLogger(__name__)
 
 
-def writeworkflow(sequence_list):
-    tag = gettag()
+def write_workflow(sequence_list):
     from os.path import exists, join
 
     from osa.configs.config import cfg
-    from osa.utils.iofile import writetofile
-    from osa.utils.utils import lstdate_to_number
+    from osa.utils.iofile import write_to_file
+    from osa.utils.utils import lstdate_to_dir
 
-    replaced = None
     dot_basename = "{0}_{1}_{2}{3}".format(
         cfg.get("LSTOSA", "WORKFLOWPREFIX"),
-        lstdate_to_number(options.date),
+        lstdate_to_dir(options.date),
         options.tel_id,
         cfg.get("LSTOSA", "GRAPHSUFFIX"),
     )
@@ -51,8 +52,7 @@ def writeworkflow(sequence_list):
                 content += "n{0} -> n{1};\n".format(index, i.seq)
     # Closing the content
     content += "}\n"
-    if not options.simulate:
-        replaced = writetofile(dot_path, content)
+    replaced = write_to_file(dot_path, content) if not options.simulate else None
     log.debug("Workflow updated? {0} in {1}".format(replaced, dot_path))
     svg_path = dot_path.rsplit(".", 1)[0] + cfg.get("LSTOSA", "SVGSUFFIX")
     if replaced or not exists(svg_path):
@@ -61,7 +61,6 @@ def writeworkflow(sequence_list):
 
 
 def convert_dot_into_svg(dotfile, svgfile):
-    tag = gettag()
     import subprocess
 
     from osa.configs.config import cfg
@@ -69,18 +68,18 @@ def convert_dot_into_svg(dotfile, svgfile):
     command = cfg.get("LSTOSA", "GRAPH")
     svgflag = "-" + cfg.get("LSTOSA", "SVGSUFFIX").replace(".", "T")
     try:
-        commandoutput = subprocess.check_output(["which", command])
+        subprocess.check_output(["which", command])
     except subprocess.CalledProcessError as Error:
-        error(tag, Error, 3)
+        log.error(Error)
     else:
         commandargs = [command, svgflag, "-o" + svgfile, dotfile]
 
     try:
         subprocess.call(commandargs)
     # except OSError as (ValueError, NameError):
-    except OSError as NameError:
+    except OSError as Error:
         log.warning(
-            "svg file could not be created from dot file {0}, {1}".format(dotfile, NameError)
+            "svg file could not be created from dot file {0}, {1}".format(dotfile, Error)
         )
     else:
         log.debug("Workflow sketched in file {0} ".format(dotfile))

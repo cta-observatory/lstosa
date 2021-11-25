@@ -4,10 +4,13 @@ import logging
 import os
 import re
 import subprocess
+import sys
+from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.cliopts import set_default_directory_if_needed
+from osa.utils.cliopts import get_prod_id
+from osa.utils.cliopts import set_default_directory_if_needed, valid_date
 from osa.utils.logging import myLogger
 from osa.utils.utils import set_no_observations_flag, create_directories_datacheck_web
 
@@ -17,19 +20,13 @@ log = myLogger(logging.getLogger())
 
 
 # settings / global variables
-def valid_date(s):
-    try:
-        return datetime.datetime.strptime(s, "%Y_%m_%d")
-    except ValueError:
-        msg = f"Not a valid date: '{s}'."
-        raise argparse.ArgumentTypeError(msg)
-
-
 def argument_parser():
     parser = argparse.ArgumentParser(
         description="This script is an automatic error handler and closer for lstosa."
     )
-    parser.add_argument("-v", "--verbose", action="store_true", help="Turn on verbose mode")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Turn on verbose mode"
+    )
     parser.add_argument(
         "-t",
         "--test",
@@ -42,7 +39,9 @@ def argument_parser():
         action="store_true",
         help="Create nothing, only simulate closer (safe mode)",
     )
-    parser.add_argument("--ignorecronlock", action="store_true", help='Ignore "cron.lock"')
+    parser.add_argument(
+        "--ignorecronlock", action="store_true", help='Ignore "cron.lock"'
+    )
     parser.add_argument(
         "-i",
         "--onlyIncidences",
@@ -54,12 +53,20 @@ def argument_parser():
         "-f", "--force", action="store_true", help="Force the autocloser to close the day"
     )
     parser.add_argument(
-        "-e", "--equal", action="store_true", help="Skip check for equal amount of sequences"
+        "-e",
+        "--equal",
+        action="store_true",
+        help="Skip check for equal amount of sequences",
     )
     parser.add_argument(
-        "-w", "--woIncidences", action="store_true", help="Close without writing down incidences."
+        "-w",
+        "--woIncidences",
+        action="store_true",
+        help="Close without writing down incidences.",
     )
-    parser.add_argument("-r", "--runwise", action="store_true", help="Close the day run-wise.")
+    parser.add_argument(
+        "-r", "--runwise", action="store_true", help="Close the day run-wise."
+    )
     parser.add_argument(
         "-c",
         "--config-file",
@@ -81,8 +88,8 @@ def analysis_path(tel):
 def closedFlag(tel):
     if args.test:
         return f"./{tel}/NightFinished.txt"
-    basename = cfg.get("LSTOSA", "ENDOFACTIVITYPREFIX") + cfg.get("LSTOSA", "TEXTSUFFIX")
-    return os.path.join(cfg.get(tel, "CLOSERDIR"), nightdir, prod_id, basename)
+    basename = cfg.get("LSTOSA", "end_of_activity")
+    return Path(cfg.get(tel, "CLOSER_DIR")) / nightdir / prod_id / basename
 
 
 def exampleSeq(tel):
@@ -127,11 +134,12 @@ class Telescope(object):
         self.sequences = []
 
         if self.is_closed():
-            log.warning(f"{self.telescope} is already closed! Ignoring {self.telescope}")
+            log.info(f"{self.telescope} is already closed! Ignoring {self.telescope}")
             return
         if not os.path.exists(analysis_path(self.telescope)):
             log.warning(
-                f"'Analysis' folder does not exist for {self.telescope}! Ignoring {self.telescope}"
+                f"'Analysis' folder does not exist for {self.telescope}! "
+                f"Ignoring {self.telescope}"
             )
             return
         if not self.lockAutomaticSequencer() and not args.ignorecronlock:
@@ -139,21 +147,29 @@ class Telescope(object):
             return
         if not self.simulate_sequencer():
             log.warning(
-                f"Simulation of the sequencer failed for {self.telescope}! Ignoring {self.telescope}"
+                f"Simulation of the sequencer failed "
+                f"for {self.telescope}! Ignoring {self.telescope}"
             )
             return
 
         self.parse_sequencer()
 
-        # Create directories in the webserver to copy datacheck products
-        log.debug("Setting up the directories in the datacheck webserver")
-        create_directories_datacheck_web(cfg.get("WEBSERVER", "HOST"), nightdir, prod_id)
+        if not args.test:
+            # Create directories in the webserver to copy datacheck products
+            log.debug("Setting up the directories in the datacheck webserver")
+            create_directories_datacheck_web(
+                cfg.get("WEBSERVER", "HOST"), nightdir, prod_id
+            )
 
         if not self.build_Sequences():
-            log.warning(f"Sequencer for {self.telescope} is empty! Ignoring {self.telescope}")
+            log.warning(
+                f"Sequencer for {self.telescope} is empty! Ignoring {self.telescope}"
+            )
 
             if not args.simulate and not args.test:
-                set_no_observations_flag(cfg.get("WEBSERVER", "HOST"), nightdir, options.prod_id)
+                set_no_observations_flag(
+                    cfg.get("WEBSERVER", "HOST"), nightdir, options.prod_id
+                )
             return
         self.incidence = Incidence(self.telescope)
 
@@ -203,7 +219,10 @@ class Telescope(object):
             ]
             log.debug(f"Executing {' '.join(seqArgs)}")
             seqr = subprocess.Popen(
-                seqArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
+                seqArgs,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True,
             )
             self.stdout, self.stderr = seqr.communicate()
             log.info(self.stdout)
@@ -273,21 +292,21 @@ class Telescope(object):
 
         log.debug(f"Executing {' '.join(closerArgs)}")
         closer = subprocess.Popen(
-            closerArgs,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            shell=False
+            closerArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False
         )
         stdout, stderr = closer.communicate()
         if closer.returncode != 0:
-            log.warning(f"'closer' returned error code {closer.returncode}! See output: {stdout}")
+            log.warning(
+                f"'closer' returned error code {closer.returncode}! See output: {stdout}"
+            )
             return False
         self.closed = True
         return True
 
 
 class Sequence(object):
-    """As for now the keys for the 'dictSequence' are:
+    """
+    As for now the keys for the 'dictSequence' are:
     (LST1) Tel Seq Parent Type Run Subruns Source Wobble Action Tries JobID
     State Host CPU_time Walltime Exit  DL1% MUONS% DATACHECK% DL2%
 
@@ -323,34 +342,34 @@ class Sequence(object):
         return self.dictSequence["State"] == "PENDING"
 
     def is_100(self):
+        """Check that all analysis products are 100% complete."""
         if (
             self.dictSequence["Tel"] != "ST"
-            and self.dictSequence["DL1%"] == "100"
-            and self.dictSequence["DL1AB%"] == "100"
-            and self.dictSequence["MUONS%"] == "100"
-            and self.dictSequence["DL2%"] == "100"
+                and self.dictSequence["DL1%"] == "100"
+                and self.dictSequence["DL1AB%"] == "100"
+                and self.dictSequence["MUONS%"] == "100"
+                and self.dictSequence["DL2%"] == "100"
         ):
             return True
-        return self.dictSequence["Tel"] == "ST" and self.dictSequence["DL3%"] == "100"
 
     def is_flawless(self):
         log.debug("Check if flawless")
         if (
             self.dictSequence["Type"] == "DATA"
-            and self.dictSequence["Exit"] == "0:0"
-            and self.is_100()
-            and self.dictSequence["State"] == "COMPLETED"
-            and int(self.dictSequence["Subruns"]) > 0
+                and self.dictSequence["Exit"] == "0:0"
+                and self.is_100()
+                and self.dictSequence["State"] == "COMPLETED"
+                and int(self.dictSequence["Subruns"]) > 0
         ):
             return True
         if (
             self.dictSequence["Type"] == "PEDCALIB"
-            and self.dictSequence["Exit"] == "0:0"
-            and self.dictSequence["DL1%"] == "None"
-            and self.dictSequence["DATACHECK%"] == "None"
-            and self.dictSequence["MUONS%"] == "None"
-            and self.dictSequence["DL2%"] == "None"
-            and self.dictSequence["State"] == "COMPLETED"
+                and self.dictSequence["Exit"] == "0:0"
+                and self.dictSequence["DL1%"] == "None"
+                and self.dictSequence["DATACHECK%"] == "None"
+                and self.dictSequence["MUONS%"] == "None"
+                and self.dictSequence["DL2%"] == "None"
+                and self.dictSequence["State"] == "COMPLETED"
         ):
             return True
 
@@ -363,10 +382,10 @@ class Sequence(object):
         if self.dictSequence["Type"] == "PEDCALIB":
             log.debug("Cannot check for missing subruns in the middle for CALIBRATION")
             return True
-        search_str = (
-            f"{analysis_path(self.dictSequence['Tel'])}/dl1*{int(self.dictSequence['Run']):05d}*.h5"
+        search_str = f"{analysis_path(self.dictSequence['Tel'])}/dl1*{int(self.dictSequence['Run']):05d}*.h5"
+        subrun_nrs = sorted(
+            [int(os.path.basename(f).split(".")[2]) for f in glob.glob(search_str)]
         )
-        subrun_nrs = sorted([int(os.path.basename(f).split(".")[2]) for f in glob.glob(search_str)])
         return bool(subrun_nrs and len(subrun_nrs) == int(self.dictSequence["Subruns"]))
 
     def close(self):
@@ -398,10 +417,14 @@ class Sequence(object):
             return True
 
         log.debug(f"Executing {' '.join(closerArgs)}")
-        closer = subprocess.Popen(closerArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        closer = subprocess.Popen(
+            closerArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
         stdout, stderr = closer.communicate()
         if closer.returncode != 0:
-            log.warning(f"'closer' returned error code {closer.returncode}! See output: {stdout}")
+            log.warning(
+                f"'closer' returned error code {closer.returncode}! See output: {stdout}"
+            )
             return False
         self.closed = True
         return True
@@ -425,7 +448,9 @@ class Incidence(object):
         self.write_header()
 
     def write_header(self):
-        self.header = f"NIGHT={year:04}-{month:02}-{day:02}\nTELESCOPE={self.telescope}\nCOMMENTS="
+        self.header = (
+            f"NIGHT={year:04}-{month:02}-{day:02}\nTELESCOPE={self.telescope}\nCOMMENTS="
+        )
         return
 
     def write_error(self, text, runs):
@@ -493,11 +518,15 @@ class Incidence(object):
         if self.telescope != "ST":
             for k in self.incidencesMono:
                 if self.incidencesDict[k]:
-                    incidences += self.write_error(self.incidencesMono[k], self.incidencesDict[k])
+                    incidences += self.write_error(
+                        self.incidencesMono[k], self.incidencesDict[k]
+                    )
         else:
             for k in self.incidencesStereo:
                 if self.incidencesDict[k]:
-                    incidences += self.write_error(self.incidencesStereo[k], self.incidencesDict[k])
+                    incidences += self.write_error(
+                        self.incidencesStereo[k], self.incidencesDict[k]
+                    )
 
         log.info(self.header + incidences)
         self.create_incidenceFile(self.header + incidences)
@@ -553,7 +582,8 @@ def understand_sequence(tel, seq):
 def check_for_output_files(path):
     found_files = [re.search("LST-1.Run", file) for file in os.listdir(path)]
     if any(found_files):
-        file_names = [m.group() for m in found_files if m]
+        pass
+        # file_names = [m.group() for m in found_files if m]
         # file_names_str = ', '.join(file_names)
         # sendEmail('WARNING: Following *LST-1.Run* files found '
         #           'in "%s" after closing: %s' % (path, file_names_str))
@@ -598,7 +628,7 @@ if __name__ == "__main__":
         log.error(
             "The command line arguments 'onlyIncidences' and 'force' are incompatible with each other"
         )
-        exit(1)
+        sys.exit(1)
 
     if args.date:
         year = args.date.year
@@ -621,9 +651,9 @@ if __name__ == "__main__":
     log.info(message)
 
     if is_night_time():
-        exit(1)
+        sys.exit(1)
 
-    prod_id = cfg.get("LST1", "PROD-ID")
+    prod_id = get_prod_id()
 
     # create telescope, sequence, problem and incidence objects
     log.info("Simulating sequencer...")
