@@ -11,16 +11,16 @@ from osa.utils.iofile import append_to_file
 
 log = logging.getLogger(__name__)
 
-__all__ = ["history", "start", "rule", "finished_assignments", "finished_text"]
+__all__ = ["history", "start", "rule", "finished_assignments"]
 
 
-def start(parent_tag):
+def start(parent_tag: str):
     """
-    Print out the header of the script (sequencer, closer, etc)
+    Print out the header of the script (sequencer, closer, etc).
 
     Parameters
     ----------
-    parent_tag
+    parent_tag: str
     """
     now = datetime.utcnow()
     simple_parent_tag = parent_tag.rsplit("(")[0]
@@ -45,53 +45,19 @@ def rule():
     log.info(prettyframe)
 
 
-def finished_text(ana_dict):
-    """
-
-    Parameters
-    ----------
-    ana_dict
-
-    Returns
-    -------
-
-    """
-    content = f"analysis.finished.timestamp={ana_dict['END']}\n"
-    content += f"analysis.finished.night={ana_dict['NIGHT']}\n"
-    content += f"analysis.finished.telescope={ana_dict['TELESCOPE']}\n"
-
-    if options.tel_id == "LST1":
-        content += f"analysis.finished.data.size={ana_dict['RAW_GB']} GB\n"
-        content += f"analysis.finished.data.files.r0={ana_dict['FILES_RAW']}\n"
-        content += f"analysis.finished.data.files.pedestal={ana_dict['FILES_PEDESTAL']}\n"
-        content += f"analysis.finished.data.files.calib={ana_dict['FILES_CALIB']}\n"
-        content += (
-            f"analysis.finished.data.files.time_calib={ana_dict['FILES_TIMECALIB']}\n"
-        )
-        content += f"analysis.finished.data.files.dl1={ana_dict['FILES_DL1']}\n"
-        content += f"analysis.finished.data.files.dl2={ana_dict['FILES_DL2']}\n"
-        content += f"analysis.finished.data.files.muons={ana_dict['FILES_MUON']}\n"
-        content += (
-            f"analysis.finished.data.files.datacheck={ana_dict['FILES_DATACHECK']}\n"
-        )
-
-    if options.reason is not None:
-        content += f"analysis.finished.data.comment={ana_dict['COMMENTS']}.\n"
-
-    log.info(content)
-    return content
-
-
 def finished_assignments(sequence_list):
     """
+    Report that the files have been produced and the night closed.
 
     Parameters
     ----------
-    sequence_list
+    sequence_list: Iterable
 
     Returns
     -------
-
+    dictionary: dict
+        Dictionary with the sequence names as keys and the corresponding
+        output files and sizes as values.
     """
     concept_set = []
     analysis_dir = options.directory
@@ -122,7 +88,7 @@ def finished_assignments(sequence_list):
         disk_space_GB_f = float(disk_space) / (1000 * 1000 * 1000)
         disk_space_GB = int(round(disk_space_GB_f, 0))
 
-    ana_files = glob(join(analysis_dir, "*" + cfg.get("LSTOSA", "R0SUFFIX")))
+    ana_files = glob(join(analysis_dir, "*" + cfg.get("PATTERN", "R0SUFFIX")))
     file_no = {}
     ana_set = set(ana_files)
 
@@ -140,7 +106,7 @@ def finished_assignments(sequence_list):
                 delete_set.add(a)
         ana_set -= delete_set
 
-    now_string = f"{datetime.utcnow()}"
+    now_string = f"{datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
 
     dictionary = {
         "NIGHT": options.date,

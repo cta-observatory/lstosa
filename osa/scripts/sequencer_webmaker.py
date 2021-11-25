@@ -146,11 +146,13 @@ def main():
     ]
 
     try:
-        output = sp.run(commandargs, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8")
-    except sp.CalledProcessError:
+        output = sp.run(
+            commandargs, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8", check=True
+        )
+    except sp.CalledProcessError as error:
         # Sorry, it does not work (day closed, asked with wrong parameters ...)
         print(
-            f"Command with the following args {commandargs} failed, {output.returncode}"
+            f"Command with the following args {commandargs} failed, {error.returncode}"
         )
         sys.exit(1)
     else:
