@@ -98,7 +98,7 @@ def test_destination_dir():
 
 def test_get_input_file(r0_data):
     from osa.utils.utils import get_input_file
-    runs = ["01805", "01806"]
+    runs = ["01804", "01805", "01806", "01807"]
     for run, r0_file in zip(runs, r0_data):
         assert r0_file.exists()
         assert get_input_file(run) == r0_file
