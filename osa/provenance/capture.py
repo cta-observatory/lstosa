@@ -5,13 +5,13 @@ import hashlib
 import logging
 import logging.config
 import os
-import pkg_resources
 import platform
 import sys
 import uuid
 from functools import wraps
 from pathlib import Path
 
+import pkg_resources
 import psutil
 import yaml
 
@@ -322,6 +322,7 @@ def get_item_properties(nested, item):
 
 
 def get_python_packages():
+    """Return the collection of dependencies available for importing."""
     return [
         {"name": p.project_name, "version": p.version, "path": p.module_path}
         for p in sorted(pkg_resources.working_set, key=lambda p: p.project_name)
