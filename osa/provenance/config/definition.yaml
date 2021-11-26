@@ -128,7 +128,7 @@ activities:
             - role: "Analysis configuration file"
               description: "Configuration file for DL1"
               entityName: AnalysisConfigFile
-              value: AnalysisConfigFileDL1
+              value: Analysisconfigfile_dl1
               # filepath: /fefs/aswg/lstosa/config_files_lstchain/lstchain_standard_config.json
 
         generation:
@@ -229,7 +229,7 @@ activities:
             - role: "Analysis configuration file"
               description: "LSTChain analysis configuration file"
               entityName: AnalysisConfigFile
-              value: AnalysisConfigFileDL2
+              value: Analysisconfigfile_dl2
               # filepath: /fefs/aswg/lstosa/config_files_lstchain/lstchain_standard_config_tailcut84_dynamic_cleaning_v075.json
 
             # - role: "DL1 Collection"
