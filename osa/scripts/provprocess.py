@@ -210,10 +210,10 @@ def parse_lines_run(filter_step, prov_lines, out):
 
         # copy used files not subruns not RFs not mergedDL2
         if (
-            filepath
-            and content_type != "application/x-spss-sav"
-            and name != "DL2MergedFile"
-            and not remove
+                filepath
+                and content_type != "application/x-spss-sav"
+                and name != "DL2MergedFile"
+                and not remove
         ):
             copy_used_file(filepath, out)
         if session_id and osa_cfg and not osa_config_copied:
@@ -391,8 +391,8 @@ def produce_provenance(session_log_filename, base_filename):
             read_prov(filename=session_log_filename),
             str(paths_dl1_dl2["out_path"]),
         )
-        linesDL2 = copy.deepcopy(plines_dl2)
-        dl1_dl2_lines = lines_check + linesDL2[1:]
+        lines_dl2 = copy.deepcopy(plines_dl2)
+        dl1_dl2_lines = lines_check + lines_dl2[1:]
 
     # create last step products only if filtering
     if options.filter == "dl1_to_dl2":
