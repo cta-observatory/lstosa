@@ -10,20 +10,9 @@ from osa.configs import options
 log = logging.getLogger(__name__)
 
 __all__ = [
-    "read_from_file",
     "write_to_file",
     "append_to_file",
 ]
-
-
-def read_from_file(file):
-    """Read the content of a file."""
-    if file.exists() and file.is_file():
-        with open(file, "r") as f:
-            return f.read()
-    else:
-        log.error(f"{file} does not exists or is not a file")
-        return None
 
 
 def write_to_file(file, content):
