@@ -5,8 +5,8 @@ def test_failed_history():
     from osa.veto import failed_history
     good_history_file = Path('./extra/history_files/sequence_LST1_04183.history')
     bad_history_file = Path('./extra/history_files/sequence_LST1_04183_failed.history')
-    good_history_failed = failed_history(good_history_file, max_trials=2)
-    bad_history_failed = failed_history(bad_history_file, max_trials=2)
+    good_history_failed = failed_history(good_history_file)
+    bad_history_failed = failed_history(bad_history_file)
     assert good_history_failed is False
     assert bad_history_failed is True
 

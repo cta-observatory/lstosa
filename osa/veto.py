@@ -54,19 +54,19 @@ def update_vetoes(sequence_list):
             log.debug(f"Created veto file {sequence.veto}")
 
 
-def failed_history(history_file, max_trials=2) -> bool:
+def failed_history(history_file) -> bool:
     """
-    Check if maximum amount of failures reached for a given history file.
-    If the last line of the history file contains a non-zero exit status and is
-    repeated by maximum trials times, return True.
+    Check if a processing step has failed twice in a given history file.
+
+    Return True if the last line of the history file contains a non-zero exit
+    status and is repeated by maximum trials times.
     """
     history_lines = history_file.read_text().splitlines()
 
-    if history_lines:
-        return (
-            history_lines[-1] == history_lines[-2]
-            and history_lines[-1].split() != "0"
-        )
+    return (
+        history_lines[-1] == history_lines[-2]
+        and history_lines[-1].split() != "0"
+    )
 
 
 def set_closed_sequence(sequence):

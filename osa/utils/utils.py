@@ -71,7 +71,7 @@ def getcurrentdate(sep="_"):
     """
     now = datetime.utcnow()
     if (now.hour >= LIMIT_NIGHT >= 0) or (
-        now.hour < LIMIT_NIGHT + 24 and LIMIT_NIGHT < 0
+            now.hour < LIMIT_NIGHT + 24 and LIMIT_NIGHT < 0
     ):
         # today, nothing to do
         pass
