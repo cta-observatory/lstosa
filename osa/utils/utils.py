@@ -6,8 +6,6 @@ import logging
 import os
 import subprocess
 from datetime import datetime, timedelta
-from os import getpid, readlink, symlink
-from os.path import dirname, exists, islink
 from pathlib import Path
 from socket import gethostname
 
@@ -220,7 +218,7 @@ def create_lock(lockfile) -> bool:
         if not directory_lock.exists():
             directory_lock.mkdir(exist_ok=True, parents=True)
             log.debug(f"Creating parent directory {directory_lock} for lock file")
-            pid = str(getpid())
+            pid = str(os.getpid())
             hostname = gethostname()
             content = f"{hostname}:{pid}"
             write_to_file(lockfile, content)
@@ -229,7 +227,7 @@ def create_lock(lockfile) -> bool:
     return False
 
 
-def get_lock_file():
+def get_lock_file() -> Path:
     """
     Create night-is-finished lock file.
 
@@ -290,25 +288,24 @@ def get_night_limit_timestamp():
     return night_limit
 
 
-def get_md5sum_and_copy(inputf, outputf):
+def get_md5sum_and_copy(inputf: Path, outputf: Path):
     """
 
     Parameters
     ----------
-    inputf
-    outputf
+    inputf: pathlib.Path
+    outputf: pathlib.Path
 
     Returns
     -------
-
     """
     md5 = hashlib.md5()
-    outputdir = dirname(outputf)
-    os.makedirs(outputdir, exist_ok=True)
+    outputdir = outputf.parent
+    outputdir.mkdir()
     # in case of being a link we just move it
-    if islink(inputf):
-        linkto = readlink(inputf)
-        symlink(linkto, outputf)
+    if inputf.is_symlink():
+        linkto = inputf.readlink()
+        linkto.symlink_to(outputf)
         return None
 
     try:
@@ -325,10 +322,10 @@ def get_md5sum_and_copy(inputf, outputf):
         return md5.hexdigest()
 
 
-def is_day_closed():
+def is_day_closed() -> bool:
     """Get the name and Check for the existence of the Closer flag file."""
     flag_file = get_lock_file()
-    return bool(exists(flag_file))
+    return flag_file.exists()
 
 
 def date_in_yymmdd(date_string):
