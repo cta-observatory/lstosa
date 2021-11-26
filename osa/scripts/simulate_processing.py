@@ -42,12 +42,12 @@ log = myLogger(logging.getLogger())
 
 def do_setup():
     """Set-up folder structure and check flags."""
-    pathAnalysis = Path(cfg.get("LST1", "ANALYSIS_DIR")) / options.directory
-    pathDL1 = Path(cfg.get("LST1", "DL1_DIR")) / options.directory
-    pathDL2 = Path(cfg.get("LST1", "DL2_DIR")) / options.directory
-    pathSubAnalysis = pathAnalysis / options.prod_id
-    pathDL1sub = pathDL1 / options.prod_id
-    pathDL2sub = pathDL2 / options.prod_id
+    path_analysis = Path(cfg.get("LST1", "ANALYSIS_DIR")) / options.directory
+    path_dl1 = Path(cfg.get("LST1", "DL1_DIR")) / options.directory
+    path_dl2 = Path(cfg.get("LST1", "DL2_DIR")) / options.directory
+    path_sub_analysis = path_analysis / options.prod_id
+    path_dl1sub = path_dl1 / options.prod_id
+    path_dl2_sub = path_dl2 / options.prod_id
 
     if Path(LOG_FILENAME).exists() and not options.append:
         CONFIG_FLAGS["Go"] = False
@@ -57,41 +57,41 @@ def do_setup():
         return
 
     CONFIG_FLAGS["TearSubAnalysis"] = (
-        False if pathSubAnalysis.exists() or options.provenance else pathSubAnalysis
+        False if path_sub_analysis.exists() or options.provenance else path_sub_analysis
     )
     CONFIG_FLAGS["TearAnalysis"] = (
-        False if pathAnalysis.exists() or options.provenance else pathAnalysis
+        False if path_analysis.exists() or options.provenance else path_analysis
     )
     CONFIG_FLAGS["TearSubDL1"] = (
-        False if pathDL1sub.exists() or options.provenance else pathDL1sub
+        False if path_dl1sub.exists() or options.provenance else path_dl1sub
     )
     CONFIG_FLAGS["TearSubDL2"] = (
-        False if pathDL2sub.exists() or options.provenance else pathDL2sub
+        False if path_dl2_sub.exists() or options.provenance else path_dl2_sub
     )
     CONFIG_FLAGS["TearDL1"] = (
-        False if pathDL1.exists() or options.provenance else pathDL1
+        False if path_dl1.exists() or options.provenance else path_dl1
     )
     CONFIG_FLAGS["TearDL2"] = (
-        False if pathDL2.exists() or options.provenance else pathDL2
+        False if path_dl2.exists() or options.provenance else path_dl2
     )
 
     if options.provenance and not options.force:
-        if pathSubAnalysis.exists():
+        if path_sub_analysis.exists():
             CONFIG_FLAGS["Go"] = False
-            log.info(f"Folder {pathSubAnalysis} already exist.")
-        if pathDL1sub.exists():
+            log.info(f"Folder {path_sub_analysis} already exist.")
+        if path_dl1sub.exists():
             CONFIG_FLAGS["Go"] = False
-            log.info(f"Folder {pathDL1sub} already exist.")
-        if pathDL2sub.exists():
+            log.info(f"Folder {path_dl1sub} already exist.")
+        if path_dl2_sub.exists():
             CONFIG_FLAGS["Go"] = False
-            log.info(f"Folder {pathDL2sub} already exist.")
+            log.info(f"Folder {path_dl2_sub} already exist.")
         if not CONFIG_FLAGS["Go"]:
             log.info("You must enforce provenance files overwrite with --force flag.")
             return
 
-    pathSubAnalysis.mkdir(parents=True, exist_ok=True)
-    pathDL1sub.mkdir(parents=True, exist_ok=True)
-    pathDL2sub.mkdir(parents=True, exist_ok=True)
+    path_sub_analysis.mkdir(parents=True, exist_ok=True)
+    path_dl1sub.mkdir(parents=True, exist_ok=True)
+    path_dl2_sub.mkdir(parents=True, exist_ok=True)
 
 
 def tear_down():
@@ -157,12 +157,16 @@ def simulate_processing():
         processed = False
         for sub_list in sequence.subrun_list:
             if sub_list.runobj.type != "DATA":
-                args_cal = parse_template(create_job_template(sequence, get_content=True), 0)
+                args_cal = parse_template(
+                    create_job_template(sequence, get_content=True), 0
+                )
                 simulate_calibration(args_cal)
             else:
                 with mp.Pool() as poolproc:
                     args_proc = [
-                        parse_template(create_job_template(sequence, get_content=True), subrun_idx)
+                        parse_template(
+                            create_job_template(sequence, get_content=True), subrun_idx
+                        )
                         for subrun_idx in range(sub_list.subrun)
                     ]
                     processed = poolproc.map(simulate_subrun_processing, args_proc)
@@ -183,6 +187,7 @@ def simulate_processing():
 
 
 def main():
+    """Dry-run of the entire processing chain to produce provenance."""
     log.setLevel(logging.INFO)
 
     simprocparsing()

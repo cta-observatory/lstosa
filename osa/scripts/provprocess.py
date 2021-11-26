@@ -25,7 +25,6 @@ log = myLogger(logging.getLogger())
 provconfig = yaml.safe_load(get_log_config())
 LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 PROV_PREFIX = provconfig["PREFIX"]
-PATH_RO = cfg.get("LST1", "R0_DIR")
 PATH_DL1 = cfg.get("LST1", "DL1_DIR")
 PATH_DL2 = cfg.get("LST1", "DL2_DIR")
 
@@ -211,10 +210,10 @@ def parse_lines_run(filter_step, prov_lines, out):
 
         # copy used files not subruns not RFs not mergedDL2
         if (
-                filepath
-                and content_type != "application/x-spss-sav"
-                and name != "DL2MergedFile"
-                and not remove
+            filepath
+            and content_type != "application/x-spss-sav"
+            and name != "DL2MergedFile"
+            and not remove
         ):
             copy_used_file(filepath, out)
         if session_id and osa_cfg and not osa_config_copied:
@@ -291,9 +290,7 @@ def parse_lines_run(filter_step, prov_lines, out):
             working_lines.append(generated)
         if dl2filepath_str and filter_step == "dl1_to_dl2":
             entity_id = get_file_hash(dl2filepath_str, buffer="path")
-            dl2filepath_str = dl2filepath_str.replace(
-                PurePath(dl2filepath_str).name, ""
-            )
+            dl2filepath_str = dl2filepath_str.replace(PurePath(dl2filepath_str).name, "")
             used = {"entity_id": entity_id}
             used.update({"name": "DL2Collection"})
             used.update({"type": "SetCollection"})
@@ -361,62 +358,53 @@ def produce_provenance(session_log_filename, base_filename):
     """
 
     if options.filter == "r0_to_dl1" or not options.filter:
-        pathsR0DL1 = define_paths(
-            "r0_to_dl1",
-            PATH_DL1,
-            options.dl1_prod_id,
-            base_filename
+        paths_r0_dl1 = define_paths(
+            "r0_to_dl1", PATH_DL1, options.dl1_prod_id, base_filename
         )
-        plinesR0 = parse_lines_run(
+        plines_r0 = parse_lines_run(
             "r0_to_dl1",
             read_prov(filename=session_log_filename),
-            str(pathsR0DL1["out_path"])
+            str(paths_r0_dl1["out_path"]),
         )
-        linesR0DL1 = copy.deepcopy(plinesR0)
-        plinesAB = parse_lines_run(
+        lines_r0_dl1 = copy.deepcopy(plines_r0)
+        plines_ab = parse_lines_run(
             "dl1ab",
             read_prov(filename=session_log_filename),
-            str(pathsR0DL1["out_path"])
+            str(paths_r0_dl1["out_path"]),
         )
-        linesDL1AB = copy.deepcopy(plinesAB)
-        DL1lines = linesR0DL1 + linesDL1AB[1:]
-        produce_provenance_files(plinesR0 + plinesAB[1:], pathsR0DL1)
+        lines_dl1ab = copy.deepcopy(plines_ab)
+        dl1_lines = lines_r0_dl1 + lines_dl1ab[1:]
+        produce_provenance_files(plines_r0 + plines_ab[1:], paths_r0_dl1)
 
     if options.filter == "dl1_to_dl2" or not options.filter:
-        pathsDL1DL2 = define_paths(
-            "dl1_to_dl2",
-            PATH_DL2,
-            options.dl2_prod_id,
-            base_filename
+        paths_dl1_dl2 = define_paths(
+            "dl1_to_dl2", PATH_DL2, options.dl2_prod_id, base_filename
         )
-        plinesCHECK = parse_lines_run(
+        plines_check = parse_lines_run(
             "dl1_datacheck",
             read_prov(filename=session_log_filename),
-            str(pathsDL1DL2["out_path"])
+            str(paths_dl1_dl2["out_path"]),
         )
-        linesCHECK = copy.deepcopy(plinesCHECK)
-        plinesDL2 = parse_lines_run(
+        lines_check = copy.deepcopy(plines_check)
+        plines_dl2 = parse_lines_run(
             "dl1_to_dl2",
             read_prov(filename=session_log_filename),
-            str(pathsDL1DL2["out_path"])
+            str(paths_dl1_dl2["out_path"]),
         )
-        linesDL2 = copy.deepcopy(plinesDL2)
-        DL1DL2lines = linesCHECK + linesDL2[1:]
+        linesDL2 = copy.deepcopy(plines_dl2)
+        dl1_dl2_lines = lines_check + linesDL2[1:]
 
-        # create last step products only if filtering
-        if options.filter == "dl1_to_dl2":
-            produce_provenance_files(plinesCHECK + plinesDL2[1:], pathsDL1DL2)
+    # create last step products only if filtering
+    if options.filter == "dl1_to_dl2":
+        produce_provenance_files(plines_check + plines_dl2[1:], paths_dl1_dl2)
 
     # create all steps products in last step path
     if not options.filter:
-        all_lines = DL1lines + DL1DL2lines[1:]
-        pathsR0DL2 = define_paths(
-            "r0_to_dl2",
-            PATH_DL2,
-            options.dl2_prod_id,
-            base_filename
+        all_lines = dl1_lines + dl1_dl2_lines[1:]
+        paths_r0_dl2 = define_paths(
+            "r0_to_dl2", PATH_DL2, options.dl2_prod_id, base_filename
         )
-        produce_provenance_files(all_lines, pathsR0DL2)
+        produce_provenance_files(all_lines, paths_r0_dl2)
 
 
 def main():
