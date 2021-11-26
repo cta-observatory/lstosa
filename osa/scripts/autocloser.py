@@ -179,11 +179,7 @@ class Telescope(object):
     def __del__(self, log=log, os=os):
         if self.locked:
             log.debug(f"Deleting {self.cl}")
-            try:
-                os.remove(self.cl)
-            except:
-                log.warning(f"Could not delete {self.cl}")
-                # send email
+            os.remove(self.cl)
 
     def is_closed(self):
         log.debug(f"Checking if {self.telescope} is closed")
@@ -475,8 +471,8 @@ class Incidence(object):
         log.debug(f"Trying to read {input_file}")
         try:
             with open(input_file, "r") as f:
-                for l in [line for line in f.read().split("\n") if line]:
-                    self.add_incidence(l.split(":")[0], l.split(":")[1])
+                for line in [line for line in f.read().split("\n") if line]:
+                    self.add_incidence(line.split(":")[0], line.split(":")[1])
             return True
         except IOError:
             log.warning(f"Could not open {input_file}")

@@ -17,7 +17,7 @@ import pandas as pd
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.report import history
-from osa.utils.iofile import read_from_file, write_to_file
+from osa.utils.iofile import write_to_file
 from osa.utils.utils import date_in_yymmdd, lstdate_to_dir, time_to_seconds, stringify
 
 log = logging.getLogger(__name__)
@@ -175,7 +175,7 @@ def historylevel(history_file: Path, data_type: str):
         sys.exit(1)
     exit_status = 0
     if history_file.exists():
-        for line in read_from_file(history_file).splitlines():
+        for line in history_file.read_text().splitlines():
             words = line.split()
             try:
                 program = words[1]
@@ -468,12 +468,12 @@ def create_job_template(sequence, get_content=False):
 
     python_imports = dedent(
         """\
-        
+
         import os
         import subprocess
         import sys
         import tempfile
-        
+
         """
     )
     content = job_header + "\n" + python_imports
@@ -761,7 +761,7 @@ def set_queue_values(
             sequence.state = "FAILED"
             sequence.exit = df_jobid_filtered[
                 df_jobid_filtered.State.values == "FAILED"
-                ]["ExitCode"].iloc[0]
+            ]["ExitCode"].iloc[0]
         elif any("CANCELLED" in job for job in df_jobid_filtered.State):
             sequence.state = "CANCELLED"
             mask = ['CANCELLED' in job for job in df_jobid_filtered.State]

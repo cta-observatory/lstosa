@@ -70,8 +70,9 @@ def getcurrentdate(sep="_"):
         Date in string format using the given separator
     """
     now = datetime.utcnow()
-    if (now.hour >= LIMIT_NIGHT >= 0) or \
-            (now.hour < LIMIT_NIGHT + 24 and LIMIT_NIGHT < 0):
+    if (now.hour >= LIMIT_NIGHT >= 0) or (
+        now.hour < LIMIT_NIGHT + 24 and LIMIT_NIGHT < 0
+    ):
         # today, nothing to do
         pass
     elif LIMIT_NIGHT >= 0:
@@ -372,17 +373,29 @@ def destination_dir(concept, create_dir=True) -> Path:
     nightdir = lstdate_to_dir(options.date)
 
     if concept == "MUON":
-        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
-                    nightdir / options.prod_id
+        directory = (
+            Path(cfg.get(options.tel_id, concept + "_DIR")) / nightdir / options.prod_id
+        )
     elif concept in ["DL1AB", "DATACHECK"]:
-        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
-                    nightdir / options.prod_id / options.dl1_prod_id
+        directory = (
+            Path(cfg.get(options.tel_id, concept + "_DIR"))
+            / nightdir
+            / options.prod_id
+            / options.dl1_prod_id
+        )
     elif concept == "DL2":
-        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
-            nightdir / options.prod_id / options.dl2_prod_id
+        directory = (
+            Path(cfg.get(options.tel_id, concept + "_DIR"))
+            / nightdir
+            / options.prod_id
+            / options.dl2_prod_id
+        )
     elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
-                    nightdir / options.calib_prod_id
+        directory = (
+            Path(cfg.get(options.tel_id, concept + "_DIR"))
+            / nightdir
+            / options.calib_prod_id
+        )
     else:
         log.warning(f"Concept {concept} not known")
         directory = None
@@ -495,9 +508,7 @@ def get_input_file(run_number: str) -> Path:
     r0_path = Path(cfg.get("LST1", "R0_DIR")).absolute()
 
     # Get raw data file.
-    file_list = list(
-        r0_path.rglob(f"*/LST-1.1.Run{run_number}.0000*")
-    )
+    file_list = list(r0_path.rglob(f"*/LST-1.1.Run{run_number}.0000*"))
 
     if not file_list:
         raise IOError(f"Files corresponding to run {run_number} not found in {r0_path}.")
@@ -534,10 +545,11 @@ def time_to_seconds(timestring):
         timestring = "00:00:00"
     if "-" in timestring:
         # Day is also specified (D-)HH:MM:SS
-        days, hhmmss = timestring.split("-", )
+        days, hhmmss = timestring.split("-")
         hours, minutes, seconds = hhmmss.split(":")
-        return (int(days) * 24 * 3600 + int(hours) * 3600
-                + int(minutes) * 60 + int(seconds))
+        return (
+            int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+        )
 
     split_time = timestring.split(":")
     if len(split_time) == 2:
