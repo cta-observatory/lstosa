@@ -216,11 +216,16 @@ activities:
               entityName: RFModelEnergyFile
               value: RFModelEnergyFile
               # filepath: /fefs/aswg/data/models/20190415/south_pointing/20200316_v0.4.5__EG1/reg_energy.sav
-            - role: "RFModelDispFile"
-              description: "Random Forest Model Dispersion Matrix File"
-              entityName: RFModelDispFile
-              value: RFModelDispFile
-              # filepath: /fefs/aswg/data/models/20190415/south_pointing/20200316_v0.4.5__EG1/reg_disp_vector.sav
+            - role: "RFModelDispNormFile"
+              description: "Random Forest Model Direction File"
+              entityName: RFModelDispNormFile
+              value: RFModelDispNormFile
+              # filepath: /fefs/aswg/data/models/20190415/south_pointing/20200316_v0.4.5__EG1/reg_disp_norm.sav
+            - role: "RFModelDispSignFile"
+              description: "Random Forest Model Direction File"
+              entityName: RFModelDispSignFile
+              value: RFModelDispSignFile
+              # filepath: /fefs/aswg/data/models/20190415/south_pointing/20200316_v0.4.5__EG1/reg_disp_sign.sav
             - role: "RFModelGammanessFile"
               description: "Random Forest Model Gammaness File"
               entityName: RFModelGammanessFile
@@ -331,15 +336,23 @@ entities:
         type: File
         contentType: application/hdf5
     RFModelEnergyFile:
-        description: "Model file for deriving reconstructed Energy with Random Forest algorithm"
+        description: "Model file for deriving reconstructed energy with Random Forest algorithm"
         type: File
         contentType: application/x-spss-sav
     RFModelDispFile:
-        description: "Model file for energy dispersion correction when deriving reconstructed Energy with Random Forest algorithm"
+        description: "Model file for deriving reconstructed direction with Random Forest algorithm and Disp vector method"
+        type: File
+        contentType: application/x-spss-sav
+    RFModelDispNormFile:
+        description: "Model file for deriving reconstructed direction with Random Forest algorithm and Disp vector method"
+        type: File
+        contentType: application/x-spss-sav
+    RFModelDispSignFile:
+        description: "Model file for deriving reconstructed direction with Random Forest algorithm and Disp vector method"
         type: File
         contentType: application/x-spss-sav
     RFModelGammanessFile:
-        description: "Model file for deriving of gammaness Random Forest algorithm"
+        description: "Model file for deriving of gammaness with Random Forest algorithm"
         type: File
         contentType: application/x-spss-sav
     DL2Collection:

@@ -130,8 +130,11 @@ def parse_variables(class_instance):
         class_instance.RFModelEnergyFile = str(
             Path(rf_models_directory) / "reg_energy.sav"
         )
-        class_instance.RFModelDispFile = str(
+        class_instance.RFModelDispNormFile = str(
             Path(rf_models_directory) / "reg_disp_norm.sav"
+        )
+        class_instance.RFModelDispSignFile = str(
+            Path(rf_models_directory) / "reg_disp_sign.sav"
         )
         class_instance.RFModelGammanessFile = str(
             Path(rf_models_directory) / "cls_gh.sav"
