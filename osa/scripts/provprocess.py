@@ -127,8 +127,8 @@ def parse_lines_run(filter_step, prov_lines, out):
     r0filepath_str = ""
     dl1filepath_str = ""
     dl2filepath_str = ""
-    muonsfilepath_str = ""
-    checkfilepath_str = ""
+    mufilepath_str = ""
+    ckfilepath_str = ""
     id_activity_run = ""
     end_time_line = ""
     osa_config_copied = False
@@ -155,13 +155,13 @@ def parse_lines_run(filter_step, prov_lines, out):
 
         # remove subruns info
         if name == "DL1CheckSubrunDataset":
-            checkfilepath_str = filepath
+            ckfilepath_str = filepath
         elif name == "DL1SubrunDataset":
             dl1filepath_str = filepath
         elif name == "DL2SubrunDataset":
             dl2filepath_str = filepath
         elif name == "MuonsSubrunDataset":
-            muonsfilepath_str = filepath
+            mufilepath_str = filepath
         elif name == "R0SubrunDataset":
             r0filepath_str = filepath
         if "Subrun" in name or "subrun" in used_role or "subrun" in generated_role:
@@ -262,27 +262,27 @@ def parse_lines_run(filter_step, prov_lines, out):
             used.update({"used_id": entity_id})
             used.update({"used_role": "DL1 Collection"})
             working_lines.append(used)
-        if muonsfilepath_str and filter_step == "dl1_datacheck":
-            muonsfilepath_str = muonsfilepath_str.replace(PurePath(muonsfilepath_str).name, "")
-            entity_id = get_file_hash(muonsfilepath_str + "muons", buffer="path")
+        if mufilepath_str and filter_step == "dl1_datacheck":
+            mufilepath_str = mufilepath_str.replace(PurePath(mufilepath_str).name, "")
+            entity_id = get_file_hash(mufilepath_str + "muons", buffer="path")
             muons = {"entity_id": entity_id}
             muons.update({"name": "MuonsCollectionRun"})
             muons.update({"type": "SetCollection"})
             muons.update({"size": size})
-            muons.update({"filepath": muonsfilepath_str})
+            muons.update({"filepath": mufilepath_str})
             working_lines.append(muons)
             used = {"activity_id": id_activity_run}
             used.update({"used_id": entity_id})
             used.update({"used_role": "Muons Collection"})
             working_lines.append(used)
-        if checkfilepath_str and filter_step == "dl1_datacheck":
-            checkfilepath_str = checkfilepath_str.replace(PurePath(checkfilepath_str).name, "")
-            entity_id = get_file_hash(checkfilepath_str + "check", buffer="path")
+        if ckfilepath_str and filter_step == "dl1_datacheck":
+            ckfilepath_str = ckfilepath_str.replace(PurePath(ckfilepath_str).name, "")
+            entity_id = get_file_hash(ckfilepath_str + "check", buffer="path")
             dl1check = {"entity_id": entity_id}
             dl1check.update({"name": "DL1CheckCollection"})
             dl1check.update({"type": "SetCollection"})
             dl1check.update({"size": size})
-            dl1check.update({"filepath": checkfilepath_str})
+            dl1check.update({"filepath": ckfilepath_str})
             working_lines.append(dl1check)
             generated = {"activity_id": id_activity_run}
             generated.update({"generated_id": entity_id})
