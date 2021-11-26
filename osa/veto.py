@@ -5,8 +5,6 @@ import os
 from pathlib import Path
 
 from osa.configs import options
-from osa.configs.config import cfg
-from osa.utils.iofile import read_from_file
 
 __all__ = [
     "failed_history",
@@ -29,7 +27,7 @@ def get_veto_list(sequence_list):
     veto_ls = analysis_dir.glob("*.veto")
     veto_list = []
     for file in veto_ls:
-        # we extract the job name
+        # Extract the job name
         name = file.stem.strip("sequence_")
         veto_list.append(name)
         set_veto_action(name, sequence_list)
@@ -50,48 +48,25 @@ def update_vetoes(sequence_list):
         if (
                 not os.path.exists(sequence.veto)
                 and os.path.exists(sequence.history)
-                and failed_history(sequence.history, int(cfg.get("LSTOSA", "MAX_FAIL")))
+                and failed_history(sequence.history)
         ):
             Path(sequence.veto).touch()
             log.debug(f"Created veto file {sequence.veto}")
 
 
-def failed_history(historyfile: str, max_trials: int) -> bool:
-    """Check if maximum amount of failures reached for a given history file."""
-    programme = []
-    card = []
-    goal = []
-    exit_status = []
-    for line in read_from_file(historyfile).splitlines():
-        words = line.split()
-        # columns 2, 10, 11 and 12 of history file contains
-        # the info (index 1, -3, -2 and -1 respectively)
-        programme.append(words[1])
-        goal.append(words[-3])
-        card.append(words[-2])
-        try:
-            exit_status.append(int(words[-1]))
-        except ValueError as error:
-            log.exception(f"Malformed file {historyfile}, {error}")
-        log.debug(f"extracting line: {line}")
-    lsize = len(exit_status)
-    if lsize >= max_trials and (goal[-1] != "new_calib"):
-        strike = 0
-        for i in range(lsize - 1):
-            # m  = f"{exit_status[i]}=={exit_status[lsize-1]}, "
-            # m += f"{card[i]=={card[lsize-1]}, {programme[i]}=={programme[lsize-1]}"
-            # log.debug(f"comparing {m}")
-            if (
-                    (exit_status[i] != 0)
-                    and (exit_status[i] == exit_status[lsize - 1])
-                    and (card[i] == card[lsize - 1])
-                    and (programme[i] == programme[lsize - 1])
-            ):
-                strike += 1
-                if strike == max_trials - 1:
-                    log.debug(f"Maximum amount of failures reached for {historyfile}")
-                    return True
-    return False
+def failed_history(history_file, max_trials=2) -> bool:
+    """
+    Check if maximum amount of failures reached for a given history file.
+    If the last line of the history file contains a non-zero exit status and is
+    repeated by maximum trials times, return True.
+    """
+    history_lines = history_file.read_text().splitlines()
+
+    if history_lines:
+        return (
+            history_lines[-1] == history_lines[-2]
+            and history_lines[-1].split() != "0"
+        )
 
 
 def set_closed_sequence(sequence):
