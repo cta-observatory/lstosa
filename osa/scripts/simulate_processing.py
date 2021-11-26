@@ -138,7 +138,7 @@ def simulate_calibration(args):
 
 def simulate_subrun_processing(args):
     """Simulate subrun processing."""
-    run_str, subrun_idx = args[14].split(".")
+    run_str, subrun_idx = args[13].split(".")
     log.info(f"Simulating process call for run {run_str} subrun {subrun_idx}")
     subprocess.run(args)
 
