@@ -190,7 +190,7 @@ def extractsequences(run_list):
         if not head:
             if currenttype == "DRS4":
                 # normal case
-                log.debug(f'appending [{currentrun}, {currenttype}, None]')
+                log.debug(f"appending [{currentrun}, {currenttype}, None]")
                 head.append([currentrun, currenttype, None])
         elif len(head) == 1:
             previousrun = head[0][0]
@@ -212,7 +212,7 @@ def extractsequences(run_list):
                 head[0] = [currentrun, currenttype, whichreq]
             elif currenttype == "PEDCALIB" and previoustype == "DRS4":
                 # add it too
-                log.debug(f'appending [{currentrun}, {currenttype}, None]')
+                log.debug(f"appending [{currentrun}, {currenttype}, None]")
                 head.append([currentrun, currenttype, None])
                 require[currentrun] = previousrun
             elif currenttype == "DATA":
@@ -221,16 +221,19 @@ def extractsequences(run_list):
                     # replace and store if they are not the first of observations
                     # required run requirement inherited from pedestal run
                     if previousreq is not None:
-                        log.debug(f"P->C, replacing "
-                                  f"[{currentrun}, {currenttype}, {previousreq}]")
+                        log.debug(
+                            f"P->C, replacing "
+                            f"[{currentrun}, {currenttype}, {previousreq}]"
+                        )
                         head[0] = [currentrun, currenttype, previousreq]
                         store.append(currentrun)
                         require[currentrun] = previousreq
                 elif previoustype == "DATA":
                     whichreq = previousreq
 
-                    log.debug(f"D->D, "
-                              f"replacing [{currentrun}, {currenttype}, {whichreq}]")
+                    log.debug(
+                        f"D->D, " f"replacing [{currentrun}, {currenttype}, {whichreq}]"
+                    )
                     head[0] = [currentrun, currenttype, whichreq]
                     store.append(currentrun)
                     require[currentrun] = whichreq
@@ -241,8 +244,11 @@ def extractsequences(run_list):
                 # append, store, resize and replace
                 previousrun = head[1][0]
                 head.pop()
-                log.debug(f"P->C->D, appending "
-                          f"[{currentrun}, {currenttype}, {previousrun}]")
+                log.debug(
+                    f"P->C->D,"
+                    f"appending "
+                    f"[{currentrun}, {currenttype}, {previousrun}]"
+                )
                 head[0] = [currentrun, currenttype, previousrun]
                 store.append(currentrun)
                 # this is different from currentrun since it marks parent sequence run
@@ -252,8 +258,8 @@ def extractsequences(run_list):
                 # and shifters decide to give another try
                 head.pop()
                 log.debug(
-                    f'P->C->P, deleting and '
-                    f'replacing [{currentrun}, {currenttype}, None]'
+                    "P->C->P, "
+                    f"deleting and replacing [{currentrun}, {currenttype}, None]"
                 )
 
                 head[0] = [currentrun, currenttype, None]
@@ -366,8 +372,8 @@ def generate_workflow(run_list, store, require):
                     sequence.jobname = f"{run.telescope}_{str(run.run).zfill(5)}"
                     sequence_filenames(sequence)
                     log.debug(
-                        f"Sequence {sequence.seq} assigned to run {run.run} whose parent is"
-                        f" {sequence.parent} with run {sequence.previousrun}"
+                        f"Sequence {sequence.seq} assigned to run {run.run} whose "
+                        f"parent is {sequence.parent} with run {sequence.previousrun}"
                     )
                     if sequence not in sequence_list:
                         sequence_list.append(sequence)

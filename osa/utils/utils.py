@@ -6,8 +6,6 @@ import logging
 import os
 import subprocess
 from datetime import datetime, timedelta
-from os import getpid, readlink, symlink
-from os.path import dirname, exists, islink
 from pathlib import Path
 from socket import gethostname
 
@@ -70,8 +68,9 @@ def getcurrentdate(sep="_"):
         Date in string format using the given separator
     """
     now = datetime.utcnow()
-    if (now.hour >= LIMIT_NIGHT >= 0) or \
-            (now.hour < LIMIT_NIGHT + 24 and LIMIT_NIGHT < 0):
+    if (now.hour >= LIMIT_NIGHT >= 0) or (
+            now.hour < LIMIT_NIGHT + 24 and LIMIT_NIGHT < 0
+    ):
         # today, nothing to do
         pass
     elif LIMIT_NIGHT >= 0:
@@ -219,7 +218,7 @@ def create_lock(lockfile) -> bool:
         if not directory_lock.exists():
             directory_lock.mkdir(exist_ok=True, parents=True)
             log.debug(f"Creating parent directory {directory_lock} for lock file")
-            pid = str(getpid())
+            pid = str(os.getpid())
             hostname = gethostname()
             content = f"{hostname}:{pid}"
             write_to_file(lockfile, content)
@@ -228,7 +227,7 @@ def create_lock(lockfile) -> bool:
     return False
 
 
-def get_lock_file():
+def get_lock_file() -> Path:
     """
     Create night-is-finished lock file.
 
@@ -289,25 +288,24 @@ def get_night_limit_timestamp():
     return night_limit
 
 
-def get_md5sum_and_copy(inputf, outputf):
+def get_md5sum_and_copy(inputf: Path, outputf: Path):
     """
 
     Parameters
     ----------
-    inputf
-    outputf
+    inputf: pathlib.Path
+    outputf: pathlib.Path
 
     Returns
     -------
-
     """
     md5 = hashlib.md5()
-    outputdir = dirname(outputf)
-    os.makedirs(outputdir, exist_ok=True)
+    outputdir = outputf.parent
+    outputdir.mkdir()
     # in case of being a link we just move it
-    if islink(inputf):
-        linkto = readlink(inputf)
-        symlink(linkto, outputf)
+    if inputf.is_symlink():
+        linkto = inputf.readlink()
+        linkto.symlink_to(outputf)
         return None
 
     try:
@@ -324,10 +322,10 @@ def get_md5sum_and_copy(inputf, outputf):
         return md5.hexdigest()
 
 
-def is_day_closed():
+def is_day_closed() -> bool:
     """Get the name and Check for the existence of the Closer flag file."""
     flag_file = get_lock_file()
-    return bool(exists(flag_file))
+    return flag_file.exists()
 
 
 def date_in_yymmdd(date_string):
@@ -372,17 +370,29 @@ def destination_dir(concept, create_dir=True) -> Path:
     nightdir = lstdate_to_dir(options.date)
 
     if concept == "MUON":
-        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
-                    nightdir / options.prod_id
+        directory = (
+            Path(cfg.get(options.tel_id, concept + "_DIR")) / nightdir / options.prod_id
+        )
     elif concept in ["DL1AB", "DATACHECK"]:
-        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
-                    nightdir / options.prod_id / options.dl1_prod_id
+        directory = (
+            Path(cfg.get(options.tel_id, concept + "_DIR"))
+            / nightdir
+            / options.prod_id
+            / options.dl1_prod_id
+        )
     elif concept == "DL2":
-        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
-            nightdir / options.prod_id / options.dl2_prod_id
+        directory = (
+            Path(cfg.get(options.tel_id, concept + "_DIR"))
+            / nightdir
+            / options.prod_id
+            / options.dl2_prod_id
+        )
     elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) /\
-                    nightdir / options.calib_prod_id
+        directory = (
+            Path(cfg.get(options.tel_id, concept + "_DIR"))
+            / nightdir
+            / options.calib_prod_id
+        )
     else:
         log.warning(f"Concept {concept} not known")
         directory = None
@@ -495,9 +505,7 @@ def get_input_file(run_number: str) -> Path:
     r0_path = Path(cfg.get("LST1", "R0_DIR")).absolute()
 
     # Get raw data file.
-    file_list = list(
-        r0_path.rglob(f"*/LST-1.1.Run{run_number}.0000*")
-    )
+    file_list = list(r0_path.rglob(f"*/LST-1.1.Run{run_number}.0000*"))
 
     if not file_list:
         raise IOError(f"Files corresponding to run {run_number} not found in {r0_path}.")
@@ -534,10 +542,11 @@ def time_to_seconds(timestring):
         timestring = "00:00:00"
     if "-" in timestring:
         # Day is also specified (D-)HH:MM:SS
-        days, hhmmss = timestring.split("-", )
+        days, hhmmss = timestring.split("-")
         hours, minutes, seconds = hhmmss.split(":")
-        return (int(days) * 24 * 3600 + int(hours) * 3600
-                + int(minutes) * 60 + int(seconds))
+        return (
+            int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+        )
 
     split_time = timestring.split(":")
     if len(split_time) == 2:

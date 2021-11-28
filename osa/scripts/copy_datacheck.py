@@ -39,8 +39,10 @@ def main():
         Path(cfg.get("LST1", "ANALYSIS_DIR")) / nightdir / options.prod_id / "log"
     )
     dl1_dir = (
-        Path(cfg.get("LST1", "DL1_DIR")) / nightdir / options.prod_id /
-        options.dl1_prod_id
+        Path(cfg.get("LST1", "DL1_DIR"))
+        / nightdir
+        / options.prod_id
+        / options.dl1_prod_id
     )
     dl1_longterm_daily = (
         Path("/fefs/aswg/data/real/OSA/DL1DataCheck_LongTerm") / "v0.7" / nightdir

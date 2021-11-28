@@ -166,8 +166,8 @@ def main():
 
         if len(lines) > 1:
             matrix = []
-            for l in lines:
-                l_fields = l.split()
+            for line in lines:
+                l_fields = line.split()
                 if len(l_fields) == 21:
                     # Full line, all OK
                     matrix.append(l_fields)
