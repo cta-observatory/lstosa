@@ -15,3 +15,9 @@ def test_get_veto_list(sequence_list):
     from osa.veto import get_veto_list
     veto_list = get_veto_list(sequence_list)
     assert not veto_list
+
+
+def test_get_closed_list(sequence_list):
+    from osa.veto import get_closed_list
+    closed_list = get_closed_list(sequence_list)
+    assert closed_list == ['LST1_01807', 'LST1_01808', 'LST1_01805']
