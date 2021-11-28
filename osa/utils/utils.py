@@ -241,7 +241,7 @@ def get_lock_file() -> Path:
     close_directory = Path(cfg.get(options.tel_id, "CLOSER_DIR"))
     lock_file = close_directory / date / options.prod_id / basename
     log.debug(f"Looking for lock file {lock_file}")
-    return lock_file
+    return lock_file.resolve()
 
 
 def lstdate_to_iso(date_string):
