@@ -79,7 +79,7 @@ def test_scheduler_env_variables(sequence_list, running_analysis_dir):
         f'#SBATCH --chdir={running_analysis_dir}',
         '#SBATCH --output=log/slurm_01807.%4a_%A.out',
         '#SBATCH --error=log/slurm_01807.%4a_%A.err',
-        '#SBATCH --array=0-18',
+        '#SBATCH --array=0-10',
         '#SBATCH --partition=long',
         '#SBATCH --mem-per-cpu=16GB'
     ]
@@ -114,7 +114,7 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     #SBATCH --chdir={running_analysis_dir}
     #SBATCH --output=log/slurm_01807.%4a_%A.out
     #SBATCH --error=log/slurm_01807.%4a_%A.err
-    #SBATCH --array=0-18
+    #SBATCH --array=0-10
     #SBATCH --partition=long
     #SBATCH --mem-per-cpu=16GB""")
     assert header == output_string2
@@ -132,7 +132,7 @@ def test_create_job_template_scheduler(sequence_list):
     #SBATCH --chdir={Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0
     #SBATCH --output=log/slurm_01807.%4a_%A.out
     #SBATCH --error=log/slurm_01807.%4a_%A.err
-    #SBATCH --array=0-18
+    #SBATCH --array=0-10
     #SBATCH --partition={cfg.get('SLURM', 'PARTITION_DATA')}
     #SBATCH --mem-per-cpu={cfg.get('SLURM', 'MEMSIZE_DATA')}
 

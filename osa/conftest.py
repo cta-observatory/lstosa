@@ -103,11 +103,12 @@ def sequence_list(running_analysis_dir, run_summary):
 
 
 @pytest.fixture(scope="session")
-def sequence_file(running_analysis_dir):
+def sequence_file_list(running_analysis_dir):
     run_program("sequencer", "-d", "2020_01_17", "--no-submit", "-t", "LST1")
     return [
         running_analysis_dir / "sequence_LST1_01805.py",
         running_analysis_dir / "sequence_LST1_01807.py",
+        running_analysis_dir / "sequence_LST1_01808.py",
     ]
 
 
