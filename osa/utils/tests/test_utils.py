@@ -112,3 +112,29 @@ def test_time_to_seconds():
     assert seconds == 2 * 3600 + 27 * 60 + 15
     seconds = time_to_seconds("27:15")
     assert seconds == 27 * 60 + 15
+    assert time_to_seconds(None) == 0
+
+    with pytest.raises(ValueError):
+        time_to_seconds("12.11.11")
+
+
+def test_stringify():
+    from osa.utils.utils import stringify
+    assert stringify(["command", "foo", "--bar"]) == "command foo --bar"
+
+
+def test_gettag():
+    from osa.utils.utils import gettag
+    assert gettag() == "test_utils.py(test_gettag)"
+
+
+def test_get_lock_file(base_test_dir):
+    from osa.utils.utils import get_lock_file
+    assert get_lock_file() == base_test_dir / "OSA/Closer/20200117/v0.1.0/NightFinished.txt"
+
+
+def test_create_lock(base_test_dir):
+    from osa.utils.utils import create_lock
+    lock_path = base_test_dir / "test_lock.closed"
+    is_closed = create_lock(lock_path)
+    assert is_closed is False
