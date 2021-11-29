@@ -37,7 +37,6 @@ def parse_variables(class_instance):
     dl1_dir = cfg.get("LST1", "DL1_DIR")
     dl2_dir = cfg.get("LST1", "DL2_DIR")
     nightdir = lstdate_to_dir(options.date)
-    analysis_dir = Path(cfg.get("LST1", "ANALYSIS_DIR")) / nightdir / options.prod_id
     outdir_dl1 = Path(dl1_dir) / nightdir / options.prod_id / options.dl1_prod_id
     outdir_dl2 = Path(dl2_dir) / nightdir / options.prod_id / options.dl2_prod_id
 
@@ -69,8 +68,8 @@ def parse_variables(class_instance):
         class_instance.TimeCalibrationFile = str(
             calibration_path / timecalibration_filename
         )
-        class_instance.PointingFile = class_instance.args[3]
-        class_instance.RunSummaryFile = os.path.basename(class_instance.args[4])
+        class_instance.PointingFile = str(class_instance.args[3])
+        class_instance.RunSummaryFile = str(class_instance.args[4])
         class_instance.DL1SubrunDataset = (
             f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[5]}.h5"
         )
@@ -105,7 +104,7 @@ def parse_variables(class_instance):
             f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[0]}.h5"
         )
         class_instance.MuonsSubrunDataset = (
-            f"{analysis_dir}/muons_LST-1.Run{class_instance.args[0]}.fits"
+            f"{outdir_dl1}/muons_LST-1.Run{class_instance.args[0]}.fits"
         )
         class_instance.DL1CheckSubrunDataset = (
             f"{outdir_dl1}/datacheck_dl1_LST-1.Run{class_instance.args[0]}.h5"
