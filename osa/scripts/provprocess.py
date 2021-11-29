@@ -226,79 +226,85 @@ def parse_lines_run(filter_step, prov_lines, out):
     if end_time_line:
         working_lines.append(end_time_line)
         if r0filepath_str and filter_step == "r0_to_dl1":
-            entity_id = get_file_hash(r0filepath_str + "r0", buffer="path")
+            r0_entity_id = get_file_hash(r0filepath_str + "r0", buffer="path")
             r0filepath_str = r0filepath_str.replace(PurePath(r0filepath_str).name, "")
-            used = {"entity_id": entity_id}
+            used = {"entity_id": r0_entity_id}
             used.update({"name": "R0Collection"})
             used.update({"type": "SetCollection"})
             used.update({"size": size})
             used.update({"filepath": r0filepath_str})
             working_lines.append(used)
             used = {"activity_id": id_activity_run}
-            used.update({"used_id": entity_id})
+            used.update({"used_id": r0_entity_id})
             used.update({"used_role": "R0 Collection"})
             working_lines.append(used)
         if dl1filepath_str:
             dl1filepath_str = dl1filepath_str.replace(PurePath(dl1filepath_str).name, "")
-            entity_id = get_file_hash(dl1filepath_str + "dl1", buffer="path")
-            dl1 = {"entity_id": entity_id}
+            dl1_entity_id = get_file_hash(dl1filepath_str + "dl1", buffer="path")
+            dl1 = {"entity_id": dl1_entity_id}
             dl1.update({"name": "DL1Collection"})
             dl1.update({"type": "SetCollection"})
             dl1.update({"size": size})
             dl1.update({"filepath": dl1filepath_str})
             working_lines.append(dl1)
-        if dl1filepath_str and filter_step in ["r0_to_dl1", "dl1ab"]:
-            generated = {"activity_id": id_activity_run}
-            generated.update({"generated_id": entity_id})
-            generated.update({"generated_role": "DL1 Collection"})
-            working_lines.append(generated)
-        if dl1filepath_str and filter_step in ["dl1_to_dl2", "dl1ab"]:
-            used = {"activity_id": id_activity_run}
-            used.update({"used_id": entity_id})
-            used.update({"used_role": "DL1 Collection"})
-            working_lines.append(used)
-        if dl1filepath_str and filter_step == "dl1_datacheck":
-            used = {"activity_id": id_activity_run}
-            used.update({"used_id": entity_id})
-            used.update({"used_role": "DL1 Collection"})
-            working_lines.append(used)
-        if mufilepath_str and filter_step == "dl1_datacheck":
+        if mufilepath_str:
             mufilepath_str = mufilepath_str.replace(PurePath(mufilepath_str).name, "")
-            entity_id = get_file_hash(mufilepath_str + "muons", buffer="path")
-            muons = {"entity_id": entity_id}
-            muons.update({"name": "MuonsCollectionRun"})
+            mu_entity_id = get_file_hash(mufilepath_str + "muons", buffer="path")
+            muons = {"entity_id": mu_entity_id}
+            muons.update({"name": "MuonsCollection"})
             muons.update({"type": "SetCollection"})
             muons.update({"size": size})
             muons.update({"filepath": mufilepath_str})
             working_lines.append(muons)
+        if mufilepath_str and filter_step == "r0_to_dl1":
+            generated = {"activity_id": id_activity_run}
+            generated.update({"generated_id": mu_entity_id})
+            generated.update({"generated_role": "Muons Collection"})
+            working_lines.append(generated)
+        if dl1filepath_str and filter_step in ["r0_to_dl1", "dl1ab"]:
+            generated = {"activity_id": id_activity_run}
+            generated.update({"generated_id": dl1_entity_id})
+            generated.update({"generated_role": "DL1 Collection"})
+            working_lines.append(generated)
+        if dl1filepath_str and filter_step in ["dl1_to_dl2", "dl1ab"]:
             used = {"activity_id": id_activity_run}
-            used.update({"used_id": entity_id})
+            used.update({"used_id": dl1_entity_id})
+            used.update({"used_role": "DL1 Collection"})
+            working_lines.append(used)
+        if dl1filepath_str and filter_step == "dl1_datacheck":
+            used = {"activity_id": id_activity_run}
+            used.update({"used_id": dl1_entity_id})
+            used.update({"used_role": "DL1 Collection"})
+            working_lines.append(used)
+        if mufilepath_str and filter_step == "dl1_datacheck":
+            used = {"activity_id": id_activity_run}
+            used.update({"used_id": mu_entity_id})
             used.update({"used_role": "Muons Collection"})
             working_lines.append(used)
         if ckfilepath_str and filter_step == "dl1_datacheck":
             ckfilepath_str = ckfilepath_str.replace(PurePath(ckfilepath_str).name, "")
-            entity_id = get_file_hash(ckfilepath_str + "check", buffer="path")
-            dl1check = {"entity_id": entity_id}
+            chk_entity_id = get_file_hash(ckfilepath_str + "check", buffer="path")
+            dl1check = {"entity_id": chk_entity_id}
             dl1check.update({"name": "DL1CheckCollection"})
             dl1check.update({"type": "SetCollection"})
             dl1check.update({"size": size})
             dl1check.update({"filepath": ckfilepath_str})
             working_lines.append(dl1check)
             generated = {"activity_id": id_activity_run}
-            generated.update({"generated_id": entity_id})
+            generated.update({"generated_id": chk_entity_id})
             generated.update({"generated_role": "DL1Checks Collection"})
             working_lines.append(generated)
         if dl2filepath_str and filter_step == "dl1_to_dl2":
-            entity_id = get_file_hash(dl2filepath_str + "dl2", buffer="path")
+            dl2_entity_id = get_file_hash(dl2filepath_str + "dl2", buffer="path")
             dl2filepath_str = dl2filepath_str.replace(PurePath(dl2filepath_str).name, "")
-            used = {"entity_id": entity_id}
+            used = {"entity_id": dl2_entity_id}
             used.update({"name": "DL2Collection"})
             used.update({"type": "SetCollection"})
             used.update({"size": size})
             used.update({"filepath": dl2filepath_str})
             working_lines.append(used)
             used = {"activity_id": id_activity_run}
-            used.update({"generated_id": entity_id})
+            used.update({"generated_id": dl2_entity_id})
             used.update({"generated_role": "DL2 Collection"})
             working_lines.append(used)
 

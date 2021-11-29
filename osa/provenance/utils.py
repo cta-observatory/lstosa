@@ -73,6 +73,9 @@ def parse_variables(class_instance):
         class_instance.DL1SubrunDataset = (
             f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[5]}.h5"
         )
+        class_instance.MuonsSubrunDataset = (
+            f"{outdir_dl1}/muons_LST-1.Run{class_instance.args[5]}.fits"
+        )
 
     if class_instance.__name__ == "dl1ab":
         # run_str       [0] 02006.0000

@@ -102,11 +102,24 @@ activities:
               value: DL1SubrunDataset
               # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
 
+            - role: "Muons subrun dataset"
+              description: "Muons dataset for a given observation subrun"
+              entityName: MuonsSubrunDataset
+              value: MuonsSubrunDataset
+             # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/muons_LST-1.Run06275.0060.fits
+
             # - role: "DL1 Collection"
             #   description: "Set of DL1 files for a given run"
             #   entityName: Dl1Collection
             #   value: DL1Collection
             #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84
+            #   size: 128
+
+            # - role: "Muons Collection"
+            #   description: "Set of muons files for a given run"
+            #   entityName: MuonsCollection
+            #   value: MuonsCollection
+            #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
             #   size: 128
 
     dl1ab:
