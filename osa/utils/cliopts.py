@@ -12,7 +12,6 @@ from osa.utils.utils import (
     get_calib_prod_id,
     get_dl1_prod_id,
     get_dl2_prod_id,
-    get_lstchain_version,
     get_prod_id,
     getcurrentdate,
     night_directory,
