@@ -12,7 +12,6 @@ from osa.utils.utils import (
     get_calib_prod_id,
     get_dl1_prod_id,
     get_dl2_prod_id,
-    get_lstchain_version,
     get_prod_id,
     getcurrentdate,
     night_directory,
@@ -472,8 +471,6 @@ def data_sequence_cli_parsing():
     else:
         options.dl2_prod_id = options.prod_id
 
-    options.lstchain_version = get_lstchain_version()
-
     return (
         opts.calib_file,
         opts.drs4_ped_file,
@@ -767,7 +764,6 @@ def provprocessparsing():
     options.configfile = os.path.abspath(opts.configfile)
     options.filter = opts.filter
     options.quit = opts.quit
-    options.lstchain_version = get_lstchain_version()
 
     if cfg.get("LST1", "DL1_PROD_ID") is not None:
         options.dl1_prod_id = get_dl1_prod_id()

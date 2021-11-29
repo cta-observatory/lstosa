@@ -15,7 +15,6 @@ verbose = None
 warning = None
 nocheck = None
 no_dl2 = None
-lstchain_version = None
 prod_id = None
 calib_prod_id = None
 dl1_prod_id = None

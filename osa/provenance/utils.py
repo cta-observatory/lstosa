@@ -9,7 +9,7 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.utils import lstdate_to_dir
+from osa.utils.utils import get_lstchain_version, lstdate_to_dir
 
 __all__ = ["parse_variables", "get_log_config", "store_conda_env_export"]
 
@@ -50,7 +50,7 @@ def parse_variables(class_instance):
 
         class_instance.ObservationRun = class_instance.args[5].split(".")[0]
         class_instance.ObservationDate = nightdir
-        class_instance.SoftwareVersion = options.lstchain_version
+        class_instance.SoftwareVersion = get_lstchain_version()
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile
 
@@ -83,7 +83,7 @@ def parse_variables(class_instance):
         class_instance.Analysisconfigfile_dl1 = configfile_dl1
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
         class_instance.ObservationDate = nightdir
-        class_instance.SoftwareVersion = options.lstchain_version
+        class_instance.SoftwareVersion = get_lstchain_version()
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile
 
@@ -99,7 +99,7 @@ def parse_variables(class_instance):
 
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
         class_instance.ObservationDate = nightdir
-        class_instance.SoftwareVersion = options.lstchain_version
+        class_instance.SoftwareVersion = get_lstchain_version()
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile
 
@@ -125,7 +125,7 @@ def parse_variables(class_instance):
         class_instance.Analysisconfigfile_dl2 = configfile_dl2
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
         class_instance.ObservationDate = nightdir
-        class_instance.SoftwareVersion = options.lstchain_version
+        class_instance.SoftwareVersion = get_lstchain_version()
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile
 
