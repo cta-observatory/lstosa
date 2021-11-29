@@ -42,12 +42,12 @@ def provlist2provdoc(provlist):
                     "prov:label": provdict.pop("name"),
                     "prov:type": "ExecutionSession",
                     "prov:generatedAtTime": provdict.pop("startTime"),
-                    # 'configFile': provdict.pop('configFile'),
-                    # "system": str(provdict.pop('system')),
-                    # "script": provdict.pop("script"),
                     "software_version": provdict.pop("software_version"),
                     "observation_date": provdict.pop("observation_date"),
                     "observation_run": provdict.pop("observation_run"),
+                    "config_file": provdict.pop("config_file"),
+                    "config_file_hash": provdict.pop("config_file_hash"),
+                    "config_file_hash_type": provdict.pop("config_file_hash_type"),
                 }
             )
         # activity

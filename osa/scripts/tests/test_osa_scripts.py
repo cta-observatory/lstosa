@@ -17,7 +17,8 @@ ALL_SCRIPTS = [
     "copy_datacheck",
     "datasequence",
     "show_run_summary",
-    "provprocess"
+    "provprocess",
+    "simulate_processing"
 ]
 
 
@@ -182,8 +183,8 @@ def test_calibrationsequence(r0_data, running_analysis_dir):
     options.directory = running_analysis_dir
 
     # Check that the R0 files corresponding to calibration run exists
-    assert r0_data[0].exists()
-    assert r0_data[1].exists()
+    for files in r0_data:
+        assert os.path.exists(files)
 
     output = run_program(
         "calibrationsequence",
@@ -228,7 +229,7 @@ def test_calibration_file_command(r0_data, test_calibration_data, running_analys
     from osa.scripts.calibrationsequence import calibration_file_command
     options.directory = running_analysis_dir
     calibration_run = "01806"
-    input_file = r0_data[1]
+    input_file = r0_data[2]  # Corresponds to run 01806
     calibration_output_file = Path(test_calibration_data[0])
     drs4_pedestal_file = Path(test_calibration_data[1])
     ffactor_systematics = cfg.get("lstchain", "ffactor_systematics")

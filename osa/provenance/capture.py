@@ -11,6 +11,7 @@ import uuid
 from functools import wraps
 from pathlib import Path
 
+import pkg_resources
 import psutil
 import yaml
 
@@ -189,9 +190,10 @@ def get_file_hash(str_path, buffer=get_hash_buffer(), method=get_hash_method()):
             file_hash = hash_func.hexdigest()
             logger.debug(f"File entity {str_path} has {method} hash {file_hash}")
             return file_hash
-        else:
-            logger.warning(f"File entity {str_path} not found")
-            return str_path
+
+        logger.warning(f"File entity {str_path} not found")
+        return str_path
+
     if not file_hash:
         hash_func.update(str(full_path).encode())
         return hash_func.hexdigest()
@@ -319,6 +321,14 @@ def get_item_properties(nested, item):
     return properties
 
 
+def get_python_packages():
+    """Return the collection of dependencies available for importing."""
+    return [
+        {"name": p.project_name, "version": p.version, "path": p.module_path}
+        for p in sorted(pkg_resources.working_set, key=lambda p: p.project_name)
+    ]
+
+
 def log_prov_info(prov_dict):
     """Write a dictionary to the logger."""
     prov_dict["session_tag"] = session_tag  # OSA specific session tag
@@ -347,10 +357,14 @@ def log_session(class_instance, start):
             "startTime": start,
             "system": system,
             # OSA specific
-            # "script": sys.argv[0]     # we could have different scripts in a session
             "software_version": class_instance.SoftwareVersion,
             "observation_date": class_instance.ObservationDate,
             "observation_run": class_instance.ObservationRun,  # a session is run-wise
+            "config_file": class_instance.ProcessingConfigFile,
+            "config_file_hash": get_file_hash(
+                class_instance.ProcessingConfigFile, buffer="path"
+            ),
+            "config_file_hash_type": get_hash_method(),
         }
         log_prov_info(log_record)
     return session_id
@@ -381,12 +395,15 @@ def get_derivation_records(class_instance, activity):
     for var, pair in traced_entities.items():
         entity_id, item = pair
         value = get_nested_value(class_instance, var)
-        new_id = get_entity_id(value, item)
-        if new_id != entity_id:
-            log_record = {"entity_id": new_id, "progenitor_id": entity_id}
-            records.append(log_record)
-            traced_entities[var] = (new_id, item)
-            logger.warning(f"Derivation detected in {activity} for {var}. ID: {new_id}")
+        if value:
+            new_id = get_entity_id(value, item)
+            if new_id != entity_id:
+                log_record = {"entity_id": new_id, "progenitor_id": entity_id}
+                records.append(log_record)
+                traced_entities[var] = (new_id, item)
+                logger.warning(
+                    f"Derivation detected in {activity} for {var}. ID: {new_id}"
+                )
     return records
 
 
@@ -452,9 +469,7 @@ def log_generation(class_instance, activity, activity_id):
             if "role" in item:
                 log_record.update({"generated_role": item["role"]})
             # record entity
-            log_record_ent = {
-                "entity_id": entity_id,
-            }
+            log_record_ent = {"entity_id": entity_id}
             if "entityName" in item:
                 log_record_ent.update({"name": item["entityName"]})
             for prop in props:
@@ -483,9 +498,7 @@ def log_members(entity_id, subitem, class_instance):
                 "member_id": mem_id,
             }
             # record entity
-            log_record_ent = {
-                "entity_id": mem_id,
-            }
+            log_record_ent = {"entity_id": mem_id}
             if "entityName" in subitem:
                 log_record_ent.update({"name": subitem["entityName"]})
             for prop in props:
@@ -510,9 +523,7 @@ def log_progenitors(entity_id, subitem, class_instance):
                 "progenitor_id": progen_id,
             }
             # record entity
-            log_record_ent = {
-                "entity_id": progen_id,
-            }
+            log_record_ent = {"entity_id": progen_id}
             for prop in props:
                 log_record_ent.update({prop: props[prop]})
             log_prov_info(log_record_ent)
@@ -605,6 +616,7 @@ def get_system_provenance():
             version=platform.python_version(),
             compiler=platform.python_compiler(),
             implementation=platform.python_implementation(),
+            packages=get_python_packages(),
         ),
         environment=get_env_vars(),
         arguments=sys.argv,

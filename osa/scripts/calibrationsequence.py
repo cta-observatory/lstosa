@@ -182,14 +182,14 @@ def drs4_pedestal(
     -------
     Return code
     """
+    if options.simulate:
+        return 0
+
     input_file = get_input_file(run_ped)
     output_file = Path(options.directory) / pedestal_output_file
     calib_configfile = Path(cfg.get("lstchain", "calibration_config"))
 
     command_args = drs4_pedestal_command(input_file, output_file, max_events)
-
-    if options.simulate:
-        return 0
 
     rc = run_program_with_history_logging(
         command_args,
@@ -245,6 +245,9 @@ def calibrate_charge(
     rc: str
         Return code
     """
+    if options.simulate:
+        return 0
+
     calib_configfile = Path(cfg.get("lstchain", "calibration_config"))
     command_args = calibration_file_command(
         calibration_run,
@@ -253,9 +256,6 @@ def calibrate_charge(
         calibration_output_file,
         run_summary
     )
-
-    if options.simulate:
-        return 0
 
     rc = run_program_with_history_logging(
         command_args,

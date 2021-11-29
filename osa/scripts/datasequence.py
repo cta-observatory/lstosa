@@ -156,6 +156,7 @@ def r0_to_dl1(
     )
 
 
+@trace
 def dl1ab(run_str: str, history_file: Path):
     """
     Prepare and launch the actual lstchain script that is performing
@@ -207,6 +208,7 @@ def dl1ab(run_str: str, history_file: Path):
     )
 
 
+@trace
 def dl1_datacheck(run_str: str, history_file: Path):
     """
     Run datacheck script

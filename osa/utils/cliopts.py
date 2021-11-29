@@ -805,15 +805,15 @@ def simproc_argparser():
         dest="append",
         help="append provenance capture to existing prov.log file",
     )
-    parser.add_argument(
-        "-d",
-        "--date",
-        action="store",
-        type=str,
-        dest="date",
-        help="observation ending date YYYY_MM_DD [default today]",
-    )
-    parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
+    # parser.add_argument(
+    #     "-d",
+    #     "--date",
+    #     action="store",
+    #     type=str,
+    #     dest="date",
+    #     help="observation ending date YYYY_MM_DD [default today]",
+    # )
+    # parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
 
     return parser
 
@@ -823,8 +823,6 @@ def simprocparsing():
 
     # set global variables
     options.prod_id = get_prod_id()
-    options.tel_id = opts.tel_id
-    options.date = opts.date
     options.configfile = opts.configfile
     options.provenance = opts.provenance
     options.force = opts.force
