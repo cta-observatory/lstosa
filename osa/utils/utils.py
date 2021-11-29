@@ -118,9 +118,7 @@ def get_lstchain_version():
     lstchain_version: string
     """
     from lstchain import __version__
-
-    options.lstchain_version = "v" + __version__
-    return options.lstchain_version
+    return "v" + __version__
 
 
 def get_prod_id():
