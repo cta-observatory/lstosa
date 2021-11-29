@@ -11,8 +11,8 @@ def test_finished_assignments(sequence_list):
     assert finished_dict["NIGHT"] == "2020_01_17"
     assert finished_dict["TELESCOPE"] == "LST1"
     assert finished_dict["RAW_GB"] == 0
-    assert finished_dict["FILES_RAW"] == 986
-    assert finished_dict["SEQUENCES"] == 21
+    assert finished_dict["FILES_RAW"] == 25
+    assert finished_dict["SEQUENCES"] == 3
 
 
 def test_history(base_test_dir):
