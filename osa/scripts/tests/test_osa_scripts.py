@@ -5,6 +5,7 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
+import yaml
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -63,10 +64,22 @@ def test_simulate_processing():
 
     assert prov_file_dl1.exists()
     assert prov_file_dl2.exists()
-    assert json_file_dl1.exists()
-    assert json_file_dl2.exists()
     assert pdf_file_dl1.exists()
     assert pdf_file_dl2.exists()
+
+    with open(json_file_dl1) as file:
+        dl1 = yaml.safe_load(file)
+    assert len(dl1["entity"]) == 11
+    assert len(dl1["activity"]) == 2
+    assert len(dl1["used"]) == 9
+    assert len(dl1["wasGeneratedBy"]) == 3
+
+    with open(json_file_dl2) as file:
+        dl2 = yaml.safe_load(file)
+    assert len(dl2["entity"]) == 20
+    assert len(dl2["activity"]) == 4
+    assert len(dl2["used"]) == 17
+    assert len(dl2["wasGeneratedBy"]) == 8
 
     rc = run_program("simulate_processing", "-p")
     assert rc.returncode == 0
