@@ -55,6 +55,6 @@ jobs:
           pytest --basetemp=test_osa -v --cov --cov-report=xml
 
       - name: Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v1
         with:
           functionalities: gcov
