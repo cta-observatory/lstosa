@@ -34,8 +34,8 @@ jobs:
           echo "Creating conda env"
           conda env create -n ci -f environment.yml
           conda activate ci
-          pip install pyflakes
           echo "Installing additional pip packages"
+          pip install pyflakes
           echo "pip install ."
           pip install .
 
@@ -45,12 +45,12 @@ jobs:
           mkdir -p "$(python -m site --user-site)"
           echo "import coverage; coverage.process_startup()" > "$(python -m site --user-site)/sitecustomize.py"
 
-      - name: Run pyflakes
-        # need to use a login shell for the conda setup to work
-        run: |
-          . $CONDA/etc/profile.d/conda.sh
-          conda activate ci
-          pyflakes osa
+#      - name: Run pyflakes
+#        # need to use a login shell for the conda setup to work
+#        run: |
+#          . $CONDA/etc/profile.d/conda.sh
+#          conda activate ci
+#          pyflakes osa
 
       - name: Tests
         run: |
