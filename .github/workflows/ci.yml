@@ -60,13 +60,15 @@ jobs:
           # as specified in https://coverage.readthedocs.io/en/latest/subprocess.html
           # to initialize the coverage start up.
           echo "create customize.py file in folder..."
-          echo $(python -c "import site; print(''.join(site.getsitepackages()))")
-          mkdir -p $(python -c "import site; print(''.join(site.getsitepackages()))")
-          echo "import coverage; coverage.process_startup()" > $(python -c "import site; print(''.join(site.getsitepackages()))")/sitecustomize.py
-          cat $(python -c "import site; print(''.join(site.getsitepackages()))")/sitecustomize.py
+          echo $PYTHONPATH
 
-          pytest --basetemp=test_osa -v --cov --cov-report=xml osa
-          cat coverage.xml
+#          echo $(python -c "import site; print(''.join(site.getsitepackages()))")
+#          mkdir -p $(python -c "import site; print(''.join(site.getsitepackages()))")
+#          echo "import coverage; coverage.process_startup()" > $(python -c "import site; print(''.join(site.getsitepackages()))")/sitecustomize.py
+#          cat $(python -c "import site; print(''.join(site.getsitepackages()))")/sitecustomize.py
 
-      - name: Codecov
-        uses: codecov/codecov-action@v2
+#          pytest --basetemp=test_osa -v --cov --cov-report=xml osa
+#          cat coverage.xml
+#
+#      - name: Codecov
+#        uses: codecov/codecov-action@v2
