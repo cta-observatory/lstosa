@@ -30,7 +30,10 @@ def remove_provlog():
 
 
 def run_program(*args):
-    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8", check=True)
+
+    env = os.environ.copy()
+    env['COVERAGE_PROCESS_START'] = 'true'
+    result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8", check=True, env=env)    
 
     if result.returncode != 0:
         raise ValueError(
