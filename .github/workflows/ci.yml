@@ -48,7 +48,7 @@ jobs:
 
       - name: Tests
         env:
-          COVERAGE_PROCESS_START: True
+          COVERAGE_PROCESS_START: .coveragerc
           PYTHONPATH: .
 
         run: |
