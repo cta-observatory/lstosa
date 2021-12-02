@@ -1,17 +1,15 @@
 lstosa |ci| |docs| |coverage| |precommit| |quality|
 ============================================================
 
-.. |docs| image:: https://readthedocs.org/projects/lstosa-test2/badge/?version=latest 
-  :target: https://lstosa-test2.readthedocs.io/en/latest/?badge=latest 
+.. |docs| image:: https://readthedocs.org/projects/lstosa/badge/?version=latest
+  :target: https://lstosa.readthedocs.io/en/latest/?badge=latest
   :alt: Documentation Status
   
-.. |ci| image:: https://github.com/gae-ucm/lstosa/actions/workflows/ci.yml/badge.svg?branch=main
-  :target: https://github.com/gae-ucm/lstosa/actions/workflows/ci.yml
+.. |ci| image:: https://github.com/cta-observatory/lstosa/actions/workflows/ci.yml/badge.svg?branch=main
+  :target: https://github.com/cta-observatory/lstosa/actions/workflows/ci.yml
 
-.. |coverage| image:: https://codecov.io/gh/gae-ucm/lstosa/branch/main/graph/badge.svg
-  :target: https://codecov.io/gh/gae-ucm/lstosa
-  
-.. |precommit| image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
+.. |coverage| image:: https://codecov.io/gh/cta-observatory/lstosa/branch/main/graph/badge.svg?token=Zjk1U1ytaG
+  :target: https://codecov.io/gh/cta-observatory/lstosa
 
 .. |quality| image:: https://app.codacy.com/project/badge/Grade/5b660e2b9de84a839085923a2b052d47
   :target: https://www.codacy.com/gh/gae-ucm/lstosa/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gae ucm/lstosa&amp;utm_campaign=Badge_Grade
