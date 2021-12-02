@@ -20,7 +20,7 @@ Config
 It reads the ``.cfg`` file containing the paths and configuration parameters. An example
 of this LSTOSA config file can be found in the repository `cfg/sequencer.cfg`_.
 
-.. _`cfg/sequencer.cfg`: https://gitlab.cta-observatory.org/cta-array-elements/lst/analysis/lstosa/-/blob/master/cfg/sequencer.cfg
+.. _`cfg/sequencer.cfg`: https://github.com/cta-observatory/lstosa/blob/main/cfg/sequencer.cfg
 
 
 Reference/API
