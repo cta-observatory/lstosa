@@ -52,6 +52,28 @@
 #
 
 activities:
+    drs4_pedestal:
+        description:
+            "Create pedestal file"
+        parameters:
+        usage:
+            - role: "Subrun for pedestal"
+              description: "Raw observation file for pedestal"
+              entityName: RawObservationFile
+              value: RawObservationFilePedestal
+#              filepath: /fefs/aswg/data/real/R0/20210913/LST-1.1.Run06268.0000.fits.fz
+        generation:
+            - role: "Pedestal"
+              description: "Pedestal calibration file"
+              entityName: PedestalFile
+              value: PedestalFile
+#              filepath:  /fefs/aswg/data/real/calibration/20210913/v0.7.5/drs4_pedestal.Run06268.0000.fits
+            - role: "Check plot for pedestal"
+              description: "Pedestal check plot"
+              entityName: PedestalCheckPlot
+              value: PedestalCheckPlot
+#              filepath: /fefs/aswg/data/real/calibration/20210913/v0.7.5/log/drs4_pedestal.Run02068.0000.pdf
+
     r0_to_dl1:
         description:
             "Create DL1 files for an observation run and subrun"
