@@ -52,6 +52,7 @@ LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 PROV_PREFIX = provconfig["PREFIX"]
 SUPPORTED_HASH_METHOD = ["md5"]
 SUPPORTED_HASH_BUFFER = ["content", "path"]
+REDUCTION_TASKS = ["r0_to_dl1", "dl1ab", "dl1_datacheck", "dl1_to_dl2"]
 
 # global variables
 sessions = set()
@@ -99,8 +100,14 @@ def trace(func):
         # variables parsing
         global session_name, session_tag
         class_instance = parse_variables(class_instance)
-        session_tag = f"{activity}:{class_instance.ObservationRun}"
-        session_name = f"{class_instance.ObservationRun}"
+        if class_instance.__name__ in REDUCTION_TASKS:
+            session_tag = f"{activity}:{class_instance.ObservationRun}"
+            session_name = f"{class_instance.ObservationRun}"
+        else:
+            session_tag = f"{activity}:{class_instance.PedestalRun}-{class_instance.CalibrationRun}"
+            session_name = f"{class_instance.PedestalRun}-{class_instance.CalibrationRun}"
+        # OSA specific
+        # variables parsing
 
         # provenance capture before execution
         derivation_records = get_derivation_records(class_instance, activity)
@@ -357,15 +364,18 @@ def log_session(class_instance, start):
             "startTime": start,
             "system": system,
             # OSA specific
-            "software_version": class_instance.SoftwareVersion,
             "observation_date": class_instance.ObservationDate,
-            "observation_run": class_instance.ObservationRun,  # a session is run-wise
+            "software_version": class_instance.SoftwareVersion,
             "config_file": class_instance.ProcessingConfigFile,
-            "config_file_hash": get_file_hash(
-                class_instance.ProcessingConfigFile, buffer="path"
-            ),
+            "config_file_hash": get_file_hash(class_instance.ProcessingConfigFile, buffer="path"),
             "config_file_hash_type": get_hash_method(),
         }
+        if class_instance.__name__ in REDUCTION_TASKS:
+            log_record["observation_run"] = class_instance.ObservationRun  # a session is run-wise
+        else:
+            log_record["pedestal_run"] = class_instance.PedestalRun
+            log_record["calibration_run"] = class_instance.CalibrationRun
+
         log_prov_info(log_record)
     return session_id
 
