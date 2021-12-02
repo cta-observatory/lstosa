@@ -1,5 +1,5 @@
-lstosa |ci| |docs| |coverage| |precommit| |quality|
-============================================================
+lstosa |ci| |docs| |coverage| |quality|
+=======================================
 
 .. |docs| image:: https://readthedocs.org/projects/lstosa/badge/?version=latest
   :target: https://lstosa.readthedocs.io/en/latest/?badge=latest
@@ -16,7 +16,7 @@ lstosa |ci| |docs| |coverage| |precommit| |quality|
 
 On-Site processing pipeline for the the Large Size Telescope prototype of CTA_ (Cherenkov Telescope Array).
 
-This code is a prototype data processing framework based on cta-lstchain_ under development.
+This is a prototype data processing framework under development based on cta-lstchain_ .
 
 * Code: https://github.com/cta-observatory/lstosa
 * Docs: https://lstosa.readthedocs.io/
