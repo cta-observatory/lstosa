@@ -17,16 +17,16 @@ lstosa |ci| |docs| |coverage| |precommit| |quality|
   :target: https://www.codacy.com/gh/gae-ucm/lstosa/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=gae ucm/lstosa&amp;utm_campaign=Badge_Grade
 
 
-On-Site analysis pipeline of the the Large Size Telescope prototype of CTA_ (Cherenkov Telescope Array).
+On-Site processing pipeline for the the Large Size Telescope prototype of CTA_ (Cherenkov Telescope Array).
 
 This code is a prototype data processing framework under development.
 
-* Code: https://github.com/gae-ucm/lstosa
+* Code: https://github.com/cta-observatory/lstosa
 * Docs: https://lstosa.readthedocs.io/
 * License: BSD-3-Clause_
 
 .. _CTA: https://www.cta-observatory.org/
-.. _BSD-3-Clause: https://github.com/morcuended/lstosa-test/blob/main/LICENSE
+.. _BSD-3-Clause: https://github.com/cta-observatory/lstosa/blob/main/LICENSE
 
 
 Install
@@ -36,7 +36,7 @@ Install
 
 .. code-block:: bash
 
-   git clone https://github.com/gae-ucm/lstosa.git
+   git clone https://github.com/cta-observatory/lstosa.git
    cd lstosa
    conda env create -n osa -f environment.yml
    conda activate osa
