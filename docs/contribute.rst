@@ -3,26 +3,21 @@
 How to contribute
 *****************
 
-The LSTOSA code and docs reside on this `this GitLab repository`_.
+The LSTOSA code and docs reside on this `this GitHub repository`_.
 If you want to contribute or have any question on how to use it ask its developers.
-You can also use `GitLab Issues`_ to ask or report any problem you may find.
+You can also use `GitHub Issues`_ to ask or report any problem you may find.
 
 If you know nothing about git, we recommend to follow this `guide`_.
 
-.. _`this GitLab repository`: https://gitlab.cta-observatory.org/cta-array-elements/lst/analysis/lstosa
+.. _`this GitHub repository`: https://github.com/cta-observatory/lstosa
 .. _`guide`: https://cta-observatory.github.io/ctapipe/getting_started/index.html
-.. _`GitLab Issues`: https://gitlab.cta-observatory.org/cta-array-elements/lst/analysis/lstosa/-/issues
+.. _`GitHub Issues`: https://github.com/cta-observatory/lstosa/issues
 
 How to build the docs
 =====================
 
 You can find these docs in the ``docs`` folder inside the repository.
-They are build via the `Sphinx`_ package, deployed using `GitLab CI/CD`_ which
-is configured by the file called .gitlab-ci.yml,
-and finally published and hosted in `Read the Docs`_.
-
-.. _`GitLab CI/CD`: https://docs.gitlab.com/ee/ci/README.html
-.. _`Read the Docs`: https://readthedocs.org/
+They are build via the `Sphinx`_ package, deployed and published using `Read The Docs`_.
 
 To build the docs locally on your machine, you need to activate the ``osa-dev``
 environment first. This conda environment can be created using the ``environment.yml``
@@ -40,13 +35,8 @@ Once the environment is activated just run following command inside the ``docs``
 
     make clean html
 
-or for a clean rebuild:
-
-.. code:: bash
-
-    make clean html
-
 .. _`Sphinx`: https://www.sphinx-doc.org/
+.. _`Read the Docs`: https://readthedocs.org/
 
 Python Docstrings
 =================

@@ -4,7 +4,7 @@ Authors
 =======
 
 To see who contributed to LSTOSA repository, please visit the
-`GitLab contributors page <https://gitlab.cta-observatory.org/cta-array-elements/lst/analysis/lstosa/-/graphs/master>`__
+`contributors page <https://github.com/cta-observatory/lstosa/graphs/contributors>`__
 (in alphabetical order):
 
 * Andrés Baquero, UCM, Spain
