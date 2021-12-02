@@ -212,7 +212,7 @@ def get_entity_id(value, item):
         entity_name = item["entityName"]
         entity_type = definition["entities"][entity_name]["type"]
     except Exception as ex:
-        logger.warning(f"{ex} in {item}")
+        logger.warning(f"Not found in model {ex} in {item}")
         entity_name = ""
         entity_type = ""
 
@@ -227,7 +227,8 @@ def get_entity_id(value, item):
         # osa specific hash path
         # async calls does not allow for hash content
         return get_file_hash(value, buffer="path")
-
+        # osa specific hash path
+        # async calls does not allow for hash content
     try:
         entity_id = abs(hash(value) + hash(str(value)))
         if hasattr(value, "entity_version"):
@@ -338,7 +339,9 @@ def get_python_packages():
 
 def log_prov_info(prov_dict):
     """Write a dictionary to the logger."""
-    prov_dict["session_tag"] = session_tag  # OSA specific session tag
+    # OSA specific session tag used in merging prov from parallel sessions
+    prov_dict["session_tag"] = session_tag
+    #
     record_date = datetime.datetime.now().isoformat()
     logger.info(f"{PROV_PREFIX}{record_date}{PROV_PREFIX}{prov_dict}")
 
@@ -351,9 +354,16 @@ def log_session(class_instance, start):
     session_id = abs(hash(class_instance))
     lines = read_prov(filename=LOG_FILENAME)
     for line in lines:
-        if line.get("observation_run", 0) == class_instance.ObservationRun:
+        if class_instance.__name__ in REDUCTION_TASKS:
+            if line.get("observation_run", 0) == class_instance.ObservationRun:
+                session_id = lines[0]["session_id"]
+                sessions.add(session_id)
+        elif line.get("pedestal_run", 0) == class_instance.PedestalRun:
             session_id = lines[0]["session_id"]
             sessions.add(session_id)
+    # OSA specific
+    # prov session is outside scripting and is run-wise
+    # we may have different sessions/runs in the same log file
 
     if session_id not in sessions:
         sessions.add(session_id)
@@ -365,6 +375,7 @@ def log_session(class_instance, start):
             "system": system,
             # OSA specific
             "observation_date": class_instance.ObservationDate,
+            # OSA specific
             "software_version": class_instance.SoftwareVersion,
             "config_file": class_instance.ProcessingConfigFile,
             "config_file_hash": get_file_hash(class_instance.ProcessingConfigFile, buffer="path"),
