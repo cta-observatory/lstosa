@@ -15,7 +15,6 @@ import pkg_resources
 import psutil
 import yaml
 
-from osa.provenance.io import read_prov
 from osa.provenance.utils import get_log_config, parse_variables
 
 # gammapy specific

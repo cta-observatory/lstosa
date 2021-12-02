@@ -212,6 +212,7 @@ def parse_lines_run(filter_step, prov_lines, out):
                 filepath
                 and content_type != "application/x-spss-sav"
                 and name != "DL2MergedFile"
+                and not name.startswith("DL1Check")
                 and not remove
         ):
             copy_used_file(filepath, out)
