@@ -1,3 +1,8 @@
+"""
+Script to handle the automatic closing of the OSA
+checking that all jobs are correctly finished.
+"""
+
 import argparse
 import datetime
 import logging
@@ -92,7 +97,7 @@ def closedFlag(tel):
     return Path(cfg.get(tel, "CLOSER_DIR")) / nightdir / prod_id / basename
 
 
-def exampleSeq(tel):
+def exampleSeq():
     return "./extra/example_sequencer.txt"
 
 
@@ -119,7 +124,7 @@ class Telescope(object):
     Attributes
     ----------
     sequences: list of autocloser.Sequence
-        Holds an Sequence object for each Sequence/Run belonging to the
+        Holds a Sequence object for each Sequence/Run belonging to the
         telescope.
     """
 
@@ -229,8 +234,8 @@ class Telescope(object):
         return True
 
     def read_file(self):
-        log.debug(f"Reading example of a sequencer output {exampleSeq(self.telescope)}")
-        with open(exampleSeq(self.telescope), "r") as self.stdout:
+        log.debug(f"Reading example of a sequencer output {exampleSeq()}")
+        with open(exampleSeq(), "r") as self.stdout:
             stdout_tmp = self.stdout.read()
             log.info(stdout_tmp)
             self.seqLines = stdout_tmp.split("\n")
@@ -290,10 +295,10 @@ class Telescope(object):
         closer = subprocess.Popen(
             closerArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False
         )
-        stdout, stderr = closer.communicate()
+        stdout, _ = closer.communicate()
         if closer.returncode != 0:
             log.warning(
-                f"'closer' returned error code {closer.returncode}! See output: {stdout}"
+                f"closer returned error code {closer.returncode}! See output: {stdout}"
             )
             return False
         self.closed = True
@@ -429,6 +434,7 @@ class Sequence(object):
 # add the sequences to the incidencesDict
 class Incidence(object):
     def __init__(self, telescope):
+        self.header = None
         self.incidencesStereo = None
         self.telescope = telescope
         # known incidences (keys in both dicts have to be unique!):
@@ -510,20 +516,9 @@ class Incidence(object):
 
     def write_incidences(self):
         log.info(f"Writing down incidences for {self.telescope}:")
-        incidences = ""
-        if self.telescope != "ST":
-            for k in self.incidencesMono:
-                if self.incidencesDict[k]:
-                    incidences += self.write_error(
-                        self.incidencesMono[k], self.incidencesDict[k]
-                    )
-        else:
-            for k in self.incidencesStereo:
-                if self.incidencesDict[k]:
-                    incidences += self.write_error(
-                        self.incidencesStereo[k], self.incidencesDict[k]
-                    )
-
+        incidences = "".join(self.write_error(
+                    self.incidencesMono[k], self.incidencesDict[k]
+                ) for k in self.incidencesMono if self.incidencesDict[k])
         log.info(self.header + incidences)
         self.create_incidenceFile(self.header + incidences)
         return
@@ -578,9 +573,12 @@ def understand_sequence(tel, seq):
 def check_for_output_files(path):
     found_files = [re.search("LST-1.Run", file) for file in os.listdir(path)]
     if any(found_files):
-        pass
-        # file_names = [m.group() for m in found_files if m]
-        # file_names_str = ', '.join(file_names)
+        file_names = [m.group() for m in found_files if m]
+        file_names_str = ', '.join(file_names)
+        log.warning(
+            f"Following *LST-1.Run* files found in "
+            f"{path} after closing: {file_names_str}"
+        )
         # sendEmail('WARNING: Following *LST-1.Run* files found '
         #           'in "%s" after closing: %s' % (path, file_names_str))
 
