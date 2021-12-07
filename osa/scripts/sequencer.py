@@ -449,7 +449,7 @@ def output_matrix(matrix: list, padding_space: int):
     padding_space: int
     """
     max_field_length = []
-    for i, row in enumerate(matrix):
+    for row in matrix:
         for j, col in enumerate(row):
             if matrix.index(row) == 0:
                 max_field_length.append(len(str(col)))
