@@ -1,6 +1,5 @@
 """Functions to deal with dates, directories and prod IDs."""
 
-import hashlib
 import inspect
 import logging
 import os
@@ -26,7 +25,6 @@ __all__ = [
     "get_prod_id",
     "date_in_yymmdd",
     "destination_dir",
-    "date_in_yymmdd",
     "get_lock_file",
     "is_defined",
     "destination_dir",
@@ -35,7 +33,6 @@ __all__ = [
     "stringify",
     "gettag",
     "get_calib_prod_id",
-    "get_md5sum_and_copy",
     "get_dl1_prod_id",
     "get_dl2_prod_id",
     "get_night_limit_timestamp",
@@ -284,40 +281,6 @@ def get_night_limit_timestamp():
         log.warning("No night_limit found")
     log.debug(f"Night limit is {night_limit}")
     return night_limit
-
-
-def get_md5sum_and_copy(inputf: Path, outputf: Path):
-    """
-
-    Parameters
-    ----------
-    inputf: pathlib.Path
-    outputf: pathlib.Path
-
-    Returns
-    -------
-    """
-    md5 = hashlib.md5()
-    outputdir = outputf.parent
-    outputdir.mkdir()
-    # in case of being a link we just move it
-    if inputf.is_symlink():
-        linkto = inputf.readlink()
-        linkto.symlink_to(outputf)
-        return None
-
-    try:
-        with open(inputf, "rb") as f, open(outputf, "wb") as o:
-            block_size = 8192
-            for chunk in iter(lambda: f.read(128 * block_size), b""):
-                md5.update(chunk)
-                # got this error: write() argument must be str, not bytes
-                o.write(chunk)
-    # except IOError as (ErrorValue, ErrorName):
-    except IOError as error:
-        log.exception(f"{error}", 2)
-    else:
-        return md5.hexdigest()
 
 
 def is_day_closed() -> bool:
