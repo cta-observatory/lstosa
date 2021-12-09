@@ -54,18 +54,24 @@ def update_vetoes(sequence_list):
             log.debug(f"Created veto file {sequence.veto}")
 
 
-def failed_history(history_file) -> bool:
+def failed_history(history_file: Path) -> bool:
     """
     Check if a processing step has failed twice in a given history file.
 
     Return True if the last line of the history file contains a non-zero exit
-    status and is repeated by maximum trials times.
+    status and is repeated twice, meaning that a given step has failed twice.
     """
     history_lines = history_file.read_text().splitlines()
 
+    # Check if history file has at least two trials
+    if len(history_lines) < 2:
+        return False
+
+    # Check if the last line of the history file is repeated twice
+    # and the exit status is non-zero
     return (
         history_lines[-1] == history_lines[-2]
-        and history_lines[-1].split() != "0"
+        and history_lines[-1].split()[-1] != "0"
     )
 
 
