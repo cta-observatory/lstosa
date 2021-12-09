@@ -5,9 +5,9 @@ channels:
   - conda-forge
 dependencies:
   # core dependencies
-  - python=3.7
+  - python=3.8
   - pip
-  - ctapipe~=0.10.5
+  - ctapipe~=0.11
   - protozfits=2.0
   - prov
   - pyyaml
@@ -26,11 +26,11 @@ dependencies:
   - isort
   - sphinx
   - sphinx_rtd_theme
+  - sphinx-automodapi
   - sphinx-argparse
+  - sphinx-autoapi
   - pip:
-      - lstchain~=0.7.5
+      - git+https://github.com/cta-observatory/cta-lstchain
       - pytest_runner
       - pytest-ordering
-      - ctapipe_io_lst~=0.9.3
-      - sphinx-automodapi
-      - sphinx-autoapi
+      - ctapipe_io_lst~=0.11.1

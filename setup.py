@@ -46,8 +46,8 @@ setup(
     extras_require=extras_require,
     install_requires=[
         "astropy~=4.2",
-        "lstchain~=0.7.5",
-        "matplotlib",
+        # "lstchain~=0.7.5",
+        "matplotlib>=3.5",
         "numpy",
         "pandas",
         "pyyaml",
@@ -63,6 +63,5 @@ setup(
             'provenance/config/logger.yaml',
         ],
     },
-    python_requires="~=3.7",
     entry_points=entry_points,
 )
