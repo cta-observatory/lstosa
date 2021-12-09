@@ -3,11 +3,21 @@ from pathlib import Path
 
 def test_failed_history():
     from osa.veto import failed_history
-    good_history_file = Path('./extra/history_files/sequence_LST1_04183.history')
-    bad_history_file = Path('./extra/history_files/sequence_LST1_04183_failed.history')
+    good_history_file = Path(
+        './extra/history_files/sequence_LST1_04183.history'
+    )
+    bad_history_file = Path(
+        './extra/history_files/sequence_LST1_04183_failed.history'
+    )
+    one_line_history_file = Path(
+        './extra/history_files/sequence_LST1_04183_oneline.history'
+    )
+    one_line_history = failed_history(one_line_history_file)
     good_history_failed = failed_history(good_history_file)
     bad_history_failed = failed_history(bad_history_file)
+
     assert good_history_failed is False
+    assert one_line_history is False
     assert bad_history_failed is True
 
 
