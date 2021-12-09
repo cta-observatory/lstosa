@@ -722,9 +722,8 @@ def set_queue_values(
     squeue_info: pd.DataFrame
     sequence_list: list[Sequence object]
     """
-    if sacct_info is None or squeue_info is None or \
-            sequence_list is None:
-        return None
+    if sacct_info.empty and squeue_info.empty or sequence_list is None:
+        return
 
     job_info = pd.concat([sacct_info, squeue_info])
 
