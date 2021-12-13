@@ -764,25 +764,37 @@ def set_queue_values(
             except ValueError:
                 sequence.cputime = None
 
-            if (df_jobid_filtered.State.values == "COMPLETED").all():
-                sequence.state = "COMPLETED"
-                sequence.exit = df_jobid_filtered["ExitCode"].iloc[0]
-            elif (df_jobid_filtered.State.values == "PENDING").all():
-                sequence.state = "PENDING"
-            elif any("FAIL" in job for job in df_jobid_filtered.State):
-                sequence.state = "FAILED"
-                sequence.exit = df_jobid_filtered[
-                    df_jobid_filtered.State.values == "FAILED"
-                ]["ExitCode"].iloc[0]
-            elif any("CANCELLED" in job for job in df_jobid_filtered.State):
-                sequence.state = "CANCELLED"
-                mask = ['CANCELLED' in job for job in df_jobid_filtered.State]
-                sequence.exit = df_jobid_filtered[mask]["ExitCode"].iloc[0]
-            elif any("TIMEOUT" in job for job in df_jobid_filtered.State):
-                sequence.state = "TIMEOUT"
-                sequence.exit = "0:15"
-            elif any("RUNNING" in job for job in df_jobid_filtered.State):
-                sequence.state = "RUNNING"
+            update_sequence_state(sequence, df_jobid_filtered)
+
+
+def update_sequence_state(sequence, filtered_job_info: pd.DataFrame) -> None:
+    """
+    Update the state of the sequence based on the job info.
+
+    Parameters
+    ----------
+    sequence: Sequence object
+    filtered_job_info: pd.DataFrame
+    """
+    if (filtered_job_info.State.values == "COMPLETED").all():
+        sequence.state = "COMPLETED"
+        sequence.exit = filtered_job_info["ExitCode"].iloc[0]
+    elif (filtered_job_info.State.values == "PENDING").all():
+        sequence.state = "PENDING"
+    elif any("FAIL" in job for job in filtered_job_info.State):
+        sequence.state = "FAILED"
+        sequence.exit = filtered_job_info[
+            filtered_job_info.State.values == "FAILED"
+            ]["ExitCode"].iloc[0]
+    elif any("CANCELLED" in job for job in filtered_job_info.State):
+        sequence.state = "CANCELLED"
+        mask = ['CANCELLED' in job for job in filtered_job_info.State]
+        sequence.exit = filtered_job_info[mask]["ExitCode"].iloc[0]
+    elif any("TIMEOUT" in job for job in filtered_job_info.State):
+        sequence.state = "TIMEOUT"
+        sequence.exit = "0:15"
+    elif any("RUNNING" in job for job in filtered_job_info.State):
+        sequence.state = "RUNNING"
 
 
 def run_program_with_history_logging(
