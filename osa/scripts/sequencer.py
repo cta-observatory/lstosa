@@ -18,7 +18,9 @@ from osa.job import (
     prepare_jobs,
     submit_jobs,
     get_sacct_output,
-    get_squeue_output
+    get_squeue_output,
+    run_sacct,
+    run_squeue,
 )
 from osa.nightsummary.extract import (
     extractruns,
@@ -40,6 +42,7 @@ __all__ = [
     "get_status_for_sequence",
     "output_matrix",
     "report_sequences",
+    "update_job_info"
 ]
 
 log = myLogger(logging.getLogger())
@@ -78,7 +81,7 @@ def single_process(telescope):
 
     Returns
     -------
-    sequence_list :
+    sequence_list : list
     """
 
     # Define global variables and create night directory
@@ -103,20 +106,16 @@ def single_process(telescope):
     # modifies run_list by adding the seq and parent info into runs
     sequence_list = extractsequences(run_list)
 
-    # FIXME: Does this makes sense or should be removed?
-    # workflow and submission
+    # Workflow and submission
     # if not options.simulate:
     #     write_workflow(sequence_list)
 
-    # adds the scripts
+    # Adds the scripts
     prepare_jobs(sequence_list)
 
-    if not options.test:
-        set_queue_values(
-            sacct_info=get_sacct_output(),
-            squeue_info=get_squeue_output(),
-            sequence_list=sequence_list
-        )
+    # Update sequences objects with information from SLURM
+    update_job_info(sequence_list)
+
     get_veto_list(sequence_list)
     get_closed_list(sequence_list)
     update_sequence_status(sequence_list)
@@ -131,9 +130,6 @@ def single_process(telescope):
         # rule()
         report_sequences(sequence_list)
 
-    # cleaning
-    # options.directory = None
-    # options.simulate = simulate_save
     return sequence_list
 
 
@@ -150,7 +146,7 @@ def stereo_process(telescope, s1_list, s2_list):
 
     Returns
     -------
-
+    sequence_list : list
     """
     options.tel_id = telescope
     options.directory = set_default_directory_if_needed()
@@ -159,14 +155,13 @@ def stereo_process(telescope, s1_list, s2_list):
     sequence_list = extractsequencesstereo(s1_list, s2_list)
     # Workflow and Submission
     # write_workflow(sequence_list)
+
     # Adds the scripts
     prepare_jobs(sequence_list)
-    if not options.test:
-        set_queue_values(
-            sacct_info=get_sacct_output(),
-            squeue_info=get_squeue_output(),
-            sequence_list=sequence_list
-        )
+
+    # Update sequences objects with information from SLURM
+    update_job_info(sequence_list)
+
     get_veto_list(sequence_list)
     get_closed_list(sequence_list)
     update_sequence_status(sequence_list)
@@ -177,6 +172,26 @@ def stereo_process(telescope, s1_list, s2_list):
     # cleaning
     options.directory = None
     return sequence_list
+
+
+def update_job_info(sequence_list):
+    """
+    Updates the job information from SLURM
+
+    Parameters
+    ----------
+    sequence_list : list
+        List of sequences to be updated
+    """
+    if options.test:
+        return
+
+    sacct_output, squeue_output = run_sacct(), run_squeue()
+    set_queue_values(
+        sacct_info=get_sacct_output(sacct_output),
+        squeue_info=get_squeue_output(squeue_output),
+        sequence_list=sequence_list
+    )
 
 
 def update_sequence_status(seq_list):

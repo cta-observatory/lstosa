@@ -41,6 +41,8 @@ __all__ = [
     "get_sacct_output",
     "get_squeue_output",
     "filter_jobs",
+    "run_sacct",
+    "run_squeue",
 ]
 
 TAB = "\t".expandtabs(4)
