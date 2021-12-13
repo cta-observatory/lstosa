@@ -682,20 +682,18 @@ def run_sacct() -> StringIO:
         return StringIO()
 
     start_date = (datetime.date.today() - datetime.timedelta(weeks=1)).isoformat()
-    return StringIO(subprocess.check_output(
-        [
-            "sacct",
-            "-n",
-            "--parsable2",
-            "--delimiter=,",
-            "--units=G",
-            "--starttime",
-            start_date,
-            "-o",
-            ",".join(FORMAT_SLURM)
-        ]
-    ).decode()
-    )
+    sacct_cmd = [
+        "sacct",
+        "-n",
+        "--parsable2",
+        "--delimiter=,",
+        "--units=G",
+        "--starttime",
+        start_date,
+        "-o",
+        ",".join(FORMAT_SLURM)
+    ]
+    return StringIO(subprocess.check_output(sacct_cmd).decode())
 
 
 def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
