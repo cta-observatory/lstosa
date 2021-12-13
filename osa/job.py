@@ -747,14 +747,12 @@ def set_queue_values(
         df_jobname = job_info_filtered[
             job_info_filtered["JobName"] == sequence.jobname
         ]
-        sequence.tries = len(df_jobname["JobID"].unique())
+        sequence.tries = df_jobname["JobID"].nunique()
         sequence.action = "Check"
 
-        sequence.jobid = df_jobname["JobID"].max()  # Get latest JobID
-
-        df_jobid_filtered = df_jobname[df_jobname["JobID"] == sequence.jobid]
-
-        if not df_jobid_filtered.empty:
+        if not df_jobname.empty:
+            sequence.jobid = df_jobname["JobID"].max()  # Get latest JobID
+            df_jobid_filtered = df_jobname[df_jobname["JobID"] == sequence.jobid]
             try:
                 sequence.cputime = time.strftime(
                     "%H:%M:%S", time.gmtime(

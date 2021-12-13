@@ -279,10 +279,13 @@ def test_set_queue_values(
     assert sequence_list[0].exit is None
     assert sequence_list[0].jobid == 12951086
     assert sequence_list[0].cputime == "00:36:00"
+    assert sequence_list[0].tries == 4
     assert sequence_list[1].state == "PENDING"
-    assert sequence_list[0].exit is None
+    assert sequence_list[1].tries == 2
+    assert sequence_list[1].exit is None
     assert sequence_list[2].state == "PENDING"
-    assert sequence_list[0].exit is None
+    assert sequence_list[2].exit is None
+    assert sequence_list[2].tries == 1
 
 
 def test_plot_job_statistics(sacct_output, running_analysis_dir):
