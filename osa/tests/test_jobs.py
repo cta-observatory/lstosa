@@ -2,13 +2,18 @@ import os
 from pathlib import Path
 from textwrap import dedent
 
+import pytest
+
 from osa.configs import options
 from osa.configs.config import cfg
 
 extra_files = Path(os.getenv("OSA_TEST_DATA", "extra"))
-datasequence_history_file = extra_files / "history_files/" \
-                                          "sequence_LST1_04185.0010.history"
-calibration_history_file = extra_files / "history_files/sequence_LST1_04183.history"
+datasequence_history_file = (
+        extra_files / "history_files/sequence_LST1_04185.0010.history"
+)
+calibration_history_file = (
+        extra_files / "history_files/sequence_LST1_04183.history"
+)
 options.date = "2020_01_17"
 options.tel_id = "LST1"
 
@@ -233,3 +238,58 @@ def test_calibration_history_level():
     )
     assert level == 0
     assert exit_status == 0
+
+
+@pytest.fixture
+def mock_sacct_output():
+    """Mock output of sacct to be able to use it in get_squeue_output function."""
+    return Path("./extra") / 'sacct_output.csv'
+
+
+@pytest.fixture
+def mock_squeue_output():
+    """Mock output of squeue to be able to use it in get_squeue_output function."""
+    return Path("./extra") / 'squeue_output.csv'
+
+
+@pytest.fixture
+def sacct_output(mock_sacct_output):
+    from osa.job import get_sacct_output
+    return get_sacct_output(mock_sacct_output)
+
+
+@pytest.fixture
+def squeue_output(mock_squeue_output):
+    from osa.job import get_squeue_output
+    return get_squeue_output(mock_squeue_output)
+
+
+def test_set_queue_values(
+        sacct_output,
+        squeue_output,
+        sequence_list
+):
+    from osa.job import set_queue_values
+    set_queue_values(
+        sacct_info=sacct_output,
+        squeue_info=squeue_output,
+        sequence_list=sequence_list,
+    )
+    assert sequence_list[0].state == "RUNNING"
+    assert sequence_list[0].exit is None
+    assert sequence_list[0].jobid == 12951086
+    assert sequence_list[0].cputime == "00:36:00"
+    assert sequence_list[1].state == "PENDING"
+    assert sequence_list[0].exit is None
+    assert sequence_list[2].state == "PENDING"
+    assert sequence_list[0].exit is None
+
+
+def test_plot_job_statistics(sacct_output, running_analysis_dir):
+    from osa.job import plot_job_statistics
+    log_dir = running_analysis_dir / "log"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    assert log_dir.exists()
+    plot_job_statistics(sacct_output, log_dir)
+    plot_file = log_dir / "job_statistics.pdf"
+    assert plot_file.exists()
