@@ -289,7 +289,7 @@ def sequence_calibration_filenames(sequence_list):
         sequence.pedestal = Path(options.directory) / pedfile
 
 
-def plot_job_statistics(sacct_output: pd.DataFrame):
+def plot_job_statistics(sacct_output: pd.DataFrame, directory: Path):
     """
     Get statistics of the jobs. Check elapsed time used,
     the memory used, the number of jobs completed, the number of jobs failed,
@@ -299,11 +299,13 @@ def plot_job_statistics(sacct_output: pd.DataFrame):
     Parameters
     ----------
     sacct_output: pd.DataFrame
+    directory: Path
+        Directory to save the plot.
     """
     # TODO: this function will be called in the closer loop after all
     #  the jobs are done for a given production.
 
-    # Plot the an 2D histogram of the used memory (MaxRSS) as a function of the
+    # Plot a 2D histogram of the used memory (MaxRSS) as a function of the
     # elapsed time taking also into account the State of the job.
     sacct_output_filter = sacct_output.copy()
     sacct_output_filter = sacct_output_filter.dropna()
@@ -319,7 +321,9 @@ def plot_job_statistics(sacct_output: pd.DataFrame):
     )
     plt.xlabel("MaxRSS [GB]")
     plt.ylabel("Elapsed time [h]")
-    plt.savefig("job_statistics.pdf")
+    directory.mkdir(exist_ok=True, parents=True)
+    plot_path = directory / "job_statistics.pdf"
+    plt.savefig(plot_path)
 
 
 def scheduler_env_variables(sequence, scheduler="slurm"):
@@ -641,15 +645,23 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     return job_list
 
 
-def get_squeue_output() -> pd.DataFrame:
+def run_squeue() -> StringIO:
+    """Run squeue command to get the status of the jobs."""
+    if shutil.which('squeue') is None:
+        log.warning("No job info available since sacct command is not available")
+        return StringIO()
+
+    out_fmt = "%i,%j,%T,%M"  # JOBID, NAME, STATE, TIME
+    return StringIO(
+        subprocess.check_output(["squeue", "--me", "-o", out_fmt]).decode()
+    )
+
+
+def get_squeue_output(squeue_output: StringIO) -> pd.DataFrame:
     """
     Obtain the current job information from squeue output
     and return a pandas dataframe.
     """
-    out_fmt = "%i,%j,%T,%M"  # JOBID, NAME, STATE, TIME
-    squeue_output = StringIO(
-        subprocess.check_output(["squeue", "--me", "-o", out_fmt]).decode()
-    )
     df = pd.read_csv(squeue_output)
     # Remove the job array part of the jobid
     df["JOBID"] = df["JOBID"].apply(lambda x: x.split("_")[0]).astype("int")
@@ -663,47 +675,48 @@ def get_squeue_output() -> pd.DataFrame:
     return df
 
 
-def get_sacct_output() -> pd.DataFrame:
+def run_sacct() -> StringIO:
+    """Run sacct to obtain the job information."""
+    if shutil.which('sacct') is None:
+        log.warning("No job info available since sacct command is not available")
+        return StringIO()
+
+    start_date = (datetime.date.today() - datetime.timedelta(weeks=1)).isoformat()
+    return StringIO(subprocess.check_output(
+        [
+            "sacct",
+            "-n",
+            "--parsable2",
+            "--delimiter=,",
+            "--units=G",
+            "--starttime",
+            start_date,
+            "-o",
+            ",".join(FORMAT_SLURM)
+        ]
+    ).decode()
+    )
+
+
+def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
     """
-    Fetch the information of jobs in the queue using the sacct SLURM command
+    Fetch the information of jobs in the queue using the sacct SLURM output
     and store it in a pandas dataframe.
 
     Returns
     -------
     queue_list: pd.DataFrame
     """
-    if shutil.which('sacct') is None:
-        log.warning("No job info available since sacct command is not available")
-    else:
-        start_date = (datetime.date.today() - datetime.timedelta(weeks=1)).isoformat()
-        sacct_output = subprocess.check_output(
-            [
-                "sacct",
-                "-n",
-                "--parsable2",
-                "--delimiter=,",
-                "--units=G",
-                "--starttime",
-                start_date,
-                "-o",
-                ",".join(FORMAT_SLURM)
-            ],
-            universal_newlines=True
-        )
-        sacct_output_lines = sacct_output.splitlines()
-        sacct_output = pd.DataFrame(
-            [line.split(",") for line in sacct_output_lines],
-            columns=FORMAT_SLURM
-        )
-        sacct_output["JobID"] = sacct_output["JobID"].apply(lambda x: x.split("_")[0])
-        sacct_output["JobID"] = sacct_output["JobID"].str.strip(".batch").astype(int)
-        return sacct_output
+    sacct_output = pd.read_csv(sacct_output, names=FORMAT_SLURM)
+    sacct_output["JobID"] = sacct_output["JobID"].apply(lambda x: x.split("_")[0])
+    sacct_output["JobID"] = sacct_output["JobID"].str.strip(".batch").astype(int)
+    return sacct_output
 
 
 def filter_jobs(job_info: pd.DataFrame, sequence_list: Iterable):
     """Filter the job info list to get the values of the jobs in the current queue."""
     sequences_info = pd.DataFrame([vars(seq) for seq in sequence_list])
-    # Filter the jobs in the sacct output that are present in the sequence list
+    # Keep the jobs in the sacct output that are present in the sequence list
     return job_info[job_info['JobName'].isin(sequences_info['jobname'])]
 
 
@@ -741,42 +754,35 @@ def set_queue_values(
 
         df_jobid_filtered = df_jobname[df_jobname["JobID"] == sequence.jobid]
 
-        try:
-            sequence.cputime = time.strftime(
-                "%H:%M:%S", time.gmtime(
-                    df_jobid_filtered["CPUTimeRAW"].median(skipna=False)
+        if not df_jobid_filtered.empty:
+            try:
+                sequence.cputime = time.strftime(
+                    "%H:%M:%S", time.gmtime(
+                        df_jobid_filtered["CPUTimeRAW"].median(skipna=False)
+                    )
                 )
-            )
-        except ValueError:
-            sequence.cputime = None
+            except ValueError:
+                sequence.cputime = None
 
-        if (df_jobid_filtered.State.values == "COMPLETED").all():
-            sequence.state = "COMPLETED"
-            sequence.exit = df_jobid_filtered["ExitCode"].iloc[0]
-        elif (df_jobid_filtered.State.values == "PENDING").all():
-            sequence.state = "PENDING"
-            sequence.exit = None
-        elif any("FAIL" in job for job in df_jobid_filtered.State):
-            sequence.state = "FAILED"
-            sequence.exit = df_jobid_filtered[
-                df_jobid_filtered.State.values == "FAILED"
-            ]["ExitCode"].iloc[0]
-        elif any("CANCELLED" in job for job in df_jobid_filtered.State):
-            sequence.state = "CANCELLED"
-            mask = ['CANCELLED' in job for job in df_jobid_filtered.State]
-            sequence.exit = df_jobid_filtered[mask]["ExitCode"].iloc[0]
-        elif any("TIMEOUT" in job for job in df_jobid_filtered.State):
-            sequence.state = "TIMEOUT"
-            sequence.exit = "0:15"
-        elif any("RUNNING" in job for job in df_jobid_filtered.State):
-            sequence.state = "RUNNING"
-            sequence.exit = None
-        log.debug(
-            f"Queue attributes: sequence {sequence.seq}, "
-            f"JobName {sequence.jobname}, "
-            f"JobID {sequence.jobid}, State {sequence.state}, "
-            f"CPUTime {sequence.cputime}, Exit {sequence.exit} updated"
-        )
+            if (df_jobid_filtered.State.values == "COMPLETED").all():
+                sequence.state = "COMPLETED"
+                sequence.exit = df_jobid_filtered["ExitCode"].iloc[0]
+            elif (df_jobid_filtered.State.values == "PENDING").all():
+                sequence.state = "PENDING"
+            elif any("FAIL" in job for job in df_jobid_filtered.State):
+                sequence.state = "FAILED"
+                sequence.exit = df_jobid_filtered[
+                    df_jobid_filtered.State.values == "FAILED"
+                ]["ExitCode"].iloc[0]
+            elif any("CANCELLED" in job for job in df_jobid_filtered.State):
+                sequence.state = "CANCELLED"
+                mask = ['CANCELLED' in job for job in df_jobid_filtered.State]
+                sequence.exit = df_jobid_filtered[mask]["ExitCode"].iloc[0]
+            elif any("TIMEOUT" in job for job in df_jobid_filtered.State):
+                sequence.state = "TIMEOUT"
+                sequence.exit = "0:15"
+            elif any("RUNNING" in job for job in df_jobid_filtered.State):
+                sequence.state = "RUNNING"
 
 
 def run_program_with_history_logging(
