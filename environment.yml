@@ -14,7 +14,7 @@ dependencies:
   - pydot
   - pydotplus
   - psutil
-  - gammapy>=0.18
+  - gammapy=0.18
   - h5py
   - joblib
   - traitlets=5.0
@@ -30,7 +30,7 @@ dependencies:
   - sphinx-argparse
   - sphinx-autoapi
   - pip:
-      - git+https://github.com/cta-observatory/cta-lstchain
+      - lstchain~=0.8.2
       - pytest_runner
       - pytest-ordering
-      - ctapipe_io_lst~=0.12.0
+      - ctapipe_io_lst~=0.13.1
