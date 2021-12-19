@@ -16,6 +16,7 @@ entry_points = {
         "show_run_summary = osa.scripts.show_run_summary:main",
         "provprocess = osa.scripts.provprocess:main",
         "simulate_processing = osa.scripts.simulate_processing:main",
+        "calibration_pipeline = osa.scripts.calibration_pipeline:main",
     ]
 }
 
