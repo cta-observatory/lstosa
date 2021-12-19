@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import Union, Iterable
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -31,7 +32,6 @@ from osa.utils.utils import (
     create_lock,
     gettag,
 )
-
 
 __all__ = [
     "use_night_summary",
@@ -125,12 +125,12 @@ def is_raw_data_available():
     return answer
 
 
-def is_sequencer_successful(seq_tuple: list):
+def is_sequencer_successful(seq_tuple: Union[Iterable, list]):
     return seq_tuple[0]
 
 
 def ask_for_closing():
-    """Ask to the user whether sequences should be closed or not.
+    """Ask the user whether sequences should be closed or not.
     A True (Y/y) closes, while False(N/n) answer stops the program.
 
     Returns
@@ -272,7 +272,7 @@ def is_finished_check(run_summary):
 
     sequence_success = False
     if run_summary is not None:
-        # building the sequences (the same way than the sequencer)
+        # building the sequences (the same way as the sequencer)
         subrun_list = extractsubruns(run_summary)
         run_list = extractruns(subrun_list)
         sequence_list = extractsequences(run_list)
