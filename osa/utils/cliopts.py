@@ -386,8 +386,6 @@ def calibration_pipeline_cliparsing():
     options.tel_id = opts.tel_id
     options.simulate = opts.simulate
 
-    log.debug(f"The options and arguments are {opts}")
-
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
     options.directory = set_default_directory_if_needed()
