@@ -124,7 +124,15 @@ def finished_assignments(sequence_list):
     return dictionary
 
 
-def history(run, prod_id, program, input_file, input_card, rc, history_file) -> None:
+def history(
+        run,
+        prod_id,
+        stage,
+        return_code,
+        history_file,
+        input_file=None,
+        config_file=None,
+) -> None:
     """
     Appends a history line to the history file. A history line
     reports the outcome of the execution of a lstchain executable.
@@ -135,20 +143,20 @@ def history(run, prod_id, program, input_file, input_card, rc, history_file) -> 
         Run/sequence analyzed.
     prod_id : str
         Prod ID of the run analyzed.
-    program : str
-        Mars executable used.
+    stage : str
+        Stage of the analysis pipeline.
     input_file : str
-        If needed, some input file used for the lstchain executable
-    input_card : str
+        If needed, input file used for the lstchain executable
+    config_file : str
         Input card used for the lstchain executable.
-    rc : str or int
+    return_code : int
         Return code of the lstchain executable.
     history_file : pathlib.Path
         The history file that keeps track of the analysis steps.
     """
-    now = datetime.utcnow()
-    date_string = now.strftime("%a %b %d %X UTC %Y")
+    date_string = datetime.utcnow().strftime("%a %b %d %X UTC %Y")
     string_to_write = (
-        f"{run} {program} {prod_id} {date_string} {input_file} {input_card} {rc}\n"
+        f"{run} {stage} {prod_id} {date_string} "
+        f"{input_file} {config_file} {return_code}\n"
     )
     append_to_file(history_file, string_to_write)

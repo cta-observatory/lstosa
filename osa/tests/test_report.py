@@ -27,7 +27,15 @@ def test_history(base_test_dir):
     history_file = base_test_dir / "r0_to_dl1_01800.history"
     date_string = datetime.utcnow().strftime("%a %b %d %X UTC %Y")
 
-    history(run, prod_id, program, input_file, input_card, rc, history_file)
+    history(
+        run=run,
+        prod_id=prod_id,
+        stage=program,
+        return_code=rc,
+        history_file=history_file,
+        input_file=input_file,
+        config_file=input_card
+    )
 
     logged_string = f"01800 r0_to_dl1 v1.0.0 {date_string} " \
         "r0_to_dl1_01800.fits r0_dl1.config 0\n"
