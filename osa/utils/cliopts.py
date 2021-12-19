@@ -39,6 +39,8 @@ __all__ = [
     "get_dl1_prod_id",
     "get_dl2_prod_id",
     "get_calib_prod_id",
+    "calibration_pipeline_cliparsing",
+    "calibration_pipeline_argparser",
 ]
 
 log = logging.getLogger(__name__)
@@ -69,14 +71,6 @@ def closer_argparser():
         dest="nightsum",
         default=False,
         help="rely on existing nightsumary file",
-    )
-    parser.add_argument(
-        "-o",
-        "--outputdir",
-        action="store",
-        type=str,
-        dest="directory",
-        help="analysis output directory",
     )
     parser.add_argument(
         "-r",
@@ -120,14 +114,6 @@ def closer_argparser():
         help="make lots of noise for debugging",
     )
     parser.add_argument(
-        "-w",
-        "--warnings",
-        action="store_true",
-        dest="warning",
-        default=False,
-        help="show useful warnings",
-    )
-    parser.add_argument(
         "--stderr",
         action="store",
         type=str,
@@ -168,7 +154,6 @@ def closercliparsing():
     options.stderr = opts.stderr
     options.stdout = opts.stdout
     options.date = opts.date
-    options.directory = opts.directory
     options.noninteractive = opts.noninteractive
     options.simulate = opts.simulate
     options.test = opts.test
@@ -220,28 +205,12 @@ def calibration_sequence_argparser():
         help="observation ending date YYYY_MM_DD [default today]",
     )
     parser.add_argument(
-        "-o",
-        "--outputdir",
-        action="store",
-        type=str,
-        dest="directory",
-        help="write files to output directory",
-    )
-    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
         dest="verbose",
         default=False,
         help="make lots of noise for debugging",
-    )
-    parser.add_argument(
-        "-w",
-        "--warnings",
-        action="store_true",
-        dest="warning",
-        default=False,
-        help="show useful warnings",
     )
     parser.add_argument(
         "--stderr",
@@ -310,7 +279,6 @@ def calibration_sequence_cliparsing():
     options.stderr = opts.stderr
     options.stdout = opts.stdout
     options.date = opts.date
-    options.directory = opts.directory
     options.verbose = opts.verbose
     options.prod_id = opts.prod_id
     options.tel_id = opts.tel_id
@@ -334,7 +302,7 @@ def calibration_sequence_cliparsing():
     )
 
 
-def data_sequence_argparser():
+def calibration_pipeline_argparser():
     parser = ArgumentParser()
     parser.add_argument(
         "-c",
@@ -353,12 +321,100 @@ def data_sequence_argparser():
         help="observation ending date YYYY_MM_DD [default today]",
     )
     parser.add_argument(
-        "-o",
-        "--outputdir",
+        "-v",
+        "--verbose",
+        action="store_true",
+        dest="verbose",
+        default=False,
+        help="make lots of noise for debugging",
+    )
+    parser.add_argument(
+        "--stderr",
         action="store",
         type=str,
-        dest="directory",
-        help="analysis working directory",
+        dest="stderr",
+        help="file for standard error",
+    )
+    parser.add_argument(
+        "--stdout",
+        action="store",
+        type=str,
+        dest="stdout",
+        help="file for standard output",
+    )
+    parser.add_argument(
+        "--prod-id",
+        action="store",
+        type=str,
+        dest="prod_id",
+        help="Set the prod ID to define data directories",
+    )
+    parser.add_argument(
+        "-s",
+        "--simulate",
+        action="store_true",
+        dest="simulate",
+        default=False,
+        help="do not submit sequences as jobs",
+    )
+    parser.add_argument(
+        "--drs4-pedestal-run",
+        type=str,
+        help="DRS4 pedestal run number"
+    )
+    parser.add_argument(
+        "--pedcal-run",
+        type=str,
+        help="Calibration run number"
+    )
+
+    parser.add_argument("tel_id", choices=["LST1"])
+
+    return parser
+
+
+def calibration_pipeline_cliparsing():
+    opts = calibration_pipeline_argparser().parse_args()
+
+    # set global variables
+    options.configfile = opts.configfile
+    options.stderr = opts.stderr
+    options.stdout = opts.stdout
+    options.date = opts.date
+    options.verbose = opts.verbose
+    options.prod_id = opts.prod_id
+    options.tel_id = opts.tel_id
+    options.simulate = opts.simulate
+
+    log.debug(f"The options and arguments are {opts}")
+
+    # setting the default date and directory if needed
+    options.date = set_default_date_if_needed()
+    options.directory = set_default_directory_if_needed()
+    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
+        options.calib_prod_id = get_calib_prod_id()
+    else:
+        options.calib_prod_id = options.prod_id
+    return opts.drs4_pedestal_run, opts.pedcal_run
+
+
+def data_sequence_argparser():
+    parser = ArgumentParser()
+    parser.add_argument(
+        "-c",
+        "--config",
+        action="store",
+        dest="configfile",
+        default=None,
+        help="use specific config file [default cfg/sequencer.cfg]",
+    )
+    parser.add_argument(
+        "-d",
+        "--date",
+        action="store",
+        type=str,
+        dest="date",
+        help="observation ending date YYYY_MM_DD [default today]",
     )
     parser.add_argument(
         "-v",
@@ -443,7 +499,6 @@ def data_sequence_cli_parsing():
     options.stderr = opts.stderr
     options.stdout = opts.stdout
     options.date = opts.date
-    options.directory = opts.directory
     options.verbose = opts.verbose
     options.simulate = opts.simulate
     options.prod_id = opts.prod_id
@@ -503,14 +558,6 @@ def sequencer_argparser():
     )
     # boolean options
     parser.add_argument(
-        "-o",
-        "--outputdir",
-        action="store",
-        type=str,
-        dest="directory",
-        help="analysis output directory",
-    )
-    parser.add_argument(
         "-s",
         "--simulate",
         action="store_true",
@@ -552,14 +599,6 @@ def sequencer_argparser():
         help="Increase verbosity for debugging",
     )
     parser.add_argument(
-        "-w",
-        "--warnings",
-        action="store_true",
-        dest="warning",
-        default=False,
-        help="show useful warnings",
-    )
-    parser.add_argument(
         "--stderr",
         action="store",
         type=str,
@@ -591,7 +630,6 @@ def sequencer_cli_parsing():
     options.stderr = opts.stderr
     options.stdout = opts.stdout
     options.date = opts.date
-    options.directory = opts.directory
     options.simulate = opts.simulate
     options.test = opts.test
     options.no_submit = opts.no_submit
@@ -600,11 +638,10 @@ def sequencer_cli_parsing():
     options.verbose = opts.verbose
     options.tel_id = opts.tel_id
 
-    # the standardhandle has to be declared before here,
-    # since verbose and warnings are options from the cli
     log.debug(f"the options are {opts}")
 
     options.prod_id = get_prod_id()
+
 
     if cfg.get("LST1", "CALIB_PROD_ID") is not None:
         options.calib_prod_id = get_calib_prod_id()
@@ -623,6 +660,7 @@ def sequencer_cli_parsing():
 
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
+    options.directory = set_default_directory_if_needed()
 
 
 def rawcopycliparsing():
@@ -659,14 +697,6 @@ def rawcopycliparsing():
         help="make lots of noise for debugging",
     )
     parser.add_argument(
-        "-w",
-        "--warnings",
-        action="store_true",
-        dest="warning",
-        default=False,
-        help="show useful warnings",
-    )
-    parser.add_argument(
         "--stderr",
         action="store",
         type=str,
@@ -692,8 +722,6 @@ def rawcopycliparsing():
     options.nocheck = opts.nocheck
     options.verbose = opts.verbose
 
-    # the standardhandle has to be declared here,
-    # since verbose and warnings are options from the cli
     log.debug(f"the options are {opts}")
     log.debug(f"the argument is {args}")
 
