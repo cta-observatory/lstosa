@@ -220,6 +220,34 @@ def test_datasequence(running_analysis_dir):
     assert output.returncode == 0
 
 
+def test_calibration_pipeline(r0_data, running_analysis_dir):
+    prod_id = "v0.1.0"
+    drs4_run_number = "01805"
+    pedcal_run_number = "01806"
+    options.directory = running_analysis_dir
+
+    # Check that the R0 files corresponding to calibration run exists
+    for files in r0_data:
+        assert os.path.exists(files)
+
+    output = run_program(
+        "calibration_pipeline",
+        "-c",
+        "cfg/sequencer.cfg",
+        "-d",
+        "2020_01_17",
+        "-s",
+        "--prod-id",
+        prod_id,
+        "--drs4-pedestal-run",
+        drs4_run_number,
+        "--pedcal-run",
+        pedcal_run_number,
+        "LST1",
+    )
+    assert output.returncode == 0
+
+
 def test_calibrationsequence(r0_data, running_analysis_dir):
     drs4_file = "drs4_pedestal.Run01805.0000.fits"
     calib_file = "calibration.Run01806.0000.hdf5"
