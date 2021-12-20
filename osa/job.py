@@ -450,6 +450,8 @@ def create_job_template(sequence, get_content=False):
 
     if options.verbose:
         commandargs.append("-v")
+    if options.simulate:
+        commandargs.append("-s")
     if options.configfile:
         commandargs.append(f"--config={Path(options.configfile).resolve()}")
     if sequence.type == "DATA" and options.no_dl2:
