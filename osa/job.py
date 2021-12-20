@@ -143,44 +143,52 @@ def historylevel(history_file: Path, data_type: str):
     """
     Returns the level from which the analysis should begin and
     the rc of the last executable given a certain history file.
-
+    
+    Notes
+    -----
     Workflow for PEDCALIB sequences:
-     - DRS4->time calib is level 3->2
-     - time calib->charge calib is level 2->1
-     - charge calib 1->0 (sequence completed)
+     - Creation of DRS4 pedestal file, level 2->1
+     - Creation of charge calibration file, level 1->0
+     - Sequence completed when reaching level 0
 
     Workflow for DATA sequences:
-     - R0->DL1 is level 4->3
-     - DL1->DL1AB is level 3->2
-     - DATACHECK is level 2->1
-     - DL1->DL2 is level 1->0 (sequence completed)
-
-     TODO: Create a dict with the program exit status and prod id to
-      take into account not only the last history line but also the others.
+     - R0->DL1, level 4->3
+     - DL1->DL1AB, level 3->2
+     - DATACHECK, level 2->1
+     - DL1->DL2, level 1->0 
+     - Sequence completed when reaching level 0
 
     Parameters
     ----------
     history_file: pathlib.Path
     data_type: str
-        Either 'DATA' or 'CALIBRATION'
+        Type of the sequence, either 'DATA' or 'PEDCALIB'
 
     Returns
     -------
-    level, exit_status: int, int
+    level : int
+    exit_status : int
     """
+
+    # TODO: Create a dict with the program exit status and prod id to take
+    #  into account not only the last history line but also the others.
+    
     if data_type == "DATA":
         level = 4
     elif data_type == "PEDCALIB":
-        level = 3
+        level = 2
     else:
-        log.error("Type {data_type} not expected")
+        log.error(f"Type {data_type} not expected")
         sys.exit(1)
+
     exit_status = 0
+
     if history_file.exists():
         for line in history_file.read_text().splitlines():
             words = line.split()
             try:
                 program = words[1]
+                print(program)
                 prod_id = words[2]
                 exit_status = int(words[-1])
                 log.debug(
@@ -189,7 +197,13 @@ def historylevel(history_file: Path, data_type: str):
             except (IndexError, ValueError) as err:
                 log.exception(f"Malformed history file {history_file}, {err}")
             else:
-                if program == cfg.get("lstchain", "r0_to_dl1"):
+                # Calibration sequence
+                if program == cfg.get("lstchain", "drs4_baseline"):
+                    level = 1 if exit_status == 0 else 2
+                elif program == cfg.get("lstchain", "charge_calibration"):
+                    level = 0 if exit_status == 0 else 1
+                # Data sequence
+                elif program == cfg.get("lstchain", "r0_to_dl1"):
                     level = 3 if exit_status == 0 else 4
                 elif program == cfg.get("lstchain", "dl1ab"):
                     if (exit_status == 0) and (prod_id == options.dl1_prod_id):
@@ -212,12 +226,7 @@ def historylevel(history_file: Path, data_type: str):
                     else:
                         level = 1
                         log.debug(f"DL2 prod ID: {options.dl2_prod_id} not produced yet")
-                elif program == cfg.get("lstchain", "drs4_baseline"):
-                    level = 2 if exit_status == 0 else 3
-                elif program == cfg.get("lstchain", "time_calibration"):
-                    level = 1 if exit_status == 0 else 2
-                elif program == cfg.get("lstchain", "charge_calibration"):
-                    level = 0 if exit_status == 0 else 1
+
                 else:
                     log.warning(f"Program name not identified {program}")
 
