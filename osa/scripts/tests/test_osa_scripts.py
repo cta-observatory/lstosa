@@ -247,7 +247,8 @@ def test_calibration_pipeline(r0_data, running_analysis_dir):
     assert output.returncode == 0
 
 
-def test_is_sequencer_successful(run_summary):
+def test_is_sequencer_successful(run_summary, running_analysis_dir):
+    options.directory = running_analysis_dir
     seq_tuple = is_finished_check(run_summary)
     assert is_sequencer_successful(seq_tuple) is True
 
@@ -255,14 +256,14 @@ def test_is_sequencer_successful(run_summary):
 def test_drs4_pedestal_cmd(base_test_dir):
     from osa.scripts.calibration_pipeline import drs4_pedestal_command
     cmd = drs4_pedestal_command(drs4_pedestal_run_id="01804")
-    expected_commamd = [
+    expected_command = [
         'onsite_create_drs4_pedestal_file',
         '--run_number=01804',
         f'--base_dir={base_test_dir}',
         '--no-progress',
         '--yes'
     ]
-    assert cmd == expected_commamd
+    assert cmd == expected_command
 
 
 def test_calibration_file_cmd(base_test_dir):
