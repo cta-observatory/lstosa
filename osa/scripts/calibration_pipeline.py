@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-"""Calibration pipeline
+"""
+Calibration pipeline
 
 Script to process the pedestal and calibration runs to produce the
 DRS4 pedestal and charge calibration files. It pipes together the two
