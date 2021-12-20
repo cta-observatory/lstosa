@@ -9,7 +9,6 @@ entry_points = {
     "console_scripts": [
         "sequencer = osa.scripts.sequencer:main",
         "closer = osa.scripts.closer:main",
-        "calibrationsequence = osa.scripts.calibrationsequence:main",
         "copy_datacheck = osa.scripts.copy_datacheck:main",
         "datasequence = osa.scripts.datasequence:main",
         "sequencer_webmaker = osa.scripts.sequencer_webmaker:main",
