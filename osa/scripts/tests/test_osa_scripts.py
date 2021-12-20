@@ -14,7 +14,6 @@ from osa.scripts.closer import is_sequencer_successful, is_finished_check
 ALL_SCRIPTS = [
     "sequencer",
     "closer",
-    "calibrationsequence",
     "copy_datacheck",
     "datasequence",
     "show_run_summary",
@@ -248,121 +247,6 @@ def test_calibration_pipeline(r0_data, running_analysis_dir):
     assert output.returncode == 0
 
 
-def test_calibrationsequence(r0_data, running_analysis_dir):
-    drs4_file = "drs4_pedestal.Run01805.0000.fits"
-    calib_file = "calibration.Run01806.0000.hdf5"
-    runsummary_file = "RunSummary_20200117.ecsv"
-    prod_id = "v0.1.0"
-    drs4_run_number = "01805"
-    pedcal_run_number = "01806"
-    options.directory = running_analysis_dir
-
-    # Check that the R0 files corresponding to calibration run exists
-    for files in r0_data:
-        assert os.path.exists(files)
-
-    output = run_program(
-        "calibrationsequence",
-        "-c",
-        "cfg/sequencer.cfg",
-        "-d",
-        "2020_01_17",
-        "-s",
-        "--prod-id",
-        prod_id,
-        drs4_file,
-        calib_file,
-        drs4_run_number,
-        pedcal_run_number,
-        runsummary_file,
-        "LST1",
-    )
-    assert output.returncode == 0
-
-
 def test_is_sequencer_successful(run_summary):
     seq_tuple = is_finished_check(run_summary)
     assert is_sequencer_successful(seq_tuple) is True
-
-
-def test_drs4_pedestal_command(r0_data, test_calibration_data):
-    from osa.scripts.calibrationsequence import drs4_pedestal_command
-    input_file = r0_data[0]
-    output_file = test_calibration_data[1]
-    command = drs4_pedestal_command(input_file, output_file)
-    expected_command = [
-        "lstchain_data_create_drs4_pedestal_file",
-        f"--input-file={input_file}",
-        f"--output-file={output_file}",
-        "--max-events=20000",
-        "--overwrite"
-    ]
-    assert command == expected_command
-
-
-def test_calibration_file_command(r0_data, test_calibration_data, running_analysis_dir):
-    from osa.scripts.calibrationsequence import calibration_file_command
-    options.directory = running_analysis_dir
-    calibration_run = "01806"
-    input_file = r0_data[2]  # Corresponds to run 01806
-    calibration_output_file = Path(test_calibration_data[0])
-    drs4_pedestal_file = Path(test_calibration_data[1])
-    ffactor_systematics = cfg.get("lstchain", "ffactor_systematics")
-    calib_config = cfg.get("lstchain", "calibration_config")
-    run_summary = Path("extra/monitoring/RunSummary") / "RunSummary_20200117.ecsv"
-    time_file_basename = Path(calibration_output_file).name.replace("calibration", "time_calibration")
-    time_file = Path(running_analysis_dir) / time_file_basename
-    log_dir = running_analysis_dir / "log"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    log_file = log_dir / f"calibration.Run{calibration_run}.0000.log"
-
-    command = calibration_file_command(
-        calibration_run,
-        calib_config,
-        drs4_pedestal_file,
-        calibration_output_file,
-        run_summary
-    )
-
-    expected_command = [
-        "lstchain_create_calibration_file",
-        f"--input_file={input_file}",
-        f"--output_file={calibration_output_file}",
-        "--EventSource.default_trigger_type=tib",
-        f"--LSTCalibrationCalculator.systematic_correction_path={ffactor_systematics}",
-        f"--LSTEventSource.EventTimeCalculator.run_summary_path={run_summary}",
-        f"--LSTEventSource.LSTR0Corrections.drs4_time_calibration_path={time_file}",
-        f"--LSTEventSource.LSTR0Corrections.drs4_pedestal_path={drs4_pedestal_file}",
-        f"--log-file={log_file}",
-        f"--config={calib_config}"
-    ]
-    assert command == expected_command
-
-
-def test_time_calibration_command(r0_dir, test_calibration_data, running_analysis_dir):
-    from osa.scripts.calibrationsequence import time_calibration_command
-    options.directory = running_analysis_dir
-    calibration_run = "01806"
-    input_file = r0_dir.parent / "*/LST-1.1.Run01806.000*.fits.fz"
-    calibration_output_file = Path(test_calibration_data[0])
-    drs4_pedestal_file = Path(test_calibration_data[1])
-    run_summary = Path("extra/monitoring/RunSummary") / "RunSummary_20200117.ecsv"
-    time_file_basename = Path(calibration_output_file).name.replace("calibration", "time_calibration")
-    time_calibration_file = Path(running_analysis_dir) / time_file_basename
-
-    command = time_calibration_command(
-        calibration_run,
-        time_calibration_file,
-        drs4_pedestal_file,
-        run_summary
-    )
-
-    expected_command = [
-        "lstchain_data_create_time_calibration_file",
-        f"--input-file={input_file}",
-        f"--output-file={time_calibration_file}",
-        f"--pedestal-file={drs4_pedestal_file}",
-        f"--run-summary-path={run_summary}",
-        "--max-events=53000"
-    ]
-    assert command == expected_command
