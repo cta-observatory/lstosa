@@ -55,7 +55,7 @@ FORMAT_SLURM = [
     "TotalCPU",
     "MaxRSS",
     "State",
-    "ExitCode"
+    "ExitCode",
 ]
 
 
@@ -143,7 +143,7 @@ def historylevel(history_file: Path, data_type: str):
     """
     Returns the level from which the analysis should begin and
     the rc of the last executable given a certain history file.
-    
+
     Notes
     -----
     Workflow for PEDCALIB sequences:
@@ -155,7 +155,7 @@ def historylevel(history_file: Path, data_type: str):
      - R0->DL1, level 4->3
      - DL1->DL1AB, level 3->2
      - DATACHECK, level 2->1
-     - DL1->DL2, level 1->0 
+     - DL1->DL2, level 1->0
      - Sequence completed when reaching level 0
 
     Parameters
@@ -172,7 +172,7 @@ def historylevel(history_file: Path, data_type: str):
 
     # TODO: Create a dict with the program exit status and prod id to take
     #  into account not only the last history line but also the others.
-    
+
     if data_type == "DATA":
         level = 4
     elif data_type == "PEDCALIB":
@@ -320,15 +320,12 @@ def plot_job_statistics(sacct_output: pd.DataFrame, directory: Path):
     sacct_output_filter = sacct_output.copy()
     sacct_output_filter = sacct_output_filter.dropna()
     # Remove the G from MaxRSS value and convert to float
-    sacct_output_filter["MaxRSS"] = sacct_output_filter["MaxRSS"].\
-        str.strip("G").astype(float)
+    sacct_output_filter["MaxRSS"] = (
+        sacct_output_filter["MaxRSS"].str.strip("G").astype(float)
+    )
 
     plt.figure()
-    plt.hist2d(
-        sacct_output_filter.MaxRSS,
-        sacct_output_filter.CPUTimeRAW / 3600,
-        bins=50
-    )
+    plt.hist2d(sacct_output_filter.MaxRSS, sacct_output_filter.CPUTimeRAW / 3600, bins=50)
     plt.xlabel("MaxRSS [GB]")
     plt.ylabel("Elapsed time [h]")
     directory.mkdir(exist_ok=True, parents=True)
@@ -657,14 +654,12 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
 
 def run_squeue() -> StringIO:
     """Run squeue command to get the status of the jobs."""
-    if shutil.which('squeue') is None:
+    if shutil.which("squeue") is None:
         log.warning("No job info available since sacct command is not available")
         return StringIO()
 
     out_fmt = "%i,%j,%T,%M"  # JOBID, NAME, STATE, TIME
-    return StringIO(
-        subprocess.check_output(["squeue", "--me", "-o", out_fmt]).decode()
-    )
+    return StringIO(subprocess.check_output(["squeue", "--me", "-o", out_fmt]).decode())
 
 
 def get_squeue_output(squeue_output: StringIO) -> pd.DataFrame:
@@ -675,19 +670,22 @@ def get_squeue_output(squeue_output: StringIO) -> pd.DataFrame:
     df = pd.read_csv(squeue_output)
     # Remove the job array part of the jobid
     df["JOBID"] = df["JOBID"].apply(lambda x: x.split("_")[0]).astype("int")
-    df.rename(inplace=True, columns={
-        'STATE': 'State',
-        'JOBID': 'JobID',
-        'NAME': 'JobName',
-        'TIME': 'CPUTime'
-    })
+    df.rename(
+        inplace=True,
+        columns={
+            "STATE": "State",
+            "JOBID": "JobID",
+            "NAME": "JobName",
+            "TIME": "CPUTime",
+        },
+    )
     df["CPUTimeRAW"] = df["CPUTime"].apply(time_to_seconds)
     return df
 
 
 def run_sacct() -> StringIO:
     """Run sacct to obtain the job information."""
-    if shutil.which('sacct') is None:
+    if shutil.which("sacct") is None:
         log.warning("No job info available since sacct command is not available")
         return StringIO()
 
@@ -701,7 +699,7 @@ def run_sacct() -> StringIO:
         "--starttime",
         start_date,
         "-o",
-        ",".join(FORMAT_SLURM)
+        ",".join(FORMAT_SLURM),
     ]
     return StringIO(subprocess.check_output(sacct_cmd).decode())
 
@@ -725,13 +723,11 @@ def filter_jobs(job_info: pd.DataFrame, sequence_list: Iterable):
     """Filter the job info list to get the values of the jobs in the current queue."""
     sequences_info = pd.DataFrame([vars(seq) for seq in sequence_list])
     # Keep the jobs in the sacct output that are present in the sequence list
-    return job_info[job_info['JobName'].isin(sequences_info['jobname'])]
+    return job_info[job_info["JobName"].isin(sequences_info["jobname"])]
 
 
 def set_queue_values(
-        sacct_info: pd.DataFrame,
-        squeue_info: pd.DataFrame,
-        sequence_list: Iterable
+    sacct_info: pd.DataFrame, squeue_info: pd.DataFrame, sequence_list: Iterable
 ) -> None:
     """
     Extract job info from sacct output and
@@ -752,9 +748,7 @@ def set_queue_values(
     job_info_filtered = filter_jobs(job_info, sequence_list)
 
     for sequence in sequence_list:
-        df_jobname = job_info_filtered[
-            job_info_filtered["JobName"] == sequence.jobname
-        ]
+        df_jobname = job_info_filtered[job_info_filtered["JobName"] == sequence.jobname]
         sequence.tries = df_jobname["JobID"].nunique()
         sequence.action = "Check"
 
@@ -763,9 +757,8 @@ def set_queue_values(
             df_jobid_filtered = df_jobname[df_jobname["JobID"] == sequence.jobid]
             try:
                 sequence.cputime = time.strftime(
-                    "%H:%M:%S", time.gmtime(
-                        df_jobid_filtered["CPUTimeRAW"].median(skipna=False)
-                    )
+                    "%H:%M:%S",
+                    time.gmtime(df_jobid_filtered["CPUTimeRAW"].median(skipna=False)),
                 )
             except ValueError:
                 sequence.cputime = None
@@ -789,12 +782,12 @@ def update_sequence_state(sequence, filtered_job_info: pd.DataFrame) -> None:
         sequence.state = "PENDING"
     elif any("FAIL" in job for job in filtered_job_info.State):
         sequence.state = "FAILED"
-        sequence.exit = filtered_job_info[
-            filtered_job_info.State.values == "FAILED"
-            ]["ExitCode"].iloc[0]
+        sequence.exit = filtered_job_info[filtered_job_info.State.values == "FAILED"][
+            "ExitCode"
+        ].iloc[0]
     elif any("CANCELLED" in job for job in filtered_job_info.State):
         sequence.state = "CANCELLED"
-        mask = ['CANCELLED' in job for job in filtered_job_info.State]
+        mask = ["CANCELLED" in job for job in filtered_job_info.State]
         sequence.exit = filtered_job_info[mask]["ExitCode"].iloc[0]
     elif any("TIMEOUT" in job for job in filtered_job_info.State):
         sequence.state = "TIMEOUT"
@@ -804,13 +797,13 @@ def update_sequence_state(sequence, filtered_job_info: pd.DataFrame) -> None:
 
 
 def run_program_with_history_logging(
-        command_args: List[str],
-        history_file: Path,
-        run: str,
-        prod_id: str,
-        command: str,
-        input_file: Path,
-        config_file: Path
+    command_args: List[str],
+    history_file: Path,
+    run: str,
+    prod_id: str,
+    command: str,
+    input_file: Path,
+    config_file: Path,
 ):
     """
     Run the program and log the output in the history file
@@ -836,26 +829,12 @@ def run_program_with_history_logging(
     except subprocess.CalledProcessError as error:
         rc = error.returncode
         history(
-            run,
-            prod_id,
-            command,
-            input_file.name,
-            config_file.name,
-            rc,
-            history_file
+            run, prod_id, command, input_file.name, config_file.name, rc, history_file
         )
-        log.exception(
-            f"Could not execute {stringify(command_args)}, error: {error}"
-        )
+        log.exception(f"Could not execute {stringify(command_args)}, error: {error}")
     else:
         history(
-            run,
-            prod_id,
-            command,
-            input_file.name,
-            config_file.name,
-            rc,
-            history_file
+            run, prod_id, command, input_file.name, config_file.name, rc, history_file
         )
         if rc != 0:
             sys.exit(rc)
