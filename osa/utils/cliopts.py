@@ -303,6 +303,7 @@ def calibration_sequence_cliparsing():
 
 
 def calibration_pipeline_argparser():
+    """Command line parser for the calibration pipeline."""
     parser = ArgumentParser()
     parser.add_argument(
         "-c",
@@ -374,6 +375,10 @@ def calibration_pipeline_argparser():
 
 
 def calibration_pipeline_cliparsing():
+    """
+    Set the global variables and parse the command
+    line arguments for the calibration pipeline
+    """
     opts = calibration_pipeline_argparser().parse_args()
 
     # set global variables

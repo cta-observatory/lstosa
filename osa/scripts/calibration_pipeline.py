@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-"""
+"""Calibration pipeline
+
 Script to process the pedestal and calibration runs to produce the
 DRS4 pedestal and charge calibration files. It pipes together the two
 onsite calibration scripts from lstchain.
@@ -32,10 +33,11 @@ log = myLogger(logging.getLogger())
 
 def drs4_pedestal_command(drs4_pedestal_run_id: str) -> list:
     """Build the create_drs4_pedestal command."""
+    base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     return [
         'onsite_create_drs4_pedestal_file',
         f'--run_number={drs4_pedestal_run_id}',
-        f'--base_dir={cfg.get("LST1", "BASE")}',
+        f'--base_dir={base_dir}',
         '--no-progress',
         '--yes'
     ]
@@ -43,10 +45,11 @@ def drs4_pedestal_command(drs4_pedestal_run_id: str) -> list:
 
 def calibration_file_command(pedcal_run_id: str) -> list:
     """Build the create_calibration_file command."""
+    base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     return [
         'onsite_create_calibration_file',
         f'--run_number={pedcal_run_id}',
-        f'--base_dir={cfg.get("LST1", "BASE")}',
+        f'--base_dir={base_dir}',
         '--yes',
         f'--filters=={cfg.get("lstchain", "filters")}'
     ]
@@ -119,7 +122,7 @@ def drs4_pedestal(drs4_pedestal_run_id: str, history_file: Path) -> int:
     history(
         run=drs4_pedestal_run_id,
         prod_id=options.calib_prod_id,
-        stage="drs4_pedestal",
+        stage=cmd[0],
         return_code=rc,
         history_file=history_file
     )
@@ -157,7 +160,7 @@ def calibrate_charge(calibration_run: str, history_file: Path) -> int:
     history(
         run=calibration_run,
         prod_id=options.calib_prod_id,
-        stage="calibration_file",
+        stage=cmd[0],
         return_code=rc,
         history_file=history_file
     )
