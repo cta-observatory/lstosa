@@ -19,8 +19,6 @@ from osa.utils.utils import (
 )
 
 __all__ = [
-    "calibration_sequence_cliparsing",
-    "calibration_sequence_argparser",
     "closer_argparser",
     "closercliparsing",
     "copy_datacheck_parsing",
@@ -184,122 +182,6 @@ def closercliparsing():
         options.dl2_prod_id = get_dl2_prod_id()
     else:
         options.dl2_prod_id = options.prod_id
-
-
-def calibration_sequence_argparser():
-    parser = ArgumentParser()
-    parser.add_argument(
-        "-c",
-        "--config",
-        action="store",
-        dest="configfile",
-        default=None,
-        help="use specific config file [default cfg/sequencer.cfg]",
-    )
-    parser.add_argument(
-        "-d",
-        "--date",
-        action="store",
-        type=str,
-        dest="date",
-        help="observation ending date YYYY_MM_DD [default today]",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        dest="verbose",
-        default=False,
-        help="make lots of noise for debugging",
-    )
-    parser.add_argument(
-        "--stderr",
-        action="store",
-        type=str,
-        dest="stderr",
-        help="file for standard error",
-    )
-    parser.add_argument(
-        "--stdout",
-        action="store",
-        type=str,
-        dest="stdout",
-        help="file for standard output",
-    )
-    parser.add_argument(
-        "--prod-id",
-        action="store",
-        type=str,
-        dest="prod_id",
-        help="Set the prod ID to define data directories",
-    )
-    parser.add_argument(
-        "-s",
-        "--simulate",
-        action="store_true",
-        dest="simulate",
-        default=False,
-        help="do not submit sequences as jobs",
-    )
-    parser.add_argument(
-        "drs4_pedestal_file",
-        type=Path,
-        help="Full path of the DRS4 pedestal file to be created"
-    )
-    parser.add_argument(
-        "calibration_file",
-        type=Path,
-        help="Full path of the calibration file to be created"
-    )
-    parser.add_argument(
-        "calibration_run_number",
-        type=str,
-        help="Calibration run number"
-    )
-    parser.add_argument(
-        "drs4_pedestal_run_number",
-        type=str,
-        help="DRS4 pedestal run number"
-    )
-    parser.add_argument(
-        "run_summary_file",
-        type=Path,
-        help="Run summary file"
-    )
-    parser.add_argument("tel_id", choices=["LST1"])
-
-    return parser
-
-
-def calibration_sequence_cliparsing():
-    opts = calibration_sequence_argparser().parse_args()
-
-    # set global variables
-    options.configfile = opts.configfile
-    options.stderr = opts.stderr
-    options.stdout = opts.stdout
-    options.date = opts.date
-    options.verbose = opts.verbose
-    options.prod_id = opts.prod_id
-    options.tel_id = opts.tel_id
-    options.simulate = opts.simulate
-
-    log.debug(f"The options and arguments are {opts}")
-
-    # setting the default date and directory if needed
-    options.date = set_default_date_if_needed()
-    options.directory = set_default_directory_if_needed()
-    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
-        options.calib_prod_id = get_calib_prod_id()
-    else:
-        options.calib_prod_id = options.prod_id
-    return (
-        opts.drs4_pedestal_file,
-        opts.calibration_file,
-        opts.calibration_run_number,
-        opts.drs4_pedestal_run_number,
-        opts.run_summary_file,
-    )
 
 
 def calibration_pipeline_argparser():
