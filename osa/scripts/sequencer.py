@@ -29,7 +29,7 @@ from osa.nightsummary.extract import (
     extractsubruns,
 )
 from osa.nightsummary.nightsummary import run_summary_table
-from osa.report import rule, start
+from osa.report import start
 from osa.utils.cliopts import sequencer_cli_parsing, set_default_directory_if_needed
 from osa.utils.logging import myLogger
 from osa.utils.utils import is_day_closed, gettag
@@ -127,7 +127,6 @@ def single_process(telescope):
     if is_report_needed:
         # insert_if_new_activity_db(sequence_list)
         # updatesequencedb(sequence_list)
-        # rule()
         report_sequences(sequence_list)
 
     return sequence_list
@@ -167,7 +166,6 @@ def stereo_process(telescope, s1_list, s2_list):
     update_sequence_status(sequence_list)
     submit_jobs(sequence_list)
     # finalizing report
-    rule()
     report_sequences(sequence_list)
     # cleaning
     options.directory = None

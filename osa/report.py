@@ -11,7 +11,7 @@ from osa.utils.iofile import append_to_file
 
 log = logging.getLogger(__name__)
 
-__all__ = ["history", "start", "rule", "finished_assignments"]
+__all__ = ["history", "start", "finished_assignments"]
 
 
 def start(parent_tag: str):
@@ -38,11 +38,6 @@ def header(message):
     else:
         prettyframe = ""
     log.info(f"{prettyframe} {message} {prettyframe}")
-
-
-def rule():
-    prettyframe = int(config.cfg.get("OUTPUT", "REPORTWIDTH")) * "-"
-    log.info(prettyframe)
 
 
 def finished_assignments(sequence_list):
