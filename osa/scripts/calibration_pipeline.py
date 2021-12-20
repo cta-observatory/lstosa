@@ -52,7 +52,7 @@ def calibration_file_command(pedcal_run_id: str) -> list:
         f'--run_number={pedcal_run_id}',
         f'--base_dir={base_dir}',
         '--yes',
-        f'--filters=={cfg.get("lstchain", "filters")}'
+        f'--filters={cfg.get("lstchain", "filters")}'
     ]
 
 
