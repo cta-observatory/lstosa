@@ -15,6 +15,7 @@ ALL_SCRIPTS = [
     "closer",
     "copy_datacheck",
     "datasequence",
+    "calibration_pipeline",
     "show_run_summary",
     "provprocess",
     "simulate_processing",
