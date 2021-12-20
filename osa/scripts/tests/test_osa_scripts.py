@@ -162,18 +162,18 @@ def test_closer(r0_dir, running_analysis_dir, test_observed_data, test_calibrati
         "./test_osa/test_files0/DL2/20200117/v0.1.0/tailcut84_model1/"
         "dl2_LST-1.Run01808.0011.h5"
     )
-    assert os.path.exists(
-        "./test_osa/test_files0/calibration/20200117/v01/"
-        "drs4_pedestal.Run01804.0000.fits"
-    )
-    assert os.path.exists(
-        "./test_osa/test_files0/calibration/20200117/v01/"
-        "calibration.Run01805.0000.h5"
-    )
-    assert os.path.exists(
-        "./test_osa/test_files0/calibration/20200117/"
-        "v01/time_calibration.Run01805.0000.h5"
-    )
+    # assert os.path.exists(
+    #     "./test_osa/test_files0/calibration/20200117/v01/"
+    #     "drs4_pedestal.Run01804.0000.fits"
+    # )
+    # assert os.path.exists(
+    #     "./test_osa/test_files0/calibration/20200117/v01/"
+    #     "calibration.Run01805.0000.h5"
+    # )
+    # assert os.path.exists(
+    #     "./test_osa/test_files0/calibration/20200117/"
+    #     "v01/time_calibration.Run01805.0000.h5"
+    # )
     # Assert that the link to dl1 and muons files have been created
     assert os.path.islink(
         "./test_osa/test_files0/running_analysis/20200117/"

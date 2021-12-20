@@ -9,7 +9,6 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Union, Iterable
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -125,7 +124,7 @@ def is_raw_data_available():
     return answer
 
 
-def is_sequencer_successful(seq_tuple: Union[Iterable, list]):
+def is_sequencer_successful(seq_tuple: [bool, list]):
     return seq_tuple[0]
 
 
@@ -210,9 +209,9 @@ def post_process_files(seq_list: list):
     DL2_RE = re.compile(f"{options.dl2_prod_id}" + r"/dl2.*.(?:h5|hdf5|hdf)")
     MUONS_RE = re.compile(r"muons.*.fits")
     DATACHECK_RE = re.compile(r"datacheck_dl1.*.(?:h5|hdf5|hdf)")
-    CALIB_RE = re.compile(r"/calibration.*.(?:h5|hdf5|hdf)")
-    TIMECALIB_RE = re.compile(r"/time_calibration.*.(?:h5|hdf5|hdf)")
-    PEDESTAL_RE = re.compile(r"drs4.*.fits")
+    # CALIB_RE = re.compile(r"/calibration.*.(?:h5|hdf5|hdf)")
+    # TIMECALIB_RE = re.compile(r"/time_calibration.*.(?:h5|hdf5|hdf)")
+    # PEDESTAL_RE = re.compile(r"drs4.*.fits")
 
     pattern_files = dict(
         [
@@ -220,9 +219,9 @@ def post_process_files(seq_list: list):
             ("DL2", DL2_RE),
             ("MUON", MUONS_RE),
             ("DATACHECK", DATACHECK_RE),
-            ("PEDESTAL", PEDESTAL_RE),
-            ("CALIB", CALIB_RE),
-            ("TIMECALIB", TIMECALIB_RE),
+            # ("PEDESTAL", PEDESTAL_RE),
+            # ("CALIB", CALIB_RE),
+            # ("TIMECALIB", TIMECALIB_RE),
         ]
     )
 
@@ -267,7 +266,9 @@ def is_finished_check(run_summary):
 
     Returns
     -------
-    seq_finished, seq_list: tuple
+    seq_finished: bool
+        True if all sequences are finished, False otherwise.
+    seq_list: list
     """
 
     sequence_success = False
@@ -296,7 +297,7 @@ def is_finished_check(run_summary):
         # empty file (no sensible data)
         sequence_success = True
         sequence_list = []
-    return sequence_success, sequence_list
+    return [sequence_success, sequence_list]
 
 
 def merge_dl1_datacheck(seq_list):
