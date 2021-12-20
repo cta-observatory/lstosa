@@ -25,7 +25,7 @@ def test_history(base_test_dir):
     input_card = "r0_dl1.config"
     rc = 0
     history_file = base_test_dir / "r0_to_dl1_01800.history"
-    date_string = datetime.utcnow().strftime("%a %b %d %X UTC %Y")
+    date_string = datetime.utcnow().isoformat(sep=" ", timespec="minutes")
 
     history(
         run=run,

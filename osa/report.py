@@ -154,7 +154,7 @@ def history(
     history_file : pathlib.Path
         The history file that keeps track of the analysis steps.
     """
-    date_string = datetime.utcnow().strftime("%a %b %d %X UTC %Y")
+    date_string = datetime.utcnow().isoformat(sep=" ", timespec="minutes")
     string_to_write = (
         f"{run} {stage} {prod_id} {date_string} "
         f"{input_file} {config_file} {return_code}\n"
