@@ -527,7 +527,6 @@ def sequencer_cli_parsing():
 
     options.prod_id = get_prod_id()
 
-
     if cfg.get("LST1", "CALIB_PROD_ID") is not None:
         options.calib_prod_id = get_calib_prod_id()
     else:
