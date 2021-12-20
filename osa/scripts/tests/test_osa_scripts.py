@@ -8,7 +8,6 @@ import pytest
 import yaml
 
 from osa.configs import options
-from osa.configs.config import cfg
 from osa.scripts.closer import is_sequencer_successful, is_finished_check
 
 ALL_SCRIPTS = [
