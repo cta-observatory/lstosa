@@ -439,7 +439,7 @@ def create_job_template(sequence, get_content=False):
     run_summary_dir = cfg.get("LST1", "RUN_SUMMARY_DIR")
 
     if sequence.type == "PEDCALIB":
-        command = "calibrationsequence"
+        command = "calibration_pipeline"
     elif sequence.type == "DATA":
         command = "datasequence"
     else:
@@ -727,7 +727,9 @@ def filter_jobs(job_info: pd.DataFrame, sequence_list: Iterable):
 
 
 def set_queue_values(
-    sacct_info: pd.DataFrame, squeue_info: pd.DataFrame, sequence_list: Iterable
+        sacct_info: pd.DataFrame,
+        squeue_info: pd.DataFrame,
+        sequence_list: Iterable
 ) -> None:
     """
     Extract job info from sacct output and
@@ -797,13 +799,13 @@ def update_sequence_state(sequence, filtered_job_info: pd.DataFrame) -> None:
 
 
 def run_program_with_history_logging(
-    command_args: List[str],
-    history_file: Path,
-    run: str,
-    prod_id: str,
-    command: str,
-    input_file: Path,
-    config_file: Path,
+        command_args: List[str],
+        history_file: Path,
+        run: str,
+        prod_id: str,
+        command: str,
+        input_file: Path,
+        config_file: Path,
 ):
     """
     Run the program and log the output in the history file
