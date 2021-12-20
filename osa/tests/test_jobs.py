@@ -16,6 +16,7 @@ calibration_history_file = (
 )
 options.date = "2020_01_17"
 options.tel_id = "LST1"
+options.prod_id = "v0.1.0"
 
 
 def test_historylevel():
@@ -156,12 +157,9 @@ def test_create_job_template_scheduler(sequence_list):
         os.environ['NUMBA_CACHE_DIR'] = tmpdirname
         proc = subprocess.run([
             'datasequence',
-            '-c',
-            '{Path.cwd()}/cfg/sequencer.cfg',
-            '-d',
-            '2020_01_17',
-            '--prod-id',
-            'v0.1.0',
+            '--config={Path.cwd()}/cfg/sequencer.cfg',
+            '--date=2020_01_17',
+            '--prod-id=v0.1.0',
             '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/calibration.Run01805.0000.h5',
             '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/drs4_pedestal.Run01804.0000.fits',
             '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/time_calibration.Run01805.0000.h5',
@@ -196,18 +194,45 @@ def test_create_job_template_local(sequence_list):
         os.environ['NUMBA_CACHE_DIR'] = tmpdirname
         proc = subprocess.run([
             'datasequence',
-            '-c',
-            '{Path.cwd()}/cfg/sequencer.cfg',
-            '-d',
-            '2020_01_17',
-            '--prod-id',
-            'v0.1.0',
+            '--config={Path.cwd()}/cfg/sequencer.cfg',
+            '--date=2020_01_17',
+            '--prod-id=v0.1.0',
             '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/calibration.Run01805.0000.h5',
             '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/drs4_pedestal.Run01804.0000.fits',
             '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/time_calibration.Run01805.0000.h5',
             'extra/monitoring/DrivePositioning/drive_log_20_01_17.txt',
             'extra/monitoring/RunSummary/RunSummary_20200117.ecsv',
             '01807.{{0}}'.format(str(subruns).zfill(4)),
+            'LST1'
+        ])
+
+    sys.exit(proc.returncode)""")
+    assert content == expected_content
+
+
+def test_create_job_scheduler_calibration(sequence_list):
+    """Check the pilot job file for the calibration pipeline."""
+    from osa.job import create_job_template
+    options.test = True
+    content = create_job_template(sequence_list[0], get_content=True)
+    expected_content = dedent(f"""\
+    #!/bin/env python
+
+    import os
+    import subprocess
+    import sys
+    import tempfile
+
+    subruns = 0
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        os.environ['NUMBA_CACHE_DIR'] = tmpdirname
+        proc = subprocess.run([
+            'calibration_pipeline',
+            '--config={Path.cwd()}/cfg/sequencer.cfg',
+            '--date=2020_01_17',
+            '--drs4-pedestal-run=01804',
+            '--pedcal-run=01805',
             'LST1'
         ])
 

@@ -73,7 +73,7 @@ def are_all_jobs_correctly_finished(sequence_list):
     -------
     flag: bool
     """
-    # FIXME: check based on squence.jobid exit status
+    # FIXME: check based on sequence.jobid exit status
     flag = True
     analysis_directory = Path(options.directory)
     for sequence in sequence_list:
@@ -241,7 +241,7 @@ def prepare_jobs(sequence_list):
 
 def setrunfromparent(sequence_list):
     """
-    Create a dictionary with run number and its the parent run number.
+    Create a dictionary with run number and its parent run number.
 
     Parameters
     ----------
@@ -249,7 +249,7 @@ def setrunfromparent(sequence_list):
 
     Returns
     -------
-    dictionary with run number and its the parent run number
+    dictionary with run number and its parent run number
     """
     dictionary = {}
     for s1 in sequence_list:
@@ -451,26 +451,18 @@ def create_job_template(sequence, get_content=False):
     if options.verbose:
         commandargs.append("-v")
     if options.configfile:
-        commandargs.append("-c")
-        commandargs.append(Path(options.configfile).resolve())
+        commandargs.append(f"--config={Path(options.configfile).resolve()}")
     if sequence.type == "DATA" and options.no_dl2:
         commandargs.append("--no-dl2")
 
-    commandargs.append("-d")
-    commandargs.append(options.date)
-    commandargs.append("--prod-id")
-    commandargs.append(options.prod_id)
+    commandargs.append(f"--date={options.date}")
 
     if sequence.type == "PEDCALIB":
-        commandargs.append(sequence.pedestal)
-        commandargs.append(sequence.calibration)
-        ped_run_number = str(sequence.previousrun).zfill(5)
-        cal_run_number = str(sequence.run).zfill(5)
-        commandargs.append(ped_run_number)
-        commandargs.append(cal_run_number)
-        commandargs.append(Path(run_summary_dir) / f"RunSummary_{nightdir}.ecsv")
+        commandargs.append(f"--drs4-pedestal-run={sequence.previousrun:05d}")
+        commandargs.append(f"--pedcal-run={sequence.run:05d}")
 
     if sequence.type == "DATA":
+        commandargs.append(f"--prod-id={options.prod_id}")
         commandargs.append(sequence.calibration.resolve())
         commandargs.append(sequence.pedestal.resolve())
         commandargs.append(sequence.time_calibration.resolve())
@@ -581,56 +573,9 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
                 log.debug("Adding dependencies to job submission")
                 depend_string = f"--dependency=afterok:{parent_jobid}"
                 commandargs.append(depend_string)
-            # Old MAGIC style:
-            # for pseq in s.parent_list:
-            #     if pseq.jobid is not None:
-            #         if int(pseq.jobid) > 0:
-            #             depend_string += ":{0}".format(pseq.jobid)
-            #        """ Skip vetoed """
-            #        if s.action == 'Veto':
-            #            log.debug("job {0} has been vetoed".format(s.jobname))
-            #        elif s.action == 'Closed':
-            #            log.debug("job {0} is already closed".format(s.jobname))
-            #        elif s.action == 'Check' and s.state != 'C':
-            #            log.debug("job {0} checked to be dispatched but not completed yet".format(s.jobname))
-            #            if s.state == 'H' or s.state == 'R':
-            #                # Reset values
-            #                s.exit = None
-            #                if s.state == 'H':
-            #                    s.jobhost = None
-            #                    s.cputime = None
-            #                    s.walltime = None
-            #        elif s.action == 'Check' and s.state == 'C' and s.exit == 0:
-            #            log.debug("job {0} checked to be successful".format(s.jobname))
-            #        else:
-            #            if options.simulate == True:
-            #                commandargs.insert(0, 'echo')
-            #                s.action = 'Simulate'
-            #                # This jobid is negative showing it belongs to a simulated environment (not real jobid)
-            #                s.jobid = -1 - s.seq
-            #            else:
-            #                s.action = 'Submit'
-            #                # Reset the values to avoid misleading info from previous jobs
-            #                s.jobhost = None
-            #                s.state = 'Q'
-            #                s.cputime = None
-            #                s.walltime = None
-            #                s.exit = None
-            #            try:
-            #                stdout = subprocess.check_output(commandargs)
-            #            except subprocess.CalledProcessError as Error:
-            #                log.exception(Error, 2)
-            #            except OSError (ValueError, NameError):
-            #                log.exception("Command {0}, {1}".format(stringify(commandargs), NameError), ValueError)
-            #            else:
-            #                if options.simulate == False:
-            #                    try:
-            #                        s.jobid = int(stdout.split('.', 1)[0])
-            #                    except ValueError as e:
-            #                        log.warning("Wrong parsing of jobid {0} not being an integer, {1}".format(stdout.split('.', 1)[0], e))
-            #        job_list.append(s.jobid)
-            #        log.debug("{0} {1}".format(s.action, stringify(commandargs)))
+
             commandargs.append(sequence.script)
+
             if options.simulate:
                 log.debug("SIMULATE Launching scripts")
             elif options.test:
@@ -646,7 +591,9 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
                     subprocess.check_output(commandargs, shell=False)
                 except subprocess.CalledProcessError as error:
                     log.exception(error)
+
             log.debug(commandargs)
+
         job_list.append(sequence.script)
 
     return job_list
