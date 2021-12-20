@@ -119,10 +119,8 @@ def parse_template(template, idx):
             line = line.replace("'", "")
             line = line.replace(",", "")
             line = line.replace(r"{0}.format(str(subruns).zfill(4))", str(idx).zfill(4))
-            if "--stdout=" in line or "--stderr" in line or "srun" in line:
+            if "--stdout=" in line or "--stderr" in line:
                 continue
-            if "--prod-id" in line:
-                args.append("-s")
             args.append(line.strip())
         if "subprocess.run" in line:
             keep = True
@@ -138,7 +136,7 @@ def simulate_calibration(args):
 
 def simulate_subrun_processing(args):
     """Simulate subrun processing."""
-    run_str, subrun_idx = args[13].split(".")
+    run_str, subrun_idx = args[9].split(".")
     log.info(f"Simulating process call for run {run_str} subrun {subrun_idx}")
     subprocess.run(args)
 
@@ -156,12 +154,12 @@ def simulate_processing():
     for sequence in sequence_list:
         processed = False
         for sub_list in sequence.subrun_list:
-            if sub_list.runobj.type != "DATA":
+            if sub_list.runobj.type == "PEDCALIB":
                 args_cal = parse_template(
                     create_job_template(sequence, get_content=True), 0
                 )
                 simulate_calibration(args_cal)
-            else:
+            elif sub_list.runobj.type == "DATA":
                 with mp.Pool() as poolproc:
                     args_proc = [
                         parse_template(
