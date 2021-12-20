@@ -188,7 +188,6 @@ def historylevel(history_file: Path, data_type: str):
             words = line.split()
             try:
                 program = words[1]
-                print(program)
                 prod_id = words[2]
                 exit_status = int(words[-1])
                 log.debug(
