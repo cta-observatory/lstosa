@@ -46,7 +46,12 @@ def test_all_help(script):
     run_program(script, "--help")
 
 
-def test_simulate_processing():
+def test_simulate_processing(drs4_time_calibration_files, run_summary_file):
+
+    for file in drs4_time_calibration_files:
+        assert file.exists()
+
+    assert run_summary_file.exists()
 
     remove_provlog()
     rc = run_program("simulate_processing", "-p", "--force")
@@ -88,7 +93,10 @@ def test_simulate_processing():
     assert rc.returncode == 0
 
 
-def test_simulated_sequencer():
+def test_simulated_sequencer(drs4_time_calibration_files, run_summary_file):
+    assert run_summary_file.exists()
+    for file in drs4_time_calibration_files:
+        assert file.exists()
     rc = run_program("sequencer", "-c", "cfg/sequencer.cfg", "-d", "2020_01_17", "-s", "-t", "LST1")
     assert rc.returncode == 0
     now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")
@@ -126,7 +134,7 @@ def test_autocloser(running_analysis_dir):
     )
 
 
-def test_closer(r0_dir, running_analysis_dir, test_observed_data, test_calibration_data):
+def test_closer(r0_dir, running_analysis_dir, test_observed_data):
     # First assure that the end of night flag is not set and remove it otherwise
     night_finished_flag = Path(
         "./test_osa/test_files0/OSA/Closer/20200117/v0.1.0/NightFinished.txt"
@@ -136,8 +144,6 @@ def test_closer(r0_dir, running_analysis_dir, test_observed_data, test_calibrati
 
     assert r0_dir.exists()
     assert running_analysis_dir.exists()
-    for cal_file in test_calibration_data:
-        assert cal_file.exists()
     for obs_file in test_observed_data:
         assert obs_file.exists()
 
@@ -201,18 +207,15 @@ def test_datasequence(running_analysis_dir):
 
     output = run_program(
         "datasequence",
-        "-c",
-        "cfg/sequencer.cfg",
-        "-d",
-        "2020_01_17",
-        "-s",
-        "--prod-id",
-        prod_id,
-        drs4_file,
-        calib_file,
-        timecalib_file,
-        drive_file,
-        runsummary_file,
+        "--config=cfg/sequencer.cfg",
+        "--date=2020_01_17",
+        "--simulate",
+        f"--prod-id={prod_id}",
+        f"--drs4-pedestal-file={drs4_file}",
+        f"--pedcal-file={calib_file}",
+        f"--time-calib-file={timecalib_file}",
+        f"--drive-file={drive_file}",
+        f"--run-summary={runsummary_file}",
         run_number,
         "LST1",
     )
