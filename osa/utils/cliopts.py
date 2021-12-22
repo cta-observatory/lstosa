@@ -345,27 +345,27 @@ def data_sequence_argparser():
         help="Do not produce DL2 files (default False)",
     )
     parser.add_argument(
-        "calib_file",
+        "--pedcal-file",
         type=Path,
         help="Path of the calibration file"
     )
     parser.add_argument(
-        "drs4_ped_file",
+        "--drs4-pedestal-file",
         type=Path,
         help="Path of the DRS4 pedestal file"
     )
     parser.add_argument(
-        "time_calib_file",
+        "--time-calib-file",
         type=Path,
         help="Path of the time calibration file"
     )
     parser.add_argument(
-        "drive_log_file",
+        "--drive-file",
         type=Path,
         help="Path of drive log file with pointing information"
     )
     parser.add_argument(
-        "run_summary_file",
+        "--run-summary",
         type=Path,
         help="Path of run summary file with time reference information",
     )
@@ -412,11 +412,11 @@ def data_sequence_cli_parsing():
         options.dl2_prod_id = options.prod_id
 
     return (
-        opts.calib_file,
-        opts.drs4_ped_file,
+        opts.pedcal_file,
+        opts.drs4_pedestal_file,
         opts.time_calib_file,
-        opts.drive_log_file,
-        opts.run_summary_file,
+        opts.drive_file,
+        opts.run_summary,
         opts.run_number,
     )
 
