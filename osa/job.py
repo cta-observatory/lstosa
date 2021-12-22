@@ -809,18 +809,19 @@ def run_program_with_history_logging(
         rc = subprocess.run(command_args, check=True).returncode
     except subprocess.CalledProcessError as error:
         rc = error.returncode
-        # FIXME: adapt this for data sequence
-
-        history(
-            run, prod_id, command, input_file.name, config_file.name, rc, history_file
-        )
         log.exception(f"Could not execute {stringify(command_args)}, error: {error}")
-    else:
-        history(
-            run, prod_id, command, input_file.name, config_file.name, rc, history_file
-        )
-        if rc != 0:
-            sys.exit(rc)
-        return rc
 
-    return None
+    history(
+        run=run,
+        prod_id=prod_id,
+        stage=command,
+        return_code=rc,
+        history_file=history_file,
+        input_file=input_file.name,
+        config_file=config_file.name
+    )
+
+    if rc != 0:
+        sys.exit(rc)
+
+    return rc
