@@ -338,3 +338,37 @@ def test_plot_job_statistics(sacct_output, running_analysis_dir):
     plot_job_statistics(sacct_output, log_dir)
     plot_file = log_dir / "job_statistics.pdf"
     assert plot_file.exists()
+
+
+def test_get_time_calibration_file(drs4_time_calibration_files):
+    from osa.job import get_time_calibration_file
+    for file in drs4_time_calibration_files:
+        assert file.exists()
+
+    run = 1616
+    time_file = get_time_calibration_file(run)
+    assert time_file == drs4_time_calibration_files[0]
+
+    run = 1625
+    time_file = get_time_calibration_file(run)
+    assert time_file == drs4_time_calibration_files[0]
+
+    run = 1900
+    time_file = get_time_calibration_file(run)
+    assert time_file == drs4_time_calibration_files[0]
+
+    run = 4211
+    time_file = get_time_calibration_file(run)
+    assert time_file == drs4_time_calibration_files[1]
+
+    run = 5000
+    time_file = get_time_calibration_file(run)
+    assert time_file == drs4_time_calibration_files[1]
+
+    run = 5979
+    time_file = get_time_calibration_file(run)
+    assert time_file == drs4_time_calibration_files[2]
+
+    run = 6000
+    time_file = get_time_calibration_file(run)
+    assert time_file == drs4_time_calibration_files[2]

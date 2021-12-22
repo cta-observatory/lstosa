@@ -291,12 +291,14 @@ def get_time_calibration_file(run_id: int) -> Path:
 
     for file in file_list:
         run_in_list = int(file.name.split(".")[1].strip("Run"))
-        if run_in_list <= run_id:
+        if run_id < 1625:
+            time_calibration_file = file_list[0]
+        elif run_in_list <= run_id:
             time_calibration_file = file
         else:
             break
 
-    return time_calibration_file
+        return time_calibration_file.resolve()
 
 
 def sequence_calibration_filenames(sequence_list):
@@ -597,7 +599,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
 
             log.debug(commandargs)
 
-            # FIXME here s.jobid has not been redefined se it keeps the one
+            # FIXME here s.jobid has not been redefined so it keeps the one
             #  from previous time sequencer was launched
         # Add the job dependencies after calibration sequence
         if sequence.parent_list and sequence.type == "DATA":
@@ -783,8 +785,8 @@ def run_program_with_history_logging(
         run: str,
         prod_id: str,
         command: str,
-        input_file: Path,
-        config_file: Path,
+        input_file=None,
+        config_file=None,
 ):
     """
     Run the program and log the output in the history file
@@ -796,8 +798,8 @@ def run_program_with_history_logging(
     run: str
     prod_id: str
     command: str
-    input_file: pathlib.Path
-    config_file: pathlib.Path
+    input_file: pathlib.Path, optional
+    config_file: pathlib.Path, optional
 
     Returns
     -------
