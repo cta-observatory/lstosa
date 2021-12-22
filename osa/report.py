@@ -145,9 +145,9 @@ def history(
         Return code of the lstchain executable.
     history_file : pathlib.Path
         The history file that keeps track of the analysis steps.
-    input_file : str or None
+    input_file : str, optional
         If needed, input file used for the lstchain executable
-    config_file : str or None
+    config_file : str, optional
         Input card used for the lstchain executable.
     """
     date_string = datetime.utcnow().isoformat(sep=" ", timespec="minutes")
