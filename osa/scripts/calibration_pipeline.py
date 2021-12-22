@@ -9,17 +9,15 @@ onsite calibration scripts from lstchain.
 """
 
 import logging
-import subprocess
 import sys
 from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import historylevel
-from osa.report import history
+from osa.job import run_program_with_history_logging
 from osa.utils.cliopts import calibration_pipeline_cliparsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import stringify
 
 __all__ = [
     "calibration_sequence",
@@ -113,23 +111,13 @@ def drs4_pedestal(drs4_pedestal_run_id: str, history_file: Path) -> int:
 
     cmd = drs4_pedestal_command(drs4_pedestal_run_id)
 
-    try:
-        log.info(f"Executing {stringify(cmd)}")
-        rc = subprocess.run(cmd, check=True).returncode
-    except subprocess.CalledProcessError as error:
-        rc = error.returncode
-        log.exception(f"Could not execute {stringify(cmd)}, error: {error}")
-
-    history(
+    return run_program_with_history_logging(
+        command_args=cmd,
+        history_file=history_file,
         run=drs4_pedestal_run_id,
         prod_id=options.calib_prod_id,
-        stage=cmd[0],
-        return_code=rc,
-        history_file=history_file
+        command=cmd[0]
     )
-    if rc != 0:
-        sys.exit(rc)
-    return rc
 
 
 def calibrate_charge(calibration_run: str, history_file: Path) -> int:
@@ -151,23 +139,13 @@ def calibrate_charge(calibration_run: str, history_file: Path) -> int:
 
     cmd = calibration_file_command(pedcal_run_id=calibration_run)
 
-    try:
-        log.info(f"Executing {stringify(cmd)}")
-        rc = subprocess.run(cmd, check=True).returncode
-    except subprocess.CalledProcessError as error:
-        rc = error.returncode
-        log.exception(f"Could not execute {stringify(cmd)}, error: {error}")
-
-    history(
+    return run_program_with_history_logging(
+        command_args=cmd,
+        history_file=history_file,
         run=calibration_run,
         prod_id=options.calib_prod_id,
-        stage=cmd[0],
-        return_code=rc,
-        history_file=history_file
+        command=cmd[0]
     )
-    if rc != 0:
-        sys.exit(rc)
-    return rc
 
 
 def main():
