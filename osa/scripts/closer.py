@@ -51,8 +51,6 @@ log = myLogger(logging.getLogger())
 
 def main():
     """Main function in charge of closing the sequences."""
-
-    # set the options through cli parsing
     closercliparsing()
 
     if options.verbose:
@@ -125,11 +123,13 @@ def is_raw_data_available():
 
 
 def is_sequencer_successful(seq_tuple: [bool, list]):
+    """Return a bool assessing whether the sequencer has successfully finished or not."""
     return seq_tuple[0]
 
 
 def ask_for_closing():
-    """Ask the user whether sequences should be closed or not.
+    """
+    Ask the user whether sequences should be closed or not.
     A True (Y/y) closes, while False(N/n) answer stops the program.
 
     Returns
@@ -209,9 +209,6 @@ def post_process_files(seq_list: list):
     DL2_RE = re.compile(f"{options.dl2_prod_id}" + r"/dl2.*.(?:h5|hdf5|hdf)")
     MUONS_RE = re.compile(r"muons.*.fits")
     DATACHECK_RE = re.compile(r"datacheck_dl1.*.(?:h5|hdf5|hdf)")
-    # CALIB_RE = re.compile(r"/calibration.*.(?:h5|hdf5|hdf)")
-    # TIMECALIB_RE = re.compile(r"/time_calibration.*.(?:h5|hdf5|hdf)")
-    # PEDESTAL_RE = re.compile(r"drs4.*.fits")
 
     pattern_files = dict(
         [
@@ -219,9 +216,6 @@ def post_process_files(seq_list: list):
             ("DL2", DL2_RE),
             ("MUON", MUONS_RE),
             ("DATACHECK", DATACHECK_RE),
-            # ("PEDESTAL", PEDESTAL_RE),
-            # ("CALIB", CALIB_RE),
-            # ("TIMECALIB", TIMECALIB_RE),
         ]
     )
 
@@ -412,8 +406,7 @@ def extract_provenance(seq_list):
 
 
 def merge_dl2(sequence_list):
-    """Merge DL2 h5 files run-wise"""
-
+    """Merge DL2 h5 files run-wise."""
     log.info("Looping over the sequences and merging the dl2 files")
 
     dl2_dir = destination_dir("DL2", create_dir=False)

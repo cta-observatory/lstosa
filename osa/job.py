@@ -599,8 +599,9 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
 
             log.debug(commandargs)
 
-            # FIXME here s.jobid has not been redefined so it keeps the one
-            #  from previous time sequencer was launched
+        # Here sequence.jobid has not been redefined, so it keeps the one
+        # from previous time sequencer was launched.
+
         # Add the job dependencies after calibration sequence
         if sequence.parent_list and sequence.type == "DATA":
             if not options.simulate and not options.no_calib and not options.test:
