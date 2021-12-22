@@ -43,6 +43,7 @@ __all__ = [
     "filter_jobs",
     "run_sacct",
     "run_squeue",
+    "get_time_calibration_file",
 ]
 
 TAB = "\t".expandtabs(4)
@@ -274,29 +275,57 @@ def sequence_filenames(sequence):
     sequence.history = Path(options.directory) / f"{basename}{history_suffix}"
 
 
+def get_time_calibration_file(run_id: int) -> Path:
+    """
+    Return the time calibration file corresponding to a calibration run taken before
+    the run id given. If run_id is smaller than the first run id from the time
+    calibration files, return the first time calibration file available, which
+    corresponds to 1625.
+    """
+
+    time_calibration_dir = Path(cfg.get("LST1", "TIMECALIB_DIR"))
+    file_list = sorted(time_calibration_dir.rglob("pro/time_calibration.Run*.h5"))
+
+    if not file_list:
+        raise IOError("No time calibration file found")
+
+    for file in file_list:
+        run_in_list = int(file.name.split(".")[1].strip("Run"))
+        if run_in_list <= run_id:
+            time_calibration_file = file
+        else:
+            break
+
+    return time_calibration_file
+
+
 def sequence_calibration_filenames(sequence_list):
     """Build names of the calibration and drive files."""
     nightdir = lstdate_to_dir(options.date)
     yy_mm_dd = date_in_yymmdd(nightdir)
-    drivefile = f"drive_log_{yy_mm_dd}.txt"
+    drive_file = f"drive_log_{yy_mm_dd}.txt"
 
     for sequence in sequence_list:
+
         if not sequence.parent_list:
-            cal_run_string = str(sequence.run).zfill(5)
-            calfile = f"calibration.Run{cal_run_string}.0000.h5"
-            timecalfile = f"time_calibration.Run{cal_run_string}.0000.h5"
-            ped_run_string = str(sequence.previousrun).zfill(5)
+            drs4_pedestal_run_id = sequence.previousrun
+            calibration_run_id = sequence.run
         else:
-            run_string = str(sequence.parent_list[0].run).zfill(5)
-            ped_run_string = str(sequence.parent_list[0].previousrun).zfill(5)
-            calfile = f"calibration.Run{run_string}.0000.h5"
-            timecalfile = f"time_calibration.Run{run_string}.0000.h5"
-        pedfile = f"drs4_pedestal.Run{ped_run_string}.0000.fits"
+            drs4_pedestal_run_id = sequence.parent_list[0].previousrun
+            calibration_run_id = sequence.parent_list[0].run
+
+        drs4_pedestal_file = f"drs4_pedestal.Run{drs4_pedestal_run_id:05d}.0000.h5"
+        calibration_file = f"calibration_filters_52.Run{calibration_run_id:05d}.0000.h5"
+
         # Assign the calibration and drive files to the sequence object
-        sequence.drive = drivefile
-        sequence.calibration = Path(options.directory) / calfile
-        sequence.time_calibration = Path(options.directory) / timecalfile
-        sequence.pedestal = Path(options.directory) / pedfile
+        sequence.drive = drive_file
+        sequence.pedestal = (
+            Path(cfg.get("LST1", "PEDESTAL_DIR")) / nightdir / "pro" / drs4_pedestal_file
+        )
+        sequence.calibration = (
+            Path(cfg.get("LST1", "CALIB_DIR")) / nightdir / "pro" / calibration_file
+        )
+        sequence.time_calibration = get_time_calibration_file(calibration_run_id)
 
 
 def plot_job_statistics(sacct_output: pd.DataFrame, directory: Path):
@@ -464,12 +493,13 @@ def create_job_template(sequence, get_content=False):
         commandargs.append(f"--pedcal-run={sequence.run:05d}")
 
     if sequence.type == "DATA":
+        run_summary_file = Path(run_summary_dir) / f"RunSummary_{nightdir}.ecsv"
         commandargs.append(f"--prod-id={options.prod_id}")
-        commandargs.append(sequence.calibration.resolve())
-        commandargs.append(sequence.pedestal.resolve())
-        commandargs.append(sequence.time_calibration.resolve())
-        commandargs.append(Path(drivedir) / sequence.drive)
-        commandargs.append(Path(run_summary_dir) / f"RunSummary_{nightdir}.ecsv")
+        commandargs.append(f"--drs4-pedestal-file={sequence.pedestal.resolve()}")
+        commandargs.append(f"--time-calib-file={sequence.time_calibration.resolve()}")
+        commandargs.append(f"--pedcal-file={sequence.calibration.resolve()}")
+        commandargs.append(f"--drive-file={Path(drivedir).resolve() / sequence.drive}")
+        commandargs.append(f"--run-summary={run_summary_file.resolve()}")
 
     python_imports = dedent(
         """\
@@ -779,6 +809,8 @@ def run_program_with_history_logging(
         rc = subprocess.run(command_args, check=True).returncode
     except subprocess.CalledProcessError as error:
         rc = error.returncode
+        # FIXME: adapt this for data sequence
+
         history(
             run, prod_id, command, input_file.name, config_file.name, rc, history_file
         )
