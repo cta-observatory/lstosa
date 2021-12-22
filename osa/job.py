@@ -628,7 +628,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
                 except subprocess.CalledProcessError as error:
                     log.exception(error)
 
-            log.debug(commandargs)
+            log.debug(stringify(commandargs))
 
         job_list.append(sequence.script)
 
