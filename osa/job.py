@@ -298,7 +298,7 @@ def get_time_calibration_file(run_id: int) -> Path:
         else:
             break
 
-        return time_calibration_file.resolve()
+    return time_calibration_file.resolve()
 
 
 def sequence_calibration_filenames(sequence_list):
