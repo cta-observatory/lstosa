@@ -164,7 +164,8 @@ def test_create_job_template_scheduler(
         os.environ['NUMBA_CACHE_DIR'] = tmpdirname
         proc = subprocess.run([
             'datasequence',
-            '--config={Path.cwd()}/cfg/sequencer.cfg',
+            '--config',
+            '{Path.cwd()}/cfg/sequencer.cfg',
             '--date=2020_01_17',
             '--prod-id=v0.1.0',
             '--drs4-pedestal-file={drs4_baseline_file}',
@@ -209,7 +210,8 @@ def test_create_job_template_local(
         os.environ['NUMBA_CACHE_DIR'] = tmpdirname
         proc = subprocess.run([
             'datasequence',
-            '--config={Path.cwd()}/cfg/sequencer.cfg',
+            '--config',
+            '{Path.cwd()}/cfg/sequencer.cfg',
             '--date=2020_01_17',
             '--prod-id=v0.1.0',
             '--drs4-pedestal-file={drs4_baseline_file}',
@@ -246,7 +248,8 @@ def test_create_job_scheduler_calibration(sequence_list):
         os.environ['NUMBA_CACHE_DIR'] = tmpdirname
         proc = subprocess.run([
             'calibration_pipeline',
-            '--config={Path.cwd()}/cfg/sequencer.cfg',
+            '--config',
+            '{Path.cwd()}/cfg/sequencer.cfg',
             '--date=2020_01_17',
             '--drs4-pedestal-run=01804',
             '--pedcal-run=01805',

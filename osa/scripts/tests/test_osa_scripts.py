@@ -207,7 +207,8 @@ def test_datasequence(running_analysis_dir):
 
     output = run_program(
         "datasequence",
-        "--config=cfg/sequencer.cfg",
+        "--config",
+        "cfg/sequencer.cfg",
         "--date=2020_01_17",
         "--simulate",
         f"--prod-id={prod_id}",

@@ -484,7 +484,8 @@ def create_job_template(sequence, get_content=False):
     if options.simulate:
         commandargs.append("-s")
     if options.configfile:
-        commandargs.append(f"--config={Path(options.configfile).resolve()}")
+        commandargs.append("--config")
+        commandargs.append(f"{Path(options.configfile).resolve()}")
     if sequence.type == "DATA" and options.no_dl2:
         commandargs.append("--no-dl2")
 
@@ -584,7 +585,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     for sequence in sequence_list:
         commandargs = [batch_command, "--parsable", no_display_backend]
         if sequence.type == "PEDCALIB":
-            commandargs.append(sequence.script)
+            commandargs.append(str(sequence.script))
             if options.simulate or options.no_calib or options.test:
                 log.debug("SIMULATE Launching scripts")
             else:
@@ -597,7 +598,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
                     rc = error.returncode
                     log.exception(f"Command '{batch_command}' not found, error {rc}")
 
-            log.debug(commandargs)
+            log.debug(stringify(commandargs))
 
         # Here sequence.jobid has not been redefined, so it keeps the one
         # from previous time sequencer was launched.
