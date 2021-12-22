@@ -3,6 +3,7 @@ from datetime import datetime
 from fnmatch import fnmatchcase
 from glob import glob
 from os.path import basename, getsize, join
+from pathlib import Path
 
 from osa.configs import config, options
 from osa.configs.config import cfg
@@ -120,11 +121,11 @@ def finished_assignments(sequence_list):
 
 
 def history(
-        run,
-        prod_id,
-        stage,
-        return_code,
-        history_file,
+        run: str,
+        prod_id: str,
+        stage: str,
+        return_code: int,
+        history_file: Path,
         input_file=None,
         config_file=None,
 ) -> None:
@@ -140,14 +141,14 @@ def history(
         Prod ID of the run analyzed.
     stage : str
         Stage of the analysis pipeline.
-    input_file : str
-        If needed, input file used for the lstchain executable
-    config_file : str
-        Input card used for the lstchain executable.
     return_code : int
         Return code of the lstchain executable.
     history_file : pathlib.Path
         The history file that keeps track of the analysis steps.
+    input_file : str or None
+        If needed, input file used for the lstchain executable
+    config_file : str or None
+        Input card used for the lstchain executable.
     """
     date_string = datetime.utcnow().isoformat(sep=" ", timespec="minutes")
     string_to_write = (
