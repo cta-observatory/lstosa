@@ -126,9 +126,16 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     assert header == output_string2
 
 
-def test_create_job_template_scheduler(sequence_list):
+def test_create_job_template_scheduler(
+        sequence_list,
+        drs4_time_calibration_files,
+        drs4_baseline_file,
+        calibration_file,
+        run_summary_file
+):
     from osa.job import create_job_template
     options.test = False
+    options.simulate = False
     content = create_job_template(sequence_list[1], get_content=True)
     expected_content = dedent(f"""\
     #!/bin/env python
@@ -160,11 +167,11 @@ def test_create_job_template_scheduler(sequence_list):
             '--config={Path.cwd()}/cfg/sequencer.cfg',
             '--date=2020_01_17',
             '--prod-id=v0.1.0',
-            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/calibration.Run01805.0000.h5',
-            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/drs4_pedestal.Run01804.0000.fits',
-            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/time_calibration.Run01805.0000.h5',
-            'extra/monitoring/DrivePositioning/drive_log_20_01_17.txt',
-            'extra/monitoring/RunSummary/RunSummary_20200117.ecsv',
+            '--drs4-pedestal-file={drs4_baseline_file}',
+            '--time-calib-file={drs4_time_calibration_files[0]}',
+            '--pedcal-file={calibration_file}',
+            '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/drive_log_20_01_17.txt',
+            '--run-summary={run_summary_file}',
             '--stderr=log/sequence_LST1_01807.{{0}}_{{1}}.err'.format(str(subruns).zfill(4), str(job_id)),
             '--stdout=log/sequence_LST1_01807.{{0}}_{{1}}.out'.format(str(subruns).zfill(4), str(job_id)),
             '01807.{{0}}'.format(str(subruns).zfill(4)),
@@ -172,13 +179,21 @@ def test_create_job_template_scheduler(sequence_list):
         ])
 
     sys.exit(proc.returncode)""")
+    options.simulate = True
     assert content == expected_content
 
 
-def test_create_job_template_local(sequence_list):
+def test_create_job_template_local(
+        sequence_list,
+        drs4_time_calibration_files,
+        drs4_baseline_file,
+        calibration_file,
+        run_summary_file
+):
     """Check the job file in local mode (assuming no scheduler)."""
     from osa.job import create_job_template
     options.test = True
+    options.simulate = False
     content = create_job_template(sequence_list[1], get_content=True)
     expected_content = dedent(f"""\
     #!/bin/env python
@@ -197,16 +212,17 @@ def test_create_job_template_local(sequence_list):
             '--config={Path.cwd()}/cfg/sequencer.cfg',
             '--date=2020_01_17',
             '--prod-id=v0.1.0',
-            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/calibration.Run01805.0000.h5',
-            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/drs4_pedestal.Run01804.0000.fits',
-            '{Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0/time_calibration.Run01805.0000.h5',
-            'extra/monitoring/DrivePositioning/drive_log_20_01_17.txt',
-            'extra/monitoring/RunSummary/RunSummary_20200117.ecsv',
+            '--drs4-pedestal-file={drs4_baseline_file}',
+            '--time-calib-file={drs4_time_calibration_files[0]}',
+            '--pedcal-file={calibration_file}',
+            '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/drive_log_20_01_17.txt',
+            '--run-summary={run_summary_file}',
             '01807.{{0}}'.format(str(subruns).zfill(4)),
             'LST1'
         ])
 
     sys.exit(proc.returncode)""")
+    options.simulate = True
     assert content == expected_content
 
 
@@ -214,6 +230,7 @@ def test_create_job_scheduler_calibration(sequence_list):
     """Check the pilot job file for the calibration pipeline."""
     from osa.job import create_job_template
     options.test = True
+    options.simulate = False
     content = create_job_template(sequence_list[0], get_content=True)
     expected_content = dedent(f"""\
     #!/bin/env python
@@ -237,6 +254,7 @@ def test_create_job_scheduler_calibration(sequence_list):
         ])
 
     sys.exit(proc.returncode)""")
+    options.simulate = True
     assert content == expected_content
 
 
