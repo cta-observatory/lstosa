@@ -73,9 +73,6 @@ def test_destination_dir():
     data_types = {
         "DL1AB": "DL1",
         "DATACHECK": "DL1",
-        "PEDESTAL": "calibration",
-        "CALIB": "calibration",
-        "TIMECALIB": "calibration",
         "MUON": "DL1",
         "DL2": "DL2",
     }
@@ -88,8 +85,6 @@ def test_destination_dir():
         elif concept == "DL2":
             expected_directory = base_path / dst_dir / datedir /\
                                  options.prod_id / options.dl2_prod_id
-        elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-            expected_directory = base_path / dst_dir / datedir / options.calib_prod_id
         else:
             expected_directory = base_path / dst_dir / datedir / options.prod_id
 
