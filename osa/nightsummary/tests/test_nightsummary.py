@@ -11,8 +11,10 @@ def test_get_nightsummary_file():
            "RunSummary_20200101.ecsv"
 
 
-def test_run_summary_table():
+def test_run_summary_table(run_summary_file):
     from osa.nightsummary.nightsummary import run_summary_table
+
+    assert run_summary_file.exists()
 
     date = "2020_01_17"
     summary = run_summary_table(date)
