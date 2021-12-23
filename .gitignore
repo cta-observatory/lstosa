@@ -5,6 +5,7 @@ test_osa
 testfiles
 prov.log
 docs/prov.log
+*.log
 
 # Compiled files
 *.py[co]

@@ -1,4 +1,5 @@
 from datetime import datetime
+from osa.configs import options
 
 
 def test_finished_assignments(sequence_list):
@@ -25,9 +26,21 @@ def test_history(base_test_dir):
     input_card = "r0_dl1.config"
     rc = 0
     history_file = base_test_dir / "r0_to_dl1_01800.history"
-    date_string = datetime.utcnow().strftime("%a %b %d %X UTC %Y")
+    date_string = datetime.utcnow().isoformat(sep=" ", timespec="minutes")
 
-    history(run, prod_id, program, input_file, input_card, rc, history_file)
+    options.simulate = False
+
+    history(
+        run=run,
+        prod_id=prod_id,
+        stage=program,
+        return_code=rc,
+        history_file=history_file,
+        input_file=input_file,
+        config_file=input_card
+    )
+
+    options.simulate = True
 
     logged_string = f"01800 r0_to_dl1 v1.0.0 {date_string} " \
         "r0_to_dl1_01800.fits r0_dl1.config 0\n"

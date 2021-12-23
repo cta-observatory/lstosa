@@ -3,6 +3,7 @@ from datetime import datetime
 from fnmatch import fnmatchcase
 from glob import glob
 from os.path import basename, getsize, join
+from pathlib import Path
 
 from osa.configs import config, options
 from osa.configs.config import cfg
@@ -11,7 +12,7 @@ from osa.utils.iofile import append_to_file
 
 log = logging.getLogger(__name__)
 
-__all__ = ["history", "start", "rule", "finished_assignments"]
+__all__ = ["history", "start", "finished_assignments"]
 
 
 def start(parent_tag: str):
@@ -38,11 +39,6 @@ def header(message):
     else:
         prettyframe = ""
     log.info(f"{prettyframe} {message} {prettyframe}")
-
-
-def rule():
-    prettyframe = int(config.cfg.get("OUTPUT", "REPORTWIDTH")) * "-"
-    log.info(prettyframe)
 
 
 def finished_assignments(sequence_list):
@@ -124,7 +120,15 @@ def finished_assignments(sequence_list):
     return dictionary
 
 
-def history(run, prod_id, program, input_file, input_card, rc, history_file) -> None:
+def history(
+        run: str,
+        prod_id: str,
+        stage: str,
+        return_code: int,
+        history_file: Path,
+        input_file=None,
+        config_file=None,
+) -> None:
     """
     Appends a history line to the history file. A history line
     reports the outcome of the execution of a lstchain executable.
@@ -135,20 +139,20 @@ def history(run, prod_id, program, input_file, input_card, rc, history_file) -> 
         Run/sequence analyzed.
     prod_id : str
         Prod ID of the run analyzed.
-    program : str
-        Mars executable used.
-    input_file : str
-        If needed, some input file used for the lstchain executable
-    input_card : str
-        Input card used for the lstchain executable.
-    rc : str or int
+    stage : str
+        Stage of the analysis pipeline.
+    return_code : int
         Return code of the lstchain executable.
     history_file : pathlib.Path
         The history file that keeps track of the analysis steps.
+    input_file : str, optional
+        If needed, input file used for the lstchain executable
+    config_file : str, optional
+        Input card used for the lstchain executable.
     """
-    now = datetime.utcnow()
-    date_string = now.strftime("%a %b %d %X UTC %Y")
+    date_string = datetime.utcnow().isoformat(sep=" ", timespec="minutes")
     string_to_write = (
-        f"{run} {program} {prod_id} {date_string} {input_file} {input_card} {rc}\n"
+        f"{run} {stage} {prod_id} {date_string} "
+        f"{input_file} {config_file} {return_code}\n"
     )
     append_to_file(history_file, string_to_write)

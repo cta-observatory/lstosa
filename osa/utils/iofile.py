@@ -15,7 +15,7 @@ __all__ = [
 ]
 
 
-def write_to_file(file, content):
+def write_to_file(file: pathlib.Path, content: str):
     """Check if the file already exists and write the content in it."""
     file_temp = f"{file}.tmp"
     try:

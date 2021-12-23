@@ -45,6 +45,12 @@ def test_get_prod_id():
     assert get_prod_id() == prod_id
 
 
+def test_get_calib_prod_id():
+    from osa.utils.utils import get_calib_prod_id
+    prod_id = cfg.get(options.tel_id, "CALIB_PROD_ID")
+    assert get_calib_prod_id() == prod_id
+
+
 def test_date_in_yymmdd():
     from osa.utils.utils import date_in_yymmdd
 
@@ -65,7 +71,6 @@ def test_destination_dir():
     datedir = lstdate_to_dir(options.date)
     options.dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
     options.dl2_prod_id = cfg.get("LST1", "DL2_PROD_ID")
-    options.calib_prod_id = cfg.get("LST1", "CALIB_PROD_ID")
     options.prod_id = cfg.get("LST1", "PROD_ID")
     base_directory = cfg.get("LST1", "BASE")
     base_path = Path(base_directory)
@@ -73,9 +78,6 @@ def test_destination_dir():
     data_types = {
         "DL1AB": "DL1",
         "DATACHECK": "DL1",
-        "PEDESTAL": "calibration",
-        "CALIB": "calibration",
-        "TIMECALIB": "calibration",
         "MUON": "DL1",
         "DL2": "DL2",
     }
@@ -83,13 +85,13 @@ def test_destination_dir():
     for concept, dst_dir in data_types.items():
         directory = destination_dir(concept, create_dir=False)
         if concept in ["DL1AB", "DATACHECK"]:
-            expected_directory = base_path / dst_dir / datedir /\
-                                 options.prod_id / options.dl1_prod_id
+            expected_directory = (
+                base_path / dst_dir / datedir / options.prod_id / options.dl1_prod_id
+            )
         elif concept == "DL2":
-            expected_directory = base_path / dst_dir / datedir /\
-                                 options.prod_id / options.dl2_prod_id
-        elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-            expected_directory = base_path / dst_dir / datedir / options.calib_prod_id
+            expected_directory = (
+                base_path / dst_dir / datedir / options.prod_id / options.dl2_prod_id
+            )
         else:
             expected_directory = base_path / dst_dir / datedir / options.prod_id
 

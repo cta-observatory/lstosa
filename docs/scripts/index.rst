@@ -5,7 +5,7 @@ Scripts
 Scrips to be executed from the command line are described below:
 
 * `sequencer.py`_
-* `calibrationsequence.py`_
+* `calibration_pipeline.py`_
 * `datasequence.py`_
 * `closer.py`_
 * `provprocess.py`_
@@ -27,7 +27,7 @@ In the analysis folders you will find several types of ``sequence_*`` files:
 
 ``sequence_*.sh``
    File submitted to the working nodes.
-   It calls either the :ref:`calibrationsequence.py` and the
+   It calls either the :ref:`calibration_pipeline.py` and the
    :ref:`datasequence.py` depending on the arguments given to
    the sequencer and the type of sequence/run. You can submit
    these jobs manually by executing ``sbatch sequence_*.py``.
@@ -63,10 +63,10 @@ API/References
     :no-heading:
 
 
-.. _calibrationsequence.py:
+.. _calibration_pipeline.py:
 
-calibrationsequence.py
-++++++++++++++++++++++
+calibration_pipeline.py
++++++++++++++++++++++++
 
 It produces the calibration products.
 
@@ -74,13 +74,13 @@ Usage
 -----
 .. argparse::
    :module: osa.utils.cliopts
-   :func: calibration_sequence_argparser
-   :prog: calibrationsequence.py
+   :func: calibration_pipeline_argparser
+   :prog: calibration_pipeline.py
 
 API/References
 --------------
 
-.. automodapi:: osa.scripts.calibrationsequence
+.. automodapi:: osa.scripts.calibration_pipeline
     :no-heading:
 
 
