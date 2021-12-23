@@ -321,7 +321,7 @@ def destination_dir(concept, create_dir=True) -> Path:
         Expected: MUON, DL1AB, DATACHECK, DL2, PEDESTAL, CALIB, TIMECALIB
     create_dir : bool
         Set it to True (default) if you want to create the directory.
-        Otherwise it just return the path
+        Otherwise, it just returns the path
 
     Returns
     -------
@@ -417,11 +417,11 @@ def copy_files_datacheck_web(host, datedir, file_list) -> None:
 
     Parameters
     ----------
-    host: str
+    host : str
         Hostname of the webserver
-    datedir: str
+    datedir : str
         Date directory in the webserver
-    file_list: list
+    file_list : list
         List of files to be copied
     """
     # FIXME: Check if files exists already at webserver CHECK HASH
