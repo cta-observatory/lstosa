@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import Tuple, Iterable
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -122,7 +123,7 @@ def is_raw_data_available():
     return answer
 
 
-def is_sequencer_successful(seq_tuple: [bool, list]):
+def is_sequencer_successful(seq_tuple: Tuple[bool, Iterable]):
     """Return a bool assessing whether the sequencer has successfully finished or not."""
     return seq_tuple[0]
 
