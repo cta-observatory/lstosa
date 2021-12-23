@@ -9,7 +9,7 @@ import time
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent
-from typing import List, Iterable
+from typing import List, Iterable, Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -787,8 +787,8 @@ def run_program_with_history_logging(
         run: str,
         prod_id: str,
         command: str,
-        input_file=None,
-        config_file=None,
+        input_file: Optional[str] = None,
+        config_file: Optional[str] = None,
 ):
     """
     Run the program and log the output in the history file
@@ -800,8 +800,8 @@ def run_program_with_history_logging(
     run: str
     prod_id: str
     command: str
-    input_file: pathlib.Path, optional
-    config_file: pathlib.Path, optional
+    input_file: str, optional
+    config_file: str, optional
 
     Returns
     -------
@@ -821,8 +821,8 @@ def run_program_with_history_logging(
         stage=command,
         return_code=rc,
         history_file=history_file,
-        input_file=input_file.name,
-        config_file=config_file.name
+        input_file=input_file,
+        config_file=config_file
     )
 
     if rc != 0:
