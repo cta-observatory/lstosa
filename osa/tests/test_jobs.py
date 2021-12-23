@@ -375,3 +375,28 @@ def test_get_time_calibration_file(drs4_time_calibration_files):
     run = 6000
     time_file = get_time_calibration_file(run)
     assert time_file == drs4_time_calibration_files[2]
+
+
+def test_run_program_with_history_logging(running_analysis_dir):
+    from osa.job import run_program_with_history_logging
+
+    options.simulate = False
+
+    cmd = ["echo", "Testing"]
+    history_file = running_analysis_dir / "test.history"
+    run = "01140"
+    prod_id = "v0.2.0"
+    command = "echo"
+    config_file = "config_test.json"
+
+    rc = run_program_with_history_logging(
+        command_args=cmd,
+        history_file=history_file,
+        run=run,
+        prod_id=prod_id,
+        command=command,
+        config_file=config_file,
+    )
+    options.simulate = True
+    assert rc == 0
+    assert history_file.exists()
