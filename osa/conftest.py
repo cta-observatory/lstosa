@@ -218,7 +218,11 @@ def sequence_list(running_analysis_dir, run_summary, drs4_time_calibration_files
 
 
 @pytest.fixture(scope="session")
-def sequence_file_list(running_analysis_dir):
+def sequence_file_list(running_analysis_dir, run_summary_file, drs4_time_calibration_files):
+    for file in drs4_time_calibration_files:
+        assert file.exists()
+    assert run_summary_file.exists()
+
     run_program("sequencer", "-d", "2020_01_17", "--no-submit", "-t", "LST1")
     return [
         running_analysis_dir / "sequence_LST1_01805.py",
