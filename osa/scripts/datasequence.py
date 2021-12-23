@@ -131,7 +131,7 @@ def r0_to_dl1(
     r0_dir = Path(cfg.get("LST1", "R0_DIR")) / night_dir
     r0_file = r0_dir / f"LST-1.1.Run{run_str}.fits.fz"
 
-    command_args = [
+    cmd = [
         command,
         f"--input-file={r0_file}",
         f"--output-dir={options.directory}",
@@ -146,13 +146,13 @@ def r0_to_dl1(
         return 0
 
     return run_program_with_history_logging(
-        command_args,
-        history_file,
-        run_str,
-        options.prod_id,
-        command,
-        calibration_file,
-        pedestal_file,
+        command_args=cmd,
+        history_file=history_file,
+        run=run_str,
+        prod_id=options.prod_id,
+        command=command,
+        input_file=calibration_file.name,
+        config_file=pedestal_file.name,
     )
 
 
@@ -160,7 +160,7 @@ def r0_to_dl1(
 def dl1ab(run_str: str, history_file: Path):
     """
     Prepare and launch the actual lstchain script that is performing
-    the the image cleaning considering the interleaved pedestal information
+    the image cleaning considering the interleaved pedestal information
     and obtains shower parameters. It keeps the shower images.
 
     Parameters
@@ -184,7 +184,7 @@ def dl1ab(run_str: str, history_file: Path):
 
     # Prepare and launch the actual lstchain script
     command = cfg.get("lstchain", "dl1ab")
-    command_args = [
+    cmd = [
         command,
         f"--input-file={input_dl1_datafile}",
         f"--output-file={output_dl1_datafile}",
@@ -192,19 +192,19 @@ def dl1ab(run_str: str, history_file: Path):
         f"--config={dl1ab_config_file}",
     ]
     if not cfg.getboolean("lstchain", "store_image_dl1ab"):
-        command_args.append("--no-image=True")
+        cmd.append("--no-image=True")
 
     if options.simulate:
         return 0
 
     return run_program_with_history_logging(
-        command_args,
-        history_file,
-        run_str,
-        options.dl1_prod_id,
-        command,
-        input_dl1_datafile,
-        dl1ab_config_file,
+        command_args=cmd,
+        history_file=history_file,
+        run=run_str,
+        prod_id=options.dl1_prod_id,
+        command=command,
+        input_file=input_dl1_datafile.name,
+        config_file=dl1ab_config_file.name,
     )
 
 
@@ -231,7 +231,7 @@ def dl1_datacheck(run_str: str, history_file: Path):
 
     # Prepare and launch the actual lstchain script
     command = cfg.get("lstchain", "check_dl1")
-    command_args = [
+    cmd = [
         command,
         f"--input-file={input_dl1_datafile}",
         f"--output-dir={output_directory}",
@@ -244,13 +244,13 @@ def dl1_datacheck(run_str: str, history_file: Path):
         return 0
 
     return run_program_with_history_logging(
-        command_args,
-        history_file,
-        run_str,
-        options.dl1_prod_id,
-        command,
-        input_dl1_datafile,
-        dl1ab_config_file,
+        command_args=cmd,
+        history_file=history_file,
+        run=run_str,
+        prod_id=options.dl1_prod_id,
+        command=command,
+        input_file=input_dl1_datafile.name,
+        config_file=dl1ab_config_file.name,
     )
 
 
@@ -277,7 +277,7 @@ def dl1_to_dl2(run_str: str, history_file: Path):
     dl1_file = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
 
     command = cfg.get("lstchain", "dl1_to_dl2")
-    command_args = [
+    cmd = [
         command,
         f"--input-file={dl1_file}",
         f"--output-dir={dl2_subdirectory}",
@@ -289,13 +289,13 @@ def dl1_to_dl2(run_str: str, history_file: Path):
         return 0
 
     return run_program_with_history_logging(
-        command_args,
-        history_file,
-        run_str,
-        options.dl2_prod_id,
-        command,
-        dl1_file,
-        dl2_config_file,
+        command_args=cmd,
+        history_file=history_file,
+        run=run_str,
+        prod_id=options.dl2_prod_id,
+        command=command,
+        input_file=dl1_file.name,
+        config_file=dl2_config_file.name,
     )
 
 
