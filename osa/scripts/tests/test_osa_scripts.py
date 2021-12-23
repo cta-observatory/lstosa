@@ -21,6 +21,8 @@ ALL_SCRIPTS = [
     "simulate_processing",
 ]
 
+options.date = "2020_01_17"
+
 
 def remove_provlog():
     log_file = Path("prov.log")
@@ -168,18 +170,6 @@ def test_closer(r0_dir, running_analysis_dir, test_observed_data):
         "./test_osa/test_files0/DL2/20200117/v0.1.0/tailcut84_model1/"
         "dl2_LST-1.Run01808.0011.h5"
     )
-    # assert os.path.exists(
-    #     "./test_osa/test_files0/calibration/20200117/v01/"
-    #     "drs4_pedestal.Run01804.0000.fits"
-    # )
-    # assert os.path.exists(
-    #     "./test_osa/test_files0/calibration/20200117/v01/"
-    #     "calibration.Run01805.0000.h5"
-    # )
-    # assert os.path.exists(
-    #     "./test_osa/test_files0/calibration/20200117/"
-    #     "v01/time_calibration.Run01805.0000.h5"
-    # )
     # Assert that the link to dl1 and muons files have been created
     assert os.path.islink(
         "./test_osa/test_files0/running_analysis/20200117/"
@@ -223,15 +213,11 @@ def test_datasequence(running_analysis_dir):
     assert output.returncode == 0
 
 
-def test_calibration_pipeline(r0_data, running_analysis_dir):
+def test_calibration_pipeline(running_analysis_dir):
     prod_id = "v0.1.0"
     drs4_run_number = "01805"
     pedcal_run_number = "01806"
     options.directory = running_analysis_dir
-
-    # Check that the R0 files corresponding to calibration run exists
-    for files in r0_data:
-        assert os.path.exists(files)
 
     output = run_program(
         "calibration_pipeline",
@@ -281,3 +267,25 @@ def test_calibration_file_cmd(base_test_dir):
         '--filters=52'
     ]
     assert cmd == expected_command
+
+
+def test_drs4_pedestal(running_analysis_dir):
+    from osa.scripts.calibration_pipeline import drs4_pedestal
+    history_file = running_analysis_dir / "calibration_sequence.history"
+    with pytest.raises(SystemExit):
+        rc = drs4_pedestal(
+            drs4_pedestal_run_id="01804",
+            history_file=history_file
+        )
+        assert rc != 0
+
+
+def test_calibrate_charge(running_analysis_dir):
+    from osa.scripts.calibration_pipeline import calibrate_charge
+    history_file = running_analysis_dir / "calibration_sequence.history"
+    with pytest.raises(SystemExit):
+        rc = calibrate_charge(
+            calibration_run="01805",
+            history_file=history_file
+        )
+        assert rc != 0
