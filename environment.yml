@@ -33,4 +33,4 @@ dependencies:
       - lstchain~=0.8.2
       - pytest_runner
       - pytest-ordering
-      - ctapipe_io_lst~=0.13.1
+      - ctapipe_io_lst~=0.13.2
