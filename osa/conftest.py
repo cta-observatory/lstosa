@@ -239,3 +239,48 @@ def txt_file_test(running_analysis_dir):
     write_to_file(file, 'This is a test')
     options.simulate = True
     return file
+
+
+@pytest.fixture(scope="session")
+def datacheck_dl1_files(base_test_dir):
+    dl1b_dir = base_test_dir / "DL1" / "20200117" / "v0.1.0" / "tailcut84"
+    dl1b_dir.mkdir(parents=True, exist_ok=True)
+    pdf_file_1 = dl1b_dir / "datacheck_dl1_LST-1.Run01807.pdf"
+    pdf_file_2 = dl1b_dir / "datacheck_dl1_LST-1.Run01808.pdf"
+    pdf_file_1.touch()
+    pdf_file_2.touch()
+    return pdf_file_1, pdf_file_2
+
+
+@pytest.fixture(scope="session")
+def longterm_dir(base_test_dir):
+    directory = base_test_dir / "OSA" / "DL1DataCheck_LongTerm" / "v0.1.0" / "20200117"
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
+@pytest.fixture(scope="session")
+def daily_datacheck_dl1_files(longterm_dir):
+    html_file = longterm_dir / "DL1_datacheck_20200117.html"
+    h5_file = longterm_dir / "DL1_datacheck_20200117.h5"
+    html_file.touch()
+    h5_file.touch()
+    return html_file, h5_file
+
+
+@pytest.fixture(scope="session")
+def calibration_check_plot(calibration_dir):
+    calibration_dir_log = calibration_dir / "log"
+    calibration_dir_log.mkdir(parents=True, exist_ok=True)
+    file = calibration_dir_log / "calibration_filters_52.Run01805.0000.pdf"
+    file.touch()
+    return file
+
+
+@pytest.fixture(scope="session")
+def drs4_check_plot(drs4_baseline_dir):
+    drs4_baseline_dir_log = drs4_baseline_dir / "log"
+    drs4_baseline_dir_log.mkdir(parents=True, exist_ok=True)
+    file = drs4_baseline_dir_log / "drs4_pedestal.Run01804.0000.pdf"
+    file.touch()
+    return file
