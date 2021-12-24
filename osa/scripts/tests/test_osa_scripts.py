@@ -22,6 +22,9 @@ ALL_SCRIPTS = [
 ]
 
 options.date = "2020_01_17"
+options.tel_id = "LST1"
+options.prod_id = "v0.1.0"
+options.dl1_prod_id = "tailcut84"
 
 
 def remove_provlog():
@@ -289,3 +292,28 @@ def test_calibrate_charge(running_analysis_dir):
             history_file=history_file
         )
         assert rc != 0
+
+
+def test_look_for_datacheck_files(
+        drs4_check_plot,
+        calibration_check_plot,
+        daily_datacheck_dl1_files,
+        datacheck_dl1_files
+):
+    assert drs4_check_plot.exists()
+    assert calibration_check_plot.exists()
+    for file in daily_datacheck_dl1_files:
+        assert file.exists()
+    for file in datacheck_dl1_files:
+        assert file.exists()
+
+    from osa.scripts.copy_datacheck import look_for_datacheck_files
+    date = "20200117"
+    files_to_copy = look_for_datacheck_files(date)
+
+    assert drs4_check_plot in files_to_copy
+    assert calibration_check_plot in files_to_copy
+    for file in daily_datacheck_dl1_files:
+        assert file in files_to_copy
+    for file in datacheck_dl1_files:
+        assert file in files_to_copy

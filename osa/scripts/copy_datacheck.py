@@ -22,6 +22,35 @@ from osa.utils.utils import (
 
 log = myLogger(logging.getLogger())
 
+__all__ = ["look_for_datacheck_files"]
+
+
+def look_for_datacheck_files(nightdir):
+    """Look for the datacheck files."""
+    drs4_baseline_dir = (
+        Path(cfg.get("LST1", "PEDESTAL_DIR")) / nightdir / "pro"
+    ).resolve()
+    calibration_dir = (
+        Path(cfg.get("LST1", "CALIB_DIR")) / nightdir / "pro"
+    ).resolve()
+    dl1_dir = (
+        Path(cfg.get("LST1", "DL1_DIR"))
+        / nightdir
+        / options.prod_id
+        / options.dl1_prod_id
+    ).resolve()
+    dl1_longterm_daily = (
+        Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
+    ).resolve()
+
+    drs4_pdf = list(drs4_baseline_dir.rglob("drs4*.pdf"))
+    calib_pdf = list(calibration_dir.rglob("calibration*.pdf"))
+    dl1_pdf = list(dl1_dir.rglob("datacheck*.pdf"))
+    dl1_longterm_daily = list(dl1_longterm_daily.rglob("DL1_datacheck*"))
+    list_of_files = [drs4_pdf, calib_pdf, dl1_pdf, dl1_longterm_daily]
+
+    return list(itertools.chain(*list_of_files))
+
 
 def main():
     """
@@ -30,30 +59,11 @@ def main():
     """
     log.setLevel(logging.INFO)
 
-    # Set cli options and arguments
     copy_datacheck_parsing()
-
-    # Check if files exists in local disk
     nightdir = lstdate_to_dir(options.date)
-    analysis_log_dir = (
-        Path(cfg.get("LST1", "ANALYSIS_DIR")) / nightdir / options.prod_id / "log"
-    )
-    dl1_dir = (
-        Path(cfg.get("LST1", "DL1_DIR"))
-        / nightdir
-        / options.prod_id
-        / options.dl1_prod_id
-    )
-    dl1_longterm_daily = (
-        Path("/fefs/aswg/data/real/OSA/DL1DataCheck_LongTerm") / "v0.7" / nightdir
-    )
 
-    drs4_pdf = list(analysis_log_dir.glob("drs4*.pdf"))
-    calib_pdf = list(analysis_log_dir.glob("calibration*.pdf"))
-    dl1_pdf = list(dl1_dir.glob("*datacheck*.pdf"))
-    dl1_longterm_daily = list(dl1_longterm_daily.glob("*datacheck*"))
-    list_of_files = [drs4_pdf, calib_pdf, dl1_pdf, dl1_longterm_daily]
-    files_to_transfer = list(itertools.chain(*list_of_files))
+    # Look for the datacheck files
+    files_to_transfer = look_for_datacheck_files(nightdir)
 
     log.debug("Creating directories")
     create_directories_datacheck_web(
