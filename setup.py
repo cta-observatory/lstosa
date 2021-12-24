@@ -55,7 +55,6 @@ setup(
         "pydot",
         "pydotplus",
         "psutil",
-        "traitlets~=5.0.5"
     ],
     package_data={
         'osa': [
