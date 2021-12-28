@@ -427,7 +427,7 @@ def merge_dl2(sequence_list):
                 f"--input-dir={dl2_dir}",
                 f"--output-file={dl2_merged_file}",
                 "--no-image=True",
-                "--no-progress"
+                "--no-progress",
                 f"--run-number={sequence.run}",
                 f"--pattern={dl2_pattern}",
             ]
