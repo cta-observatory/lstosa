@@ -312,7 +312,7 @@ def merge_dl1_datacheck(seq_list):
     # the dl1 and datacheck files are in the corresponding subdirectory for
     # each cleaning level.
     dl1_base_directory = Path(cfg.get("LST1", "DL1_DIR")) / nightdir / options.prod_id
-    dl1_prod_id_directory = dl1_base_directory / options.dl1_prod_id
+    dl1_prod_id_dir = dl1_base_directory / options.dl1_prod_id
 
     for sequence in seq_list:
         if sequence.type == "DATA":
@@ -325,9 +325,9 @@ def merge_dl1_datacheck(seq_list):
                 "-e",
                 f"log/merge_dl1_datacheck_{sequence.run:05d}_%j.err",
                 "lstchain_check_dl1",
-                f"--input-file={dl1_prod_id_directory}/ \
-                datacheck_dl1_LST-1.Run{sequence.run:05d}.*.h5",
-                f"--output-dir={dl1_prod_id_directory}",
+                "--input-file",
+                f"{dl1_prod_id_dir}/datacheck_dl1_LST-1.Run{sequence.run:05d}.*.h5",
+                f"--output-dir={dl1_prod_id_dir}",
                 f"--muons-dir={dl1_base_directory}",
             ]
 
@@ -427,7 +427,7 @@ def merge_dl2(sequence_list):
                 f"--input-dir={dl2_dir}",
                 f"--output-file={dl2_merged_file}",
                 "--no-image=True",
-                "--smart=False",
+                "--no-progress",
                 f"--run-number={sequence.run}",
                 f"--pattern={dl2_pattern}",
             ]
