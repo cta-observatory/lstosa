@@ -317,6 +317,7 @@ def merge_dl1_datacheck(seq_list) -> List[str]:
         if sequence.type == "DATA":
             cmd = [
                 "sbatch",
+                "--parsable",
                 "-D",
                 options.directory,
                 "-o",
@@ -463,7 +464,6 @@ def daily_datacheck(parent_job_ids: List[str]):
         "-o",
         "log/longterm_daily_%j.log",
         f"--dependency=afterok:{','.join(parent_job_ids)}",
-        "python",
         longterm_script,
         f"--input-dir={dl1_dir}",
         f"--output-file={longterm_dir}",
