@@ -6,6 +6,7 @@ collect results and merge them if needed.
 import logging
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -455,6 +456,7 @@ def daily_datacheck(parent_job_ids: List[str]):
     dl1_dir = destination_dir("DL1AB", create_dir=False)
     muons_dir = destination_dir("MUON", create_dir=False)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
+    longterm_output_file = longterm_dir / f"DL1_datacheck_{nightdir}.h5"
     longterm_script = Path(cfg.get("lstchain", "longterm_check"))
 
     cmd = [
@@ -466,12 +468,12 @@ def daily_datacheck(parent_job_ids: List[str]):
         f"--dependency=afterok:{','.join(parent_job_ids)}",
         longterm_script,
         f"--input-dir={dl1_dir}",
-        f"--output-file={longterm_dir}",
-        f"--muons-dir={muons_dir}"
+        f"--output-file={longterm_output_file}",
+        f"--muons-dir={muons_dir}",
         "--batch"
     ]
 
-    if not options.simulate and not options.test:
+    if not options.simulate and not options.test and shutil.which('sbatch') is not None:
         subprocess.run(cmd, shell=False)
     else:
         log.debug("Simulate launching scripts")
