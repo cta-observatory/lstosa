@@ -9,7 +9,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Tuple, Iterable
+from typing import Tuple, Iterable, List
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -45,6 +45,7 @@ __all__ = [
     "merge_dl1_datacheck",
     "set_closed_with_file",
     "merge_dl2",
+    "daily_datacheck"
 ]
 
 log = myLogger(logging.getLogger())
@@ -146,14 +147,13 @@ def ask_for_closing():
             if options.simulate:
                 question = "Close that day? (y/n): "
                 question += "[SIMULATE ongoing] "
-            # FIXME: figure out where raw_input comes from. I set it to answer no
-            # answer_user = input(question)
             answer_user = "n"
         except KeyboardInterrupt:
             log.warning("Program exited by user.")
             sys.exit(1)
         except EOFError as error:
             log.exception(f"End of file not expected, {error}")
+            sys.exit(2)
         else:
             answer_check = True
             if answer_user in {"n", "N"}:
@@ -177,9 +177,11 @@ def post_process(seq_tuple):
     # Close the sequences
     post_process_files(seq_list)
 
-    # First merge DL1 datacheck files and produce PDFs
+    # Merge DL1 datacheck files and produce PDFs. It also produces
+    # the daily datacheck report using the longterm script.
     if cfg.getboolean("lstchain", "merge_dl1_datacheck"):
-        merge_dl1_datacheck(seq_list)
+        list_job_id = merge_dl1_datacheck(seq_list)
+        daily_datacheck(parent_job_ids=list_job_id)
 
     # Extract the provenance info
     extract_provenance(seq_list)
@@ -295,7 +297,7 @@ def is_finished_check(run_summary):
     return [sequence_success, sequence_list]
 
 
-def merge_dl1_datacheck(seq_list):
+def merge_dl1_datacheck(seq_list) -> List[str]:
     """
     Merge every DL1 datacheck h5 files run-wise and generate the PDF files
 
@@ -304,15 +306,12 @@ def merge_dl1_datacheck(seq_list):
     seq_list: list of sequence objects
         List of Sequence Objects
     """
-
     log.debug("Merging dl1 datacheck files and producing PDFs")
-    nightdir = lstdate_to_dir(options.date)
-    # Inside DL1 directory there are different subdirectories for each
-    # cleaning level. Muons fits files are in the base dl1 directory whereas
-    # the dl1 and datacheck files are in the corresponding subdirectory for
-    # each cleaning level.
-    dl1_base_directory = Path(cfg.get("LST1", "DL1_DIR")) / nightdir / options.prod_id
-    dl1_prod_id_dir = dl1_base_directory / options.dl1_prod_id
+
+    muons_dir = destination_dir("MUON", create_dir=False)
+    dl1_dir = destination_dir("DL1AB", create_dir=False)
+
+    list_job_id = []
 
     for sequence in seq_list:
         if sequence.type == "DATA":
@@ -326,18 +325,19 @@ def merge_dl1_datacheck(seq_list):
                 f"log/merge_dl1_datacheck_{sequence.run:05d}_%j.err",
                 "lstchain_check_dl1",
                 "--input-file",
-                f"{dl1_prod_id_dir}/datacheck_dl1_LST-1.Run{sequence.run:05d}.*.h5",
-                f"--output-dir={dl1_prod_id_dir}",
-                f"--muons-dir={dl1_base_directory}",
+                f"{dl1_dir}/datacheck_dl1_LST-1.Run{sequence.run:05d}.*.h5",
+                f"--output-dir={dl1_dir}",
+                f"--muons-dir={muons_dir}",
             ]
+            if not options.simulate and not options.test:
+                job = subprocess.run(cmd, encoding="utf-8", capture_output=True, text=True)
+                list_job_id.append(job.stdout.strip())
+            else:
+                log.debug("Simulate launching scripts")
 
-            # TODO implement an automatic scp to www datacheck,
-            #  right after the production of the PDF files.
-            #  Right now there is no connection opened from cp machines
-            #  to the datacheck webserver. Hence it has to be done without
-            #  slurm and after assuring that the files are already produced.
+            log.debug(f"Executing {stringify(cmd)}")
 
-            run_subprocess(cmd)
+    return list_job_id
 
 
 def run_subprocess(cmd: list):
@@ -439,6 +439,38 @@ def merge_dl2(sequence_list):
                 log.debug("Simulate launching scripts")
 
             log.debug(f"Executing {stringify(cmd)}")
+
+
+def daily_datacheck(parent_job_ids: List[str]):
+    """Run daily dl1 checks using longterm script."""
+    log.info("Running daily dl1 checks using longterm script.")
+
+    nightdir = lstdate_to_dir(options.date)
+    dl1_dir = destination_dir("DL1AB", create_dir=False)
+    muons_dir = destination_dir("MUON", create_dir=False)
+    longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
+
+    cmd = [
+        "sbatch",
+        "-D",
+        options.directory,
+        "-o",
+        "log/longterm_daily_%j.log",
+        f"--dependency=afterok:{','.join(parent_job_ids)}",
+        "python",
+        "/fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/scripts/longterm_dl1_check.py",
+        f"--input-dir={dl1_dir}",
+        f"--output-file={longterm_dir}",
+        f"--muons-dir={muons_dir}"
+        "--batch"
+    ]
+
+    if not options.simulate and not options.test:
+        subprocess.run(cmd, shell=False)
+    else:
+        log.debug("Simulate launching scripts")
+
+    log.debug(f"Executing {stringify(cmd)}")
 
 
 if __name__ == "__main__":
