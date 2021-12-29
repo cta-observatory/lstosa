@@ -263,9 +263,11 @@ def longterm_dir(base_test_dir):
 def daily_datacheck_dl1_files(longterm_dir):
     html_file = longterm_dir / "DL1_datacheck_20200117.html"
     h5_file = longterm_dir / "DL1_datacheck_20200117.h5"
+    log_file = longterm_dir / "DL1_datacheck_20200117.log"
     html_file.touch()
     h5_file.touch()
-    return html_file, h5_file
+    log_file.touch()
+    return html_file, h5_file, log_file
 
 
 @pytest.fixture(scope="session")
