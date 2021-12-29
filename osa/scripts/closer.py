@@ -330,7 +330,12 @@ def merge_dl1_datacheck(seq_list) -> List[str]:
                 f"--muons-dir={muons_dir}",
             ]
             if not options.simulate and not options.test:
-                job = subprocess.run(cmd, encoding="utf-8", capture_output=True, text=True)
+                job = subprocess.run(
+                    cmd,
+                    encoding="utf-8",
+                    capture_output=True,
+                    text=True
+                )
                 list_job_id.append(job.stdout.strip())
             else:
                 log.debug("Simulate launching scripts")
@@ -449,6 +454,7 @@ def daily_datacheck(parent_job_ids: List[str]):
     dl1_dir = destination_dir("DL1AB", create_dir=False)
     muons_dir = destination_dir("MUON", create_dir=False)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
+    longterm_script = Path(cfg.get("lstchain", "longterm_check"))
 
     cmd = [
         "sbatch",
@@ -458,7 +464,7 @@ def daily_datacheck(parent_job_ids: List[str]):
         "log/longterm_daily_%j.log",
         f"--dependency=afterok:{','.join(parent_job_ids)}",
         "python",
-        "/fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/scripts/longterm_dl1_check.py",
+        longterm_script,
         f"--input-dir={dl1_dir}",
         f"--output-file={longterm_dir}",
         f"--muons-dir={muons_dir}"
