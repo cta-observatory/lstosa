@@ -25,6 +25,7 @@ options.date = "2020_01_17"
 options.tel_id = "LST1"
 options.prod_id = "v0.1.0"
 options.dl1_prod_id = "tailcut84"
+options.directory = "test_osa/test_files0/running_analysis/20200117/v0.1.0/"
 
 
 def remove_provlog():
@@ -317,3 +318,25 @@ def test_look_for_datacheck_files(
         assert file in files_to_copy
     for file in datacheck_dl1_files:
         assert file in files_to_copy
+
+
+def test_daily_longterm_cmd():
+    from osa.scripts.closer import daily_longterm_cmd
+    job_ids = ["12345", "54321"]
+    cmd = daily_longterm_cmd(parent_job_ids=job_ids)
+
+    expected_cmd = [
+        "sbatch",
+        "-D",
+        options.directory,
+        "-o",
+        "log/longterm_daily_%j.log",
+        "--dependency=afterok:12345,54321",
+        "/fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/scripts/longterm_dl1_check.py",
+        "--input-dir=test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84",
+        "--output-file=test_osa/test_files0/OSA/DL1DataCheck_LongTerm/v0.1.0/20200117/DL1_datacheck_20200117.h5",
+        "--muons-dir=test_osa/test_files0/DL1/20200117/v0.1.0",
+        "--batch"
+    ]
+
+    assert cmd == expected_cmd
