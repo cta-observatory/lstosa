@@ -7,7 +7,6 @@ import argparse
 import datetime
 import logging
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -309,7 +308,7 @@ class Sequence(object):
     """
     As for now the keys for the 'dictSequence' are:
     (LST1) Tel Seq Parent Type Run Subruns Source Wobble Action Tries JobID
-    State Host CPU_time Walltime Exit  DL1% MUONS% DATACHECK% DL2%
+    State Host CPU_time Walltime Exit DL1% MUONS% DATACHECK% DL2%
 
     All the values in the 'dictSequence' are strings
     """
@@ -339,7 +338,7 @@ class Sequence(object):
     def is_complete(self):
         return self.dictSequence["State"] == "COMPLETED"
 
-    def is_onHold(self):
+    def is_on_hold(self):
         return self.dictSequence["State"] == "PENDING"
 
     def is_100(self):
@@ -570,19 +569,6 @@ def understand_sequence(tel, seq):
     return False
 
 
-def check_for_output_files(path):
-    found_files = [re.search("LST-1.Run", file) for file in os.listdir(path)]
-    if any(found_files):
-        file_names = [m.group() for m in found_files if m]
-        file_names_str = ', '.join(file_names)
-        log.warning(
-            f"Following *LST-1.Run* files found in "
-            f"{path} after closing: {file_names_str}"
-        )
-        # sendEmail('WARNING: Following *LST-1.Run* files found '
-        #           'in "%s" after closing: %s' % (path, file_names_str))
-
-
 if __name__ == "__main__":
 
     args = argument_parser().parse_args()
@@ -696,7 +682,5 @@ if __name__ == "__main__":
         if not telescopes[tel].close():
             log.warning(f"Could not close the day for {tel}!")
             # TODO send email, executing the closer failed!
-        elif not args.simulate:
-            check_for_output_files(analysis_path(tel))
 
     log.info("Exit")
