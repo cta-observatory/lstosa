@@ -367,7 +367,7 @@ def destination_dir(concept, create_dir=True) -> Path:
     return directory
 
 
-def create_directories_datacheck_web(host, datedir, prod_id):
+def create_directories_datacheck_web(host: str, datedir: str, prod_id: str) -> None:
     """
     Create directories for drs4, enf_calibration
     and dl1 products in the data-check webserver via ssh. It also copies
@@ -375,18 +375,26 @@ def create_directories_datacheck_web(host, datedir, prod_id):
 
     Parameters
     ----------
-    host
-    datedir
-    prod_id
+    host : str
+        Hostname of the server to which the datacheck products will be copied
+    datedir : str
+        Date in the format YYYYMMDD
+    prod_id : str
+        Production ID
     """
-
-    # Create directory and copy the index.php to each directory
-    for product in DATACHECK_PRODUCTS:
-        dest_directory = DATACHECK_BASEDIR / product / prod_id / datedir
-        cmd = ["ssh", host, "mkdir", "-p", dest_directory]
-        subprocess.run(cmd, capture_output=True, check=True)
-        cmd = ["scp", cfg.get("WEBSERVER", "INDEXPHP"), f"{host}:{dest_directory}/."]
-        subprocess.run(cmd, capture_output=True, check=True)
+    try:
+        # Create directory and copy the index.php to each directory
+        for product in DATACHECK_PRODUCTS:
+            dest_directory = DATACHECK_BASEDIR / product / prod_id / datedir
+            cmd = ["ssh", host, "mkdir", "-p", dest_directory]
+            subprocess.run(cmd, capture_output=True, check=True)
+            cmd = ["scp", cfg.get("WEBSERVER", "INDEXPHP"), f"{host}:{dest_directory}/."]
+            subprocess.run(cmd, capture_output=True, check=True)
+    except subprocess.CalledProcessError:
+        log.warning(
+            'Cannot create directories on webserver using ssh. Check you have '
+            'permission to connect through ssh and create the destination directory.'
+        )
 
 
 def set_no_observations_flag(host, datedir, prod_id):
@@ -396,9 +404,12 @@ def set_no_observations_flag(host, datedir, prod_id):
 
     Parameters
     ----------
-    host
-    datedir
-    prod_id
+    host : str
+        Hostname of the server to which the datacheck products will be copied
+    datedir : str
+        Date in the format YYYYMMDD
+    prod_id : str
+        Production ID
     """
     for product in DATACHECK_PRODUCTS:
         try:
@@ -407,42 +418,54 @@ def set_no_observations_flag(host, datedir, prod_id):
             no_observations_flag = dest_directory / "no_observations"
             cmd = ["ssh", host, "touch", no_observations_flag]
             subprocess.check_output(cmd)
-        except subprocess.CalledProcessError as error:
-            log.warning(f"Destination directory does not exists. {error}")
+        except subprocess.CalledProcessError:
+            log.warning(
+                "Destination directory does not exists. Check your configuration."
+            )
 
 
 def copy_files_datacheck_web(host, datedir, file_list) -> None:
     """
     Copy files to the data-check webserver via scp.
 
+    Notes
+    -----
+    Files are overwritten if they already exist.
+
     Parameters
     ----------
     host : str
         Hostname of the webserver
     datedir : str
-        Date directory in the webserver
+        Date directory in the webserver in the format YYYYMMDD
     file_list : list
         List of files to be copied
     """
-    # FIXME: Check if files exists already at webserver CHECK HASH
-    # Copy files to server
+    # TODO: Check if files exists already at webserver CHECK HASH
     for file_to_transfer in file_list:
-        if "drs4" in str(file_to_transfer):
-            dest_directory = DATACHECK_BASEDIR / "drs4" / options.prod_id / datedir
-            cmd = ["scp", str(file_to_transfer), f"{host}:{dest_directory}/."]
-            subprocess.run(cmd, check=True)
+        try:
+            if "drs4" in str(file_to_transfer):
+                dest_directory = DATACHECK_BASEDIR / "drs4" / options.prod_id / datedir
+                cmd = ["scp", str(file_to_transfer), f"{host}:{dest_directory}/."]
+                subprocess.run(cmd, check=True)
 
-        elif "calibration" in str(file_to_transfer):
-            dest_directory = (
-                DATACHECK_BASEDIR / "enf_calibration" / options.prod_id / datedir
+            elif "calibration" in str(file_to_transfer):
+                dest_directory = (
+                    DATACHECK_BASEDIR / "enf_calibration" / options.prod_id / datedir
+                )
+                cmd = ["scp", file_to_transfer, f"{host}:{dest_directory}/."]
+                subprocess.run(cmd, check=True)
+
+            elif "datacheck" in str(file_to_transfer):
+                dest_directory = DATACHECK_BASEDIR / "dl1" / options.prod_id / datedir
+                cmd = ["scp", file_to_transfer, f"{host}:{dest_directory}/."]
+                subprocess.run(cmd, check=True)
+
+        except subprocess.CalledProcessError:
+            log.warning(
+                "Cannot copy file to webserver using scp. Check that the files exist "
+                "and that you have permission to connect through ssh and copy the files."
             )
-            cmd = ["scp", file_to_transfer, f"{host}:{dest_directory}/."]
-            subprocess.run(cmd, check=True)
-
-        elif "datacheck" in str(file_to_transfer):
-            dest_directory = DATACHECK_BASEDIR / "dl1" / options.prod_id / datedir
-            cmd = ["scp", file_to_transfer, f"{host}:{dest_directory}/."]
-            subprocess.run(cmd, check=True)
 
 
 def get_input_file(run_number: str) -> Path:
