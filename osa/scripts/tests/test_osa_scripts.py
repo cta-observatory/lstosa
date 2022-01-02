@@ -103,7 +103,9 @@ def test_simulated_sequencer(drs4_time_calibration_files, run_summary_file):
     assert run_summary_file.exists()
     for file in drs4_time_calibration_files:
         assert file.exists()
-    rc = run_program("sequencer", "-c", "cfg/sequencer.cfg", "-d", "2020_01_17", "-s", "-t", "LST1")
+    rc = run_program(
+        "sequencer", "-c", "cfg/sequencer.cfg", "-d", "2020_01_17", "-s", "-t", "--no-submit", "LST1"
+    )
     assert rc.returncode == 0
     now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")
     assert rc.stdout == dedent(
@@ -340,3 +342,12 @@ def test_daily_longterm_cmd():
     ]
 
     assert cmd == expected_cmd
+
+
+def test_observation_finished():
+    """Check if observation is finished for `options.date=2020_01_17`."""
+    from osa.scripts.closer import observation_finished
+    date1 = datetime.datetime(2020, 1, 21, 12, 0, 0)
+    assert observation_finished(date=date1) is True
+    date2 = datetime.datetime(2020, 1, 17, 5, 0, 0)
+    assert observation_finished(date=date2) is False
