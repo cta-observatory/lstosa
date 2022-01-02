@@ -104,7 +104,7 @@ def test_simulated_sequencer(drs4_time_calibration_files, run_summary_file):
     for file in drs4_time_calibration_files:
         assert file.exists()
     rc = run_program(
-        "sequencer", "-c", "cfg/sequencer.cfg", "-d", "2020_01_17", "-s", "-t", "--no-submit", "LST1"
+        "sequencer", "-c", "cfg/sequencer.cfg", "-d", "2020_01_17", "-s", "-t", "LST1"
     )
     assert rc.returncode == 0
     now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")
