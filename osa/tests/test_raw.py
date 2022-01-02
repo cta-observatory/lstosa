@@ -25,3 +25,15 @@ def test_get_check_raw_dir(r0_dir):
     options.date = "2020_01_17"
     raw_dir = get_check_raw_dir()
     assert raw_dir.resolve() == r0_dir
+
+
+def test_is_raw_data_available(r0_data):
+    from osa.raw import is_raw_data_available
+
+    for file in r0_data:
+        assert file.exists()
+
+    options.date = "2020_01_17"
+    assert is_raw_data_available() is True
+
+
