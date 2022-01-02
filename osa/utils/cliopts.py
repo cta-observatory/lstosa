@@ -63,23 +63,6 @@ def closer_argparser():
         help="observation ending date YYYY_MM_DD [default today]",
     )
     parser.add_argument(
-        "-n",
-        "--usenightsummary",
-        action="store_true",
-        dest="nightsum",
-        default=False,
-        help="rely on existing nightsumary file",
-    )
-    parser.add_argument(
-        "-r",
-        "--reason",
-        action="store",
-        type=str,
-        dest="reason",
-        choices=["moon", "weather", "other"],
-        help="reason for closing without data: (moon, weather, other)",
-    )
-    parser.add_argument(
         "-s",
         "--simulate",
         action="store_true",
@@ -156,7 +139,6 @@ def closercliparsing():
     options.simulate = opts.simulate
     options.test = opts.test
     options.verbose = opts.verbose
-    options.reason = opts.reason
     options.seqtoclose = opts.seqtoclose
     options.tel_id = opts.tel_id
     options.no_dl2 = opts.no_dl2

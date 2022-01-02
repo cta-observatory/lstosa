@@ -35,7 +35,6 @@ __all__ = [
     "scheduler_env_variables",
     "create_job_template",
     "set_cache_dirs",
-    "setrunfromparent",
     "submit_jobs",
     "check_history_level",
     "get_sacct_output",
@@ -92,7 +91,7 @@ def are_all_jobs_correctly_finished(sequence_list):
             elif out == 1 and options.no_dl2:
                 log.debug(
                     f"Job {sequence.seq} ({sequence.type}) correctly "
-                    f"finished up to DL1ab, but no-dL2 option selected"
+                    f"finished up to DL1ab, but --no-dl2 option selected"
                 )
                 continue
             else:
@@ -179,8 +178,7 @@ def historylevel(history_file: Path, data_type: str):
     elif data_type == "PEDCALIB":
         level = 2
     else:
-        log.error(f"Type {data_type} not expected")
-        sys.exit(1)
+        raise ValueError(f"Type {data_type} not expected")
 
     exit_status = 0
 
@@ -228,39 +226,19 @@ def historylevel(history_file: Path, data_type: str):
                         log.debug(f"DL2 prod ID: {options.dl2_prod_id} not produced yet")
 
                 else:
-                    log.warning(f"Program name not identified {program}")
+                    log.warning(f"Program name not identified: {program}")
 
     return level, exit_status
 
 
 def prepare_jobs(sequence_list):
     """Prepare job file template for each sequence."""
+    if not options.simulate:
+        log.info("Building job scripts for each sequence.")
+
     for sequence in sequence_list:
         log.debug(f"Creating sequence.py for sequence {sequence.seq}")
         create_job_template(sequence)
-
-
-def setrunfromparent(sequence_list):
-    """
-    Create a dictionary with run number and its parent run number.
-
-    Parameters
-    ----------
-    sequence_list
-
-    Returns
-    -------
-    dictionary with run number and its parent run number
-    """
-    dictionary = {}
-    for s1 in sequence_list:
-        if s1.parent is not None:
-            for s2 in sequence_list:
-                if s2.seq == s1.parent:
-                    log.debug(f"Assigning run from parent({s1.parent}) = {s2.run}")
-                    dictionary[s1.parent] = s2.run
-                    break
-    return dictionary
 
 
 def sequence_filenames(sequence):
@@ -622,6 +600,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
                 commandargs = ["python", sequence.script]
                 subprocess.check_output(commandargs, shell=False)
             else:
+                log.info("Submitting jobs to the cluster.")
                 try:
                     log.debug(f"Launching script {sequence.script}")
                     subprocess.check_output(commandargs, shell=False)
@@ -765,7 +744,7 @@ def update_sequence_state(sequence, filtered_job_info: pd.DataFrame) -> None:
         sequence.exit = filtered_job_info["ExitCode"].iloc[0]
     elif (filtered_job_info.State.values == "PENDING").all():
         sequence.state = "PENDING"
-    elif any("FAIL" in job for job in filtered_job_info.State):
+    elif any("FAILED" in job for job in filtered_job_info.State):
         sequence.state = "FAILED"
         sequence.exit = filtered_job_info[filtered_job_info.State.values == "FAILED"][
             "ExitCode"

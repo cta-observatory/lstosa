@@ -4,11 +4,11 @@ collect results and merge them if needed.
 """
 
 import logging
-import os
 import re
 import shutil
 import subprocess
 import sys
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Tuple, Iterable, List
 
@@ -16,9 +16,9 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import are_all_jobs_correctly_finished
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
-from osa.nightsummary.nightsummary import get_runsummary_file, run_summary_table
+from osa.nightsummary.nightsummary import run_summary_table
 from osa.provenance.utils import store_conda_env_export
-from osa.raw import get_check_raw_dir
+from osa.raw import is_raw_data_available
 from osa.report import start
 from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import myLogger
@@ -27,7 +27,6 @@ from osa.utils.utils import (
     get_lock_file,
     is_day_closed,
     stringify,
-    is_defined,
     lstdate_to_dir,
     destination_dir,
     create_lock,
@@ -35,8 +34,6 @@ from osa.utils.utils import (
 )
 
 __all__ = [
-    "use_night_summary",
-    "is_raw_data_available",
     "is_sequencer_successful",
     "ask_for_closing",
     "post_process",
@@ -47,7 +44,8 @@ __all__ = [
     "set_closed_with_file",
     "merge_dl2",
     "daily_datacheck",
-    "daily_longterm_cmd"
+    "daily_longterm_cmd",
+    "observation_finished"
 ]
 
 log = myLogger(logging.getLogger())
@@ -62,28 +60,28 @@ def main():
     else:
         log.setLevel(logging.INFO)
 
+    if options.simulate:
+        log.info("Running in simulation mode.")
+
     # initiating report
     tag = gettag()
     start(tag)
 
     # starting the algorithm
-    if is_day_closed():
+    if not observation_finished():
+        log.warning("Observations not over, it is earlier than 08:00 UTC.")
+        sys.exit(0)
+
+    elif is_day_closed():
         log.info(f"Night {options.date} already closed for {options.tel_id}")
         sys.exit(0)
     else:
-        # proceed
         if options.seqtoclose is not None:
             log.info(f"Closing sequence {options.seqtoclose}")
-        sequencer_tuple = []
-        if options.reason is not None:
-            log.warning("No data found")
-            sequencer_tuple = [False, []]
-            if not is_defined(options.reason):
-                # notify and ask for closing and a reason
-                log.warning("No data found and no reason is given")
-                ask_for_closing()
 
-        elif is_raw_data_available() or use_night_summary():
+        sequencer_tuple = [False, []]
+
+        if is_raw_data_available():
             # proceed normally
             log.debug(f"Checking sequencer_tuple {sequencer_tuple}")
             night_summary_table = run_summary_table(options.date)
@@ -99,31 +97,6 @@ def main():
         store_conda_env_export()
 
         post_process(sequencer_tuple)
-
-
-def use_night_summary():
-    """Check for the usage of night summary option and file existence."""
-    night_summary_file = get_runsummary_file(options.date)
-    if night_summary_file.exists():
-        return True
-    log.warning(
-        "Night Summary expected but it does not exists. "
-        "Please check it or use the -r option to give a reason."
-    )
-    return False
-
-
-def is_raw_data_available():
-    """Get the raw directory and check its existence."""
-    answer = False
-    if options.tel_id != "ST":
-        # FIXME: adapt this function
-        raw_dir = get_check_raw_dir()
-        if os.path.isdir(raw_dir):
-            answer = True
-    else:
-        answer = True
-    return answer
 
 
 def is_sequencer_successful(seq_tuple: Tuple[bool, Iterable]):
@@ -225,7 +198,7 @@ def post_process_files(seq_list: list):
     )
 
     for concept, pattern_re in pattern_files.items():
-        log.debug(f"Processing {concept} files, {len(output_files_set)} files left")
+        log.info(f"Post processing {concept} files, {len(output_files_set)} files left")
 
         dst_path = destination_dir(concept, create_dir=True)
 
@@ -249,9 +222,20 @@ def set_closed_with_file():
         # Generate NightFinished lock file
         is_closed = create_lock(closer_file)
     else:
-        log.info(f"SIMULATE Creation of lock file {closer_file}")
+        log.debug(f"Simulate the creation of lock file {closer_file}")
 
     return is_closed
+
+
+def observation_finished(date=datetime.utcnow()) -> bool:
+    """
+    We consider the observation as finished if it is later
+    than 08:00 UTC of the next day set by `options.date`
+    """
+    next_morning_limit = (
+        datetime.strptime(options.date, "%Y_%m_%d") + timedelta(days=1, hours=8)
+    )
+    return date > next_morning_limit
 
 
 def is_finished_check(run_summary):
@@ -277,19 +261,11 @@ def is_finished_check(run_summary):
         run_list = extractruns(subrun_list)
         sequence_list = extractsequences(run_list)
 
-        # TODO: lines below could be used when sequencer is launched during datataking
-        #       for the moment they are not useful
-        # if are_raw_files_transferred():
-        #     log.debug(f"Are files transferred? {sequence_list}")
-        # else:
-        #     log.info("More raw files are expected to appear")
-
         if are_all_jobs_correctly_finished(sequence_list):
             sequence_success = True
         else:
             log.info(
-                "All raw files are transferred but the "
-                "jobs did not correctly/yet finish",
+                "Raw files are transferred but the jobs did not correctly/yet finish"
             )
 
     else:
@@ -358,7 +334,7 @@ def extract_provenance(seq_list):
     seq_list: list of sequence objects
         List of Sequence Objects
     """
-    log.debug("Extract provenance run wise")
+    log.info("Extract provenance run wise")
 
     nightdir = lstdate_to_dir(options.date)
 
