@@ -235,6 +235,9 @@ def historylevel(history_file: Path, data_type: str):
 
 def prepare_jobs(sequence_list):
     """Prepare job file template for each sequence."""
+    if not options.simulate:
+        log.info("Building job scripts for each sequence.")
+
     for sequence in sequence_list:
         log.debug(f"Creating sequence.py for sequence {sequence.seq}")
         create_job_template(sequence)
@@ -582,6 +585,8 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     job_list = []
     no_display_backend = "--export=ALL,MPLBACKEND=Agg"
 
+    log.info("Submitting jobs to the cluster.")
+
     for sequence in sequence_list:
         commandargs = [batch_command, "--parsable", no_display_backend]
         if sequence.type == "PEDCALIB":
@@ -765,7 +770,7 @@ def update_sequence_state(sequence, filtered_job_info: pd.DataFrame) -> None:
         sequence.exit = filtered_job_info["ExitCode"].iloc[0]
     elif (filtered_job_info.State.values == "PENDING").all():
         sequence.state = "PENDING"
-    elif any("FAIL" in job for job in filtered_job_info.State):
+    elif any("FAILED" in job for job in filtered_job_info.State):
         sequence.state = "FAILED"
         sequence.exit = filtered_job_info[filtered_job_info.State.values == "FAILED"][
             "ExitCode"

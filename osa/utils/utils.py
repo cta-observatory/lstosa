@@ -203,7 +203,7 @@ def create_lock(lockfile) -> bool:
     """
     directory_lock = lockfile.parent
     if options.simulate:
-        log.debug(f"SIMULATE Creation of lock file {lockfile}")
+        log.debug(f"Simulate the creation of lock file {lockfile}")
     elif lockfile.exists() and lockfile.is_file():
         with open(lockfile, "r") as f:
             hostpid = f.readline()
