@@ -35,7 +35,6 @@ __all__ = [
     "scheduler_env_variables",
     "create_job_template",
     "set_cache_dirs",
-    "setrunfromparent",
     "submit_jobs",
     "check_history_level",
     "get_sacct_output",
