@@ -36,6 +36,7 @@ def produce_run_summary_file(date: str) -> None:
 
     try:
         subprocess.run(command, check=True)
+
     except OSError as error:
         log.exception(f"Command {stringify(command)}, error: {error}")
     except subprocess.CalledProcessError as error:
