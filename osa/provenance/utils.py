@@ -36,9 +36,9 @@ def parse_variables(class_instance):
     dl1_dir = cfg.get("LST1", "DL1_DIR")
     dl2_dir = cfg.get("LST1", "DL2_DIR")
     nightdir = lstdate_to_dir(options.date)
-    muon_dir = Path(dl1_dir).resolve() / nightdir / options.prod_id
-    outdir_dl1 = Path(dl1_dir).resolve() / nightdir / options.prod_id / options.dl1_prod_id
-    outdir_dl2 = Path(dl2_dir).resolve() / nightdir / options.prod_id / options.dl2_prod_id
+    muon_dir = Path(dl1_dir) / nightdir / options.prod_id
+    outdir_dl1 = Path(dl1_dir) / nightdir / options.prod_id / options.dl1_prod_id
+    outdir_dl2 = Path(dl2_dir) / nightdir / options.prod_id / options.dl2_prod_id
 
     if class_instance.__name__ == "r0_to_dl1":
         # calibrationfile   [0] .../20200218/v00/calibration.Run02006.0000.hdf5
