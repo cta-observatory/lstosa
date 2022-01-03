@@ -360,5 +360,5 @@ def test_no_runs_found():
         stdout=sp.PIPE,
         stderr=sp.PIPE
     )
-    assert output.returncode != 0
-    assert output.stderr.splitlines()[-1] == "No runs found for this date. Nothing to do. Exiting."
+    assert output.returncode == 0
+    assert "No runs found for this date. Nothing to do. Exiting." in output.stderr.splitlines()[-1]

@@ -1,6 +1,7 @@
 """Extract subrun, run, sequence list and build corresponding objects."""
 
 import logging
+import sys
 
 from astropy import units as u
 from astropy.time import Time
@@ -83,7 +84,8 @@ def extractsubruns(summary_table):
     log.debug("Subrun list extracted")
 
     if not subrun_list:
-        raise SystemExit("No runs found for this date. Nothing to do. Exiting.")
+        log.warning("No runs found for this date. Nothing to do. Exiting.")
+        sys.exit(0)
 
     return subrun_list
 
@@ -267,7 +269,8 @@ def extractsequences(run_list):
     log.debug("Sequence list extracted")
 
     if not store:
-        raise SystemExit("No data sequences found for this date. Nothing to do. Exiting.")
+        log.warning("No data sequences found for this date. Nothing to do. Exiting.")
+        sys.exit(0)
 
     return sequence_list
 
