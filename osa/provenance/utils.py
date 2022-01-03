@@ -33,12 +33,12 @@ def parse_variables(class_instance):
     configfile_dl2 = cfg.get("lstchain", "dl2_config")
     rawdir = cfg.get("LST1", "R0_DIR")
     rf_models_directory = cfg.get("lstchain", "RF_MODELS")
-    calib_dir = cfg.get("LST1", "CALIB_DIR")
     dl1_dir = cfg.get("LST1", "DL1_DIR")
     dl2_dir = cfg.get("LST1", "DL2_DIR")
     nightdir = lstdate_to_dir(options.date)
-    outdir_dl1 = Path(dl1_dir) / nightdir / options.prod_id / options.dl1_prod_id
-    outdir_dl2 = Path(dl2_dir) / nightdir / options.prod_id / options.dl2_prod_id
+    muon_dir = Path(dl1_dir).resolve() / nightdir / options.prod_id
+    outdir_dl1 = Path(dl1_dir).resolve() / nightdir / options.prod_id / options.dl1_prod_id
+    outdir_dl2 = Path(dl2_dir).resolve() / nightdir / options.prod_id / options.dl2_prod_id
 
     if class_instance.__name__ == "r0_to_dl1":
         # calibrationfile   [0] .../20200218/v00/calibration.Run02006.0000.hdf5
@@ -53,28 +53,23 @@ def parse_variables(class_instance):
         class_instance.SoftwareVersion = get_lstchain_version()
         class_instance.session_name = class_instance.ObservationRun
         class_instance.ProcessingConfigFile = options.configfile
-
-        calibration_filename = os.path.basename(class_instance.args[0])
-        pedestal_filename = os.path.basename(class_instance.args[1])
-        timecalibration_filename = os.path.basename(class_instance.args[2])
-        calibration_path = Path(calib_dir) / nightdir / options.calib_prod_id
+        # Use realpath to resolve symbolic links and return abspath
+        calibration_file = os.path.realpath(class_instance.args[0])
+        pedestal_file = os.path.realpath(class_instance.args[1])
+        timecalibration_file = os.path.realpath(class_instance.args[2])
         class_instance.R0SubrunDataset = (
             f"{rawdir}/{nightdir}/LST-1.1.Run{class_instance.args[5]}.fits.fz"
         )
-        class_instance.CoefficientsCalibrationFile = str(
-            calibration_path / calibration_filename
-        )
-        class_instance.PedestalFile = str(calibration_path / pedestal_filename)
-        class_instance.TimeCalibrationFile = str(
-            calibration_path / timecalibration_filename
-        )
+        class_instance.CoefficientsCalibrationFile = calibration_file
+        class_instance.PedestalFile = pedestal_file
+        class_instance.TimeCalibrationFile = timecalibration_file
         class_instance.PointingFile = str(class_instance.args[3])
         class_instance.RunSummaryFile = str(class_instance.args[4])
         class_instance.DL1SubrunDataset = (
             f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[5]}.h5"
         )
         class_instance.MuonsSubrunDataset = (
-            f"{outdir_dl1}/muons_LST-1.Run{class_instance.args[5]}.fits"
+            f"{muon_dir}/muons_LST-1.Run{class_instance.args[5]}.fits"
         )
 
     if class_instance.__name__ == "dl1ab":
@@ -107,7 +102,7 @@ def parse_variables(class_instance):
             f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[0]}.h5"
         )
         class_instance.MuonsSubrunDataset = (
-            f"{outdir_dl1}/muons_LST-1.Run{class_instance.args[0]}.fits"
+            f"{muon_dir}/muons_LST-1.Run{class_instance.args[0]}.fits"
         )
         class_instance.DL1CheckSubrunDataset = (
             f"{outdir_dl1}/datacheck_dl1_LST-1.Run{class_instance.args[0]}.h5"
