@@ -351,3 +351,14 @@ def test_observation_finished():
     assert observation_finished(date=date1) is True
     date2 = datetime.datetime(2020, 1, 17, 5, 0, 0)
     assert observation_finished(date=date2) is False
+
+
+def test_no_runs_found():
+    output = sp.run(
+        ["sequencer", "-s", "-d", "2015_01_01", "LST1"],
+        text=True,
+        stdout=sp.PIPE,
+        stderr=sp.PIPE
+    )
+    assert output.returncode != 0
+    assert output.stderr.splitlines()[-1] == "No runs found for this date. Nothing to do. Exiting."
