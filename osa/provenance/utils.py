@@ -13,6 +13,8 @@ from osa.utils.utils import get_lstchain_version, lstdate_to_dir
 
 __all__ = ["parse_variables", "get_log_config", "store_conda_env_export"]
 
+REDUCTION_TASKS = ["r0_to_dl1", "dl1ab", "dl1_datacheck", "dl1_to_dl2"]
+
 
 def parse_variables(class_instance):
     """Parse variables needed in model"""
@@ -35,9 +37,13 @@ def parse_variables(class_instance):
     dl1_dir = cfg.get("LST1", "DL1_DIR")
     dl2_dir = cfg.get("LST1", "DL2_DIR")
     nightdir = lstdate_to_dir(options.date)
-    muon_dir = Path(dl1_dir) / nightdir / options.prod_id
-    outdir_dl1 = Path(dl1_dir) / nightdir / options.prod_id / options.dl1_prod_id
-    outdir_dl2 = Path(dl2_dir) / nightdir / options.prod_id / options.dl2_prod_id
+    class_instance.SoftwareVersion = get_lstchain_version()
+    class_instance.ProcessingConfigFile = options.configfile
+    class_instance.ObservationDate = nightdir
+    if class_instance.__name__ in REDUCTION_TASKS:
+        muon_dir = Path(dl1_dir) / nightdir / options.prod_id
+        outdir_dl1 = Path(dl1_dir) / nightdir / options.prod_id / options.dl1_prod_id
+        outdir_dl2 = Path(dl2_dir) / nightdir / options.prod_id / options.dl2_prod_id
 
     if class_instance.__name__ == "r0_to_dl1":
         # calibrationfile   [0] .../20200218/v00/calibration.Run02006.0000.hdf5
@@ -48,11 +54,7 @@ def parse_variables(class_instance):
         # run_str           [5] 02006.0000
 
         class_instance.ObservationRun = class_instance.args[5].split(".")[0]
-        class_instance.ObservationDate = nightdir
-        class_instance.SoftwareVersion = get_lstchain_version()
-        class_instance.session_name = class_instance.ObservationRun
-        class_instance.ProcessingConfigFile = options.configfile
-        # Use realpath to resolve symbolic links and return abspath
+        # use realpath to resolve symbolic links and return abspath
         calibration_file = os.path.realpath(class_instance.args[0])
         pedestal_file = os.path.realpath(class_instance.args[1])
         timecalibration_file = os.path.realpath(class_instance.args[2])
@@ -76,14 +78,8 @@ def parse_variables(class_instance):
 
         class_instance.Analysisconfigfile_dl1 = configfile_dl1
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
-        class_instance.ObservationDate = nightdir
-        class_instance.SoftwareVersion = get_lstchain_version()
-        class_instance.session_name = class_instance.ObservationRun
-        class_instance.ProcessingConfigFile = options.configfile
-
         class_instance.PedestalCleaning = "True"
         class_instance.StoreImage = cfg.getboolean("lstchain", "store_image_dl1ab")
-
         class_instance.DL1SubrunDataset = (
             f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[0]}.h5"
         )
@@ -92,11 +88,6 @@ def parse_variables(class_instance):
         # run_str       [0] 02006.0000
 
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
-        class_instance.ObservationDate = nightdir
-        class_instance.SoftwareVersion = get_lstchain_version()
-        class_instance.session_name = class_instance.ObservationRun
-        class_instance.ProcessingConfigFile = options.configfile
-
         class_instance.DL1SubrunDataset = (
             f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[0]}.h5"
         )
@@ -118,11 +109,6 @@ def parse_variables(class_instance):
 
         class_instance.Analysisconfigfile_dl2 = configfile_dl2
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
-        class_instance.ObservationDate = nightdir
-        class_instance.SoftwareVersion = get_lstchain_version()
-        class_instance.session_name = class_instance.ObservationRun
-        class_instance.ProcessingConfigFile = options.configfile
-
         class_instance.RFModelEnergyFile = str(
             Path(rf_models_directory) / "reg_energy.sav"
         )
@@ -145,6 +131,9 @@ def parse_variables(class_instance):
         class_instance.DL2MergedFile = (
             f"{outdir_dl2}/dl2_LST-1.Run{class_instance.ObservationRun}.h5"
         )
+        
+    if class_instance.__name__ in REDUCTION_TASKS:
+        class_instance.session_name = class_instance.ObservationRun
 
     return class_instance
 
