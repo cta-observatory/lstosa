@@ -40,30 +40,34 @@ def parse_variables(class_instance):
 
     configfile_dl1 = cfg.get("lstchain", "dl1ab_config")
     configfile_dl2 = cfg.get("lstchain", "dl2_config")
-    rawdir = cfg.get("LST1", "R0_DIR")
+    raw_dir = cfg.get("LST1", "R0_DIR")
     rf_models_directory = cfg.get("lstchain", "RF_MODELS")
     dl1_dir = cfg.get("LST1", "DL1_DIR")
     dl2_dir = cfg.get("LST1", "DL2_DIR")
-    nightdir = lstdate_to_dir(options.date)
+    base_dir = Path(cfg.get("LST1", "BASE")).resolve()
+    calib_dir = base_dir / "monitoring" / "PixelCalibration" / "LevelA"
+    night_dir = lstdate_to_dir(options.date)
     class_instance.SoftwareVersion = get_lstchain_version()
     class_instance.ProcessingConfigFile = options.configfile
-    class_instance.ObservationDate = nightdir
+    class_instance.ObservationDate = night_dir
     if class_instance.__name__ in REDUCTION_TASKS:
-        muon_dir = Path(dl1_dir) / nightdir / options.prod_id
-        outdir_dl1 = Path(dl1_dir) / nightdir / options.prod_id / options.dl1_prod_id
-        outdir_dl2 = Path(dl2_dir) / nightdir / options.prod_id / options.dl2_prod_id
+        muon_dir = Path(dl1_dir) / night_dir / options.prod_id
+        outdir_dl1 = Path(dl1_dir) / night_dir / options.prod_id / options.dl1_prod_id
+        outdir_dl2 = Path(dl2_dir) / night_dir / options.prod_id / options.dl2_prod_id
 
     if class_instance.__name__ == "drs4_pedestal":
         # drs4-pedestal-run       [0] 01804
         # history_file            [1] .../20210913/v0.7.5/sequence_LST1_01805.0000.history
+        pedestal_dir = calib_dir / "drs4_baseline" / night_dir / class_instance.SoftwareVersion
+
         class_instance.RawObservationFilePedestal = (
-            f"{rawdir}/{nightdir}/LST-1.1.Run{class_instance.args[0]}.fits.fz"
+            f"{raw_dir}/{night_dir}/LST-1.1.Run{class_instance.args[0]}.fits.fz"
         )
         class_instance.PedestalFile = (
-            f"{options.directory}/drs4_pedestal.Run{class_instance.args[0]}.0000.h5"
+            f"{pedestal_dir}/drs4_pedestal.Run{class_instance.args[0]}.0000.h5"
         )
         class_instance.PedestalCheckPlot = (
-            f"{options.directory}/log/drs4_pedestal.Run{class_instance.args[0]}.0000.pdf"
+            f"{pedestal_dir}/log/drs4_pedestal.Run{class_instance.args[0]}.0000.pdf"
         )
 
     if class_instance.__name__ == "r0_to_dl1":
@@ -80,7 +84,7 @@ def parse_variables(class_instance):
         pedestal_file = os.path.realpath(class_instance.args[1])
         timecalibration_file = os.path.realpath(class_instance.args[2])
         class_instance.R0SubrunDataset = (
-            f"{rawdir}/{nightdir}/LST-1.1.Run{class_instance.args[5]}.fits.fz"
+            f"{raw_dir}/{night_dir}/LST-1.1.Run{class_instance.args[5]}.fits.fz"
         )
         class_instance.CoefficientsCalibrationFile = calibration_file
         class_instance.PedestalFile = pedestal_file
