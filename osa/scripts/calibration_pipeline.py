@@ -16,6 +16,7 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import historylevel
 from osa.job import run_program_with_history_logging
+from osa.provenance.capture import trace
 from osa.utils.cliopts import calibration_pipeline_cliparsing
 from osa.utils.logging import myLogger
 
@@ -90,6 +91,7 @@ def calibration_sequence(drs4_pedestal_run_id: str, pedcal_run_id: str) -> int:
     return rc
 
 
+@trace
 def drs4_pedestal(drs4_pedestal_run_id: str, history_file: Path) -> int:
     """
     Create a DRS4 pedestal file for baseline correction.
