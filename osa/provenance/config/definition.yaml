@@ -302,6 +302,10 @@ entities:
     PythonObject:
         description: "Python variable in memory"
         type: PythonObject
+    RawObservationFile:
+        description: "Raw observation compressed FITS file"
+        type: File
+        contentType: application/fits
     R0SubrunDataset:
         description: "R0 subrun file in FITS format on the disk"
         type: File
@@ -318,6 +322,10 @@ entities:
         description: "Pedestal file in FITS format on the disk"
         type: File
         contentType: application/fits
+    PedestalCheckPlot:
+        description: "Pedestal check plot PDF file"
+        type: File
+        contentType: application/pdf
     CoefficientsCalibrationFile:
         description: "Coefficients calibration file in HDF5 format on the disk"
         type: File
