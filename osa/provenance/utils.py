@@ -59,7 +59,10 @@ def parse_variables(class_instance):
         # drs4-pedestal-run       [0] 01804
         # history_file            [1] .../20210913/v0.7.5/sequence_LST1_01805.0000.history
         pedestal_dir = calib_dir / "drs4_baseline" / night_dir / class_instance.SoftwareVersion
-
+        class_instance.PedestalRun = class_instance.args[0]
+        sequence_filename = os.path.basename(class_instance.args[1])
+        tailname = sequence_filename.replace("sequence_LST1_", "")
+        class_instance.CalibrationRun = tailname.split(".")[0]
         class_instance.RawObservationFilePedestal = (
             f"{raw_dir}/{night_dir}/LST-1.1.Run{class_instance.args[0]}.fits.fz"
         )
