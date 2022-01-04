@@ -1,4 +1,10 @@
-"""Simulate executions of data processing pipeline and produce provenance."""
+"""
+Simulate executions of data processing pipeline and produce provenance.
+If it is not executed by tests, please run  pytest --basetemp=test_osa first.
+It needs to have test_osa folder filled with test datasets.
+
+python osa/scripts/simulate_processing.py
+"""
 
 import logging
 import multiprocessing as mp
@@ -150,21 +156,17 @@ def simulate_processing():
     run_list = extractruns(sub_run_list)
     sequence_list = extractsequences(run_list)
 
-    # skip drs4 and calibration
+    # simulate data calibration and reduction
     for sequence in sequence_list:
         processed = False
         for sub_list in sequence.subrun_list:
             if sub_list.runobj.type == "PEDCALIB":
-                args_cal = parse_template(
-                    create_job_template(sequence, get_content=True), 0
-                )
+                args_cal = parse_template(create_job_template(sequence, get_content=True), 0)
                 simulate_calibration(args_cal)
             elif sub_list.runobj.type == "DATA":
                 with mp.Pool() as poolproc:
                     args_proc = [
-                        parse_template(
-                            create_job_template(sequence, get_content=True), subrun_idx
-                        )
+                        parse_template(create_job_template(sequence, get_content=True), subrun_idx)
                         for subrun_idx in range(sub_list.subrun)
                     ]
                     processed = poolproc.map(simulate_subrun_processing, args_proc)
