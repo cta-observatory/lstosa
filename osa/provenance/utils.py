@@ -18,6 +18,14 @@ REDUCTION_TASKS = ["r0_to_dl1", "dl1ab", "dl1_datacheck", "dl1_to_dl2"]
 
 def parse_variables(class_instance):
     """Parse variables needed in model"""
+
+    # calibration_pipeline.py
+    # -c cfg/sequencer.cfg
+    # -d 2020_02_18
+    # --drs4-pedestal-run 01804
+    # --pedcal-run 01805
+    # LST1
+
     # datasequence.py
     # -c cfg/sequencer.cfg
     # -d 2020_02_18
@@ -44,6 +52,19 @@ def parse_variables(class_instance):
         muon_dir = Path(dl1_dir) / nightdir / options.prod_id
         outdir_dl1 = Path(dl1_dir) / nightdir / options.prod_id / options.dl1_prod_id
         outdir_dl2 = Path(dl2_dir) / nightdir / options.prod_id / options.dl2_prod_id
+
+    if class_instance.__name__ == "drs4_pedestal":
+        # drs4-pedestal-run       [0] 01804
+        # history_file            [1] .../20210913/v0.7.5/sequence_LST1_01805.0000.history
+        class_instance.RawObservationFilePedestal = (
+            f"{rawdir}/{nightdir}/LST-1.1.Run{class_instance.args[0]}.fits.fz"
+        )
+        class_instance.PedestalFile = (
+            f"{options.directory}/drs4_pedestal.Run{class_instance.args[0]}.0000.h5"
+        )
+        class_instance.PedestalCheckPlot = (
+            f"{options.directory}/log/drs4_pedestal.Run{class_instance.args[0]}.0000.pdf"
+        )
 
     if class_instance.__name__ == "r0_to_dl1":
         # calibrationfile   [0] .../20200218/v00/calibration.Run02006.0000.hdf5

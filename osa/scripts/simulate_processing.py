@@ -130,8 +130,8 @@ def parse_template(template, idx):
             args.append(line.strip())
         if "subprocess.run" in line:
             keep = True
-    # Remove last three elements
-    return args[0:-3]
+    # remove last three elements
+    return args[:-3]
 
 
 def simulate_calibration(args):
