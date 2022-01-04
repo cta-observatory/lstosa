@@ -7,7 +7,6 @@ formatters:
 handlers:
     provHandler:
         class: logging.handlers.WatchedFileHandler
-        level: INFO
         formatter: simple
         filename: prov.log
 loggers:
