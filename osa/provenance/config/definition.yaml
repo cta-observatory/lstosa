@@ -74,6 +74,53 @@ activities:
               value: PedestalCheckPlot
 #              filepath: /fefs/aswg/data/real/calibration/20210913/v0.7.5/log/drs4_pedestal.Run02068.0000.pdf
 
+    calibrate_charge:
+        description:
+            "Create charge calibration file"
+        parameters:
+        usage:
+            - role: "Subrun for calibration"
+              description: "Raw observation file for calibration"
+              entityName: RawObservationFile
+              value: RawObservationFileCalibration
+#              filepath: /fefs/aswg/data/real/R0/20210913/LST-1.1.Run06274.0000.fits.fz
+            - role: "Pedestal file"
+              description: "Pedestal file used"
+              entityName: PedestalFile
+              value: PedestalFile
+#              filepath: /fefs/aswg/data/real/calibration/20210913/v0.7.5/drs4_pedestal.Run06268.0000.fits
+            - role: "Run summary"
+              description: "Run summary configuration"
+              entityName: RunSummaryFile
+              value: RunSummaryFile
+#              filepath: /fefs/aswg/data/real/monitoring/RunSummary/RunSummary_20210913.ecsv
+            - role: "Configuration file"
+              description: "Configuration file for camera"
+              entityName: AnalysisConfigFile
+              value: CalibrationConfigurationFile
+#              filepath: /fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/data/onsite_camera_calibration_param.json
+            - role: "Systematics correction file"
+              description: "Systematics correction file"
+              entityName: SystematicsCorrectionFile
+              value: SystematicsCorrectionFile
+#              filepath: /path/to/ff_systematics_file.h5
+        generation:
+            - role: "Coefficients calibration file"
+              description: "Coefficients calibration file"
+              entityName: CoefficientsCalibrationFile
+              value: CoefficientsCalibrationFile
+#              filepath: /fefs/aswg/data/real/calibration/20210913/v0.7.5/calibration.Run06274.0000.hdf5
+            - role: "Check plot for calibration"
+              description: "Calibration check plot"
+              entityName: CalibrationCheckPlot
+              value: CalibrationCheckPlot
+#              filepath: /fefs/aswg/data/real/calibration/20210913/v0.7.5/log/calibration.Run06274.0000.pedestal.Run06268.0000.pdf
+            - role: "Time calibration file"
+              description: "Time calibration file"
+              entityName: TimeCalibrationFile
+              value: TimeCalibrationFile
+#              filepath: /fefs/aswg/data/real/calibration/20210913/v0.7.5/time_calibration.Run06274.0000.hdf5
+
     r0_to_dl1:
         description:
             "Create DL1 files for an observation run and subrun"
@@ -330,10 +377,18 @@ entities:
         description: "Coefficients calibration file in HDF5 format on the disk"
         type: File
         contentType: application/x-hdf
+    SystematicsCorrectionFile:
+        description: "Systematics correction file in HDF5 format on the disk"
+        type: File
+        contentType: application/x-hdf
     TimeCalibrationFile:
         description: "Time calibration file in HDF5 format on the disk"
         type: File
         contentType: application/x-hdf
+    CalibrationCheckPlot:
+        description: "Calibration check plot PDF file"
+        type: File
+        contentType: application/pdf
     AnalysisConfigFile:
         description: "LSTChain analysis configuration file in JSON format on the disk"
         type: File
