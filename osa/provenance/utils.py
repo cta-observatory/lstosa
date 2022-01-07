@@ -48,7 +48,6 @@ def parse_variables(class_instance):
     dl2_dir = cfg.get("LST1", "DL2_DIR")
     calib_dir = cfg.get("LST1", "CALIB_DIR")
     pedestal_dir = cfg.get("LST1", "PEDESTAL_DIR")
-    time_calib_dir = cfg.get("LST1", "TIMECALIB_DIR")
     # summary_dir = cfg.get("LST1", "RUN_SUMMARY_DIR")
     # calib_base_dir = cfg.get("LST1", "CALIB_BASE_DIR")
     # sys_dir = calib_base_dir / "ffactor_systematics"
@@ -88,7 +87,7 @@ def parse_variables(class_instance):
         class_instance.PedestalFile = Path(pedestal_dir) / flat_date / pro / drs4_pedestal_file
         calibration_file = f"calibration_filters_52.Run{class_instance.args[1]}.0000.h5"
         class_instance.CoefficientsCalibrationFile = Path(calib_dir) / flat_date / pro / calibration_file
-        class_instance.TimeCalibrationFile = get_time_calibration_file(class_instance.args[1])
+        class_instance.TimeCalibrationFile = get_time_calibration_file(int(class_instance.args[1]))
 
     if class_instance.__name__ == "r0_to_dl1":
         # calibrationfile   [0] .../20200218/v00/calibration.Run02006.0000.hdf5
