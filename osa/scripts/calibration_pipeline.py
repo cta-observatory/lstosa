@@ -124,6 +124,7 @@ def drs4_pedestal(drs4_pedestal_run_id: str, pedcal_run_id: str, history_file: P
     )
 
 
+@trace
 def calibrate_charge(drs4_pedestal_run_id: str, pedcal_run_id: str, history_file: Path) -> int:
     """
     Create the calibration file to transform from ADC counts to photo-electrons
