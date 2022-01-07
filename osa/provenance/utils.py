@@ -9,6 +9,7 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.job import get_time_calibration_file
 from osa.utils.utils import get_lstchain_version, lstdate_to_dir
 
 __all__ = ["parse_variables", "get_log_config", "store_conda_env_export"]
@@ -45,8 +46,12 @@ def parse_variables(class_instance):
     rf_models_directory = cfg.get("lstchain", "RF_MODELS")
     dl1_dir = cfg.get("LST1", "DL1_DIR")
     dl2_dir = cfg.get("LST1", "DL2_DIR")
-    calib_dir = base_dir / "monitoring" / "PixelCalibration" / "LevelA"
-    night_dir = lstdate_to_dir(options.date)
+    calib_dir = cfg.get("LST1", "CALIB_DIR")
+    pedestal_dir = cfg.get("LST1", "PEDESTAL_DIR")
+    time_calib_dir = cfg.get("LST1", "TIMECALIB_DIR")
+    # summary_dir = cfg.get("LST1", "RUN_SUMMARY_DIR")
+    # calib_base_dir = cfg.get("LST1", "CALIB_BASE_DIR")
+    # sys_dir = calib_base_dir / "ffactor_systematics"
     class_instance.SoftwareVersion = get_lstchain_version()
     class_instance.ProcessingConfigFile = options.configfile
     class_instance.ObservationDate = flat_date
@@ -62,15 +67,28 @@ def parse_variables(class_instance):
         class_instance.PedestalRun = class_instance.args[0]
         class_instance.CalibrationRun = class_instance.args[1]
 
+        pro = "pro"
+        # TODO - massive reprocessing vs. next day processing
+
+        # according to code in onsite scripts in lstchain
+        #
         class_instance.RawObservationFilePedestal = (
-            f"{raw_dir}/{night_dir}/LST-1.1.Run{class_instance.args[0]}.fits.fz"
+            f"{raw_dir}/{flat_date}/LST-1.1.Run{class_instance.args[0]}.fits.fz"
         )
-        class_instance.PedestalFile = (
-            f"{pedestal_dir}/drs4_pedestal.Run{class_instance.args[0]}.0000.h5"
+        class_instance.RawObservationFileCalibration = (
+            f"{raw_dir}/{flat_date}/LST-1.1.Run{class_instance.args[1]}.fits.fz"
         )
-        class_instance.PedestalCheckPlot = (
-            f"{pedestal_dir}/log/drs4_pedestal.Run{class_instance.args[0]}.0000.pdf"
-        )
+        pedestal_plot = f"drs4_pedestal.Run{class_instance.args[0]}.0000.pdf"
+        class_instance.PedestalCheckPlot = Path(pedestal_dir) / flat_date / pro / "log" / pedestal_plot
+        calibration_plot = f"calibration_filters_52.Run{class_instance.args[1]}.0000.pdf"
+        class_instance.CalibrationCheckPlot = Path(calib_dir) / flat_date / pro / "log" / calibration_plot
+        # according to code in sequence_calibration_filenames from job.py
+        #
+        drs4_pedestal_file = f"drs4_pedestal.Run{class_instance.args[0]}.0000.h5"
+        class_instance.PedestalFile = Path(pedestal_dir) / flat_date / pro / drs4_pedestal_file
+        calibration_file = f"calibration_filters_52.Run{class_instance.args[1]}.0000.h5"
+        class_instance.CoefficientsCalibrationFile = Path(calib_dir) / flat_date / pro / calibration_file
+        class_instance.TimeCalibrationFile = get_time_calibration_file(class_instance.args[1])
 
     if class_instance.__name__ == "r0_to_dl1":
         # calibrationfile   [0] .../20200218/v00/calibration.Run02006.0000.hdf5
