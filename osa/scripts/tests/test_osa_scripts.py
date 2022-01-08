@@ -65,12 +65,12 @@ def test_simulate_processing(drs4_time_calibration_files, run_summary_file):
 
     prov_dl1_path = Path("./test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84/log")
     prov_dl2_path = Path("./test_osa/test_files0/DL2/20200117/v0.1.0/tailcut84_model1/log")
-    prov_file_dl1 = prov_dl1_path / "r0_to_dl1_01807_prov.log"
-    prov_file_dl2 = prov_dl2_path / "r0_to_dl2_01807_prov.log"
-    json_file_dl1 = prov_dl1_path / "r0_to_dl1_01807_prov.json"
-    json_file_dl2 = prov_dl2_path / "r0_to_dl2_01807_prov.json"
-    pdf_file_dl1 = prov_dl1_path / "r0_to_dl1_01807_prov.pdf"
-    pdf_file_dl2 = prov_dl2_path / "r0_to_dl2_01807_prov.pdf"
+    prov_file_dl1 = prov_dl1_path / "calibration_to_dl1_01807_prov.log"
+    prov_file_dl2 = prov_dl2_path / "calibration_to_dl2_01807_prov.log"
+    json_file_dl1 = prov_dl1_path / "calibration_to_dl1_01807_prov.json"
+    json_file_dl2 = prov_dl2_path / "calibration_to_dl2_01807_prov.json"
+    pdf_file_dl1 = prov_dl1_path / "calibration_to_dl1_01807_prov.pdf"
+    pdf_file_dl2 = prov_dl2_path / "calibration_to_dl2_01807_prov.pdf"
 
     assert prov_file_dl1.exists()
     assert prov_file_dl2.exists()
@@ -79,17 +79,17 @@ def test_simulate_processing(drs4_time_calibration_files, run_summary_file):
 
     with open(json_file_dl1) as file:
         dl1 = yaml.safe_load(file)
-    assert len(dl1["entity"]) == 11
-    assert len(dl1["activity"]) == 2
-    assert len(dl1["used"]) == 9
-    assert len(dl1["wasGeneratedBy"]) == 3
+    assert len(dl1["entity"]) == 15
+    assert len(dl1["activity"]) == 4
+    assert len(dl1["used"]) == 12
+    assert len(dl1["wasGeneratedBy"]) == 8
 
     with open(json_file_dl2) as file:
         dl2 = yaml.safe_load(file)
-    assert len(dl2["entity"]) == 20
-    assert len(dl2["activity"]) == 4
-    assert len(dl2["used"]) == 17
-    assert len(dl2["wasGeneratedBy"]) == 8
+    assert len(dl2["entity"]) == 24
+    assert len(dl2["activity"]) == 6
+    assert len(dl2["used"]) == 20
+    assert len(dl2["wasGeneratedBy"]) == 13
 
     rc = run_program("simulate_processing", "-p")
     assert rc.returncode == 0
