@@ -62,13 +62,14 @@ def copy_used_file(src, outdir):
             log.warning(f"could not copy {src} file into {destpath}: {ex}")
 
 
-def parse_lines_log(filter_step, run_number):
+def parse_lines_log(filter_cut, calib_runs, run_number):
     """
     Filter content in log file to produce a run/process wise session log.
 
     Parameters
     ----------
-    filter_step
+    filter_cut
+    calib_runs
     run_number
 
     Returns
@@ -76,6 +77,15 @@ def parse_lines_log(filter_step, run_number):
     filtered
     """
     filtered = []
+    if not filter_cut:
+        filter_cut = "all"
+    cuts = {
+        "calibration": ["drs4_pedestal", "calibrate_charge"],
+        "r0_to_dl1": ["r0_to_dl1", "dl1ab"],
+        "dl1_to_dl2": ["dl1_datacheck", "dl1_to_dl2"]
+    }
+    cuts["all"] = cuts["calibration"] + cuts["r0_to_dl1"] + cuts["dl1_to_dl2"]
+
     with open(LOG_FILENAME, "r") as f:
         for line in f.readlines():
             ll = line.split(PROV_PREFIX)
@@ -90,20 +100,28 @@ def parse_lines_log(filter_step, run_number):
             session_tag = prov_dict.get("session_tag", "0:0")
             session_id = prov_dict.get("session_id", False)
             tag_activity, tag_run = session_tag.split(":")
-            # filter by run
-            if tag_run == run_number:
+
+            # filter by run and calib runs
+            if tag_run in [run_number, calib_runs]:
                 keep = True
             # filter by activity
-            if filter_step not in ["", tag_activity]:
+            if tag_activity not in cuts[filter_cut]:
                 keep = False
-            # always keep first session start
-            if session_id and tag_run == run_number:
+            # only keep first session start
+            if session_id and (tag_run in [run_number, calib_runs]):
                 keep = True
+            # make session starts with calibration
+            if session_id and filter_cut == "all" and not filtered:
+                prov_dict["session_id"] = f"{options.date}{run_number}"
+                prov_dict["name"] = f"{options.date}{run_number}"
+                prov_dict["observation_run"] = run_number
+                line = f"{ll[0]}{PROV_PREFIX}{ll[1]}{PROV_PREFIX}{prov_dict}\n"
             # remove parallel sessions
             if session_id and filtered:
                 keep = False
             if keep:
                 filtered.append(line)
+
     return filtered
 
 
@@ -438,7 +456,8 @@ def main():
     session_log_filename = f"{base_filename}.log"
 
     # parse LOG_FILENAME content for a specific run / process
-    parsed_content = parse_lines_log(options.filter, options.run)
+    calib_runs = f"{options.drs4_pedestal_run_id}-{options.pedcal_run_id}"
+    parsed_content = parse_lines_log(options.filter, calib_runs, options.run)
 
     # create temporal session log file
     with open(session_log_filename, "w") as f:

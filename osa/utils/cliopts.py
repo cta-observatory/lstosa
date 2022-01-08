@@ -623,7 +623,7 @@ def provprocess_argparser():
         action="store",
         dest="filter",
         default="",
-        help="filter by process granularity [r0_to_dl1 or dl1_to_dl2]",
+        help="filter by process granularity [calibration, r0_to_dl1 or dl1_to_dl2]",
     )
     parser.add_argument(
         "-q",
@@ -654,7 +654,7 @@ def provprocessparsing():
     opts = provprocess_argparser().parse_args()
 
     # checking arguments
-    if opts.filter not in ["r0_to_dl1", "dl1_to_dl2", ""]:
+    if opts.filter not in ["calibration", "r0_to_dl1", "dl1_to_dl2", ""]:
         log.error("incorrect value for --filter argument, type -h for help")
 
     # set global variables
