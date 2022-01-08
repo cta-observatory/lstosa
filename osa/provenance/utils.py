@@ -70,24 +70,29 @@ def parse_variables(class_instance):
         # TODO - massive reprocessing vs. next day processing
 
         # according to code in onsite scripts in lstchain
-        #
-        class_instance.RawObservationFilePedestal = (
+        class_instance.RawObservationFilePedestal = os.path.realpath(
             f"{raw_dir}/{flat_date}/LST-1.1.Run{class_instance.args[0]}.fits.fz"
         )
-        class_instance.RawObservationFileCalibration = (
+        class_instance.RawObservationFileCalibration = os.path.realpath(
             f"{raw_dir}/{flat_date}/LST-1.1.Run{class_instance.args[1]}.fits.fz"
         )
-        pedestal_plot = f"drs4_pedestal.Run{class_instance.args[0]}.0000.pdf"
-        class_instance.PedestalCheckPlot = Path(pedestal_dir) / flat_date / pro / "log" / pedestal_plot
-        calibration_plot = f"calibration_filters_52.Run{class_instance.args[1]}.0000.pdf"
-        class_instance.CalibrationCheckPlot = Path(calib_dir) / flat_date / pro / "log" / calibration_plot
+        class_instance.PedestalCheckPlot = os.path.realpath(
+            f"{pedestal_dir}/{flat_date}/{pro}/log/drs4_pedestal.Run{class_instance.args[0]}.0000.pdf"
+        )
+        class_instance.CalibrationCheckPlot = os.path.realpath(
+            f"{calib_dir}/{flat_date}/{pro}/log/calibration_filters_52.Run{class_instance.args[1]}.0000.pdf"
+        )
+
         # according to code in sequence_calibration_filenames from job.py
-        #
-        drs4_pedestal_file = f"drs4_pedestal.Run{class_instance.args[0]}.0000.h5"
-        class_instance.PedestalFile = Path(pedestal_dir) / flat_date / pro / drs4_pedestal_file
-        calibration_file = f"calibration_filters_52.Run{class_instance.args[1]}.0000.h5"
-        class_instance.CoefficientsCalibrationFile = Path(calib_dir) / flat_date / pro / calibration_file
-        class_instance.TimeCalibrationFile = get_time_calibration_file(int(class_instance.args[1]))
+        class_instance.PedestalFile = os.path.realpath(
+            f"{pedestal_dir}/{flat_date}/{pro}/drs4_pedestal.Run{class_instance.args[0]}.0000.h5"
+        )
+        class_instance.CoefficientsCalibrationFile = os.path.realpath(
+            f"{calib_dir}/{flat_date}/{pro}/calibration_filters_52.Run{class_instance.args[1]}.0000.h5"
+        )
+        class_instance.TimeCalibrationFile = os.path.realpath(
+            get_time_calibration_file(int(class_instance.args[1]))
+        )
 
     if class_instance.__name__ == "r0_to_dl1":
         # calibrationfile   [0] .../20200218/v00/calibration.Run02006.0000.hdf5
@@ -102,29 +107,29 @@ def parse_variables(class_instance):
         calibration_file = os.path.realpath(class_instance.args[0])
         pedestal_file = os.path.realpath(class_instance.args[1])
         timecalibration_file = os.path.realpath(class_instance.args[2])
-        class_instance.R0SubrunDataset = (
+        class_instance.R0SubrunDataset = os.path.realpath(
             f"{raw_dir}/{flat_date}/LST-1.1.Run{class_instance.args[5]}.fits.fz"
         )
         class_instance.CoefficientsCalibrationFile = calibration_file
         class_instance.PedestalFile = pedestal_file
         class_instance.TimeCalibrationFile = timecalibration_file
-        class_instance.PointingFile = str(class_instance.args[3])
-        class_instance.RunSummaryFile = str(class_instance.args[4])
-        class_instance.DL1SubrunDataset = (
+        class_instance.PointingFile = os.path.realpath(class_instance.args[3])
+        class_instance.RunSummaryFile = os.path.realpath(class_instance.args[4])
+        class_instance.DL1SubrunDataset = os.path.realpath(
             f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[5]}.h5"
         )
-        class_instance.MuonsSubrunDataset = (
+        class_instance.MuonsSubrunDataset = os.path.realpath(
             f"{muon_dir}/muons_LST-1.Run{class_instance.args[5]}.fits"
         )
 
     if class_instance.__name__ == "dl1ab":
         # run_str       [0] 02006.0000
 
-        class_instance.Analysisconfigfile_dl1 = configfile_dl1
+        class_instance.Analysisconfigfile_dl1 = os.path.realpath(configfile_dl1)
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
         class_instance.PedestalCleaning = "True"
         class_instance.StoreImage = cfg.getboolean("lstchain", "store_image_dl1ab")
-        class_instance.DL1SubrunDataset = (
+        class_instance.DL1SubrunDataset = os.path.realpath(
             f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[0]}.h5"
         )
 
@@ -132,19 +137,19 @@ def parse_variables(class_instance):
         # run_str       [0] 02006.0000
 
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
-        class_instance.DL1SubrunDataset = (
+        class_instance.DL1SubrunDataset = os.path.realpath(
             f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[0]}.h5"
         )
-        class_instance.MuonsSubrunDataset = (
+        class_instance.MuonsSubrunDataset = os.path.realpath(
             f"{muon_dir}/muons_LST-1.Run{class_instance.args[0]}.fits"
         )
-        class_instance.DL1CheckSubrunDataset = (
+        class_instance.DL1CheckSubrunDataset = os.path.realpath(
             f"{outdir_dl1}/datacheck_dl1_LST-1.Run{class_instance.args[0]}.h5"
         )
-        class_instance.DL1CheckHDF5File = (
+        class_instance.DL1CheckHDF5File = os.path.realpath(
             f"{outdir_dl1}/datacheck_dl1_LST-1.Run{class_instance.ObservationRun}.h5"
         )
-        class_instance.DL1CheckPDFFile = (
+        class_instance.DL1CheckPDFFile = os.path.realpath(
             f"{outdir_dl1}/datacheck_dl1_LST-1.Run{class_instance.ObservationRun}.pdf"
         )
 
@@ -153,25 +158,25 @@ def parse_variables(class_instance):
 
         class_instance.Analysisconfigfile_dl2 = configfile_dl2
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
-        class_instance.RFModelEnergyFile = str(
-            Path(rf_models_directory) / "reg_energy.sav"
+        class_instance.RFModelEnergyFile = os.path.realpath(
+            f"{rf_models_directory}/reg_energy.sav"
         )
-        class_instance.RFModelDispNormFile = str(
-            Path(rf_models_directory) / "reg_disp_norm.sav"
+        class_instance.RFModelDispNormFile = os.path.realpath(
+            f"{rf_models_directory}/reg_disp_norm.sav"
         )
-        class_instance.RFModelDispSignFile = str(
-            Path(rf_models_directory) / "reg_disp_sign.sav"
+        class_instance.RFModelDispSignFile = os.path.realpath(
+            f"{rf_models_directory}/reg_disp_sign.sav"
         )
-        class_instance.RFModelGammanessFile = str(
-            Path(rf_models_directory) / "cls_gh.sav"
+        class_instance.RFModelGammanessFile = os.path.realpath(
+            f"{rf_models_directory}/cls_gh.sav"
         )
-        class_instance.DL1SubrunDataset = (
+        class_instance.DL1SubrunDataset = os.path.realpath(
             f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[0]}.h5"
         )
-        class_instance.DL2SubrunDataset = (
+        class_instance.DL2SubrunDataset = os.path.realpath(
             f"{outdir_dl2}/dl2_LST-1.Run{class_instance.args[0]}.h5"
         )
-        class_instance.DL2MergedFile = (
+        class_instance.DL2MergedFile = os.path.realpath(
             f"{outdir_dl2}/dl2_LST-1.Run{class_instance.ObservationRun}.h5"
         )
 
