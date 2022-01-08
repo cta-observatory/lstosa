@@ -74,12 +74,8 @@ def do_setup():
     CONFIG_FLAGS["TearSubDL2"] = (
         False if path_dl2_sub.exists() or options.provenance else path_dl2_sub
     )
-    CONFIG_FLAGS["TearDL1"] = (
-        False if path_dl1.exists() or options.provenance else path_dl1
-    )
-    CONFIG_FLAGS["TearDL2"] = (
-        False if path_dl2.exists() or options.provenance else path_dl2
-    )
+    CONFIG_FLAGS["TearDL1"] = False if path_dl1.exists() or options.provenance else path_dl1
+    CONFIG_FLAGS["TearDL2"] = False if path_dl2.exists() or options.provenance else path_dl2
 
     if options.provenance and not options.force:
         if path_sub_analysis.exists():

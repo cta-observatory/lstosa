@@ -412,9 +412,7 @@ def get_derivation_records(class_instance, activity):
                 log_record = {"entity_id": new_id, "progenitor_id": entity_id}
                 records.append(log_record)
                 traced_entities[var] = (new_id, item)
-                logger.warning(
-                    f"Derivation detected in {activity} for {var}. ID: {new_id}"
-                )
+                logger.warning(f"Derivation detected in {activity} for {var}. ID: {new_id}")
     return records
 
 

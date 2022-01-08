@@ -158,18 +158,14 @@ def parse_variables(class_instance):
 
         class_instance.Analysisconfigfile_dl2 = configfile_dl2
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
-        class_instance.RFModelEnergyFile = os.path.realpath(
-            f"{rf_models_directory}/reg_energy.sav"
-        )
+        class_instance.RFModelEnergyFile = os.path.realpath(f"{rf_models_directory}/reg_energy.sav")
         class_instance.RFModelDispNormFile = os.path.realpath(
             f"{rf_models_directory}/reg_disp_norm.sav"
         )
         class_instance.RFModelDispSignFile = os.path.realpath(
             f"{rf_models_directory}/reg_disp_sign.sav"
         )
-        class_instance.RFModelGammanessFile = os.path.realpath(
-            f"{rf_models_directory}/cls_gh.sav"
-        )
+        class_instance.RFModelGammanessFile = os.path.realpath(f"{rf_models_directory}/cls_gh.sav")
         class_instance.DL1SubrunDataset = os.path.realpath(
             f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[0]}.h5"
         )

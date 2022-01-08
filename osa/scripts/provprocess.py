@@ -82,7 +82,7 @@ def parse_lines_log(filter_cut, calib_runs, run_number):
     cuts = {
         "calibration": ["drs4_pedestal", "calibrate_charge"],
         "r0_to_dl1": ["r0_to_dl1", "dl1ab"],
-        "dl1_to_dl2": ["dl1_datacheck", "dl1_to_dl2"]
+        "dl1_to_dl2": ["dl1_datacheck", "dl1_to_dl2"],
     }
     cuts["all"] = cuts["calibration"] + cuts["r0_to_dl1"] + cuts["dl1_to_dl2"]
 
@@ -90,9 +90,7 @@ def parse_lines_log(filter_cut, calib_runs, run_number):
         for line in f.readlines():
             ll = line.split(PROV_PREFIX)
             if len(ll) != 3:
-                log.warning(
-                    f"format {PROV_PREFIX} mismatch in log file {LOG_FILENAME}\n{line}"
-                )
+                log.warning(f"format {PROV_PREFIX} mismatch in log file {LOG_FILENAME}\n{line}")
                 continue
             prov_str = ll.pop()
             prov_dict = yaml.safe_load(prov_str)
@@ -227,11 +225,11 @@ def parse_lines_run(filter_step, prov_lines, out):
 
         # copy used files not subruns not RFs not mergedDL2
         if (
-                filepath
-                and content_type != "application/x-spss-sav"
-                and name != "DL2MergedFile"
-                and not name.startswith("DL1Check")
-                and not remove
+            filepath
+            and content_type != "application/x-spss-sav"
+            and name != "DL2MergedFile"
+            and not name.startswith("DL1Check")
+            and not remove
         ):
             copy_used_file(filepath, out)
         if session_id and osa_cfg and not osa_config_copied:
@@ -404,9 +402,7 @@ def produce_provenance(session_log_filename, base_filename):
         pass
 
     if options.filter == "r0_to_dl1" or not options.filter:
-        paths_r0_dl1 = define_paths(
-            "r0_to_dl1", PATH_DL1, options.dl1_prod_id, base_filename
-        )
+        paths_r0_dl1 = define_paths("r0_to_dl1", PATH_DL1, options.dl1_prod_id, base_filename)
         plines_r0 = parse_lines_run(
             "r0_to_dl1",
             read_prov(filename=session_log_filename),
@@ -424,9 +420,7 @@ def produce_provenance(session_log_filename, base_filename):
         produce_provenance_files(plines_r0 + plines_ab[1:], paths_r0_dl1)
 
     if options.filter == "dl1_to_dl2" or not options.filter:
-        paths_dl1_dl2 = define_paths(
-            "dl1_to_dl2", PATH_DL2, options.dl2_prod_id, base_filename
-        )
+        paths_dl1_dl2 = define_paths("dl1_to_dl2", PATH_DL2, options.dl2_prod_id, base_filename)
         plines_check = parse_lines_run(
             "dl1_datacheck",
             read_prov(filename=session_log_filename),
