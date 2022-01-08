@@ -113,7 +113,7 @@ def parse_lines_log(filter_cut, calib_runs, run_number):
             # make session starts with calibration
             if session_id and filter_cut == "all" and not filtered:
                 prov_dict["session_id"] = f"{options.date}{run_number}"
-                prov_dict["name"] = f"{options.date}{run_number}"
+                prov_dict["name"] = run_number
                 prov_dict["observation_run"] = run_number
                 line = f"{ll[0]}{PROV_PREFIX}{ll[1]}{PROV_PREFIX}{prov_dict}\n"
             # remove parallel sessions
