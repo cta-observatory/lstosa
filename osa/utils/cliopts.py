@@ -632,6 +632,12 @@ def provprocess_argparser():
         help="use this flag to reset session and remove log file",
     )
     parser.add_argument(
+        "drs4_pedestal_run_id", help="Number of the drs4_pedestal used in the calibration"
+    )
+    parser.add_argument(
+        "pedcal_run_id", help="Number of the used pedcal used in the calibration"
+    )
+    parser.add_argument(
         "run", help="Number of the run whose provenance is to be extracted"
     )
     parser.add_argument(
@@ -652,6 +658,8 @@ def provprocessparsing():
         log.error("incorrect value for --filter argument, type -h for help")
 
     # set global variables
+    options.drs4_pedestal_run_id = opts.drs4_pedestal_run_id
+    options.pedcal_run_id = opts.pedcal_run_id
     options.run = opts.run
     options.date = opts.date
     options.prod_id = get_prod_id()

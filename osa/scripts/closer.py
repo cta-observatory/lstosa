@@ -95,7 +95,6 @@ def main():
             sys.exit(-1)
 
         store_conda_env_export()
-
         post_process(sequencer_tuple)
 
 
@@ -340,6 +339,8 @@ def extract_provenance(seq_list):
 
     for sequence in seq_list:
         if sequence.type == "DATA":
+            drs4_pedestal_run_id = str(sequence.pedestal).split(".")[1].replace("Run", "")
+            pedcal_run_id = str(sequence.calibration).split(".")[1].replace("Run", "")
             cmd = [
                 "sbatch",
                 "-D",
@@ -349,6 +350,8 @@ def extract_provenance(seq_list):
                 "provprocess",
                 "-c",
                 options.configfile,
+                drs4_pedestal_run_id,
+                pedcal_run_id,
                 f"{sequence.run:05d}",
                 nightdir,
                 options.prod_id,

@@ -170,6 +170,8 @@ def simulate_processing():
                         for subrun_idx in range(sub_list.subrun)
                     ]
                     processed = poolproc.map(simulate_subrun_processing, args_proc)
+        drs4_pedestal_run_id = str(sequence.pedestal).split(".")[1].replace("Run", "")
+        pedcal_run_id = str(sequence.calibration).split(".")[1].replace("Run", "")
 
         # produce prov if overwrite prov arg
         if processed and options.provenance:
@@ -178,6 +180,8 @@ def simulate_processing():
                 command,
                 "-c",
                 options.configfile,
+                drs4_pedestal_run_id,
+                pedcal_run_id,
                 sequence.run_str,
                 options.directory,
                 options.prod_id,
