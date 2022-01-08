@@ -382,6 +382,27 @@ def produce_provenance(session_log_filename, base_filename):
     and graphs according to granularity.
     """
 
+    if options.filter == "calibration" or not options.filter:
+        paths_calibration = define_paths(
+            "calibration_to_dl1", PATH_DL1, options.dl1_prod_id, base_filename
+        )
+        plines_drs4 = parse_lines_run(
+            "drs4_pedestal",
+            read_prov(filename=session_log_filename),
+            str(paths_calibration["out_path"]),
+        )
+        plines_calib = parse_lines_run(
+            "calibrate_charge",
+            read_prov(filename=session_log_filename),
+            str(paths_calibration["out_path"]),
+        )
+        calibration_lines = plines_drs4 + plines_calib[1:]
+
+    # TODO
+    # create calibration prov files only if filtering
+    if options.filter == "calibration":
+        pass
+
     if options.filter == "r0_to_dl1" or not options.filter:
         paths_r0_dl1 = define_paths(
             "r0_to_dl1", PATH_DL1, options.dl1_prod_id, base_filename
@@ -391,14 +412,15 @@ def produce_provenance(session_log_filename, base_filename):
             read_prov(filename=session_log_filename),
             str(paths_r0_dl1["out_path"]),
         )
-        lines_r0_dl1 = copy.deepcopy(plines_r0)
         plines_ab = parse_lines_run(
             "dl1ab",
             read_prov(filename=session_log_filename),
             str(paths_r0_dl1["out_path"]),
         )
-        lines_dl1ab = copy.deepcopy(plines_ab)
-        dl1_lines = lines_r0_dl1 + lines_dl1ab[1:]
+        dl1_lines = plines_r0 + plines_ab[1:]
+
+    # create r0_to_dl1 prov files only if filtering
+    if options.filter == "r0_to_dl1":
         produce_provenance_files(plines_r0 + plines_ab[1:], paths_r0_dl1)
 
     if options.filter == "dl1_to_dl2" or not options.filter:
@@ -410,20 +432,18 @@ def produce_provenance(session_log_filename, base_filename):
             read_prov(filename=session_log_filename),
             str(paths_dl1_dl2["out_path"]),
         )
-        lines_check = copy.deepcopy(plines_check)
         plines_dl2 = parse_lines_run(
             "dl1_to_dl2",
             read_prov(filename=session_log_filename),
             str(paths_dl1_dl2["out_path"]),
         )
-        lines_dl2 = copy.deepcopy(plines_dl2)
-        dl1_dl2_lines = lines_check + lines_dl2[1:]
+        dl1_dl2_lines = plines_check + plines_dl2[1:]
 
-    # create last step products only if filtering
+    # create dl1_to_dl2 prov files only if filtering
     if options.filter == "dl1_to_dl2":
         produce_provenance_files(plines_check + plines_dl2[1:], paths_dl1_dl2)
 
-    # create all steps products in last step path
+    # create calibration_to_dl1 and calibration_to_dl2 prov files
     if not options.filter:
         all_lines = dl1_lines + dl1_dl2_lines[1:]
         paths_r0_dl2 = define_paths(
