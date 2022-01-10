@@ -1,10 +1,9 @@
-"""
-Simulate executions of data processing pipeline and produce provenance.
+"""Simulate executions of data processing pipeline and produce provenance.
+
 If it is not executed by tests, please run  pytest --basetemp=test_osa first.
 It needs to have test_osa folder filled with test datasets.
 
-python osa/scripts/simulate_processing.py
-"""
+python osa/scripts/simulate_processing.py"""
 
 import logging
 import multiprocessing as mp
@@ -74,8 +73,12 @@ def do_setup():
     CONFIG_FLAGS["TearSubDL2"] = (
         False if path_dl2_sub.exists() or options.provenance else path_dl2_sub
     )
-    CONFIG_FLAGS["TearDL1"] = False if path_dl1.exists() or options.provenance else path_dl1
-    CONFIG_FLAGS["TearDL2"] = False if path_dl2.exists() or options.provenance else path_dl2
+    CONFIG_FLAGS["TearDL1"] = (
+        False if path_dl1.exists() or options.provenance else path_dl1
+    )
+    CONFIG_FLAGS["TearDL2"] = (
+        False if path_dl2.exists() or options.provenance else path_dl2
+    )
 
     if options.provenance and not options.force:
         if path_sub_analysis.exists():
@@ -157,12 +160,16 @@ def simulate_processing():
         processed = False
         for sub_list in sequence.subrun_list:
             if sub_list.runobj.type == "PEDCALIB":
-                args_cal = parse_template(create_job_template(sequence, get_content=True), 0)
+                args_cal = parse_template(
+                    create_job_template(sequence, get_content=True), 0
+                )
                 simulate_calibration(args_cal)
             elif sub_list.runobj.type == "DATA":
                 with mp.Pool() as poolproc:
                     args_proc = [
-                        parse_template(create_job_template(sequence, get_content=True), subrun_idx)
+                        parse_template(
+                            create_job_template(sequence, get_content=True), subrun_idx
+                        )
                         for subrun_idx in range(sub_list.subrun)
                     ]
                     processed = poolproc.map(simulate_subrun_processing, args_proc)

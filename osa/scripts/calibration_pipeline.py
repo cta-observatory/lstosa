@@ -35,11 +35,11 @@ def drs4_pedestal_command(drs4_pedestal_run_id: str) -> list:
     """Build the create_drs4_pedestal command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     return [
-        'onsite_create_drs4_pedestal_file',
-        f'--run_number={drs4_pedestal_run_id}',
-        f'--base_dir={base_dir}',
-        '--no-progress',
-        '--yes'
+        "onsite_create_drs4_pedestal_file",
+        f"--run_number={drs4_pedestal_run_id}",
+        f"--base_dir={base_dir}",
+        "--no-progress",
+        "--yes",
     ]
 
 
@@ -47,11 +47,11 @@ def calibration_file_command(pedcal_run_id: str) -> list:
     """Build the create_calibration_file command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     return [
-        'onsite_create_calibration_file',
-        f'--run_number={pedcal_run_id}',
-        f'--base_dir={base_dir}',
-        '--yes',
-        '--filters=52'
+        "onsite_create_calibration_file",
+        f"--run_number={pedcal_run_id}",
+        f"--base_dir={base_dir}",
+        "--yes",
+        "--filters=52",
     ]
 
 
@@ -92,7 +92,9 @@ def calibration_sequence(drs4_pedestal_run_id: str, pedcal_run_id: str) -> int:
 
 
 @trace
-def drs4_pedestal(drs4_pedestal_run_id: str, pedcal_run_id: str, history_file: Path) -> int:
+def drs4_pedestal(
+    drs4_pedestal_run_id: str, pedcal_run_id: str, history_file: Path
+) -> int:
     """
     Create a DRS4 pedestal file for baseline correction.
 
@@ -120,12 +122,14 @@ def drs4_pedestal(drs4_pedestal_run_id: str, pedcal_run_id: str, history_file: P
         history_file=history_file,
         run=drs4_pedestal_run_id,
         prod_id=options.calib_prod_id,
-        command=cmd[0]
+        command=cmd[0],
     )
 
 
 @trace
-def calibrate_charge(drs4_pedestal_run_id: str, pedcal_run_id: str, history_file: Path) -> int:
+def calibrate_charge(
+    drs4_pedestal_run_id: str, pedcal_run_id: str, history_file: Path
+) -> int:
     """
     Create the calibration file to transform from ADC counts to photo-electrons
 
@@ -153,7 +157,7 @@ def calibrate_charge(drs4_pedestal_run_id: str, pedcal_run_id: str, history_file
         history_file=history_file,
         run=pedcal_run_id,
         prod_id=options.calib_prod_id,
-        command=cmd[0]
+        command=cmd[0],
     )
 
 
