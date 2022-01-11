@@ -104,6 +104,11 @@ activities:
 #              entityName: SystematicsCorrectionFile
 #              value: SystematicsCorrectionFile
 #              filepath: /path/to/ff_systematics_file.h5
+#            - role: "Time calibration file"
+#              description: "Time calibration file"
+#              entityName: TimeCalibrationFile
+#              value: TimeCalibrationFile
+#              filepath: /fefs/aswg/data/real/calibration/20210913/v0.7.5/time_calibration.Run06274.0000.hdf5
         generation:
             - role: "Coefficients calibration file"
               description: "Coefficients calibration file"
@@ -115,12 +120,6 @@ activities:
               entityName: CalibrationCheckPlot
               value: CalibrationCheckPlot
 #              filepath: /fefs/aswg/data/real/calibration/20210913/v0.7.5/log/calibration.Run06274.0000.pedestal.Run06268.0000.pdf
-            - role: "Time calibration file"
-              description: "Time calibration file"
-              entityName: TimeCalibrationFile
-              value: TimeCalibrationFile
-#              filepath: /fefs/aswg/data/real/calibration/20210913/v0.7.5/time_calibration.Run06274.0000.hdf5
-
     r0_to_dl1:
         description:
             "Create DL1 files for an observation run and subrun"

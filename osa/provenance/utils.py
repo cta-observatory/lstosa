@@ -9,7 +9,6 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import get_time_calibration_file
 from osa.utils.utils import get_lstchain_version, lstdate_to_dir
 
 __all__ = ["parse_variables", "get_log_config", "store_conda_env_export"]
@@ -89,9 +88,6 @@ def parse_variables(class_instance):
         )
         class_instance.CoefficientsCalibrationFile = os.path.realpath(
             f"{calib_dir}/{flat_date}/{pro}/calibration_filters_52.Run{class_instance.args[1]}.0000.h5"
-        )
-        class_instance.TimeCalibrationFile = os.path.realpath(
-            get_time_calibration_file(int(class_instance.args[1]))
         )
 
     if class_instance.__name__ == "r0_to_dl1":
