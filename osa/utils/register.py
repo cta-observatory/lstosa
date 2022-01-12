@@ -51,16 +51,31 @@ def register_files(run_str, analysis_dir, prefix, suffix, output_dir) -> None:
 
 
 def create_symlinks(input_file, output_file, prefix, suffix):
-    """Keep DL1 and muons symlink in running_analysis for possible future re-use."""
+    """
+    Keep DL1 and muons symlink in running_analysis for possible future re-use.
+    DL1 symlink is also kept in the DL1ab subdirectory to be able to process
+    up to DL2 later on.
+    """
+
     analysis_dir = Path(options.directory)
+    dl1ab_dir = analysis_dir / options.dl1_prod_id
 
     if prefix == "dl1_LST-1" and suffix == ".h5":
-        dl1_filepath = analysis_dir / input_file.name
+        dl1_filepath_analysis_dir = analysis_dir / input_file.name
+        dl1_filepath_dl1_dir = dl1ab_dir / input_file.name
         # Remove the original DL1 files pre DL1ab stage and keep only symlinks
-        if dl1_filepath.is_file() and not dl1_filepath.is_symlink():
-            dl1_filepath.unlink()
-        if not dl1_filepath.is_symlink():
-            dl1_filepath.symlink_to(output_file.resolve())
+        if (
+                dl1_filepath_analysis_dir.is_file()
+                and not dl1_filepath_analysis_dir.is_symlink()
+        ):
+            dl1_filepath_analysis_dir.unlink()
+
+        if not dl1_filepath_analysis_dir.is_symlink():
+            dl1_filepath_analysis_dir.symlink_to(output_file.resolve())
+
+        # Also set the symlink in the DL1ab subdirectory
+        if not dl1_filepath_dl1_dir.is_symlink():
+            dl1_filepath_dl1_dir.symlink_to(output_file.resolve())
 
     if prefix == "muons_LST-1" and suffix == ".fits":
         input_file.symlink_to(output_file.resolve())
