@@ -676,8 +676,20 @@ def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
     queue_list: pd.DataFrame
     """
     sacct_output = pd.read_csv(sacct_output, names=FORMAT_SLURM)
-    sacct_output["JobID"] = sacct_output["JobID"].apply(lambda x: x.split("_")[0])
-    sacct_output["JobID"] = sacct_output["JobID"].str.strip(".batch").astype(int)
+
+    # Keep only the jobs corresponding to OSA sequences
+    sacct_output = sacct_output[
+        (sacct_output['JobName'].str.contains("batch")) |
+        (sacct_output["JobName"].str.contains("LST1"))
+    ]
+
+    try:
+        sacct_output["JobID"] = sacct_output["JobID"].apply(lambda x: x.split("_")[0])
+        sacct_output["JobID"] = sacct_output["JobID"].str.strip(".batch").astype(int)
+
+    except AttributeError:
+        log.exception("No job info could be obtained from sacct")
+
     return sacct_output
 
 
