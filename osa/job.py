@@ -688,7 +688,7 @@ def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
         sacct_output["JobID"] = sacct_output["JobID"].str.strip(".batch").astype(int)
 
     except AttributeError:
-        log.exception("No job info could be obtained from sacct")
+        log.debug("No job info could be obtained from sacct")
 
     return sacct_output
 
