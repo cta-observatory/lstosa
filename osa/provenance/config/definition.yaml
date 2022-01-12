@@ -365,9 +365,9 @@ entities:
         type: File
         contentType: text/plain
     PedestalFile:
-        description: "Pedestal file in FITS format on the disk"
+        description: "Pedestal file in HDF5 format on the disk"
         type: File
-        contentType: application/fits
+        contentType: application/x-hdf
     PedestalCheckPlot:
         description: "Pedestal check plot PDF file"
         type: File

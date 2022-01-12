@@ -30,11 +30,11 @@ def parse_variables(class_instance):
     # -c cfg/sequencer.cfg
     # -d 2020_02_18
     # --prod-id v0.4.3_v00
-    # --pedcal-file ../calibration/20200218/v00/calibration.Run02006.0000.hdf5
-    # --drs4-pedestal-file ../calibration/20200218/v00/drs4_pedestal.Run02005.0000.fits
-    # --time-calib-file ../calibration/20191124/v00/time_calibration.Run01625.0000.hdf5
-    # --drive-file ../lapp/DrivePositioning/drive_log_20_02_18.txt
-    # --run-summary ../monitoring/RunSummary/RunSummary_20200101.ecsv
+    # --pedcal-file .../20200218/pro/calibration_filters_52.Run02006.0000.h5
+    # --drs4-pedestal-file .../20200218/pro/drs4_pedestal.Run02005.0000.h5
+    # --time-calib-file .../20191124/pro/time_calibration.Run01625.0000.h5
+    # --drive-file .../lapp/DrivePositioning/drive_log_20_02_18.txt
+    # --run-summary .../monitoring/RunSummary/RunSummary_20200101.ecsv
     # 02006.0000
     # LST1
 
@@ -91,9 +91,9 @@ def parse_variables(class_instance):
         )
 
     if class_instance.__name__ == "r0_to_dl1":
-        # calibrationfile   [0] .../20200218/v00/calibration.Run02006.0000.hdf5
-        # pedestalfile      [1] .../20200218/v00/drs4_pedestal.Run02005.0000.fits
-        # timecalibfile     [2] .../20191124/v00/time_calibration.Run01625.0000.hdf5
+        # calibrationfile   [0] .../20200218/pro/calibration_filters_52.Run02006.0000.h5
+        # pedestalfile      [1] .../20200218/pro/drs4_pedestal.Run02005.0000.h5
+        # timecalibfile     [2] .../20191124/pro/time_calibration.Run01625.0000.h5
         # drivefile         [3] .../DrivePositioning/drive_log_20_02_18.txt
         # runsummaryfile    [4] .../RunSummary/RunSummary_20200101.ecsv
         # run_str           [5] 02006.0000
