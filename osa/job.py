@@ -645,7 +645,7 @@ def get_squeue_output(squeue_output: StringIO) -> pd.DataFrame:
 
     try:
         # Remove the job array part of the jobid
-        df["JobIDD"] = df["JobID"].apply(lambda x: x.split("_")[0]).astype("int")
+        df["JobID"] = df["JobID"].apply(lambda x: x.split("_")[0]).astype("int")
     except AttributeError:
         log.debug("No job info could be obtained from squeue")
 
