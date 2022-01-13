@@ -630,8 +630,6 @@ def get_squeue_output(squeue_output: StringIO) -> pd.DataFrame:
     and return a pandas dataframe.
     """
     df = pd.read_csv(squeue_output)
-    # Remove the job array part of the jobid
-    df["JOBID"] = df["JOBID"].apply(lambda x: x.split("_")[0]).astype("int")
     df.rename(
         inplace=True,
         columns={
@@ -641,7 +639,18 @@ def get_squeue_output(squeue_output: StringIO) -> pd.DataFrame:
             "TIME": "CPUTime",
         },
     )
+
+    # Keep only the jobs corresponding to OSA sequences
+    df = df[df["JobName"].str.contains("LST1")]
+
+    try:
+        # Remove the job array part of the jobid
+        df["JobIDD"] = df["JobID"].apply(lambda x: x.split("_")[0]).astype("int")
+    except AttributeError:
+        log.debug("No job info could be obtained from squeue")
+
     df["CPUTimeRAW"] = df["CPUTime"].apply(time_to_seconds)
+
     return df
 
 
