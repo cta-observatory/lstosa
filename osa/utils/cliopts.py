@@ -623,13 +623,19 @@ def provprocess_argparser():
         action="store",
         dest="filter",
         default="",
-        help="filter by process granularity [r0_to_dl1 or dl1_to_dl2]",
+        help="filter by process granularity [calibration, r0_to_dl1 or dl1_to_dl2]",
     )
     parser.add_argument(
         "-q",
         action="store_true",
         dest="quit",
         help="use this flag to reset session and remove log file",
+    )
+    parser.add_argument(
+        "drs4_pedestal_run_id", help="Number of the drs4_pedestal used in the calibration"
+    )
+    parser.add_argument(
+        "pedcal_run_id", help="Number of the used pedcal used in the calibration"
     )
     parser.add_argument(
         "run", help="Number of the run whose provenance is to be extracted"
@@ -648,10 +654,12 @@ def provprocessparsing():
     opts = provprocess_argparser().parse_args()
 
     # checking arguments
-    if opts.filter not in ["r0_to_dl1", "dl1_to_dl2", ""]:
+    if opts.filter not in ["calibration", "r0_to_dl1", "dl1_to_dl2", ""]:
         log.error("incorrect value for --filter argument, type -h for help")
 
     # set global variables
+    options.drs4_pedestal_run_id = opts.drs4_pedestal_run_id
+    options.pedcal_run_id = opts.pedcal_run_id
     options.run = opts.run
     options.date = opts.date
     options.prod_id = get_prod_id()

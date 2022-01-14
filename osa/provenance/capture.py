@@ -15,7 +15,6 @@ import pkg_resources
 import psutil
 import yaml
 
-from osa.provenance.io import read_prov
 from osa.provenance.utils import get_log_config, parse_variables
 
 # gammapy specific
@@ -52,9 +51,9 @@ LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 PROV_PREFIX = provconfig["PREFIX"]
 SUPPORTED_HASH_METHOD = ["md5"]
 SUPPORTED_HASH_BUFFER = ["content", "path"]
+REDUCTION_TASKS = ["r0_to_dl1", "dl1ab", "dl1_datacheck", "dl1_to_dl2"]
 
 # global variables
-sessions = set()
 traced_entities = {}
 session_name = ""
 session_tag = ""
@@ -99,8 +98,16 @@ def trace(func):
         # variables parsing
         global session_name, session_tag
         class_instance = parse_variables(class_instance)
-        session_tag = f"{activity}:{class_instance.ObservationRun}"
-        session_name = f"{class_instance.ObservationRun}"
+        if class_instance.__name__ in REDUCTION_TASKS:
+            session_tag = f"{activity}:{class_instance.ObservationRun}"
+            session_name = f"{class_instance.ObservationRun}"
+        else:
+            session_tag = (
+                f"{activity}:{class_instance.PedestalRun}-{class_instance.CalibrationRun}"
+            )
+            session_name = f"{class_instance.PedestalRun}-{class_instance.CalibrationRun}"
+        # OSA specific
+        # variables parsing
 
         # provenance capture before execution
         derivation_records = get_derivation_records(class_instance, activity)
@@ -205,7 +212,7 @@ def get_entity_id(value, item):
         entity_name = item["entityName"]
         entity_type = definition["entities"][entity_name]["type"]
     except Exception as ex:
-        logger.warning(f"{ex} in {item}")
+        logger.warning(f"Not found in model {ex} in {item}")
         entity_name = ""
         entity_type = ""
 
@@ -220,7 +227,8 @@ def get_entity_id(value, item):
         # osa specific hash path
         # async calls does not allow for hash content
         return get_file_hash(value, buffer="path")
-
+        # osa specific hash path
+        # async calls does not allow for hash content
     try:
         entity_id = abs(hash(value) + hash(str(value)))
         if hasattr(value, "entity_version"):
@@ -331,7 +339,9 @@ def get_python_packages():
 
 def log_prov_info(prov_dict):
     """Write a dictionary to the logger."""
-    prov_dict["session_tag"] = session_tag  # OSA specific session tag
+    # OSA specific session tag used in merging prov from parallel sessions
+    prov_dict["session_tag"] = session_tag
+    #
     record_date = datetime.datetime.now().isoformat()
     logger.info(f"{PROV_PREFIX}{record_date}{PROV_PREFIX}{prov_dict}")
 
@@ -341,32 +351,39 @@ def log_session(class_instance, start):
     # OSA specific
     # prov session is outside scripting and is run-wise
     # we may have different sessions/runs in the same log file
-    session_id = abs(hash(class_instance))
-    lines = read_prov(filename=LOG_FILENAME)
-    for line in lines:
-        if line.get("observation_run", 0) == class_instance.ObservationRun:
-            session_id = lines[0]["session_id"]
-            sessions.add(session_id)
+    # session_id = abs(hash(class_instance))
+    if class_instance.__name__ in REDUCTION_TASKS:
+        session_id = f"{class_instance.ObservationDate}{class_instance.ObservationRun}"
+    else:
+        session_id = f"{class_instance.PedestalRun}{class_instance. CalibrationRun}"
+    # OSA specific
+    # prov session is outside scripting and is run-wise
+    # we may have different sessions/runs in the same log file
 
-    if session_id not in sessions:
-        sessions.add(session_id)
-        system = get_system_provenance()
-        log_record = {
-            "session_id": session_id,
-            "name": session_name,
-            "startTime": start,
-            "system": system,
-            # OSA specific
-            "software_version": class_instance.SoftwareVersion,
-            "observation_date": class_instance.ObservationDate,
-            "observation_run": class_instance.ObservationRun,  # a session is run-wise
-            "config_file": class_instance.ProcessingConfigFile,
-            "config_file_hash": get_file_hash(
-                class_instance.ProcessingConfigFile, buffer="path"
-            ),
-            "config_file_hash_type": get_hash_method(),
-        }
-        log_prov_info(log_record)
+    system = get_system_provenance()
+    log_record = {
+        "session_id": session_id,
+        "name": session_name,
+        "startTime": start,
+        "system": system,
+        # OSA specific
+        "observation_date": class_instance.ObservationDate,
+        # OSA specific
+        "software_version": class_instance.SoftwareVersion,
+        "config_file": class_instance.ProcessingConfigFile,
+        "config_file_hash": get_file_hash(
+            class_instance.ProcessingConfigFile, buffer="path"
+        ),
+        "config_file_hash_type": get_hash_method(),
+    }
+    if class_instance.__name__ in REDUCTION_TASKS:
+        log_record[
+            "observation_run"
+        ] = class_instance.ObservationRun  # a session is run-wise
+    else:
+        log_record["pedestal_run"] = class_instance.PedestalRun
+        log_record["calibration_run"] = class_instance.CalibrationRun
+    log_prov_info(log_record)
     return session_id
 
 

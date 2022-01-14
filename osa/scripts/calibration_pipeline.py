@@ -16,6 +16,7 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import historylevel
 from osa.job import run_program_with_history_logging
+from osa.provenance.capture import trace
 from osa.utils.cliopts import calibration_pipeline_cliparsing
 from osa.utils.logging import myLogger
 
@@ -34,11 +35,11 @@ def drs4_pedestal_command(drs4_pedestal_run_id: str) -> list:
     """Build the create_drs4_pedestal command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     return [
-        'onsite_create_drs4_pedestal_file',
-        f'--run_number={drs4_pedestal_run_id}',
-        f'--base_dir={base_dir}',
-        '--no-progress',
-        '--yes'
+        "onsite_create_drs4_pedestal_file",
+        f"--run_number={drs4_pedestal_run_id}",
+        f"--base_dir={base_dir}",
+        "--no-progress",
+        "--yes",
     ]
 
 
@@ -46,11 +47,11 @@ def calibration_file_command(pedcal_run_id: str) -> list:
     """Build the create_calibration_file command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     return [
-        'onsite_create_calibration_file',
-        f'--run_number={pedcal_run_id}',
-        f'--base_dir={base_dir}',
-        '--yes',
-        '--filters=52'
+        "onsite_create_calibration_file",
+        f"--run_number={pedcal_run_id}",
+        f"--base_dir={base_dir}",
+        "--yes",
+        "--filters=52",
     ]
 
 
@@ -77,11 +78,11 @@ def calibration_sequence(drs4_pedestal_run_id: str, pedcal_run_id: str) -> int:
     log.info(f"Going to level {level}")
 
     if level == 2:
-        rc = drs4_pedestal(drs4_pedestal_run_id, history_file)
+        rc = drs4_pedestal(drs4_pedestal_run_id, pedcal_run_id, history_file)
         level -= 1
         log.info(f"Going to level {level}")
     if level == 1:
-        rc = calibrate_charge(pedcal_run_id, history_file)
+        rc = calibrate_charge(drs4_pedestal_run_id, pedcal_run_id, history_file)
         level -= 1
         log.info(f"Going to level {level}")
     if level == 0:
@@ -90,7 +91,10 @@ def calibration_sequence(drs4_pedestal_run_id: str, pedcal_run_id: str) -> int:
     return rc
 
 
-def drs4_pedestal(drs4_pedestal_run_id: str, history_file: Path) -> int:
+@trace
+def drs4_pedestal(
+    drs4_pedestal_run_id: str, pedcal_run_id: str, history_file: Path
+) -> int:
     """
     Create a DRS4 pedestal file for baseline correction.
 
@@ -98,6 +102,8 @@ def drs4_pedestal(drs4_pedestal_run_id: str, history_file: Path) -> int:
     ----------
     drs4_pedestal_run_id : str
         String with run number of the pedestal run
+    pedcal_run_id : str
+        String with run number of the pedcal run
     history_file : `pathlib.Path`
         Path to the history file
 
@@ -116,18 +122,25 @@ def drs4_pedestal(drs4_pedestal_run_id: str, history_file: Path) -> int:
         history_file=history_file,
         run=drs4_pedestal_run_id,
         prod_id=options.calib_prod_id,
-        command=cmd[0]
+        command=cmd[0],
     )
 
 
-def calibrate_charge(calibration_run: str, history_file: Path) -> int:
+@trace
+def calibrate_charge(
+    drs4_pedestal_run_id: str, pedcal_run_id: str, history_file: Path
+) -> int:
     """
     Create the calibration file to transform from ADC counts to photo-electrons
 
     Parameters
     ----------
-    calibration_run
-    history_file
+    drs4_pedestal_run_id : str
+        String with run number of the pedestal run
+    pedcal_run_id : str
+        String with run number of the pedcal run
+    history_file : `pathlib.Path`
+        Path to the history file
 
     Returns
     -------
@@ -137,14 +150,14 @@ def calibrate_charge(calibration_run: str, history_file: Path) -> int:
     if options.simulate:
         return 0
 
-    cmd = calibration_file_command(pedcal_run_id=calibration_run)
+    cmd = calibration_file_command(pedcal_run_id=pedcal_run_id)
 
     return run_program_with_history_logging(
         command_args=cmd,
         history_file=history_file,
-        run=calibration_run,
+        run=pedcal_run_id,
         prod_id=options.calib_prod_id,
-        command=cmd[0]
+        command=cmd[0],
     )
 
 

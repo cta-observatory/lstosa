@@ -289,13 +289,13 @@ def sequence_calibration_filenames(sequence_list):
 
         if not sequence.parent_list:
             drs4_pedestal_run_id = sequence.previousrun
-            calibration_run_id = sequence.run
+            pedcal_run_id = sequence.run
         else:
             drs4_pedestal_run_id = sequence.parent_list[0].previousrun
-            calibration_run_id = sequence.parent_list[0].run
+            pedcal_run_id = sequence.parent_list[0].run
 
         drs4_pedestal_file = f"drs4_pedestal.Run{drs4_pedestal_run_id:05d}.0000.h5"
-        calibration_file = f"calibration_filters_52.Run{calibration_run_id:05d}.0000.h5"
+        calibration_file = f"calibration_filters_52.Run{pedcal_run_id:05d}.0000.h5"
 
         # Assign the calibration and drive files to the sequence object
         sequence.drive = drive_file
@@ -305,7 +305,7 @@ def sequence_calibration_filenames(sequence_list):
         sequence.calibration = (
             Path(cfg.get("LST1", "CALIB_DIR")) / nightdir / "pro" / calibration_file
         )
-        sequence.time_calibration = get_time_calibration_file(calibration_run_id)
+        sequence.time_calibration = get_time_calibration_file(pedcal_run_id)
 
 
 def plot_job_statistics(sacct_output: pd.DataFrame, directory: Path):

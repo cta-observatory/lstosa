@@ -1,4 +1,9 @@
-"""Simulate executions of data processing pipeline and produce provenance."""
+"""Simulate executions of data processing pipeline and produce provenance.
+
+If it is not executed by tests, please run  pytest --basetemp=test_osa first.
+It needs to have test_osa folder filled with test datasets.
+
+python osa/scripts/simulate_processing.py"""
 
 import logging
 import multiprocessing as mp
@@ -124,8 +129,8 @@ def parse_template(template, idx):
             args.append(line.strip())
         if "subprocess.run" in line:
             keep = True
-    # Remove last three elements
-    return args[0:-3]
+    # remove last three elements
+    return args[:-3]
 
 
 def simulate_calibration(args):
@@ -150,7 +155,7 @@ def simulate_processing():
     run_list = extractruns(sub_run_list)
     sequence_list = extractsequences(run_list)
 
-    # skip drs4 and calibration
+    # simulate data calibration and reduction
     for sequence in sequence_list:
         processed = False
         for sub_list in sequence.subrun_list:
@@ -168,6 +173,8 @@ def simulate_processing():
                         for subrun_idx in range(sub_list.subrun)
                     ]
                     processed = poolproc.map(simulate_subrun_processing, args_proc)
+        drs4_pedestal_run_id = str(sequence.pedestal).split(".")[1].replace("Run", "")
+        pedcal_run_id = str(sequence.calibration).split(".")[1].replace("Run", "")
 
         # produce prov if overwrite prov arg
         if processed and options.provenance:
@@ -176,6 +183,8 @@ def simulate_processing():
                 command,
                 "-c",
                 options.configfile,
+                drs4_pedestal_run_id,
+                pedcal_run_id,
                 sequence.run_str,
                 options.directory,
                 options.prod_id,

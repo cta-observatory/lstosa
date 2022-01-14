@@ -62,13 +62,14 @@ def copy_used_file(src, outdir):
             log.warning(f"could not copy {src} file into {destpath}: {ex}")
 
 
-def parse_lines_log(filter_step, run_number):
+def parse_lines_log(filter_cut, calib_runs, run_number):
     """
     Filter content in log file to produce a run/process wise session log.
 
     Parameters
     ----------
-    filter_step
+    filter_cut
+    calib_runs
     run_number
 
     Returns
@@ -76,6 +77,15 @@ def parse_lines_log(filter_step, run_number):
     filtered
     """
     filtered = []
+    if not filter_cut:
+        filter_cut = "all"
+    cuts = {
+        "calibration": ["drs4_pedestal", "calibrate_charge"],
+        "r0_to_dl1": ["r0_to_dl1", "dl1ab"],
+        "dl1_to_dl2": ["dl1_datacheck", "dl1_to_dl2"],
+    }
+    cuts["all"] = cuts["calibration"] + cuts["r0_to_dl1"] + cuts["dl1_to_dl2"]
+
     with open(LOG_FILENAME, "r") as f:
         for line in f.readlines():
             ll = line.split(PROV_PREFIX)
@@ -90,20 +100,28 @@ def parse_lines_log(filter_step, run_number):
             session_tag = prov_dict.get("session_tag", "0:0")
             session_id = prov_dict.get("session_id", False)
             tag_activity, tag_run = session_tag.split(":")
-            # filter by run
-            if tag_run == run_number:
+
+            # filter by run and calib runs
+            if tag_run in [run_number, calib_runs]:
                 keep = True
             # filter by activity
-            if filter_step not in ["", tag_activity]:
+            if tag_activity not in cuts[filter_cut]:
                 keep = False
-            # always keep first session start
-            if session_id and tag_run == run_number:
+            # only keep first session start
+            if session_id and (tag_run in [run_number, calib_runs]):
                 keep = True
+            # make session starts with calibration
+            if session_id and filter_cut == "all" and not filtered:
+                prov_dict["session_id"] = f"{options.date}{run_number}"
+                prov_dict["name"] = run_number
+                prov_dict["observation_run"] = run_number
+                line = f"{ll[0]}{PROV_PREFIX}{ll[1]}{PROV_PREFIX}{prov_dict}\n"
             # remove parallel sessions
             if session_id and filtered:
                 keep = False
             if keep:
                 filtered.append(line)
+
     return filtered
 
 
@@ -209,10 +227,11 @@ def parse_lines_run(filter_step, prov_lines, out):
 
         # copy used files not subruns not RFs not mergedDL2
         if (
-                filepath
-                and content_type != "application/x-spss-sav"
-                and name != "DL2MergedFile"
-                and not remove
+            filepath
+            and content_type != "application/x-spss-sav"
+            and name != "DL2MergedFile"
+            and not name.startswith("DL1Check")
+            and not remove
         ):
             copy_used_file(filepath, out)
         if session_id and osa_cfg and not osa_config_copied:
@@ -363,6 +382,27 @@ def produce_provenance(session_log_filename, base_filename):
     and graphs according to granularity.
     """
 
+    if options.filter == "calibration" or not options.filter:
+        paths_calibration = define_paths(
+            "calibration_to_dl1", PATH_DL1, options.dl1_prod_id, base_filename
+        )
+        plines_drs4 = parse_lines_run(
+            "drs4_pedestal",
+            read_prov(filename=session_log_filename),
+            str(paths_calibration["out_path"]),
+        )
+        plines_calib = parse_lines_run(
+            "calibrate_charge",
+            read_prov(filename=session_log_filename),
+            str(paths_calibration["out_path"]),
+        )
+        calibration_lines = plines_drs4 + plines_calib[1:]
+
+    # TODO
+    # create calibration prov files only if filtering
+    if options.filter == "calibration":
+        pass
+
     if options.filter == "r0_to_dl1" or not options.filter:
         paths_r0_dl1 = define_paths(
             "r0_to_dl1", PATH_DL1, options.dl1_prod_id, base_filename
@@ -372,14 +412,15 @@ def produce_provenance(session_log_filename, base_filename):
             read_prov(filename=session_log_filename),
             str(paths_r0_dl1["out_path"]),
         )
-        lines_r0_dl1 = copy.deepcopy(plines_r0)
         plines_ab = parse_lines_run(
             "dl1ab",
             read_prov(filename=session_log_filename),
             str(paths_r0_dl1["out_path"]),
         )
-        lines_dl1ab = copy.deepcopy(plines_ab)
-        dl1_lines = lines_r0_dl1 + lines_dl1ab[1:]
+        dl1_lines = plines_r0 + plines_ab[1:]
+
+    # create r0_to_dl1 prov files only if filtering
+    if options.filter == "r0_to_dl1":
         produce_provenance_files(plines_r0 + plines_ab[1:], paths_r0_dl1)
 
     if options.filter == "dl1_to_dl2" or not options.filter:
@@ -391,26 +432,31 @@ def produce_provenance(session_log_filename, base_filename):
             read_prov(filename=session_log_filename),
             str(paths_dl1_dl2["out_path"]),
         )
-        lines_check = copy.deepcopy(plines_check)
         plines_dl2 = parse_lines_run(
             "dl1_to_dl2",
             read_prov(filename=session_log_filename),
             str(paths_dl1_dl2["out_path"]),
         )
-        lines_dl2 = copy.deepcopy(plines_dl2)
-        dl1_dl2_lines = lines_check + lines_dl2[1:]
+        dl1_dl2_lines = plines_check + plines_dl2[1:]
 
-    # create last step products only if filtering
+    # create dl1_to_dl2 prov files only if filtering
     if options.filter == "dl1_to_dl2":
         produce_provenance_files(plines_check + plines_dl2[1:], paths_dl1_dl2)
 
-    # create all steps products in last step path
+    # create calibration_to_dl1 and calibration_to_dl2 prov files
     if not options.filter:
-        all_lines = dl1_lines + dl1_dl2_lines[1:]
-        paths_r0_dl2 = define_paths(
-            "r0_to_dl2", PATH_DL2, options.dl2_prod_id, base_filename
+        calibration_to_dl1 = define_paths(
+            "calibration_to_dl1", PATH_DL1, options.dl1_prod_id, base_filename
         )
-        produce_provenance_files(all_lines, paths_r0_dl2)
+        calibration_to_dl2 = define_paths(
+            "calibration_to_dl2", PATH_DL2, options.dl2_prod_id, base_filename
+        )
+        calibration_to_dl1_lines = calibration_lines + dl1_lines[1:]
+        lines_dl1 = copy.deepcopy(calibration_to_dl1_lines)
+        calibration_to_dl2_lines = calibration_to_dl1_lines + dl1_dl2_lines[1:]
+        lines_dl2 = copy.deepcopy(calibration_to_dl2_lines)
+        produce_provenance_files(lines_dl1, calibration_to_dl1)
+        produce_provenance_files(lines_dl2, calibration_to_dl2)
 
 
 def main():
@@ -437,7 +483,8 @@ def main():
     session_log_filename = f"{base_filename}.log"
 
     # parse LOG_FILENAME content for a specific run / process
-    parsed_content = parse_lines_log(options.filter, options.run)
+    calib_runs = f"{options.drs4_pedestal_run_id}-{options.pedcal_run_id}"
+    parsed_content = parse_lines_log(options.filter, calib_runs, options.run)
 
     # create temporal session log file
     with open(session_log_filename, "w") as f:
