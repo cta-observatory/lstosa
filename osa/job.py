@@ -617,7 +617,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
 def run_squeue() -> StringIO:
     """Run squeue command to get the status of the jobs."""
     if shutil.which("squeue") is None:
-        log.warning("No job info available since sacct command is not available")
+        log.warning("No job info available since squeue command is not available")
         return StringIO()
 
     out_fmt = "%i,%j,%T,%M"  # JOBID, NAME, STATE, TIME
