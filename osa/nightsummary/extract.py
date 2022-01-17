@@ -15,7 +15,7 @@ from osa.configs.datamodel import (
     SubrunObj,
 )
 from osa.job import sequence_calibration_filenames, sequence_filenames
-from osa.nightsummary.database import query
+from osa.nightsummary import database
 from osa.utils.utils import lstdate_to_iso
 from pymongo.errors import ServerSelectionTimeoutError
 
@@ -72,15 +72,15 @@ def extractsubruns(summary_table):
             sr.runobj.telescope = options.tel_id
             sr.runobj.night = lstdate_to_iso(options.date)
             if not options.test:
-                sr.runobj.source = query(
+                sr.runobj.source = database.query(
                     obs_id=sr.runobj.run,
                     property_name="DriveControl_SourceName"
                 )
-                sr.runobj.source_ra = query(
+                sr.runobj.source_ra = database.query(
                     obs_id=sr.runobj.run,
                     property_name="DriveControl_RA_Target"
                 )
-                sr.runobj.source_dec = query(
+                sr.runobj.source_dec = database.query(
                     obs_id=sr.runobj.run,
                     property_name="DriveControl_Dec_Target"
                 )
