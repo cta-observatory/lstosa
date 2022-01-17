@@ -4,7 +4,6 @@ import logging
 import os
 import subprocess as sp
 from datetime import date, timedelta
-from pathlib import Path
 
 import click
 from astropy.utils import iers
@@ -13,9 +12,9 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import run_summary_table
+from osa.utils.cliopts import set_default_directory_if_needed, get_prod_id, get_dl2_prod_id
 from osa.utils.logging import myLogger
 from osa.utils.utils import destination_dir, stringify
-from osa.utils.cliopts import set_default_directory_if_needed, get_prod_id, get_dl2_prod_id
 
 iers.conf.auto_download = False
 
