@@ -209,11 +209,13 @@ def sequence_list(running_analysis_dir, run_summary, drs4_time_calibration_files
     """Creates a sequence list from a run summary file."""
     options.directory = running_analysis_dir
     options.simulate = True
+    options.test = True
     for file in drs4_time_calibration_files:
         assert file.exists()
 
     subrun_list = extractsubruns(run_summary)
     run_list = extractruns(subrun_list)
+    options.test = False
     return extractsequences(run_list)
 
 

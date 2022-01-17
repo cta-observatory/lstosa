@@ -149,6 +149,7 @@ def simulate_subrun_processing(args):
 def simulate_processing():
     """Simulate daily processing and capture provenance."""
     options.simulate = True
+    options.test = True
     summary_table = run_summary_table(options.date)
 
     sub_run_list = extractsubruns(summary_table)

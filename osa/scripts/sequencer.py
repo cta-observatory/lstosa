@@ -286,14 +286,11 @@ def report_sequences(sequence_list):
         "Run",
         "Subruns",
         "Source",
-        "Wobble",
         "Action",
         "Tries",
         "JobID",
         "State",
-        "Host",
         "CPU_time",
-        "Walltime",
         "Exit",
     ]
     if options.tel_id in ["LST1", "LST2"]:
@@ -313,14 +310,11 @@ def report_sequences(sequence_list):
             sequence.run,
             sequence.subruns,
             sequence.source,
-            sequence.wobble,
             sequence.action,
             sequence.tries,
             sequence.jobid,
             sequence.state,
-            sequence.jobhost,
             sequence.cputime,
-            sequence.walltime,
             sequence.exit,
         ]
         if sequence.type in ["DRS4", "PEDCALIB"]:
