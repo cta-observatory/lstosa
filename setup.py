@@ -56,7 +56,8 @@ setup(
         "pydot",
         "pydotplus",
         "psutil",
-        "click"
+        "click",
+        "pymongo"
     ],
     package_data={
         'osa': [

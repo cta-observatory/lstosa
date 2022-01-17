@@ -15,7 +15,9 @@ from osa.configs.datamodel import (
     SubrunObj,
 )
 from osa.job import sequence_calibration_filenames, sequence_filenames
+from osa.nightsummary import database
 from osa.utils.utils import lstdate_to_iso
+from pymongo.errors import ConnectionFailure
 
 log = logging.getLogger(__name__)
 
@@ -35,10 +37,9 @@ def extractsubruns(summary_table):
     Parameters
     ----------
     summary_table: astropy.Table
-    Table containing run-wise information indicated in
-    nightsummary.run_summary.
+    Table containing run-wise information indicated in `nightsummary.run_summary`.
 
-    See Also: nightsummary.run_summary
+    See Also: `nightsummary.run_summary`
 
     Returns
     -------
@@ -66,16 +67,30 @@ def extractsubruns(summary_table):
             # Build run object
             sr.runobj = RunObj()
             sr.runobj.run_str = f"{run_info['run_id']:05d}"
-            # FIXME: Leave only .run attribute
             sr.runobj.run = run_info["run_id"]
             sr.runobj.type = run_info["run_type"]
             sr.runobj.telescope = options.tel_id
             sr.runobj.night = lstdate_to_iso(options.date)
+            if not options.test:
+                sr.runobj.source = database.query(
+                    obs_id=sr.runobj.run,
+                    property_name="DriveControl_SourceName"
+                )
+                sr.runobj.source_ra = database.query(
+                    obs_id=sr.runobj.run,
+                    property_name="DriveControl_RA_Target"
+                )
+                sr.runobj.source_dec = database.query(
+                    obs_id=sr.runobj.run,
+                    property_name="DriveControl_Dec_Target"
+                )
             run_to_obj[sr.runobj.run] = sr.runobj
         except KeyError as err:
             log.warning(f"Key error, {err}")
         except IndexError as err:
             log.warning(f"Index error, {err}")
+        except ConnectionFailure:
+            log.warning("MongoDB server not available.")
         else:
             sr.runobj.subrun_list.append(sr)
             sr.runobj.subruns = len(sr.runobj.subrun_list)

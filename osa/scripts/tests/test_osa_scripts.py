@@ -111,10 +111,10 @@ def test_simulated_sequencer(drs4_time_calibration_files, run_summary_file):
     assert rc.stdout == dedent(
         f"""\
         ================================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Night: 2020_01_17 ==================================
-        Tel   Seq  Parent  Type      Run   Subruns  Source  Wobble  Action  Tries  JobID  State  Host  CPU_time  Walltime  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%  
-        LST1    0  None    PEDCALIB  1805  5        None    None    None    None   None   None   None  None      None      None  None  None    None    None        None  
-        LST1    1       0  DATA      1807  11       None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
-        LST1    2       0  DATA      1808  9        None    None    None    None   None   None   None  None      None      None     0       0       0           0     0  
+        Tel   Seq  Parent  Type      Run   Subruns  Source  Action  Tries  JobID  State  CPU_time  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%  
+        LST1    0  None    PEDCALIB  1805  5        None    None    None   None   None   None      None  None  None    None    None        None  
+        LST1    1       0  DATA      1807  11       None    None    None   None   None   None      None     0       0       0           0     0  
+        LST1    2       0  DATA      1808  9        None    None    None   None   None   None      None     0       0       0           0     0  
         """)
 
 
@@ -241,7 +241,9 @@ def test_calibration_pipeline(running_analysis_dir):
 
 def test_is_sequencer_successful(run_summary, running_analysis_dir):
     options.directory = running_analysis_dir
+    options.test = True
     seq_tuple = is_finished_check(run_summary)
+    options.test = False
     assert is_sequencer_successful(seq_tuple) is True
 
 

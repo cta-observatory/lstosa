@@ -22,6 +22,7 @@ dependencies:
   - joblib
   - traitlets=5.0
   - click
+  - pymongo
   # dev dependencies
   - pre-commit
   - pytest
