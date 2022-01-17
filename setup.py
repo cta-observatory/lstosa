@@ -56,6 +56,7 @@ setup(
         "pydot",
         "pydotplus",
         "psutil",
+        "click"
     ],
     package_data={
         'osa': [

@@ -21,6 +21,7 @@ dependencies:
   - h5py
   - joblib
   - traitlets=5.0
+  - click
   # dev dependencies
   - pre-commit
   - pytest
