@@ -135,9 +135,6 @@ def main(date_obs, telescope, verbose, simulate):
     # Get the list of source names
     source_list = []
     for sequence in sequence_list:
-        sequence.source = "Crab"
-        sequence.source_ra = "83.05deg"
-        sequence.source_dev = "22.02deg"
         if sequence.source not in source_list:
             source_list.append(sequence.source)
 
