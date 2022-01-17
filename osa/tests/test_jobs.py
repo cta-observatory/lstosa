@@ -74,7 +74,7 @@ def test_scheduler_env_variables(sequence_list, running_analysis_dir):
         '#SBATCH --output=log/slurm_01805.%4a_%A.out',
         '#SBATCH --error=log/slurm_01805.%4a_%A.err',
         '#SBATCH --partition=short',
-        '#SBATCH --mem-per-cpu=5GB'
+        '#SBATCH --mem-per-cpu=3GB'
     ]
     # Extract the second sequence
     second_sequence = sequence_list[1]
@@ -106,7 +106,7 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     #SBATCH --output=log/slurm_01805.%4a_%A.out
     #SBATCH --error=log/slurm_01805.%4a_%A.err
     #SBATCH --partition=short
-    #SBATCH --mem-per-cpu=5GB""")
+    #SBATCH --mem-per-cpu=3GB""")
     assert header == output_string1
 
     # Extract the second sequence
