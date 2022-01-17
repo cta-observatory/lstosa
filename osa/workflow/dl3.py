@@ -109,6 +109,7 @@ def cmd_create_index_dl3(dl3_dir, parent_job_list):
     type=click.DateTime(formats=["%Y_%m_%d"]),
     default=(date.today()-timedelta(days=1)).strftime("%Y_%m_%d")
 )
+@click.option('-c', '--config', type=click.Path(exists=True), default=None)
 @click.option('-v', '--verbose', is_flag=True)
 @click.option('-s', '--simulate', is_flag=True)
 def main(date_obs, telescope, verbose, simulate):
