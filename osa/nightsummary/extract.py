@@ -17,7 +17,7 @@ from osa.configs.datamodel import (
 from osa.job import sequence_calibration_filenames, sequence_filenames
 from osa.nightsummary import database
 from osa.utils.utils import lstdate_to_iso
-from pymongo.errors import ServerSelectionTimeoutError
+from pymongo.errors import ConnectionFailure
 
 log = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ def extractsubruns(summary_table):
             log.warning(f"Key error, {err}")
         except IndexError as err:
             log.warning(f"Index error, {err}")
-        except ServerSelectionTimeoutError:
+        except ConnectionFailure:
             log.warning("MongoDB server not available.")
         else:
             sr.runobj.subrun_list.append(sr)
