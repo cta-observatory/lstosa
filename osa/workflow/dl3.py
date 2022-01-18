@@ -35,7 +35,7 @@ def cmd_create_irf(cwd, mc_gamma, mc_proton, mc_electron, output_irf_file, dl3_c
         "-D",
         cwd,
         "-o",
-        "log/create_irf_%j.log"
+        "log/create_irf_%j.log",
         "lstchain_create_irf_files",
         "--point-like",
         f"--input-gamma-dl2={mc_gamma}",
