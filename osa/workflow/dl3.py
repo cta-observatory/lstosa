@@ -135,8 +135,15 @@ def main(date_obs, telescope, verbose, simulate, config, local):
     else:
         log.setLevel(logging.INFO)
 
+    log.info(f"=== DL3 stage for {date_obs.strftime('%Y-%m-%d')} ===")
+
     if local:
         options.test = True
+        log.info("Local mode enabled: no interaction with the cluster.")
+
+    if simulate:
+        options.simulate = True
+        log.info("Simulation mode enabled: no jobs will be submitted.")
 
     options.date = date_obs.strftime('%Y_%m_%d')
     options.tel_id = telescope
@@ -144,7 +151,7 @@ def main(date_obs, telescope, verbose, simulate, config, local):
     options.dl2_prod_id = get_dl2_prod_id()
     options.directory = set_default_directory_if_needed()
 
-    log.info(f"=== DL3 stage for {date_obs.strftime('%Y-%m-%d')} ===")
+
 
     # Build the sequences
     summary_table = run_summary_table(options.date)
@@ -179,7 +186,7 @@ def main(date_obs, telescope, verbose, simulate, config, local):
             source_dir = std_cuts_dir / source
             source_dir.mkdir(parents=True, exist_ok=True)
 
-    log.info("Looping over the sequences and running DL2 to DL3 step")
+    log.info("Creating the IRFs.")
 
     mc_gamma = cfg.get("IRF", "mc_gamma")
     mc_proton = cfg.get("IRF", "mc_proton")
@@ -197,7 +204,7 @@ def main(date_obs, telescope, verbose, simulate, config, local):
     )
 
     if not simulate:
-        log.info("Producing the IRF")
+        log.info("Submitting the IRF job.")
         log.debug(stringify(cmd1))
         job_irf = sp.run(
             cmd1,
@@ -209,16 +216,16 @@ def main(date_obs, telescope, verbose, simulate, config, local):
 
     else:
         job_id_irf = None
-        log.debug("Simulate creating IRF")
 
     list_of_job_id = []
 
+    log.info("Looping over the runs to produce the DL3 files.")
     for sequence in sequence_list:
 
         if sequence.type == "DATA":
 
             dl2_file = dl2_dir / f"dl2_LST-1.Run{sequence.run:05d}.h5"
-            dl3_subdir = dl3_dir / f"{sequence.source_name}"
+            dl3_subdir = std_cuts_dir / f"{sequence.source_name}"
 
             cmd2 = cmd_create_dl3(
                 dl2_file=dl2_file,
