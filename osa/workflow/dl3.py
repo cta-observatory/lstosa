@@ -150,7 +150,7 @@ def main(date_obs, telescope, verbose, simulate, config, local):
 
     log.info(f"List of sources: {source_list}")
 
-    if len(source_list) and source_list[0] is None:
+    if len(source_list) == 1 and source_list[0] is None:
         sys.exit("No sources found. Check the access to TCU database. Exiting.")
 
     # Create a subdirectory inside the DL3 directory corresponding to the selection cuts
