@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import logging
-import os
 import pathlib
 import subprocess as sp
 import sys
@@ -28,13 +27,16 @@ DEFAULT_CFG = pathlib.Path(__file__).parent / '../../cfg/sequencer.cfg'
 
 
 def cmd_create_irf(cwd, mc_gamma, mc_proton, mc_electron, output_irf_file, dl3_config):
+    log_dir = cwd / "log"
+    log_dir.mkdir(exist_ok=True, parents=True)
+    job_log_file = log_dir / "create_irf_%j.log"
     return [
         "sbatch",
         "--parsable",
         "--mem=8GB",
         "--job-name=irf",
         f"-D={cwd}",
-        "-o=log/create_irf_%j.log",
+        f"-o={job_log_file}",
         "lstchain_create_irf_files",
         "--point-like",
         f"--input-gamma-dl2={mc_gamma}",
@@ -48,7 +50,7 @@ def cmd_create_irf(cwd, mc_gamma, mc_proton, mc_electron, output_irf_file, dl3_c
 
 def cmd_create_dl3(
         dl2_file,
-        dl3_dir,
+        cwd,
         run,
         source_name,
         source_ra,
@@ -62,7 +64,7 @@ def cmd_create_dl3(
         "--mem=8GB",
         "--job-name=dl2dl3",
         f"--dependency=afterok:{job_irf}",
-        f"-D={dl3_dir}",
+        f"-D={cwd}",
         f"-o=log/dl2_dl3_{run:05d}_%j.log",
         "--parsable",
         "lstchain_create_dl3_file",
@@ -191,7 +193,6 @@ def main(date_obs, telescope, verbose, simulate, config, local):
             text=True,
         )
         job_id_irf = job_irf.stdout.strip()
-        print(job_id_irf)
 
     else:
         job_id_irf = None
@@ -203,7 +204,7 @@ def main(date_obs, telescope, verbose, simulate, config, local):
 
         if sequence.type == "DATA":
 
-            dl2_file = os.path.join(dl2_dir, f"dl2_LST-1.Run{sequence.run:05d}.h5")
+            dl2_file = dl2_dir / f"dl2_LST-1.Run{sequence.run:05d}.h5"
 
             cmd2 = cmd_create_dl3(
                 dl2_file=dl2_file,
