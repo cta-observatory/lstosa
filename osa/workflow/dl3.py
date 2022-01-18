@@ -49,7 +49,7 @@ def cmd_create_irf(cwd, mc_gamma, mc_proton, mc_electron, output_irf_file, dl3_c
 
 def cmd_create_dl3(
         dl2_file,
-        cwd,
+        dl3_dir,
         run,
         source_name,
         source_ra,
@@ -58,15 +58,18 @@ def cmd_create_dl3(
         dl3_config,
         job_irf
 ):
+    log_dir = dl3_dir / "log"
+    log_dir.mkdir(exist_ok=True, parents=True)
+    log_file = log_dir / f"dl2_dl3_{run:05d}_{source_name}_%j.log"
     return [
         "sbatch",
         "--mem=8GB",
         "--job-name=dl2dl3",
         f"--dependency=afterok:{job_irf}",
         "-D",
-        cwd,
+        dl3_dir,
         "-o",
-        f"log/dl2_dl3_{run:05d}_%j.log",
+        log_file,
         "--parsable",
         "lstchain_create_dl3_file",
         f"-d={dl2_file}",
@@ -82,6 +85,9 @@ def cmd_create_dl3(
 
 def cmd_create_index_dl3(dl3_dir, parent_job_list):
     parent_job_list_str = ",".join(parent_job_list)
+    log_dir = dl3_dir / "log"
+    log_dir.mkdir(exist_ok=True, parents=True)
+    log_file = log_dir / "create_index_dl3_%j.log"
 
     return [
         "sbatch",
@@ -92,7 +98,7 @@ def cmd_create_index_dl3(dl3_dir, parent_job_list):
         "-D",
         dl3_dir,
         "-o",
-        "log/create_index_dl3_%j.log",
+        log_file,
         "lstchain_create_dl3_index_files",
         f"-d={dl3_dir}",
         f"-o={dl3_dir}",
@@ -208,10 +214,11 @@ def main(date_obs, telescope, verbose, simulate, config, local):
         if sequence.type == "DATA":
 
             dl2_file = dl2_dir / f"dl2_LST-1.Run{sequence.run:05d}.h5"
+            dl3_subdir = dl3_dir / f"{sequence.source_name}"
 
             cmd2 = cmd_create_dl3(
                 dl2_file=dl2_file,
-                dl3_dir=dl3_dir,
+                dl3_dir=dl3_subdir,
                 run=sequence.run,
                 source_name=sequence.source_name,
                 source_ra=sequence.source_ra,
@@ -237,20 +244,25 @@ def main(date_obs, telescope, verbose, simulate, config, local):
 
             log.debug(f"Executing {stringify(cmd1)}")
 
-    cmd3 = cmd_create_index_dl3(dl3_dir, list_of_job_id)
+    # Creating observation index for each source
 
-    if not simulate:
-        log.info("Scheduling DL3 index job")
-        sp.run(
-            cmd3,
-            encoding="utf-8",
-            capture_output=True,
-            text=True,
-        )
-    else:
-        log.debug("Simulate creating DL3 index")
+    for source in source_list:
+        dl3_subdir = dl3_dir / source
 
-    log.debug(f"Executing {stringify(cmd3)}")
+        cmd3 = cmd_create_index_dl3(dl3_subdir, list_of_job_id)
+
+        if not simulate:
+            log.info("Scheduling DL3 index job")
+            sp.run(
+                cmd3,
+                encoding="utf-8",
+                capture_output=True,
+                text=True,
+            )
+        else:
+            log.debug("Simulate creating DL3 index")
+
+        log.debug(f"Executing {stringify(cmd3)}")
 
 
 if __name__ == "__main__":
