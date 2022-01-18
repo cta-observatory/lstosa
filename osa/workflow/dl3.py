@@ -19,9 +19,11 @@ from osa.utils.utils import destination_dir, stringify
 
 iers.conf.auto_download = False
 
-__all__ = ["cmd_create_irf"]
-
-log = myLogger(logging.getLogger())
+__all__ = [
+    "cmd_create_irf",
+    "cmd_create_dl3",
+    "cmd_create_index_dl3",
+]
 
 DEFAULT_CFG = pathlib.Path(__file__).parent / '../../cfg/sequencer.cfg'
 
@@ -126,6 +128,8 @@ def cmd_create_index_dl3(dl3_dir, parent_job_list):
 @click.option('-s', '--simulate', is_flag=True)
 def main(date_obs, telescope, verbose, simulate, config, local):
     """Produce the IRF and DL3 files tool in a run basis."""
+    log = myLogger(logging.getLogger())
+
     if verbose:
         log.setLevel(logging.DEBUG)
     else:
@@ -242,7 +246,7 @@ def main(date_obs, telescope, verbose, simulate, config, local):
             else:
                 log.info("Simulate launching scripts")
 
-            log.debug(f"Executing {stringify(cmd1)}")
+            log.debug(f"Executing {stringify(cmd2)}")
 
     # Creating observation index for each source
 
