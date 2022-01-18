@@ -27,13 +27,13 @@ log = myLogger(logging.getLogger())
 DEFAULT_CFG = pathlib.Path(__file__).parent / '../../cfg/sequencer.cfg'
 
 
-def cmd_create_irf(dl3_dir, mc_gamma, mc_proton, mc_electron, output_irf_file, dl3_config):
-    cmd = [
+def cmd_create_irf(cwd, mc_gamma, mc_proton, mc_electron, output_irf_file, dl3_config):
+    return [
         "sbatch",
         "--parsable",
         "--mem=8GB",
         "--job-name=irf",
-        f"-D={dl3_dir}",
+        f"-D={cwd}",
         "-o=log/create_irf_%j.log",
         "lstchain_create_irf_files",
         "--point-like",
@@ -44,7 +44,6 @@ def cmd_create_irf(dl3_dir, mc_gamma, mc_proton, mc_electron, output_irf_file, d
         f"--config={dl3_config}",
         "--overwrite",
     ]
-    return cmd
 
 
 def cmd_create_dl3(
@@ -58,15 +57,13 @@ def cmd_create_dl3(
         dl3_config,
         job_irf
 ):
-    cmd = [
+    return [
         "sbatch",
         "--mem=8GB",
         "--job-name=dl2dl3",
         f"--dependency=afterok:{job_irf}",
-        "-D",
-        dl3_dir,
-        "-o",
-        f"log/dl2_dl3_{run:05d}_%j.log",
+        f"-D={dl3_dir}",
+        f"-o=log/dl2_dl3_{run:05d}_%j.log",
         "--parsable",
         "lstchain_create_dl3_file",
         f"-d={dl2_file}",
@@ -78,13 +75,12 @@ def cmd_create_dl3(
         f"--config={dl3_config}",
         "--overwrite",
     ]
-    return cmd
 
 
 def cmd_create_index_dl3(dl3_dir, parent_job_list):
     parent_job_list_str = ",".join(parent_job_list)
 
-    cmd = [
+    return [
         "sbatch",
         "--parsable",
         "--mem=8GB",
@@ -98,7 +94,6 @@ def cmd_create_index_dl3(dl3_dir, parent_job_list):
         "-p=dl3*.fits.gz",
         "--overwrite",
     ]
-    return cmd
 
 
 @click.command()
@@ -121,9 +116,9 @@ def cmd_create_index_dl3(dl3_dir, parent_job_list):
 def main(date_obs, telescope, verbose, simulate, config, local):
     """Produce the IRF and DL3 files tool in a run basis."""
     if verbose:
-        logging.root.setLevel(logging.DEBUG)
+        log.setLevel(logging.DEBUG)
     else:
-        logging.root.setLevel(logging.INFO)
+        log.setLevel(logging.INFO)
 
     if local:
         options.test = True
@@ -134,7 +129,7 @@ def main(date_obs, telescope, verbose, simulate, config, local):
     options.dl2_prod_id = get_dl2_prod_id()
     options.directory = set_default_directory_if_needed()
 
-    log.info(f"=== Producing IRFs & DL3 files for {date_obs.strftime('%Y-%m-%d')} ===")
+    log.info(f"=== DL3 stage for {date_obs.strftime('%Y-%m-%d')} ===")
 
     # Build the sequences
     summary_table = run_summary_table(options.date)
@@ -145,13 +140,13 @@ def main(date_obs, telescope, verbose, simulate, config, local):
     # Get the list of source names
     source_list = []
     for sequence in sequence_list:
-        if sequence.source_name not in source_list:
+        if sequence.source_name is not None and sequence.source_name not in source_list:
             source_list.append(sequence.source_name)
 
     log.info(f"List of sources: {source_list}")
 
-    if len(source_list) == 1 and source_list[0] is None:
-        sys.exit("No sources found. Check the access to TCU database. Exiting.")
+    if not source_list:
+        sys.exit("No sources found. Check the access to database. Exiting.")
 
     # Create a subdirectory inside the DL3 directory corresponding to the selection cuts
     log.debug("Creating DL3 directory")
@@ -177,7 +172,14 @@ def main(date_obs, telescope, verbose, simulate, config, local):
     dl3_config = cfg.get("lstchain", "DL3_CONFIG")
     irf_file = std_cuts_dir / "irf.fits.gz"
 
-    cmd1 = cmd_create_irf(dl3_dir, mc_gamma, mc_proton, mc_electron, irf_file, dl3_config)
+    cmd1 = cmd_create_irf(
+        cwd=std_cuts_dir,
+        mc_gamma=mc_gamma,
+        mc_proton=mc_proton,
+        mc_electron=mc_electron,
+        output_irf_file=irf_file,
+        dl3_config=dl3_config,
+    )
 
     if not simulate:
         log.info("Producing the IRF")
