@@ -27,16 +27,15 @@ DEFAULT_CFG = pathlib.Path(__file__).parent / '../../cfg/sequencer.cfg'
 
 
 def cmd_create_irf(cwd, mc_gamma, mc_proton, mc_electron, output_irf_file, dl3_config):
-    log_dir = cwd / "log"
-    log_dir.mkdir(exist_ok=True, parents=True)
-    job_log_file = log_dir / "create_irf_%j.log"
     return [
         "sbatch",
         "--parsable",
         "--mem=8GB",
         "--job-name=irf",
-        f"-D={cwd}",
-        f"-o={job_log_file}",
+        "-D",
+        cwd,
+        "-o",
+        "log/create_irf_%j.log"
         "lstchain_create_irf_files",
         "--point-like",
         f"--input-gamma-dl2={mc_gamma}",
@@ -64,8 +63,10 @@ def cmd_create_dl3(
         "--mem=8GB",
         "--job-name=dl2dl3",
         f"--dependency=afterok:{job_irf}",
-        f"-D={cwd}",
-        f"-o=log/dl2_dl3_{run:05d}_%j.log",
+        "-D",
+        cwd,
+        "-o",
+        f"log/dl2_dl3_{run:05d}_%j.log",
         "--parsable",
         "lstchain_create_dl3_file",
         f"-d={dl2_file}",
@@ -88,8 +89,10 @@ def cmd_create_index_dl3(dl3_dir, parent_job_list):
         "--mem=8GB",
         "--job-name=dl3_index",
         f"--dependency=afterok:{parent_job_list_str}",
-        f"-D={dl3_dir}",
-        "-o=log/create_index_dl3_%j.log",
+        "-D",
+        dl3_dir,
+        "-o",
+        "log/create_index_dl3_%j.log",
         "lstchain_create_dl3_index_files",
         f"-d={dl3_dir}",
         f"-o={dl3_dir}",
