@@ -72,7 +72,7 @@ def extractsubruns(summary_table):
             sr.runobj.telescope = options.tel_id
             sr.runobj.night = lstdate_to_iso(options.date)
             if not options.test:
-                sr.runobj.source = database.query(
+                sr.runobj.source_name = database.query(
                     obs_id=sr.runobj.run,
                     property_name="DriveControl_SourceName"
                 )
