@@ -159,7 +159,7 @@ def extractsequences(run_list):
 
     for run in run_list:
         # extract the basic info
-        currentsrc = run.source
+        currentsrc = run.source_name
         currentrun = run.run
         currenttype = run.type
 
