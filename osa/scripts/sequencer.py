@@ -309,7 +309,7 @@ def report_sequences(sequence_list):
             sequence.type,
             sequence.run,
             sequence.subruns,
-            sequence.source,
+            sequence.source_name,
             sequence.action,
             sequence.tries,
             sequence.jobid,
