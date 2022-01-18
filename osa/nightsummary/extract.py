@@ -67,7 +67,7 @@ def extractsubruns(summary_table):
             # Build run object
             sr.runobj = RunObj()
             sr.runobj.run_str = f"{run_info['run_id']:05d}"
-            sr.runobj.run = run_info["run_id"]
+            sr.runobj.run = int(run_info["run_id"])
             sr.runobj.type = run_info["run_type"]
             sr.runobj.telescope = options.tel_id
             sr.runobj.night = lstdate_to_iso(options.date)
