@@ -25,6 +25,8 @@ __all__ = [
     "cmd_create_index_dl3",
 ]
 
+log = myLogger(logging.getLogger(__name__))
+
 DEFAULT_CFG = pathlib.Path(__file__).parent / '../../cfg/sequencer.cfg'
 
 
@@ -62,7 +64,7 @@ def cmd_create_dl3(
 ):
     log_dir = dl3_dir / "log"
     log_dir.mkdir(exist_ok=True, parents=True)
-    log_file = log_dir / f"dl2_dl3_{run:05d}_{source_name}_%j.log"
+    log_file = log_dir / f"dl2_to_dl3_Run{run:05d}_{source_name}_%j.log"
     return [
         "sbatch",
         "--mem=8GB",
@@ -128,7 +130,6 @@ def cmd_create_index_dl3(dl3_dir, parent_job_list):
 @click.option('-s', '--simulate', is_flag=True)
 def main(date_obs, telescope, verbose, simulate, config, local):
     """Produce the IRF and DL3 files tool in a run basis."""
-    log = myLogger(logging.getLogger())
     log.setLevel(logging.INFO)
 
     if verbose:
