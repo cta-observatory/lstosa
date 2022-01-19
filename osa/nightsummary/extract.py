@@ -67,12 +67,12 @@ def extractsubruns(summary_table):
             # Build run object
             sr.runobj = RunObj()
             sr.runobj.run_str = f"{run_info['run_id']:05d}"
-            sr.runobj.run = run_info["run_id"]
+            sr.runobj.run = int(run_info["run_id"])
             sr.runobj.type = run_info["run_type"]
             sr.runobj.telescope = options.tel_id
             sr.runobj.night = lstdate_to_iso(options.date)
             if not options.test:
-                sr.runobj.source = database.query(
+                sr.runobj.source_name = database.query(
                     obs_id=sr.runobj.run,
                     property_name="DriveControl_SourceName"
                 )
@@ -159,7 +159,7 @@ def extractsequences(run_list):
 
     for run in run_list:
         # extract the basic info
-        currentsrc = run.source
+        currentsrc = run.source_name
         currentrun = run.run
         currenttype = run.type
 

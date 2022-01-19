@@ -18,7 +18,9 @@ class Telescope(Night):
 class Source(Telescope):
     def __init__(self):
         super(Source, self).__init__()
-        self.source = None
+        self.source_name = None
+        self.source_ra = None
+        self.source_dec = None
 
 
 class Wobble(Source):

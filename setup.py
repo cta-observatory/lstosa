@@ -16,6 +16,7 @@ entry_points = {
         "provprocess = osa.scripts.provprocess:main",
         "simulate_processing = osa.scripts.simulate_processing:main",
         "calibration_pipeline = osa.scripts.calibration_pipeline:main",
+        "dl3_stage = osa.workflow.dl3:main",
     ]
 }
 
@@ -56,6 +57,7 @@ setup(
         "pydot",
         "pydotplus",
         "psutil",
+        "click",
         "pymongo"
     ],
     package_data={

@@ -341,7 +341,7 @@ def destination_dir(concept, create_dir=True) -> Path:
             / options.prod_id
             / options.dl1_prod_id
         )
-    elif concept == "DL2":
+    elif concept in ["DL2", "DL3"]:
         directory = (
             Path(cfg.get(options.tel_id, concept + "_DIR"))
             / nightdir
