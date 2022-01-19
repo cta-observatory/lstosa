@@ -255,7 +255,7 @@ def main(date_obs, telescope, verbose, simulate, config, local):
 
     # Creating observation index for each source
     for source in source_list:
-        dl3_subdir = dl3_dir / source
+        dl3_subdir = std_cuts_dir / source
 
         cmd3 = cmd_create_index_dl3(dl3_subdir, list_of_job_id)
 
