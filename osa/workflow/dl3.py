@@ -78,8 +78,8 @@ def cmd_create_dl3(
         f"-o={dl3_dir}",
         f"--input-irf={irf}",
         f"--source-name={source_name}",
-        f"--source-ra={source_ra}",
-        f"--source-dec={source_dec}",
+        f"--source-ra={source_ra}deg",
+        f"--source-dec={source_dec}deg",
         f"--config={dl3_config}",
         "--overwrite",
     ]
@@ -129,11 +129,10 @@ def cmd_create_index_dl3(dl3_dir, parent_job_list):
 def main(date_obs, telescope, verbose, simulate, config, local):
     """Produce the IRF and DL3 files tool in a run basis."""
     log = myLogger(logging.getLogger())
+    log.setLevel(logging.INFO)
 
     if verbose:
         log.setLevel(logging.DEBUG)
-    else:
-        log.setLevel(logging.INFO)
 
     log.info(f"=== DL3 stage for {date_obs.strftime('%Y-%m-%d')} ===")
 
@@ -150,8 +149,6 @@ def main(date_obs, telescope, verbose, simulate, config, local):
     options.prod_id = get_prod_id()
     options.dl2_prod_id = get_dl2_prod_id()
     options.directory = set_default_directory_if_needed()
-
-
 
     # Build the sequences
     summary_table = run_summary_table(options.date)
@@ -256,7 +253,6 @@ def main(date_obs, telescope, verbose, simulate, config, local):
             log.debug(f"Executing {stringify(cmd2)}")
 
     # Creating observation index for each source
-
     for source in source_list:
         dl3_subdir = dl3_dir / source
 
