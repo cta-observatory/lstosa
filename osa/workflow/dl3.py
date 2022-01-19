@@ -34,7 +34,7 @@ def cmd_create_irf(cwd, mc_gamma, mc_proton, mc_electron, output_irf_file, dl3_c
     return [
         "sbatch",
         "--parsable",
-        "--mem=8GB",
+        "--mem=6GB",
         "--job-name=irf",
         "-D",
         cwd,
@@ -67,7 +67,7 @@ def cmd_create_dl3(
     log_file = log_dir / f"dl2_to_dl3_Run{run:05d}_{source_name}_%j.log"
     return [
         "sbatch",
-        "--mem=8GB",
+        "--mem=10GB",
         "--job-name=dl2dl3",
         f"--dependency=afterok:{job_irf}",
         "-D",
