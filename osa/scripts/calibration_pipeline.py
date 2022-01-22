@@ -19,6 +19,7 @@ from osa.job import run_program_with_history_logging
 from osa.provenance.capture import trace
 from osa.utils.cliopts import calibration_pipeline_cliparsing
 from osa.utils.logging import myLogger
+from osa.utils.utils import lstdate_to_dir
 
 __all__ = [
     "calibration_sequence",
@@ -31,6 +32,36 @@ __all__ = [
 log = myLogger(logging.getLogger())
 
 
+def is_calibration_produced(drs4_pedestal_run_id: str, pedcal_run_id: str) -> bool:
+    """
+    Check if calibration files are already produced.
+
+    Parameters
+    ----------
+    drs4_pedestal_run_id : str
+    pedcal_run_id : str
+
+    Returns
+    -------
+    bool
+        True if both calibration files were already produced
+    """
+    calib_dir = Path(cfg.get(options.tel_id, "CALIB_DIR"))
+    pedestal_dir = Path(cfg.get(options.tel_id, "PEDESTAL_DIR"))
+    night_dir = lstdate_to_dir(options.date)
+
+    drs4_pedestal_file = (
+        pedestal_dir / night_dir / options.calib_prod_id /
+        f"drs4_pedestal.Run{drs4_pedestal_run_id}.0000.h5"
+    )
+    pedcal_file = (
+        calib_dir / night_dir / options.calib_prod_id /
+        f"calibration_filters_52.Run{pedcal_run_id}.0000.h5"
+    )
+
+    return drs4_pedestal_file.exists() and pedcal_file.exists()
+
+
 def drs4_pedestal_command(drs4_pedestal_run_id: str) -> list:
     """Build the create_drs4_pedestal command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
@@ -39,7 +70,6 @@ def drs4_pedestal_command(drs4_pedestal_run_id: str) -> list:
         f"--run_number={drs4_pedestal_run_id}",
         f"--base_dir={base_dir}",
         "--no-progress",
-        "--yes",
     ]
 
 
@@ -50,7 +80,6 @@ def calibration_file_command(pedcal_run_id: str) -> list:
         "onsite_create_calibration_file",
         f"--run_number={pedcal_run_id}",
         f"--base_dir={base_dir}",
-        "--yes",
         "--filters=52",
     ]
 
@@ -172,6 +201,15 @@ def main():
         log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
+
+    if is_calibration_produced(
+        drs4_pedestal_run_id=drs4_pedestal_run,
+        pedcal_run_id=pedcal_run
+    ):
+        log.info(
+            f"Calibration already produced, runs {drs4_pedestal_run} and {pedcal_run}"
+        )
+        sys.exit(0)
 
     rc = calibration_sequence(drs4_pedestal_run, pedcal_run)
     sys.exit(rc)
