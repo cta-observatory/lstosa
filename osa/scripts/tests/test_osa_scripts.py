@@ -255,7 +255,6 @@ def test_drs4_pedestal_cmd(base_test_dir):
         "--run_number=01804",
         f"--base_dir={base_test_dir}",
         "--no-progress",
-        "--yes"
     ]
     assert cmd == expected_command
 
@@ -267,34 +266,9 @@ def test_calibration_file_cmd(base_test_dir):
         "onsite_create_calibration_file",
         "--run_number=01805",
         f"--base_dir={base_test_dir}",
-        "--yes",
         "--filters=52"
     ]
     assert cmd == expected_command
-
-
-# def test_drs4_pedestal(running_analysis_dir):
-#     from osa.scripts.calibration_pipeline import drs4_pedestal
-#     history_file = running_analysis_dir / "calibration_sequence.history"
-#     with pytest.raises(SystemExit):
-#         rc = drs4_pedestal(
-#             drs4_pedestal_run_id="01804",
-#             pedcal_run_id="01805",
-#             history_file=history_file
-#         )
-#         assert rc != 0
-#
-#
-# def test_calibrate_charge(running_analysis_dir):
-#     from osa.scripts.calibration_pipeline import calibrate_charge
-#     history_file = running_analysis_dir / "calibration_sequence.history"
-#     with pytest.raises(SystemExit):
-#         rc = calibrate_charge(
-#             drs4_pedestal_run_id="01804",
-#             pedcal_run_id="01805",
-#             history_file=history_file
-#         )
-#         assert rc != 0
 
 
 def test_look_for_datacheck_files(
