@@ -48,6 +48,7 @@ setup(
     install_requires=[
         "astropy~=4.2",
         "lstchain~=0.8.4",
+        "ctapipe~=0.11.0",
         "matplotlib~=3.4.3",
         "pyparsing~=2.4",
         "numpy<1.22.0a0",
@@ -58,7 +59,8 @@ setup(
         "pydotplus",
         "psutil",
         "click",
-        "pymongo"
+        "pymongo",
+        "gammapy~=0.18.2",
     ],
     package_data={
         'osa': [
