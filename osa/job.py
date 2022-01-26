@@ -43,6 +43,8 @@ __all__ = [
     "run_sacct",
     "run_squeue",
     "get_time_calibration_file",
+    "get_calibration_file",
+    "get_drs4_pedestal_file",
 ]
 
 TAB = "\t".expandtabs(4)
@@ -279,6 +281,40 @@ def get_time_calibration_file(run_id: int) -> Path:
     return time_calibration_file.resolve()
 
 
+def get_drs4_pedestal_file(run_id: int) -> Path:
+    """
+    Return the drs4 pedestal file corresponding to a given run id
+    regardless of the date when the run was taken.
+    """
+    r0_dir = Path(cfg.get("LST1", "R0_DIR"))
+    drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
+
+    r0_file = sorted(r0_dir.rglob(f"LST-1.1.Run{run_id:05d}.0000.fits.fz"))
+    date_run = r0_file[0].parent.name
+    return (
+        drs4_pedestal_dir
+        / date_run
+        / f"pro/drs4_pedestal.Run{run_id:05d}.0000.h5"
+    )
+
+
+def get_calibration_file(run_id: int) -> Path:
+    """
+    Return the drs4 pedestal file corresponding to a given run id
+    regardless of the date when the run was taken.
+    """
+    r0_dir = Path(cfg.get("LST1", "R0_DIR"))
+    calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
+
+    r0_file = sorted(r0_dir.rglob(f"LST-1.1.Run{run_id:05d}.0000.fits.fz"))
+    date_run = r0_file[0].parent.name
+    return (
+        calib_dir
+        / date_run
+        / f"pro/calibration_filters_52.Run{run_id:05d}.0000.h5"
+    )
+
+
 def sequence_calibration_filenames(sequence_list):
     """Build names of the calibration and drive files."""
     nightdir = lstdate_to_dir(options.date)
@@ -294,17 +330,10 @@ def sequence_calibration_filenames(sequence_list):
             drs4_pedestal_run_id = sequence.parent_list[0].previousrun
             pedcal_run_id = sequence.parent_list[0].run
 
-        drs4_pedestal_file = f"drs4_pedestal.Run{drs4_pedestal_run_id:05d}.0000.h5"
-        calibration_file = f"calibration_filters_52.Run{pedcal_run_id:05d}.0000.h5"
-
         # Assign the calibration and drive files to the sequence object
         sequence.drive = drive_file
-        sequence.pedestal = (
-            Path(cfg.get("LST1", "PEDESTAL_DIR")) / nightdir / "pro" / drs4_pedestal_file
-        )
-        sequence.calibration = (
-            Path(cfg.get("LST1", "CALIB_DIR")) / nightdir / "pro" / calibration_file
-        )
+        sequence.pedestal = get_drs4_pedestal_file(drs4_pedestal_run_id)
+        sequence.calibration = get_calibration_file(pedcal_run_id)
         sequence.time_calibration = get_time_calibration_file(pedcal_run_id)
 
 
