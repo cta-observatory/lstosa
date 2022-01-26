@@ -8,6 +8,19 @@ from pymongo.errors import ConnectionFailure
 __all__ = ['query']
 
 
+def db_available():
+    """Check the connection to the TCU database."""
+    caco_client = MongoClient("tcs01")
+    tcu_client = MongoClient("tcs05")
+    try:
+        caco_client.server_info()
+        tcu_client.server_info()
+    except ConnectionFailure:
+        return False
+    else:
+        return True
+
+
 def query(obs_id: int, property_name: str):
     """
     Query the source name and coordinates from TCU database.
@@ -32,12 +45,6 @@ def query(obs_id: int, property_name: str):
 
     caco_client = MongoClient("tcs01")
     tcu_client = MongoClient("tcs05")
-
-    try:
-        caco_client.admin.command('ping')
-        tcu_client.admin.command('ping')
-    except ConnectionFailure:
-        raise ConnectionFailure("Databases not available")
 
     with caco_client, tcu_client:
         run_info = caco_client["CACO"]["RUN_INFORMATION"]

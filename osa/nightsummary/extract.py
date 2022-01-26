@@ -16,6 +16,7 @@ from osa.configs.datamodel import (
 )
 from osa.job import sequence_calibration_filenames, sequence_filenames
 from osa.nightsummary import database
+from osa.nightsummary.database import db_available
 from osa.utils.utils import lstdate_to_iso
 from pymongo.errors import ConnectionFailure
 
@@ -47,8 +48,6 @@ def extractsubruns(summary_table):
     """
     subrun_list = []
     run_to_obj = {}
-
-    # FIXME: Directly build run object instead.
 
     # Get information run-wise going through each row
     for run_id in summary_table["run_id"]:
@@ -82,9 +81,10 @@ def extractsubruns(summary_table):
             sr.runobj.subruns = len(sr.runobj.subrun_list)
             subrun_list.append(sr)
 
-        # Add metadata from TCU database if available
-        if not options.test:
-            try:
+    # Add metadata from TCU database if available
+    if db_available() and not options.test:
+        try:
+            for sr in subrun_list:
                 sr.runobj.source_name = database.query(
                     obs_id=sr.runobj.run,
                     property_name="DriveControl_SourceName"
@@ -97,8 +97,8 @@ def extractsubruns(summary_table):
                     obs_id=sr.runobj.run,
                     property_name="DriveControl_Dec_Target"
                 )
-            except ConnectionFailure:
-                log.warning("MongoDB server not available.")
+        except ConnectionFailure:
+            log.warning("MongoDB server not available.")
 
     log.debug("Subrun list extracted")
 
