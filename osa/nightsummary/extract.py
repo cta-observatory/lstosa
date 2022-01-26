@@ -71,7 +71,20 @@ def extractsubruns(summary_table):
             sr.runobj.type = run_info["run_type"]
             sr.runobj.telescope = options.tel_id
             sr.runobj.night = lstdate_to_iso(options.date)
-            if not options.test:
+            run_to_obj[sr.runobj.run] = sr.runobj
+
+        except KeyError as err:
+            log.warning(f"Key error, {err}")
+        except IndexError as err:
+            log.warning(f"Index error, {err}")
+        else:
+            sr.runobj.subrun_list.append(sr)
+            sr.runobj.subruns = len(sr.runobj.subrun_list)
+            subrun_list.append(sr)
+
+        # Add metadata from TCU database if available
+        if not options.test:
+            try:
                 sr.runobj.source_name = database.query(
                     obs_id=sr.runobj.run,
                     property_name="DriveControl_SourceName"
@@ -84,17 +97,8 @@ def extractsubruns(summary_table):
                     obs_id=sr.runobj.run,
                     property_name="DriveControl_Dec_Target"
                 )
-            run_to_obj[sr.runobj.run] = sr.runobj
-        except KeyError as err:
-            log.warning(f"Key error, {err}")
-        except IndexError as err:
-            log.warning(f"Index error, {err}")
-        except ConnectionFailure:
-            log.warning("MongoDB server not available.")
-        else:
-            sr.runobj.subrun_list.append(sr)
-            sr.runobj.subruns = len(sr.runobj.subrun_list)
-            subrun_list.append(sr)
+            except ConnectionFailure:
+                log.warning("MongoDB server not available.")
 
     log.debug("Subrun list extracted")
 
