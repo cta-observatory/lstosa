@@ -1,11 +1,11 @@
 """Query the TCU database source name and astronomical coordinates."""
-
+import logging
 from datetime import datetime
 
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
-__all__ = ['query']
+__all__ = ['query', 'db_available']
 
 
 def db_available():
@@ -16,6 +16,7 @@ def db_available():
         caco_client.server_info()
         tcu_client.server_info()
     except ConnectionFailure:
+        logging.warning("TCU database is not available. No source info will be added.")
         return False
     else:
         return True

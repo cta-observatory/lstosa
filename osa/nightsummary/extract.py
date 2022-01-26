@@ -83,22 +83,19 @@ def extractsubruns(summary_table):
 
     # Add metadata from TCU database if available
     if db_available() and not options.test:
-        try:
-            for sr in subrun_list:
-                sr.runobj.source_name = database.query(
-                    obs_id=sr.runobj.run,
-                    property_name="DriveControl_SourceName"
-                )
-                sr.runobj.source_ra = database.query(
-                    obs_id=sr.runobj.run,
-                    property_name="DriveControl_RA_Target"
-                )
-                sr.runobj.source_dec = database.query(
-                    obs_id=sr.runobj.run,
-                    property_name="DriveControl_Dec_Target"
-                )
-        except ConnectionFailure:
-            log.warning("MongoDB server not available.")
+        for sr in subrun_list:
+            sr.runobj.source_name = database.query(
+                obs_id=sr.runobj.run,
+                property_name="DriveControl_SourceName"
+            )
+            sr.runobj.source_ra = database.query(
+                obs_id=sr.runobj.run,
+                property_name="DriveControl_RA_Target"
+            )
+            sr.runobj.source_dec = database.query(
+                obs_id=sr.runobj.run,
+                property_name="DriveControl_Dec_Target"
+            )
 
     log.debug("Subrun list extracted")
 
