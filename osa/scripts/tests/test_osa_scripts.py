@@ -52,10 +52,13 @@ def test_all_help(script):
     run_program(script, "--help")
 
 
-def test_simulate_processing(drs4_time_calibration_files, run_summary_file):
+def test_simulate_processing(drs4_time_calibration_files, run_summary_file, r0_data):
 
     for file in drs4_time_calibration_files:
         assert file.exists()
+
+    for r0_file in r0_data:
+        assert r0_file.exists()
 
     assert run_summary_file.exists()
 
@@ -99,8 +102,14 @@ def test_simulate_processing(drs4_time_calibration_files, run_summary_file):
     assert rc.returncode == 0
 
 
-def test_simulated_sequencer(drs4_time_calibration_files, run_summary_file):
+def test_simulated_sequencer(
+        drs4_time_calibration_files,
+        run_summary_file,
+        r0_data
+):
     assert run_summary_file.exists()
+    for r0_file in r0_data:
+        assert r0_file.exists()
     for file in drs4_time_calibration_files:
         assert file.exists()
     rc = run_program(
