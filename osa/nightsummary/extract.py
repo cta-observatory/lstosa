@@ -18,7 +18,6 @@ from osa.job import sequence_calibration_filenames, sequence_filenames
 from osa.nightsummary import database
 from osa.nightsummary.database import db_available
 from osa.utils.utils import lstdate_to_iso
-from pymongo.errors import ConnectionFailure
 
 log = logging.getLogger(__name__)
 
