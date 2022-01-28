@@ -7,11 +7,13 @@ from pathlib import Path
 from astropy.table import Table
 
 from osa.configs.config import cfg
+from osa.utils.logging import myLogger
 from osa.utils.utils import lstdate_to_dir, stringify
 
 __all__ = ["produce_run_summary_file", "get_run_summary_file", "run_summary_table"]
 
-log = logging.getLogger(__name__)
+
+log = myLogger(logging.getLogger(__name__))
 
 
 def produce_run_summary_file(date: str) -> None:

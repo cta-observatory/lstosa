@@ -6,8 +6,9 @@ import pathlib
 from os import remove, rename
 
 from osa.configs import options
+from osa.utils.logging import myLogger
 
-log = logging.getLogger(__name__)
+log = myLogger(logging.getLogger(__name__))
 
 __all__ = [
     "write_to_file",

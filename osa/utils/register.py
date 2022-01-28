@@ -7,6 +7,7 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.utils.logging import myLogger
 from osa.utils.utils import destination_dir
 from osa.veto import set_closed_sequence
 
@@ -17,7 +18,7 @@ __all__ = [
     "register_non_existing_file"
 ]
 
-log = logging.getLogger(__name__)
+log = myLogger(logging.getLogger(__name__))
 
 
 def register_files(run_str, analysis_dir, prefix, suffix, output_dir) -> None:

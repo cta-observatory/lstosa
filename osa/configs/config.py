@@ -6,8 +6,9 @@ import configparser
 from pathlib import Path
 
 from osa.configs import options
+from osa.utils.logging import myLogger
 
-log = logging.getLogger(__name__)
+log = myLogger(logging.getLogger(__name__))
 
 __all__ = ['read_config', 'cfg']
 

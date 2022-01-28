@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 
 from osa.configs import options
+from osa.utils.logging import myLogger
 
 __all__ = [
     "failed_history",
@@ -16,8 +17,7 @@ __all__ = [
     "set_closed_sequence"
 ]
 
-
-log = logging.getLogger(__name__)
+log = myLogger(logging.getLogger(__name__))
 
 
 def get_veto_list(sequence_list):

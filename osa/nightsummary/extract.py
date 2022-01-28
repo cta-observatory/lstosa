@@ -17,9 +17,10 @@ from osa.configs.datamodel import (
 from osa.job import sequence_calibration_filenames, sequence_filenames
 from osa.nightsummary import database
 from osa.nightsummary.database import db_available
+from osa.utils.logging import myLogger
 from osa.utils.utils import lstdate_to_iso
 
-log = logging.getLogger(__name__)
+log = myLogger(logging.getLogger(__name__))
 
 __all__ = [
     "extractsubruns",

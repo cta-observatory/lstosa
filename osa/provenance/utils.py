@@ -9,6 +9,7 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.utils.logging import myLogger
 from osa.utils.utils import get_lstchain_version, lstdate_to_dir
 
 __all__ = ["parse_variables", "get_log_config", "store_conda_env_export"]
@@ -211,7 +212,7 @@ def get_log_config():
                 if "[PROVENANCE]" in line:
                     in_prov_section = True
     except FileNotFoundError:
-        log = logging.getLogger(__name__)
+        log = myLogger(logging.getLogger(__name__))
         log.warning(f"{config_file} not found, using {std_logger_file} instead.")
 
     # use default logger.yaml if no prov config info found

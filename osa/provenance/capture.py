@@ -26,6 +26,8 @@ from osa.provenance.utils import get_log_config, parse_variables
 
 __all__ = ["trace", "get_file_hash", "get_activity_id"]
 
+from osa.utils.logging import myLogger
+
 _interesting_env_vars = [
     "CONDA_DEFAULT_ENV",
     "CONDA_PREFIX",
@@ -61,7 +63,7 @@ session_tag = ""
 
 def setup_logging():
     """Setup logging configuration."""
-    log = logging.getLogger(__name__)
+    log = myLogger(logging.getLogger(__name__))
 
     try:
         logging.config.dictConfig(provconfig)

@@ -18,9 +18,10 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.report import history
 from osa.utils.iofile import write_to_file
+from osa.utils.logging import myLogger
 from osa.utils.utils import date_in_yymmdd, lstdate_to_dir, time_to_seconds, stringify
 
-log = logging.getLogger(__name__)
+log = myLogger(logging.getLogger(__name__))
 
 __all__ = [
     "run_program_with_history_logging",
