@@ -120,6 +120,7 @@ def test_simulated_sequencer(
     assert rc.stdout == dedent(
         f"""\
         ================================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Night: 2020_01_17 ==================================
+        TCU or CaCo database not available. No source info will be added.
         Tel   Seq  Parent  Type      Run   Subruns  Source  Action  Tries  JobID  State  CPU_time  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%  
         LST1    0  None    PEDCALIB  1805  5        None    None    None   None   None   None      None  None  None    None    None        None  
         LST1    1       0  DATA      1807  11       None    None    None   None   None   None      None     0       0       0           0     0  
@@ -270,9 +271,10 @@ def test_drs4_pedestal_cmd(base_test_dir):
 
 def test_calibration_file_cmd(base_test_dir):
     from osa.scripts.calibration_pipeline import calibration_file_command
-    cmd = calibration_file_command(pedcal_run_id="01805")
+    cmd = calibration_file_command(pedestal_run_id="01804", pedcal_run_id="01805")
     expected_command = [
         "onsite_create_calibration_file",
+        "--pedestal_run=01804",
         "--run_number=01805",
         f"--base_dir={base_test_dir}",
         "--filters=52"
