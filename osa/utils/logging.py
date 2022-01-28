@@ -50,4 +50,5 @@ def myLogger(osalogger):
     handler = logging.StreamHandler()
     handler.setFormatter(fmt)
     osalogger.addHandler(handler)
+    osalogger.propagate = False
     return osalogger
