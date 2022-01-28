@@ -5,18 +5,23 @@ from datetime import datetime
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
+from osa.utils.logging import myLogger
+
 __all__ = ['query', 'db_available']
+
+
+log = myLogger(logging.getLogger(__name__))
 
 
 def db_available():
     """Check the connection to the TCU database."""
-    caco_client = MongoClient("tcs01")
-    tcu_client = MongoClient("tcs05")
+    caco_client = MongoClient("tcs01", serverSelectionTimeoutMS=3000)
+    tcu_client = MongoClient("tcs05", serverSelectionTimeoutMS=3000)
     try:
         caco_client.server_info()
         tcu_client.server_info()
     except ConnectionFailure:
-        logging.warning("TCU database is not available. No source info will be added.")
+        log.info("TCU or CaCo database not available. No source info will be added.")
         return False
     else:
         return True
