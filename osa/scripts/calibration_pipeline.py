@@ -29,7 +29,7 @@ __all__ = [
     "calibration_file_command",
 ]
 
-log = myLogger(logging.getLogger())
+log = myLogger(logging.getLogger(__name__))
 
 
 def is_calibration_produced(drs4_pedestal_run_id: str, pedcal_run_id: str) -> bool:
@@ -73,11 +73,12 @@ def drs4_pedestal_command(drs4_pedestal_run_id: str) -> list:
     ]
 
 
-def calibration_file_command(pedcal_run_id: str) -> list:
+def calibration_file_command(pedestal_run_id: str, pedcal_run_id: str) -> list:
     """Build the create_calibration_file command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     return [
         "onsite_create_calibration_file",
+        f"--pedestal_run={pedestal_run_id}",
         f"--run_number={pedcal_run_id}",
         f"--base_dir={base_dir}",
         "--filters=52",
@@ -179,7 +180,10 @@ def calibrate_charge(
     if options.simulate:
         return 0
 
-    cmd = calibration_file_command(pedcal_run_id=pedcal_run_id)
+    cmd = calibration_file_command(
+        pedestal_run_id=drs4_pedestal_run_id,
+        pedcal_run_id=pedcal_run_id
+    )
 
     return run_program_with_history_logging(
         command_args=cmd,
