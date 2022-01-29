@@ -9,20 +9,15 @@ from osa.configs import config, options
 from osa.configs.config import cfg
 from osa.raw import get_raw_dir
 from osa.utils.iofile import append_to_file
+from osa.utils.logging import myLogger
 
-log = logging.getLogger(__name__)
+log = myLogger(logging.getLogger(__name__))
 
 __all__ = ["history", "start", "finished_assignments"]
 
 
 def start(parent_tag: str):
-    """
-    Print out the header of the script (sequencer, closer, etc).
-
-    Parameters
-    ----------
-    parent_tag: str
-    """
+    """Print out the header of the script (e.g. sequencer, closer)."""
     now = datetime.utcnow()
     simple_parent_tag = parent_tag.rsplit("(")[0]
     header(

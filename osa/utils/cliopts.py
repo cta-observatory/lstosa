@@ -8,6 +8,7 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.utils.logging import myLogger
 from osa.utils.utils import (
     get_calib_prod_id,
     get_dl1_prod_id,
@@ -41,7 +42,7 @@ __all__ = [
     "calibration_pipeline_argparser",
 ]
 
-log = logging.getLogger(__name__)
+log = myLogger(logging.getLogger(__name__))
 
 
 def closer_argparser():

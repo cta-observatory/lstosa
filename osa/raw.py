@@ -3,9 +3,10 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.utils.logging import myLogger
 from osa.utils.utils import lstdate_to_dir
 
-log = logging.getLogger(__name__)
+log = myLogger(logging.getLogger(__name__))
 
 __all__ = [
     "get_check_raw_dir",

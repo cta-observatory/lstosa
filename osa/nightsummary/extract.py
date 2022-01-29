@@ -16,10 +16,11 @@ from osa.configs.datamodel import (
 )
 from osa.job import sequence_calibration_filenames, sequence_filenames
 from osa.nightsummary import database
+from osa.nightsummary.database import db_available
+from osa.utils.logging import myLogger
 from osa.utils.utils import lstdate_to_iso
-from pymongo.errors import ConnectionFailure
 
-log = logging.getLogger(__name__)
+log = myLogger(logging.getLogger(__name__))
 
 __all__ = [
     "extractsubruns",
@@ -48,8 +49,6 @@ def extractsubruns(summary_table):
     subrun_list = []
     run_to_obj = {}
 
-    # FIXME: Directly build run object instead.
-
     # Get information run-wise going through each row
     for run_id in summary_table["run_id"]:
         sr = SubrunObj()
@@ -71,30 +70,32 @@ def extractsubruns(summary_table):
             sr.runobj.type = run_info["run_type"]
             sr.runobj.telescope = options.tel_id
             sr.runobj.night = lstdate_to_iso(options.date)
-            if not options.test:
-                sr.runobj.source_name = database.query(
-                    obs_id=sr.runobj.run,
-                    property_name="DriveControl_SourceName"
-                )
-                sr.runobj.source_ra = database.query(
-                    obs_id=sr.runobj.run,
-                    property_name="DriveControl_RA_Target"
-                )
-                sr.runobj.source_dec = database.query(
-                    obs_id=sr.runobj.run,
-                    property_name="DriveControl_Dec_Target"
-                )
             run_to_obj[sr.runobj.run] = sr.runobj
+
         except KeyError as err:
             log.warning(f"Key error, {err}")
         except IndexError as err:
             log.warning(f"Index error, {err}")
-        except ConnectionFailure:
-            log.warning("MongoDB server not available.")
         else:
             sr.runobj.subrun_list.append(sr)
             sr.runobj.subruns = len(sr.runobj.subrun_list)
             subrun_list.append(sr)
+
+    # Add metadata from TCU database if available
+    if db_available() and not options.test:
+        for sr in subrun_list:
+            sr.runobj.source_name = database.query(
+                obs_id=sr.runobj.run,
+                property_name="DriveControl_SourceName"
+            )
+            sr.runobj.source_ra = database.query(
+                obs_id=sr.runobj.run,
+                property_name="DriveControl_RA_Target"
+            )
+            sr.runobj.source_dec = database.query(
+                obs_id=sr.runobj.run,
+                property_name="DriveControl_Dec_Target"
+            )
 
     log.debug("Subrun list extracted")
 

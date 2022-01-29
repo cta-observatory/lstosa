@@ -1,11 +1,30 @@
 """Query the TCU database source name and astronomical coordinates."""
-
+import logging
 from datetime import datetime
 
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
-__all__ = ['query']
+from osa.utils.logging import myLogger
+
+__all__ = ['query', 'db_available']
+
+
+log = myLogger(logging.getLogger(__name__))
+
+
+def db_available():
+    """Check the connection to the TCU database."""
+    caco_client = MongoClient("tcs01", serverSelectionTimeoutMS=3000)
+    tcu_client = MongoClient("tcs05", serverSelectionTimeoutMS=3000)
+    try:
+        caco_client.server_info()
+        tcu_client.server_info()
+    except ConnectionFailure:
+        log.info("TCU or CaCo database not available. No source info will be added.")
+        return False
+    else:
+        return True
 
 
 def query(obs_id: int, property_name: str):
@@ -32,12 +51,6 @@ def query(obs_id: int, property_name: str):
 
     caco_client = MongoClient("tcs01")
     tcu_client = MongoClient("tcs05")
-
-    try:
-        caco_client.admin.command('ping')
-        tcu_client.admin.command('ping')
-    except ConnectionFailure:
-        raise ConnectionFailure("Databases not available")
 
     with caco_client, tcu_client:
         run_info = caco_client["CACO"]["RUN_INFORMATION"]

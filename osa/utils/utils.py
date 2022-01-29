@@ -11,6 +11,7 @@ from socket import gethostname
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.iofile import write_to_file
+from osa.utils.logging import myLogger
 
 __all__ = [
     "getcurrentdate",
@@ -39,7 +40,7 @@ __all__ = [
     "time_to_seconds",
 ]
 
-log = logging.getLogger(__name__)
+log = myLogger(logging.getLogger(__name__))
 
 DATACHECK_PRODUCTS = ["drs4", "enf_calibration", "dl1"]
 DATACHECK_BASEDIR = Path(cfg.get("WEBSERVER", "DATACHECK"))

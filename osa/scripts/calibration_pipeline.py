@@ -29,37 +29,44 @@ __all__ = [
     "calibration_file_command",
 ]
 
-log = myLogger(logging.getLogger())
+log = myLogger(logging.getLogger(__name__))
 
 
 def is_calibration_produced(drs4_pedestal_run_id: str, pedcal_run_id: str) -> bool:
     """
-    Check if calibration files are already produced.
-
-    Parameters
-    ----------
-    drs4_pedestal_run_id : str
-    pedcal_run_id : str
-
-    Returns
-    -------
-    bool
-        True if both calibration files were already produced
+    Check if both daily calibration (DRS4 baseline and
+    charge calibration) files are already produced.
     """
-    calib_dir = Path(cfg.get(options.tel_id, "CALIB_DIR"))
+    return (
+        drs4_pedestal_exists(drs4_pedestal_run_id)
+        and calibration_file_exists(pedcal_run_id)
+    )
+
+
+def drs4_pedestal_exists(drs4_pedestal_run_id: str) -> bool:
+    """Return true if drs4 pedestal file was already produced."""
     pedestal_dir = Path(cfg.get(options.tel_id, "PEDESTAL_DIR"))
-    night_dir = lstdate_to_dir(options.date)
+    date_obs = lstdate_to_dir(options.date)
 
     drs4_pedestal_file = (
-        pedestal_dir / night_dir / options.calib_prod_id /
+        pedestal_dir / date_obs / options.calib_prod_id /
         f"drs4_pedestal.Run{drs4_pedestal_run_id}.0000.h5"
     )
+
+    return drs4_pedestal_file.exists()
+
+
+def calibration_file_exists(pedcal_run_id: str) -> bool:
+    """Return true if calibration file was already produced."""
+    calib_dir = Path(cfg.get(options.tel_id, "CALIB_DIR"))
+    date_obs = lstdate_to_dir(options.date)
+
     pedcal_file = (
-        calib_dir / night_dir / options.calib_prod_id /
+        calib_dir / date_obs / options.calib_prod_id /
         f"calibration_filters_52.Run{pedcal_run_id}.0000.h5"
     )
 
-    return drs4_pedestal_file.exists() and pedcal_file.exists()
+    return pedcal_file.exists()
 
 
 def drs4_pedestal_command(drs4_pedestal_run_id: str) -> list:
@@ -73,11 +80,12 @@ def drs4_pedestal_command(drs4_pedestal_run_id: str) -> list:
     ]
 
 
-def calibration_file_command(pedcal_run_id: str) -> list:
+def calibration_file_command(pedestal_run_id: str, pedcal_run_id: str) -> list:
     """Build the create_calibration_file command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     return [
         "onsite_create_calibration_file",
+        f"--pedestal_run={pedestal_run_id}",
         f"--run_number={pedcal_run_id}",
         f"--base_dir={base_dir}",
         "--filters=52",
@@ -141,7 +149,7 @@ def drs4_pedestal(
     rc : int
         Return code
     """
-    if options.simulate:
+    if options.simulate or drs4_pedestal_exists(drs4_pedestal_run_id):
         return 0
 
     cmd = drs4_pedestal_command(drs4_pedestal_run_id)
@@ -176,10 +184,13 @@ def calibrate_charge(
     rc: int
         Return code
     """
-    if options.simulate:
+    if options.simulate or calibration_file_exists(pedcal_run_id):
         return 0
 
-    cmd = calibration_file_command(pedcal_run_id=pedcal_run_id)
+    cmd = calibration_file_command(
+        pedestal_run_id=drs4_pedestal_run_id,
+        pedcal_run_id=pedcal_run_id
+    )
 
     return run_program_with_history_logging(
         command_args=cmd,

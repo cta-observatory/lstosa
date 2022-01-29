@@ -343,6 +343,22 @@ def test_plot_job_statistics(sacct_output, running_analysis_dir):
     assert plot_file.exists()
 
 
+def test_get_calibration_file(r0_data):
+    from osa.job import get_calibration_file
+    for file in r0_data:
+        assert file.exists()
+    file = get_calibration_file(1805)
+    file.exists()
+
+
+def test_get_drs4_pedestal_file(r0_data):
+    from osa.job import get_drs4_pedestal_file
+    for file in r0_data:
+        assert file.exists()
+    file = get_drs4_pedestal_file(1804)
+    file.exists()
+
+
 def test_get_time_calibration_file(drs4_time_calibration_files):
     from osa.job import get_time_calibration_file
     for file in drs4_time_calibration_files:
