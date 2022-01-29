@@ -24,7 +24,7 @@ from lstchain.scripts.lstchain_create_run_summary import (
 
 from osa.utils.logging import myLogger
 
-log = myLogger(logging.getLogger())
+log = myLogger(logging.getLogger(__name__))
 
 parser = argparse.ArgumentParser(description="Create run summary file")
 
@@ -49,18 +49,24 @@ dtypes = {
 }
 
 
-def start_end_of_run_files_stat(date_path, run_number, num_files):
+def start_end_of_run_files_stat(r0_path: Path, run_number: int, num_files: int):
     """
     Get first timestamps from the last subrun.
     Write down the reference Dragon module used, reference event_id.
 
+    Notes
+    -----
+    Start and end times are currently taken from the creation and last modification
+    time of the first and last file in the run. They are approximate and may be off
+    by a few seconds.
+
     Parameters
     ----------
-    date_path: pathlib.Path
+    r0_path : pathlib.Path
         Directory that contains the R0 files
-    run_number: int
+    run_number : int
         Number of the run
-    num_files: int
+    num_files : int
         Number of the sequential files (subruns) of a given run
 
     Returns
@@ -69,18 +75,20 @@ def start_end_of_run_files_stat(date_path, run_number, num_files):
     """
 
     last_subrun = num_files - 1  # first subrun is 0
-    pattern_first_subrun = date_path / f"LST-1.1.Run{run_number:05d}.0000.fits.fz"
+    pattern_first_subrun = r0_path / f"LST-1.1.Run{run_number:05d}.0000.fits.fz"
     pattern_last_subrun = (
-        date_path / f"LST-1.1.Run{run_number:05d}.{last_subrun:04d}.fits.fz"
+        r0_path / f"LST-1.1.Run{run_number:05d}.{last_subrun:04d}.fits.fz"
     )
     try:
-        run_start_first_file = Time(os.path.getctime(pattern_first_subrun), format="unix")
-        run_end_last_file = Time(os.path.getmtime(pattern_last_subrun), format="unix")
-        elapsed_time = run_end_last_file - run_start_first_file
+        # Get start and end times from the creation and last modification timestamps
+        # from the first and last file in the run
+        run_start = Time(os.path.getctime(pattern_first_subrun), format="unix")
+        run_end = Time(os.path.getmtime(pattern_last_subrun), format="unix")
+        elapsed_time = run_end - run_start
 
         return dict(
-            time_start=run_start_first_file.iso,
-            time_end=run_end_last_file.iso,
+            time_start=run_start.iso,
+            time_end=run_end.iso,
             elapsed=np.round(elapsed_time.to_value("min"), decimals=1),
         )
 
