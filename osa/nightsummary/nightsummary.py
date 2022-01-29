@@ -97,23 +97,3 @@ def get_run_summary_file(date: str) -> Path:
     """
     nightdir = lstdate_to_dir(date)
     return Path(cfg.get("LST1", "RUN_SUMMARY_DIR")) / f"RunSummary_{nightdir}.ecsv"
-
-
-def store_source_info(sequence, date: str) -> None:
-    """
-    Store in an astropy Table source info obtained from TCU. The source info
-    is stored in a run basis. Every run should have associated its type, the name of
-    the source and its coordinates.
-    """
-    nightdir = lstdate_to_dir(date)
-
-    output_file = Path(cfg.get("LST1", "RUN_CATALOG")) / f"RunCatalog_{nightdir}.ecsv"
-
-    log.debug(f"Storing source info in {output_file}")
-    # Create the table if it does not exist
-    if not output_file.exists():
-        table = Table(
-            names=["run_id", "run_type", "source_name", "source_ra", "source_dec"]
-        )
-
-

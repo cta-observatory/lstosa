@@ -90,7 +90,7 @@ def extractsubruns(summary_table):
 
     if source_catalog_file.exists():
         log.debug(f"RunCatalog file found: {source_catalog_file}")
-        source_catalog_table = QTable.read(source_catalog_file)
+        source_catalog_table = Table.read(source_catalog_file)
 
         # Get information run-wise going through each row of the RunCatalog file
         # and assign it to the corresponding run object.
@@ -129,6 +129,7 @@ def extractsubruns(summary_table):
                 sr.runobj.source_ra,
                 sr.runobj.source_dec
             ]
+            log.debug(f"Adding line with source info to RunCatalog: {line}")
             run_table.add_row(line)
 
         # Save table to disk
