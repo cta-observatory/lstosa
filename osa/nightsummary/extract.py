@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from astropy import units as u
-from astropy.table import QTable
+from astropy.table import Table
 from astropy.time import Time
 
 from osa.configs import options
@@ -103,7 +103,7 @@ def extractsubruns(summary_table):
 
     # Add metadata from TCU database if available and store it in a ECSV file to be re-used
     elif db_available() and not options.test:
-        run_table = QTable(
+        run_table = Table(
             names=["run_id", "source_name", "source_ra", "source_dec"],
             dtype=["i4", "S20", "f8", "f8"],
         )
