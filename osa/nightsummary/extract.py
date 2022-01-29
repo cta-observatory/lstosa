@@ -104,7 +104,8 @@ def extractsubruns(summary_table):
     # Add metadata from TCU database if available and store it in a ECSV file to be re-used
     elif db_available() and not options.test:
         run_table = QTable(
-            names=["run_id", "source_name", "source_ra", "source_dec"]
+            names=["run_id", "source_name", "source_ra", "source_dec"],
+            dtype=["i4", "S20", "f8", "f8"],
         )
         for sr in subrun_list:
             sr.runobj.source_name = database.query(
