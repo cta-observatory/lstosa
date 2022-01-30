@@ -107,7 +107,7 @@ def extractsubruns(summary_table):
     elif db_available() and not options.test:
         run_table = Table(
             names=["run_id", "source_name", "source_ra", "source_dec"],
-            dtype=["int32", str, "float32", "float32"],
+            dtype=["int32", str, "float64", "float64"],
         )
         for sr in subrun_list:
             sr.runobj.source_name = database.query(
