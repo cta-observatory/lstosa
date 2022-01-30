@@ -105,9 +105,11 @@ def test_simulate_processing(drs4_time_calibration_files, run_summary_file, r0_d
 def test_simulated_sequencer(
         drs4_time_calibration_files,
         run_summary_file,
+        run_catalog,
         r0_data
 ):
     assert run_summary_file.exists()
+    assert run_catalog.exists()
     for r0_file in r0_data:
         assert r0_file.exists()
     for file in drs4_time_calibration_files:
@@ -120,11 +122,10 @@ def test_simulated_sequencer(
     assert rc.stdout == dedent(
         f"""\
         ================================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Night: 2020_01_17 ==================================
-        TCU or CaCo database not available. No source info will be added.
-        Tel   Seq  Parent  Type      Run   Subruns  Source  Action  Tries  JobID  State  CPU_time  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%  
-        LST1    0  None    PEDCALIB  1805  5        None    None    None   None   None   None      None  None  None    None    None        None  
-        LST1    1       0  DATA      1807  11       None    None    None   None   None   None      None     0       0       0           0     0  
-        LST1    2       0  DATA      1808  9        None    None    None   None   None   None      None     0       0       0           0     0  
+        Tel   Seq  Parent  Type      Run   Subruns  Source   Action  Tries  JobID  State  CPU_time  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%  
+        LST1    0  None    PEDCALIB  1805  5        None     None    None   None   None   None      None  None  None    None    None        None  
+        LST1    1       0  DATA      1807  11       Source1  None    None   None   None   None      None     0       0       0           0     0  
+        LST1    2       0  DATA      1808  9        Source2  None    None   None   None   None      None     0       0       0           0     0  
         """)
 
 

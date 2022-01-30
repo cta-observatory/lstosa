@@ -104,7 +104,7 @@ def extractsubruns(summary_table):
                     sr.runobj.source_dec = source_catalog_table.loc[run_id]["source_dec"]
 
     # Add metadata from TCU database if available and store it in a ECSV file to be re-used
-    elif db_available() and not options.test:
+    elif db_available():
         run_table = Table(
             names=["run_id", "source_name", "source_ra", "source_dec"],
             dtype=["int32", str, "float64", "float64"],
