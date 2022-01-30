@@ -54,6 +54,13 @@ def run_summary_dir(monitoring_dir):
 
 
 @pytest.fixture(scope="session")
+def run_catalog_dir(monitoring_dir):
+    catalog_dir = monitoring_dir / "RunCatalog"
+    catalog_dir.mkdir(parents=True, exist_ok=True)
+    return catalog_dir
+
+
+@pytest.fixture(scope="session")
 def calibration_base_dir(monitoring_dir):
     base_dir = monitoring_dir / "PixelCalibration" / "LevelA"
     base_dir.mkdir(parents=True, exist_ok=True)
@@ -223,6 +230,7 @@ def sequence_list(running_analysis_dir, run_summary, drs4_time_calibration_files
 def sequence_file_list(
         running_analysis_dir,
         run_summary_file,
+        run_catalog,
         drs4_time_calibration_files,
         r0_data
 ):
@@ -231,6 +239,7 @@ def sequence_file_list(
     for file in drs4_time_calibration_files:
         assert file.exists()
     assert run_summary_file.exists()
+    assert run_catalog.exists()
 
     run_program("sequencer", "-d", "2020_01_17", "--no-submit", "-t", "LST1")
     return [
@@ -295,3 +304,26 @@ def drs4_check_plot(drs4_baseline_dir):
     file = drs4_baseline_dir_log / "drs4_pedestal.Run01804.0000.pdf"
     file.touch()
     return file
+
+
+@pytest.fixture(scope="session")
+def run_catalog(run_catalog_dir):
+    source_information = dedent("""\
+    # %ECSV 1.0
+    # ---
+    # datatype:
+    # - {name: run_id, datatype: int32}
+    # - {name: source_name, datatype: string}
+    # - {name: source_ra, datatype: float64}
+    # - {name: source_dec, datatype: float64}
+    # delimiter: ','
+    # schema: astropy-2.0
+    run_id,source_name,source_ra,source_dec
+    1807,Source1,35.543,11.04
+    1808,Source2,115.441,43.98""")
+
+    catalog_file = run_catalog_dir / 'RunCatalog_20200117.ecsv'
+    catalog_file.touch()
+    catalog_file.write_text(source_information)
+    return catalog_file
+

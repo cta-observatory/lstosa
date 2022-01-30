@@ -2,11 +2,14 @@
 
 import logging
 import sys
+from pathlib import Path
 
 from astropy import units as u
+from astropy.table import Table
 from astropy.time import Time
 
 from osa.configs import options
+from osa.configs.config import cfg
 from osa.configs.datamodel import (
     RunObj,
     SequenceCalibration,
@@ -18,7 +21,7 @@ from osa.job import sequence_calibration_filenames, sequence_filenames
 from osa.nightsummary import database
 from osa.nightsummary.database import db_available
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_iso
+from osa.utils.utils import lstdate_to_iso, lstdate_to_dir
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -38,7 +41,7 @@ def extractsubruns(summary_table):
     Parameters
     ----------
     summary_table: astropy.Table
-    Table containing run-wise information indicated in `nightsummary.run_summary`.
+        Table containing run-wise information indicated in `nightsummary.run_summary`
 
     See Also: `nightsummary.run_summary`
 
@@ -47,7 +50,6 @@ def extractsubruns(summary_table):
     subrun_list
     """
     subrun_list = []
-    run_to_obj = {}
 
     # Get information run-wise going through each row
     for run_id in summary_table["run_id"]:
@@ -70,8 +72,6 @@ def extractsubruns(summary_table):
             sr.runobj.type = run_info["run_type"]
             sr.runobj.telescope = options.tel_id
             sr.runobj.night = lstdate_to_iso(options.date)
-            run_to_obj[sr.runobj.run] = sr.runobj
-
         except KeyError as err:
             log.warning(f"Key error, {err}")
         except IndexError as err:
@@ -81,8 +81,35 @@ def extractsubruns(summary_table):
             sr.runobj.subruns = len(sr.runobj.subrun_list)
             subrun_list.append(sr)
 
+    # Before trying to access the information in the database, check if it is available
+    # in the RunCatalog file (previously generated with the information in the database).
+    nightdir = lstdate_to_dir(options.date)
+    source_catalog_dir = Path(cfg.get("LST1", "RUN_CATALOG"))
+    source_catalog_dir.mkdir(parents=True, exist_ok=True)
+    source_catalog_file = source_catalog_dir / f"RunCatalog_{nightdir}.ecsv"
+
+    if source_catalog_file.exists():
+        log.debug(f"RunCatalog file found: {source_catalog_file}")
+        source_catalog = Table.read(source_catalog_file)
+        # Add index to be able to browse the table
+        source_catalog.add_index("run_id")
+
+        # Get information run-wise going through each row of the RunCatalog file
+        # and assign it to the corresponding run object.
+        for run_id in source_catalog["run_id"]:
+            for sr in subrun_list:
+                if sr.runobj.run == run_id:
+                    sr.runobj.source_name = source_catalog.loc[run_id]["source_name"]
+                    sr.runobj.source_ra = source_catalog.loc[run_id]["source_ra"]
+                    sr.runobj.source_dec = source_catalog.loc[run_id]["source_dec"]
+
     # Add metadata from TCU database if available
-    if db_available() and not options.test:
+    # and store it in a ECSV file to be re-used
+    elif db_available():
+        run_table = Table(
+            names=["run_id", "source_name", "source_ra", "source_dec"],
+            dtype=["int32", str, "float64", "float64"],
+        )
         for sr in subrun_list:
             sr.runobj.source_name = database.query(
                 obs_id=sr.runobj.run,
@@ -96,6 +123,25 @@ def extractsubruns(summary_table):
                 obs_id=sr.runobj.run,
                 property_name="DriveControl_Dec_Target"
             )
+            # Store this source information (run_id, source_name, source_ra, source_dec)
+            # into an astropy Table and save to disk. In this way, the information can be
+            # dumped anytime later more easily than accessing the TCU database itself.
+            if sr.runobj.source_name is not None:
+                line = [
+                    sr.runobj.run,
+                    sr.runobj.source_name,
+                    sr.runobj.source_ra,
+                    sr.runobj.source_dec
+                ]
+                log.debug(f"Adding line with source info to RunCatalog: {line}")
+                run_table.add_row(line)
+
+        # Save table to disk
+        run_table.write(
+            source_catalog_file,
+            overwrite=True,
+            delimiter=","
+        )
 
     log.debug("Subrun list extracted")
 
