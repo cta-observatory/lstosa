@@ -17,6 +17,7 @@ entry_points = {
         "simulate_processing = osa.scripts.simulate_processing:main",
         "calibration_pipeline = osa.scripts.calibration_pipeline:main",
         "dl3_stage = osa.workflow.dl3:main",
+        "source_coordinates = osa.nightsummary.set_source_coordinates:main",
     ]
 }
 
