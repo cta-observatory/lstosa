@@ -91,6 +91,8 @@ def extractsubruns(summary_table):
     if source_catalog_file.exists():
         log.debug(f"RunCatalog file found: {source_catalog_file}")
         source_catalog_table = Table.read(source_catalog_file)
+        # Add index to be able to browse the table
+        source_catalog_table.add_index("run_id")
 
         # Get information run-wise going through each row of the RunCatalog file
         # and assign it to the corresponding run object.
@@ -105,7 +107,7 @@ def extractsubruns(summary_table):
     elif db_available() and not options.test:
         run_table = Table(
             names=["run_id", "source_name", "source_ra", "source_dec"],
-            dtype=["i4", "S20", "f8", "f8"],
+            dtype=["int32", str, "float32", "float32"],
         )
         for sr in subrun_list:
             sr.runobj.source_name = database.query(
@@ -123,14 +125,15 @@ def extractsubruns(summary_table):
             # Store this source information (run_id, source_name, source_ra, source_dec)
             # into an astropy Table and save to disk. In this way, the information can be
             # dumped anytime later more easily than accessing the TCU database itself.
-            line = [
-                sr.runobj.run,
-                sr.runobj.source_name,
-                sr.runobj.source_ra,
-                sr.runobj.source_dec
-            ]
-            log.debug(f"Adding line with source info to RunCatalog: {line}")
-            run_table.add_row(line)
+            if sr.runobj.source_name is not None:
+                line = [
+                    sr.runobj.run,
+                    sr.runobj.source_name,
+                    sr.runobj.source_ra,
+                    sr.runobj.source_dec
+                ]
+                log.debug(f"Adding line with source info to RunCatalog: {line}")
+                run_table.add_row(line)
 
         # Save table to disk
         run_table.write(
