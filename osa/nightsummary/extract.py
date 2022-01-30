@@ -41,7 +41,7 @@ def extractsubruns(summary_table):
     Parameters
     ----------
     summary_table: astropy.Table
-    Table containing run-wise information indicated in `nightsummary.run_summary`.
+        Table containing run-wise information indicated in `nightsummary.run_summary`
 
     See Also: `nightsummary.run_summary`
 
@@ -90,20 +90,21 @@ def extractsubruns(summary_table):
 
     if source_catalog_file.exists():
         log.debug(f"RunCatalog file found: {source_catalog_file}")
-        source_catalog_table = Table.read(source_catalog_file)
+        source_catalog = Table.read(source_catalog_file)
         # Add index to be able to browse the table
-        source_catalog_table.add_index("run_id")
+        source_catalog.add_index("run_id")
 
         # Get information run-wise going through each row of the RunCatalog file
         # and assign it to the corresponding run object.
-        for run_id in source_catalog_table["run_id"]:
+        for run_id in source_catalog["run_id"]:
             for sr in subrun_list:
                 if sr.runobj.run == run_id:
-                    sr.runobj.source_name = source_catalog_table.loc[run_id]["source_name"]
-                    sr.runobj.source_ra = source_catalog_table.loc[run_id]["source_ra"]
-                    sr.runobj.source_dec = source_catalog_table.loc[run_id]["source_dec"]
+                    sr.runobj.source_name = source_catalog.loc[run_id]["source_name"]
+                    sr.runobj.source_ra = source_catalog.loc[run_id]["source_ra"]
+                    sr.runobj.source_dec = source_catalog.loc[run_id]["source_dec"]
 
-    # Add metadata from TCU database if available and store it in a ECSV file to be re-used
+    # Add metadata from TCU database if available
+    # and store it in a ECSV file to be re-used
     elif db_available():
         run_table = Table(
             names=["run_id", "source_name", "source_ra", "source_dec"],
