@@ -319,8 +319,8 @@ def run_catalog(run_catalog_dir):
     # delimiter: ','
     # schema: astropy-2.0
     run_id,source_name,source_ra,source_dec
-    1807,Source1,35.543,11.04
-    1808,Source2,115.441,43.98""")
+    1807,Crab,83.543,22.08
+    1808,MadeUpSource,115.441,43.98""")
 
     catalog_file = run_catalog_dir / 'RunCatalog_20200117.ecsv'
     catalog_file.touch()
