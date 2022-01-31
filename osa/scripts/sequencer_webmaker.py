@@ -115,18 +115,15 @@ def main():
         "right",
         "right",
         "left",
-        "right",
+        "left",
+        "left",
+        "left",
+        "left",
         "right",
         "left",
         "left",
         "left",
-        "right",
-        "right",
         "left",
-        "left",
-        "right",
-        "right",
-        "right",
         "right",
         "right",
         "right",
@@ -168,7 +165,7 @@ def main():
             matrix = []
             for line in lines:
                 l_fields = line.split()
-                if len(l_fields) == 21:
+                if len(l_fields) == 18:
                     # Full line, all OK
                     matrix.append(l_fields)
 
