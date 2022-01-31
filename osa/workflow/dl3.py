@@ -1,10 +1,16 @@
 #!/usr/bin/env python
 
+"""
+Handle the production of DL3 data. It pipes the lstchain scripts
+that related to DL3 data: IRF, creation of DL3 files and indexing them.
+"""
+
 import logging
 import pathlib
 import subprocess as sp
 import sys
 from datetime import date, timedelta
+from pathlib import Path
 
 import click
 from astropy.utils import iers
@@ -13,7 +19,10 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import run_summary_table
-from osa.utils.cliopts import set_default_directory_if_needed, get_prod_id, get_dl2_prod_id
+from osa.utils.cliopts import (
+    set_default_directory_if_needed,
+    get_prod_id, get_dl2_prod_id
+)
 from osa.utils.logging import myLogger
 from osa.utils.utils import destination_dir, stringify
 
@@ -31,6 +40,7 @@ DEFAULT_CFG = pathlib.Path(__file__).parent / '../../cfg/sequencer.cfg'
 
 
 def cmd_create_irf(cwd, mc_gamma, mc_proton, mc_electron, output_irf_file, dl3_config):
+    """Command to schedule the job for creating IRF file using lstchain tool."""
     return [
         "sbatch",
         "--parsable",
@@ -62,19 +72,24 @@ def cmd_create_dl3(
         dl3_config,
         job_irf
 ):
+    """Command to schedule the job for creating DL3 files using lstchain tool."""
     log_dir = dl3_dir / "log"
     log_dir.mkdir(exist_ok=True, parents=True)
     log_file = log_dir / f"dl2_to_dl3_Run{run:05d}_{source_name}_%j.log"
-    return [
+    sbatch_cmd = [
         "sbatch",
         "--mem=10GB",
         "--job-name=dl2dl3",
-        f"--dependency=afterok:{job_irf}",
         "-D",
         dl3_dir,
         "-o",
         log_file,
-        "--parsable",
+        "--parsable"
+    ]
+    if job_irf is not None:
+        sbatch_cmd.append(f"--dependency=afterok:{job_irf}")
+
+    lstchain_dl3_cmd = [
         "lstchain_create_dl3_file",
         f"-d={dl2_file}",
         f"-o={dl3_dir}",
@@ -86,8 +101,11 @@ def cmd_create_dl3(
         "--overwrite",
     ]
 
+    return sbatch_cmd + lstchain_dl3_cmd
+
 
 def cmd_create_index_dl3(dl3_dir, parent_job_list):
+    """Command to schedule the job for indexing the DL3 files previously created."""
     parent_job_list_str = ",".join(parent_job_list)
     log_dir = dl3_dir / "log"
     log_dir.mkdir(exist_ok=True, parents=True)
@@ -111,6 +129,18 @@ def cmd_create_index_dl3(dl3_dir, parent_job_list):
     ]
 
 
+def get_source_list(sequence_list) -> list:
+    """Get the list of source names."""
+    source_list = []
+    for sequence in sequence_list:
+        if sequence.source_name is not None and sequence.source_name not in source_list:
+            source_list.append(sequence.source_name)
+
+    log.info(f"List of sources: {source_list}")
+
+    return source_list
+
+
 @click.command()
 @click.argument('telescope', type=click.Choice(['LST1', 'LST2']))
 @click.option(
@@ -127,8 +157,17 @@ def cmd_create_index_dl3(dl3_dir, parent_job_list):
 )
 @click.option('-v', '--verbose', is_flag=True)
 @click.option('--local', is_flag=True)
+@click.option('--add-irf', is_flag=True)
 @click.option('-s', '--simulate', is_flag=True)
-def main(date_obs, telescope, verbose, simulate, config, local):
+def main(
+        date_obs: date = None,
+        telescope: str = None,
+        config: Path = None,
+        verbose: bool = False,
+        simulate: bool = False,
+        local: bool = False,
+        add_irf: bool = False,
+):
     """Produce the IRF and DL3 files tool in a run basis."""
     log.setLevel(logging.INFO)
 
@@ -157,13 +196,7 @@ def main(date_obs, telescope, verbose, simulate, config, local):
     run_list = extractruns(subrun_list)
     sequence_list = extractsequences(run_list)
 
-    # Get the list of source names
-    source_list = []
-    for sequence in sequence_list:
-        if sequence.source_name is not None and sequence.source_name not in source_list:
-            source_list.append(sequence.source_name)
-
-    log.info(f"List of sources: {source_list}")
+    source_list = get_source_list(sequence_list)
 
     if not source_list:
         sys.exit("No sources found. Check the access to database. Exiting.")
@@ -201,7 +234,7 @@ def main(date_obs, telescope, verbose, simulate, config, local):
         dl3_config=dl3_config,
     )
 
-    if not simulate:
+    if not simulate and not add_irf:
         log.info("Submitting the IRF job.")
         log.debug(stringify(cmd1))
         job_irf = sp.run(
