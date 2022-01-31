@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 """
-Handle the production of DL3 data. It pipes the lstchain scripts
-that related to DL3 data: IRF, creation of DL3 files and indexing them.
+Handle the production of DL3 data.
+
+It pipes the lstchain scripts related to DL3 data:
+IRF, creation of DL3 files and indexing them.
 """
 
 import logging
-import pathlib
 import subprocess as sp
 import sys
 from datetime import date, timedelta
@@ -32,11 +33,12 @@ __all__ = [
     "cmd_create_irf",
     "cmd_create_dl3",
     "cmd_create_index_dl3",
+    "get_source_list",
 ]
 
 log = myLogger(logging.getLogger(__name__))
 
-DEFAULT_CFG = pathlib.Path(__file__).parent / '../../cfg/sequencer.cfg'
+DEFAULT_CFG = Path(__file__).parent / '../../cfg/sequencer.cfg'
 
 
 def cmd_create_irf(cwd, mc_gamma, mc_proton, mc_electron, output_irf_file, dl3_config):
@@ -176,6 +178,8 @@ def main(
 
     log.info(f"=== DL3 stage for {date_obs.strftime('%Y-%m-%d')} ===")
 
+    log.debug(f"Config: {config}")
+
     if local:
         options.test = True
         log.info("Local mode enabled: no interaction with the cluster.")
@@ -217,7 +221,10 @@ def main(
             source_dir = std_cuts_dir / source
             source_dir.mkdir(parents=True, exist_ok=True)
 
-    log.info("Creating the IRFs.")
+    if add_irf:
+        log.info("Creating the IRFs.")
+    else:
+        log.info("DL3 will be created without adding IRF information.")
 
     mc_gamma = cfg.get("IRF", "mc_gamma")
     mc_proton = cfg.get("IRF", "mc_proton")
