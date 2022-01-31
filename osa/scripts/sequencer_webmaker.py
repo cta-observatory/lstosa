@@ -165,7 +165,7 @@ def main():
             matrix = []
             for line in lines:
                 l_fields = line.split()
-                if len(l_fields) == 21:
+                if len(l_fields) == 18:
                     # Full line, all OK
                     matrix.append(l_fields)
 
