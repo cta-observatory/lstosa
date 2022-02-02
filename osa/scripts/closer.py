@@ -424,7 +424,6 @@ def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
     muons_dir = destination_dir("MUON", create_dir=False)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
     longterm_output_file = longterm_dir / f"DL1_datacheck_{nightdir}.h5"
-    longterm_script = cfg.get("lstchain", "longterm_check")
 
     return [
         "sbatch",
@@ -433,7 +432,7 @@ def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
         "-o",
         "log/longterm_daily_%j.log",
         f"--dependency=afterok:{','.join(parent_job_ids)}",
-        longterm_script,
+        "lstchain_longterm_dl1_check",
         f"--input-dir={dl1_dir}",
         f"--output-file={longterm_output_file}",
         f"--muons-dir={muons_dir}",
