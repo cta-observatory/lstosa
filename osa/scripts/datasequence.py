@@ -188,7 +188,6 @@ def dl1ab(run_str: str, history_file: Path):
         command,
         f"--input-file={input_dl1_datafile}",
         f"--output-file={output_dl1_datafile}",
-        "--pedestal-cleaning=True",
         f"--config={dl1ab_config_file}",
     ]
     if not cfg.getboolean("lstchain", "store_image_dl1ab"):
