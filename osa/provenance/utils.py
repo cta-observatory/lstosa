@@ -124,7 +124,6 @@ def parse_variables(class_instance):
 
         class_instance.Analysisconfigfile_dl1 = os.path.realpath(configfile_dl1)
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
-        class_instance.PedestalCleaning = "True"
         class_instance.StoreImage = cfg.getboolean("lstchain", "store_image_dl1ab")
         class_instance.DL1SubrunDataset = os.path.realpath(
             f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[0]}.h5"
