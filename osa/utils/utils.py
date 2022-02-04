@@ -19,7 +19,6 @@ __all__ = [
     "get_lstchain_version",
     "create_directories_datacheck_web",
     "set_no_observations_flag",
-    "copy_files_datacheck_web",
     "lstdate_to_dir",
     "lstdate_to_iso",
     "is_day_closed",
@@ -370,9 +369,9 @@ def destination_dir(concept, create_dir=True) -> Path:
 
 def create_directories_datacheck_web(host: str, datedir: str, prod_id: str) -> None:
     """
-    Create directories for drs4, enf_calibration
-    and dl1 products in the data-check webserver via ssh. It also copies
-    the index.php file needed to build the directory tree structure.
+    Create directories for drs4, enf_calibration and dl1 products in the data-check
+    webserver via ssh. It also copies the index.php file needed to build and visualize
+    the directory tree structure in the web server.
 
     Parameters
     ----------
@@ -387,10 +386,17 @@ def create_directories_datacheck_web(host: str, datedir: str, prod_id: str) -> N
         # Create directory and copy the index.php to each directory
         for product in DATACHECK_PRODUCTS:
             dest_directory = DATACHECK_BASEDIR / product / prod_id / datedir
-            cmd = ["ssh", host, "mkdir", "-p", dest_directory]
-            subprocess.run(cmd, capture_output=True, check=True)
-            cmd = ["scp", cfg.get("WEBSERVER", "INDEXPHP"), f"{host}:{dest_directory}/."]
-            subprocess.run(cmd, capture_output=True, check=True)
+            cmd_create_dir = ["ssh", host, "mkdir", "-p", dest_directory]
+            subprocess.run(cmd_create_dir, capture_output=True, check=True)
+            cmd_copy_index = ["scp", cfg.get("WEBSERVER", "INDEXPHP"), f"{host}:{dest_directory}/."]
+            subprocess.run(cmd_copy_index, capture_output=True, check=True)
+            if product == "dl1":
+                pdf_subdir = dest_directory / "pdf"
+                cmd_pdf_subdir = ["ssh", host, "mkdir", "-p", pdf_subdir]
+                subprocess.run(cmd_pdf_subdir, capture_output=True, check=True)
+                cmd_copy_index = ["scp", cfg.get("WEBSERVER", "INDEXPHP"), f"{host}:{pdf_subdir}/."]
+                subprocess.run(cmd_copy_index, capture_output=True, check=True)
+
     except subprocess.CalledProcessError:
         log.warning(
             'Cannot create directories on webserver using ssh. Check you have '
@@ -422,50 +428,6 @@ def set_no_observations_flag(host, datedir, prod_id):
         except subprocess.CalledProcessError:
             log.warning(
                 "Destination directory does not exists. Check your configuration."
-            )
-
-
-def copy_files_datacheck_web(host, datedir, file_list) -> None:
-    """
-    Copy files to the data-check webserver via scp.
-
-    Notes
-    -----
-    Files are overwritten if they already exist.
-
-    Parameters
-    ----------
-    host : str
-        Hostname of the webserver
-    datedir : str
-        Date directory in the webserver in the format YYYYMMDD
-    file_list : list
-        List of files to be copied
-    """
-    # TODO: Check if files exists already at webserver CHECK HASH
-    for file_to_transfer in file_list:
-        try:
-            if "drs4" in str(file_to_transfer):
-                dest_directory = DATACHECK_BASEDIR / "drs4" / options.prod_id / datedir
-                cmd = ["scp", str(file_to_transfer), f"{host}:{dest_directory}/."]
-                subprocess.run(cmd, check=True)
-
-            elif "calibration" in str(file_to_transfer):
-                dest_directory = (
-                    DATACHECK_BASEDIR / "enf_calibration" / options.prod_id / datedir
-                )
-                cmd = ["scp", file_to_transfer, f"{host}:{dest_directory}/."]
-                subprocess.run(cmd, check=True)
-
-            elif "datacheck" in str(file_to_transfer):
-                dest_directory = DATACHECK_BASEDIR / "dl1" / options.prod_id / datedir
-                cmd = ["scp", file_to_transfer, f"{host}:{dest_directory}/."]
-                subprocess.run(cmd, check=True)
-
-        except subprocess.CalledProcessError:
-            log.warning(
-                "Cannot copy file to webserver using scp. Check that the files exist "
-                "and that you have permission to connect through ssh and copy the files."
             )
 
 

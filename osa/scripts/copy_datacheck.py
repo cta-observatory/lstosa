@@ -4,9 +4,10 @@ Script to copy analysis products to datacheck webserver creating new
 directories whenever they are needed.
 """
 
-import itertools
 import logging
+import subprocess as sp
 from pathlib import Path
+from typing import List
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -15,68 +16,101 @@ from osa.utils.logging import myLogger
 from osa.utils.utils import (
     lstdate_to_dir,
     is_day_closed,
-    create_directories_datacheck_web,
     set_no_observations_flag,
-    copy_files_datacheck_web,
 )
+
 
 log = myLogger(logging.getLogger())
 
-__all__ = ["look_for_datacheck_files"]
+
+DATACHECK_FILE_PATTERNS = {
+    "PEDESTAL": "drs4*.pdf",
+    "CALIB": "calibration*.pdf",
+    "DL1": "datacheck_dl1*.pdf",
+    "LONGTERM": "DL1_datacheck_*.*"
+}
 
 
-def look_for_datacheck_files(nightdir):
-    """Look for the datacheck files."""
-    drs4_baseline_dir = (
-        Path(cfg.get("LST1", "PEDESTAL_DIR")) / nightdir / "pro"
-    ).resolve()
-    calibration_dir = (
-        Path(cfg.get("LST1", "CALIB_DIR")) / nightdir / "pro"
-    ).resolve()
-    dl1_dir = (
-        Path(cfg.get("LST1", "DL1_DIR"))
-        / nightdir
-        / options.prod_id
-        / options.dl1_prod_id
-    ).resolve()
-    dl1_longterm_daily = (
-        Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
-    ).resolve()
+def get_datacheck_files(pattern: str, directory: Path) -> list:
+    """Return a list of files matching the pattern."""
+    return [file for file in directory.glob(pattern)]
 
-    drs4_pdf = list(drs4_baseline_dir.rglob("drs4*.pdf"))
-    calib_pdf = list(calibration_dir.rglob("calibration*.pdf"))
-    dl1_pdf = list(dl1_dir.rglob("datacheck*.pdf"))
-    dl1_longterm_daily = list(dl1_longterm_daily.rglob("DL1_datacheck*"))
-    list_of_files = [drs4_pdf, calib_pdf, dl1_pdf, dl1_longterm_daily]
 
-    return list(itertools.chain(*list_of_files))
+def create_directory_in_datacheck_webserver(host: str, datacheck_type: str) -> Path:
+    """Create directories in the datacheck web server and setup index.php file."""
+    date = lstdate_to_dir(options.date)
+    datacheck_dir = Path(cfg.get("WEBSERVER", "DATACHECK"))
+
+    DATACHECK_WEB_DIRS = {
+        "PEDESTAL": f"drs4/{options.prod_id}/{date}",
+        "CALIB": f"enf_calibration/{options.prod_id}/{date}",
+        "DL1": f"dl1/{options.prod_id}/{date}/pdf",
+        "LONGTERM": f"dl1/{options.prod_id}/{date}"
+    }
+
+    destination_dir = datacheck_dir / DATACHECK_WEB_DIRS[datacheck_type]
+
+    index_php = cfg.get("WEBSERVER", "INDEX_PHP")
+    remote_mkdir = ["ssh", host, "mkdir", "-p", destination_dir]
+    copy_index_php = ["scp", index_php, f"{host}:{destination_dir}/."]
+    sp.run(remote_mkdir, check=True)
+    sp.run(copy_index_php, check=True)
+
+    return destination_dir
+
+
+def copy_to_webserver(files: List[Path], datacheck_type: str):
+    """Copy files to the webserver in host."""
+    host = cfg.get("WEBSERVER", "HOST")
+    destination_dir = create_directory_in_datacheck_webserver(host, datacheck_type)
+
+    for file in files:
+        log.info(f"Copying {file}")
+        copy_file = ["scp", file, f"{host}:{destination_dir}/."]
+        sp.run(copy_file, check=True)
+
+
+def datacheck_directory(data_type: str, date: str) -> Path:
+    if data_type in {"PEDESTAL", "CALIB"}:
+        directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / date / "pro/log"
+    elif data_type == "DL1":
+        directory = (
+            Path(cfg.get("LST1", f"{data_type}_DIR"))
+            / date
+            / options.prod_id
+            / options.dl1_prod_id
+        )
+    elif data_type == "LONGTERM":
+        directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / options.prod_id / date
+    else:
+        raise ValueError(f"Unknown data type: {data_type}")
+    return directory
 
 
 def main():
-    """
-    Get analysis products to be copied to the webserver,
-    create directories and eventually copy the files.
-    """
+    """Copy datacheck products to the webserver."""
     log.setLevel(logging.INFO)
 
     copy_datacheck_parsing()
     nightdir = lstdate_to_dir(options.date)
 
-    # Look for the datacheck files
-    files_to_transfer = look_for_datacheck_files(nightdir)
+    lists_datacheck_files = []
 
-    log.debug("Creating directories")
-    create_directories_datacheck_web(
-        cfg.get("WEBSERVER", "HOST"), nightdir, options.prod_id
-    )
-    if not files_to_transfer and is_day_closed():
+    for data, pattern in DATACHECK_FILE_PATTERNS.items():
+        log.info(f"Looking for {pattern}")
+        directory = datacheck_directory(data_type=data, date=nightdir)
+        files = get_datacheck_files(pattern, directory)
+        copy_to_webserver(files, data)
+        lists_datacheck_files.append(files)
+
+    # Flatten the list of lists
+    datacheck_files = [item for sublist in lists_datacheck_files for item in sublist]
+
+    print(datacheck_files)
+
+    if not datacheck_files and is_day_closed():
         log.warning("No observations. No files to be copied")
         set_no_observations_flag(cfg.get("WEBSERVER", "HOST"), nightdir, options.prod_id)
-    else:
-        log.debug("Transferring files")
-        copy_files_datacheck_web(
-            cfg.get("WEBSERVER", "HOST"), nightdir, files_to_transfer
-        )
 
 
 if __name__ == "__main__":

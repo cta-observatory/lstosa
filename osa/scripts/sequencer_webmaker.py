@@ -7,12 +7,12 @@ from pathlib import Path
 from osa.configs import options
 from osa.utils.cliopts import sequencer_webmaker_argparser
 from osa.utils.logging import myLogger
-from osa.utils.utils import is_day_closed
+from osa.utils.utils import is_day_closed, lstdate_to_iso
 
 log = myLogger(logging.getLogger())
 
 
-def matrixtohtmltable(matrix, column_class, header, footer):
+def matrix_to_html_table(matrix, column_class, header, footer):
     """
     Header and footer are simple simple bool in order to build first and last line
     with outside the body with th, td. Column_class is a css class to align columns.
@@ -94,17 +94,13 @@ def main():
     run_summary_directory = Path("/fefs/aswg/data/real/monitoring/RunSummary")
     run_summary_file = run_summary_directory / f"RunSummary_{strdate}.ecsv"
 
-    # FIXME: Parse this via command line as done in the sequencer.
-    #        It has to somehow identify if data was taken and update the web.
-    #        Otherwise the web does not needs to be updated.
-
     if not run_summary_file.is_file():
         print(f"No RunSummary file found for {strdate}")
         sys.exit(1)
 
     # Print the output into a web page
     webhead(
-        '<title>OSA Sequencer in the LST onsite IT center</title><link href="osa.css" rel="stylesheet" type="text/css" /><style>table{width:152ex;}</style>'
+        '<title>OSA Sequencer in the LST-1 onsite IT center</title><link href="osa.css" rel="stylesheet" type="text/css" /><style>table{width:152ex;}</style>'
     )
 
     print("<h1>OSA sequencer in the LST onsite IT center</h1>")
@@ -147,15 +143,14 @@ def main():
             commandargs, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8", check=True
         )
     except sp.CalledProcessError as error:
-        # Sorry, it does not work (day closed, asked with wrong parameters ...)
         print(
             f"Command with the following args {commandargs} failed, {error.returncode}"
         )
         sys.exit(1)
     else:
         print(
-            f'<p>Sequencer at {datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC. '
-            f"Date {options.date}. Telescope: {options.tel_id}</p>"
+            f'<p>Processing data from: {lstdate_to_iso(options.date)}. '
+            f'Last updated: {datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC</p>'
         )
 
         # Strip newlines and fit it into a table:
@@ -169,7 +164,7 @@ def main():
                     # Full line, all OK
                     matrix.append(l_fields)
 
-            matrixtohtmltable(matrix, column_class, True, False)
+            matrix_to_html_table(matrix, column_class, True, False)
         else:
             # Show just plain text
             print(f"<pre>{output.stdout}</pre>")
