@@ -8,21 +8,21 @@ dependencies:
   - numpy=1.21
   - pip
   - astropy~=4.2
-  - ctapipe~=0.11
+  - ctapipe~=0.12
   - protozfits=2.0
-  - matplotlib=3.4
-  - pyparsing=2.4
+  - matplotlib=3.5
+  - pyparsing
   - prov
   - pyyaml
   - pydot
   - pydotplus
   - psutil
-  - gammapy=0.18
+  - gammapy=0.19
   - h5py
   - joblib
-  - traitlets=5.0
   - click
   - pymongo
+  - scikit-learn=1.0
   # dev dependencies
   - pre-commit
   - pytest
@@ -36,9 +36,9 @@ dependencies:
   - sphinx-argparse
   - sphinx-autoapi
   - pip:
-      - lstchain~=0.8.4
+      - lstchain~=0.9.0
       - pytest_runner
       - pytest-ordering
-      - ctapipe_io_lst~=0.13.2
+      - ctapipe_io_lst~=0.15.0
       - ctaplot~=0.5.5
-      - pyirf~=0.5.0
+      - pyirf~=0.6.0
