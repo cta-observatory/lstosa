@@ -16,7 +16,7 @@ from osa.configs.config import cfg
 from osa.utils.cliopts import get_prod_id
 from osa.utils.cliopts import set_default_directory_if_needed, valid_date
 from osa.utils.logging import myLogger
-from osa.utils.utils import set_no_observations_flag, create_directories_datacheck_web
+from osa.webserver.utils import set_no_observations_flag
 
 __all__ = ["Telescope", "Sequence"]
 
@@ -158,22 +158,14 @@ class Telescope(object):
 
         self.parse_sequencer()
 
-        if not args.test:
-            # Create directories in the webserver to copy datacheck products
-            log.debug("Setting up the directories in the datacheck webserver")
-            create_directories_datacheck_web(
-                cfg.get("WEBSERVER", "HOST"), nightdir, prod_id
-            )
-
         if not self.build_Sequences():
             log.warning(
                 f"Sequencer for {self.telescope} is empty! Ignoring {self.telescope}"
             )
 
             if not args.simulate and not args.test:
-                set_no_observations_flag(
-                    cfg.get("WEBSERVER", "HOST"), nightdir, options.prod_id
-                )
+                host = cfg.get("WEBSERVER", "HOST")
+                set_no_observations_flag(host, nightdir, options.prod_id)
             return
         self.incidence = Incidence(self.telescope)
 

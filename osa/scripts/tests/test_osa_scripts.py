@@ -283,31 +283,6 @@ def test_calibration_file_cmd(base_test_dir):
     assert cmd == expected_command
 
 
-def test_look_for_datacheck_files(
-        drs4_check_plot,
-        calibration_check_plot,
-        daily_datacheck_dl1_files,
-        datacheck_dl1_files
-):
-    assert drs4_check_plot.exists()
-    assert calibration_check_plot.exists()
-    for file in daily_datacheck_dl1_files:
-        assert file.exists()
-    for file in datacheck_dl1_files:
-        assert file.exists()
-
-    from osa.scripts.copy_datacheck import look_for_datacheck_files
-    date = "20200117"
-    files_to_copy = look_for_datacheck_files(date)
-
-    assert drs4_check_plot in files_to_copy
-    assert calibration_check_plot in files_to_copy
-    for file in daily_datacheck_dl1_files:
-        assert file in files_to_copy
-    for file in datacheck_dl1_files:
-        assert file in files_to_copy
-
-
 def test_daily_longterm_cmd():
     from osa.scripts.closer import daily_longterm_cmd
     job_ids = ["12345", "54321"]

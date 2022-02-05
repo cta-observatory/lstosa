@@ -3,7 +3,6 @@
 import inspect
 import logging
 import os
-import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
 from socket import gethostname
@@ -17,9 +16,6 @@ __all__ = [
     "getcurrentdate",
     "night_directory",
     "get_lstchain_version",
-    "create_directories_datacheck_web",
-    "set_no_observations_flag",
-    "copy_files_datacheck_web",
     "lstdate_to_dir",
     "lstdate_to_iso",
     "is_day_closed",
@@ -38,12 +34,21 @@ __all__ = [
     "get_dl2_prod_id",
     "get_night_limit_timestamp",
     "time_to_seconds",
+    "datacheck_directory",
+    "get_datacheck_files",
+    "DATACHECK_FILE_PATTERNS"
 ]
 
 log = myLogger(logging.getLogger(__name__))
 
 DATACHECK_PRODUCTS = ["drs4", "enf_calibration", "dl1"]
-DATACHECK_BASEDIR = Path(cfg.get("WEBSERVER", "DATACHECK"))
+
+DATACHECK_FILE_PATTERNS = {
+    "PEDESTAL": "drs4*.pdf",
+    "CALIB": "calibration*.pdf",
+    "DL1": "datacheck_dl1*.pdf",
+    "LONGTERM": "DL1_datacheck_*.*"
+}
 # Sets the amount of hours after midnight for the default OSA date
 # to be the current date, eg 4: 04:00:00 UTC, -4: 20:00:00 UTC day before
 LIMIT_NIGHT = 12
@@ -368,107 +373,6 @@ def destination_dir(concept, create_dir=True) -> Path:
     return directory
 
 
-def create_directories_datacheck_web(host: str, datedir: str, prod_id: str) -> None:
-    """
-    Create directories for drs4, enf_calibration
-    and dl1 products in the data-check webserver via ssh. It also copies
-    the index.php file needed to build the directory tree structure.
-
-    Parameters
-    ----------
-    host : str
-        Hostname of the server to which the datacheck products will be copied
-    datedir : str
-        Date in the format YYYYMMDD
-    prod_id : str
-        Production ID
-    """
-    try:
-        # Create directory and copy the index.php to each directory
-        for product in DATACHECK_PRODUCTS:
-            dest_directory = DATACHECK_BASEDIR / product / prod_id / datedir
-            cmd = ["ssh", host, "mkdir", "-p", dest_directory]
-            subprocess.run(cmd, capture_output=True, check=True)
-            cmd = ["scp", cfg.get("WEBSERVER", "INDEXPHP"), f"{host}:{dest_directory}/."]
-            subprocess.run(cmd, capture_output=True, check=True)
-    except subprocess.CalledProcessError:
-        log.warning(
-            'Cannot create directories on webserver using ssh. Check you have '
-            'permission to connect through ssh and create the destination directory.'
-        )
-
-
-def set_no_observations_flag(host, datedir, prod_id):
-    """
-    Create a file indicating that are no observations
-    on a given date in the data-check webserver.
-
-    Parameters
-    ----------
-    host : str
-        Hostname of the server to which the datacheck products will be copied
-    datedir : str
-        Date in the format YYYYMMDD
-    prod_id : str
-        Production ID
-    """
-    for product in DATACHECK_PRODUCTS:
-        try:
-            # Check if destination directory exists, otherwise create it
-            dest_directory = DATACHECK_BASEDIR / product / prod_id / datedir
-            no_observations_flag = dest_directory / "no_observations"
-            cmd = ["ssh", host, "touch", no_observations_flag]
-            subprocess.check_output(cmd)
-        except subprocess.CalledProcessError:
-            log.warning(
-                "Destination directory does not exists. Check your configuration."
-            )
-
-
-def copy_files_datacheck_web(host, datedir, file_list) -> None:
-    """
-    Copy files to the data-check webserver via scp.
-
-    Notes
-    -----
-    Files are overwritten if they already exist.
-
-    Parameters
-    ----------
-    host : str
-        Hostname of the webserver
-    datedir : str
-        Date directory in the webserver in the format YYYYMMDD
-    file_list : list
-        List of files to be copied
-    """
-    # TODO: Check if files exists already at webserver CHECK HASH
-    for file_to_transfer in file_list:
-        try:
-            if "drs4" in str(file_to_transfer):
-                dest_directory = DATACHECK_BASEDIR / "drs4" / options.prod_id / datedir
-                cmd = ["scp", str(file_to_transfer), f"{host}:{dest_directory}/."]
-                subprocess.run(cmd, check=True)
-
-            elif "calibration" in str(file_to_transfer):
-                dest_directory = (
-                    DATACHECK_BASEDIR / "enf_calibration" / options.prod_id / datedir
-                )
-                cmd = ["scp", file_to_transfer, f"{host}:{dest_directory}/."]
-                subprocess.run(cmd, check=True)
-
-            elif "datacheck" in str(file_to_transfer):
-                dest_directory = DATACHECK_BASEDIR / "dl1" / options.prod_id / datedir
-                cmd = ["scp", file_to_transfer, f"{host}:{dest_directory}/."]
-                subprocess.run(cmd, check=True)
-
-        except subprocess.CalledProcessError:
-            log.warning(
-                "Cannot copy file to webserver using scp. Check that the files exist "
-                "and that you have permission to connect through ssh and copy the files."
-            )
-
-
 def get_input_file(run_number: str) -> Path:
     """
     Get the input file for the given run number.
@@ -544,3 +448,26 @@ def time_to_seconds(timestring):
     else:
         raise ValueError("Time format not recognized.")
     return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+
+
+def get_datacheck_files(pattern: str, directory: Path) -> list:
+    """Return a list of files matching the pattern."""
+    return [file for file in directory.glob(pattern)]
+
+
+def datacheck_directory(data_type: str, date: str) -> Path:
+    """Returns the path to the datacheck directory given the data type."""
+    if data_type in {"PEDESTAL", "CALIB"}:
+        directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / date / "pro/log"
+    elif data_type == "DL1":
+        directory = (
+            Path(cfg.get("LST1", f"{data_type}_DIR"))
+            / date
+            / options.prod_id
+            / options.dl1_prod_id
+        )
+    elif data_type == "LONGTERM":
+        directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / options.prod_id / date
+    else:
+        raise ValueError(f"Unknown data type: {data_type}")
+    return directory

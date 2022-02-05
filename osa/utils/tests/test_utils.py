@@ -140,3 +140,16 @@ def test_create_lock(base_test_dir):
     lock_path = base_test_dir / "test_lock.closed"
     is_closed = create_lock(lock_path)
     assert is_closed is False
+
+
+def test_get_datacheck_file(datacheck_dl1_files):
+    from osa.utils.utils import get_datacheck_files
+    for file in datacheck_dl1_files:
+        assert file.exists()
+    dl1_path = Path("test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84")
+    files = get_datacheck_files(pattern="datacheck*.pdf", directory=dl1_path)
+    expected_files = [
+        dl1_path / "datacheck_dl1_LST-1.Run01808.pdf",
+        dl1_path / "datacheck_dl1_LST-1.Run01807.pdf"
+    ]
+    assert set(files) == set(expected_files)
