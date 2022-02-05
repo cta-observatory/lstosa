@@ -42,7 +42,7 @@ __all__ = [
     "extract_provenance",
     "merge_dl1_datacheck",
     "set_closed_with_file",
-    "merge_dl2",
+    "merge_files",
     "daily_datacheck",
     "daily_longterm_cmd",
     "observation_finished"
@@ -160,9 +160,12 @@ def post_process(seq_tuple):
     # Extract the provenance info
     extract_provenance(seq_list)
 
+    # Merge DL1b files run-wise
+    merge_files(seq_list, data_level="DL1AB")
+
     # Merge DL2 files run-wise
     if not options.no_dl2:
-        merge_dl2(seq_list)
+        merge_files(seq_list, data_level="DL2")
 
     if options.seqtoclose is None:
         return set_closed_with_file()
@@ -366,30 +369,40 @@ def extract_provenance(seq_list):
                 log.debug("Simulate launching scripts")
 
 
-def merge_dl2(sequence_list):
-    """Merge DL2 h5 files run-wise."""
-    log.info("Looping over the sequences and merging the dl2 files")
+def get_pattern(data_level) -> Tuple[str, str]:
+    """Return the subrun wise file pattern for the data level."""
+    if data_level == "DL1AB":
+        return "dl1_LST-1.Run?????.????.h5", "dl1"
+    elif data_level == "DL2":
+        return "dl2_LST-1.Run?????.????.h5", "dl2"
+    else:
+        raise ValueError(f"Unknown data level {data_level}")
 
-    dl2_dir = destination_dir("DL2", create_dir=False)
-    dl2_pattern = "dl2*.h5"
+
+def merge_files(sequence_list, data_level="DL2"):
+    """Merge DL1b or DL2 h5 files run-wise."""
+    log.info(f"Looping over the sequences and merging the {data_level} files")
+
+    data_dir = destination_dir(data_level, create_dir=False)
+    pattern, prefix = get_pattern(data_level)
 
     for sequence in sequence_list:
         if sequence.type == "DATA":
-            dl2_merged_file = Path(dl2_dir) / f"dl2_LST-1.Run{sequence.run:05d}.h5"
+            merged_file = Path(data_dir) / f"{prefix}_LST-1.Run{sequence.run:05d}.h5"
 
             cmd = [
                 "sbatch",
                 "-D",
                 options.directory,
                 "-o",
-                f"log/merge_dl2_{sequence.run:05d}_%j.log",
+                f"log/merge_{prefix}_{sequence.run:05d}_%j.log",
                 "lstchain_merge_hdf5_files",
-                f"--input-dir={dl2_dir}",
-                f"--output-file={dl2_merged_file}",
+                f"--input-dir={data_dir}",
+                f"--output-file={merged_file}",
                 "--no-image=True",
                 "--no-progress",
                 f"--run-number={sequence.run}",
-                f"--pattern={dl2_pattern}",
+                f"--pattern={pattern}",
             ]
 
             log.debug(f"Executing {stringify(cmd)}")
@@ -411,7 +424,6 @@ def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
     muons_dir = destination_dir("MUON", create_dir=False)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
     longterm_output_file = longterm_dir / f"DL1_datacheck_{nightdir}.h5"
-    longterm_script = cfg.get("lstchain", "longterm_check")
 
     return [
         "sbatch",
@@ -420,7 +432,7 @@ def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
         "-o",
         "log/longterm_daily_%j.log",
         f"--dependency=afterok:{','.join(parent_job_ids)}",
-        longterm_script,
+        "lstchain_longterm_dl1_check",
         f"--input-dir={dl1_dir}",
         f"--output-file={longterm_output_file}",
         f"--muons-dir={muons_dir}",

@@ -194,9 +194,6 @@ activities:
         description:
             "Create DL1AB files for an observation run"
         parameters:
-            - name: PedestalCleaning
-              description: "Perform Pedestal Cleaning"
-              value: PedestalCleaning
             - name: StoreImage
               description: "Store DL1 Image"
               value: StoreImage
