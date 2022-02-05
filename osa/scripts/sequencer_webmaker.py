@@ -100,7 +100,8 @@ def main():
 
     # Print the output into a web page
     webhead(
-        '<title>OSA Sequencer in the LST-1 onsite IT center</title><link href="osa.css" rel="stylesheet" type="text/css" /><style>table{width:152ex;}</style>'
+        '<title>OSA Sequencer in the LST-1 onsite IT center</title><link href="osa.css" '
+        'rel="stylesheet" type="text/css" /><style>table{width:152ex;}</style>'
     )
 
     print("<h1>OSA sequencer in the LST onsite IT center</h1>")
@@ -149,8 +150,8 @@ def main():
         sys.exit(1)
     else:
         print(
-            f'<p>Processing data from: {lstdate_to_iso(options.date)}. '
-            f'Last updated: {datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC</p>'
+            f'<p>Processing data from: {lstdate_to_iso(options.date)}. Last updated: '
+            f'{datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC</p>'
         )
 
         # Strip newlines and fit it into a table:
