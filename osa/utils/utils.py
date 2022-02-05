@@ -456,6 +456,7 @@ def get_datacheck_files(pattern: str, directory: Path) -> list:
 
 
 def datacheck_directory(data_type: str, date: str) -> Path:
+    """Returns the path to the datacheck directory given the data type."""
     if data_type in {"PEDESTAL", "CALIB"}:
         directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / date / "pro/log"
     elif data_type == "DL1":
