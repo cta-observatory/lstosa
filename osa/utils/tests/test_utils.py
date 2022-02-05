@@ -152,4 +152,4 @@ def test_get_datacheck_file(datacheck_dl1_files):
         dl1_path / "datacheck_dl1_LST-1.Run01808.pdf",
         dl1_path / "datacheck_dl1_LST-1.Run01807.pdf"
     ]
-    assert files == expected_files
+    assert set(files) == set(expected_files)
