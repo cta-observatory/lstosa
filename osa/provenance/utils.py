@@ -106,12 +106,14 @@ def parse_variables(class_instance):
         calibration_file = os.path.realpath(class_instance.args[0])
         pedestal_file = os.path.realpath(class_instance.args[1])
         timecalibration_file = os.path.realpath(class_instance.args[2])
+        systematic_correction_file = os.path.realpath(class_instance.args[3])
         class_instance.R0SubrunDataset = os.path.realpath(
             f"{raw_dir}/{flat_date}/LST-1.1.Run{run_subrun_id}.fits.fz"
         )
         class_instance.CoefficientsCalibrationFile = calibration_file
         class_instance.PedestalFile = pedestal_file
         class_instance.TimeCalibrationFile = timecalibration_file
+        class_instance.SystematicCorrectionFile = systematic_correction_file
         class_instance.PointingFile = os.path.realpath(class_instance.args[3])
         class_instance.RunSummaryFile = os.path.realpath(class_instance.args[4])
         class_instance.DL1SubrunDataset = os.path.realpath(
