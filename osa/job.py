@@ -301,6 +301,8 @@ def get_systematic_correction_file(run_id: int) -> Path:
         for line in logfile.readlines():
             if '"systematic_correction_path": ' in line:
                 return Path(line.split('"')[3]).resolve()
+            else:
+                raise IOError("No systematic correction file found in log")
 
 
 def get_drs4_pedestal_file(run_id: int) -> Path:
