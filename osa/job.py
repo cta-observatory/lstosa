@@ -45,6 +45,7 @@ __all__ = [
     "get_time_calibration_file",
     "get_calibration_file",
     "get_drs4_pedestal_file",
+    "get_systematic_correction_file"
 ]
 
 TAB = "\t".expandtabs(4)
