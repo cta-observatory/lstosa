@@ -281,28 +281,37 @@ def get_time_calibration_file(run_id: int) -> Path:
     return time_calibration_file.resolve()
 
 
-def get_systematic_correction_file(run_id: int) -> Path:
+def get_systematic_correction_file(date: str) -> Path:
     """
-    Return the systematic correction file used to produce the calibration file
-    corresponding to run_id by looking at the calibration provenance log.
+    Return the systematic correction file for a given date.
+
+    Parameters
+    ----------
+    date : str
+        Date in the format YYYYMMDD.
+
+    Notes
+    -----
+    The search for the proper systematic correction file is based on
+    lstchain/scripts/onsite/onsite_create_calibration_file.py
     """
+    sys_dir = Path(cfg.get("LST1", "SYSTEMATIC_DIR"))
 
-    cal_dir = Path(cfg.get("LST1", "CALIB_DIR"))
-
-    # Get the calibration provenance log
-    calib_log_list = list(
-        cal_dir.rglob(f"calibration_filters_52.Run{run_id:05d}.0000.log")
+    # Search for the first sys correction file before the run, if nothing before,
+    # use the first found
+    dir_list = sorted(sys_dir.rglob('*/pro/ffactor_systematics*'))
+    if len(dir_list) == 0:
+        raise IOError(
+            f"No systematic correction file found for production pro in {sys_dir}\n"
+        )
+    sys_date_list = sorted([file.parts[-3] for file in dir_list], reverse=True)
+    selected_date = next(
+        (day for day in sys_date_list if day <= date), sys_date_list[-1]
     )
-    if not calib_log_list:
-        raise IOError(f"No calibration provenance log found for run {run_id}")
-    calibration_log = list(calib_log_list)[0]
 
-    with open(calibration_log, 'r') as logfile:
-        for line in logfile.readlines():
-            if '"systematic_correction_path": ' in line:
-                return Path(line.split('"')[3]).resolve()
-            else:
-                raise IOError("No systematic correction file found in log")
+    return Path(
+        f"{sys_dir}/{selected_date}/pro/ffactor_systematics_{selected_date}.h5"
+    ).resolve()
 
 
 def get_drs4_pedestal_file(run_id: int) -> Path:
@@ -359,7 +368,7 @@ def sequence_calibration_filenames(sequence_list):
         sequence.pedestal = get_drs4_pedestal_file(drs4_pedestal_run_id)
         sequence.calibration = get_calibration_file(pedcal_run_id)
         sequence.time_calibration = get_time_calibration_file(pedcal_run_id)
-        sequence.systematic_correction = get_systematic_correction_file(pedcal_run_id)
+        sequence.systematic_correction = get_systematic_correction_file(nightdir)
 
 
 def plot_job_statistics(sacct_output: pd.DataFrame, directory: Path):

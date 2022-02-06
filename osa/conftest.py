@@ -100,6 +100,21 @@ def drs4_time_calibration_files(calibration_base_dir):
 
 
 @pytest.fixture(scope="session")
+def systematic_correction_files(calibration_base_dir):
+    directory = calibration_base_dir / "ffactor_systematics"
+    directory1 = directory / "20200725" / "pro"
+    directory2 = directory / "20201110" / "pro"
+    directory1.mkdir(parents=True, exist_ok=True)
+    directory2.mkdir(parents=True, exist_ok=True)
+    file1 = directory1 / "ffactor_systematics_20200725.h5"
+    file2 = directory2 / "ffactor_systematics_20201110.h5"
+    sys_corr_file_list = [file1, file2]
+    for file in sys_corr_file_list:
+        file.touch()
+    return sys_corr_file_list
+
+
+@pytest.fixture(scope="session")
 def running_analysis_dir(base_test_dir):
     analysis_dir = base_test_dir / "running_analysis" / nightdir / prod_id
     analysis_dir.mkdir(parents=True, exist_ok=True)
@@ -143,21 +158,6 @@ def calibration_file(calibration_dir):
     calib_file = calibration_dir / "calibration_filters_52.Run01805.0000.h5"
     calib_file.touch()
     return calib_file
-
-
-@pytest.fixture(scope="session")
-def calibration_file_log(calibration_dir):
-    """Mock calibration files for testing."""
-    calib_log_dir = calibration_dir / "log"
-    calib_log_dir.mkdir(parents=True, exist_ok=True)
-    calib_log = calib_log_dir / "calibration_filters_52.Run01805.0000.log"
-    calib_log.touch()
-    calib_log.write_text(
-        '  "systematic_correction_path": '
-        '"/path/to/PixelCalibration/LevelA/ffactor_systematics/'
-        '20200117/v0.1.0/no_sys_corrected_calibration_scan_fit_20200101.0000.h5",'
-    )
-    return calib_log
 
 
 @pytest.fixture(scope="session")
@@ -231,7 +231,7 @@ def sequence_list(
         running_analysis_dir,
         run_summary,
         drs4_time_calibration_files,
-        calibration_file_log,
+        systematic_correction_files,
         r0_data,
 ):
     """Creates a sequence list from a run summary file."""
@@ -242,7 +242,8 @@ def sequence_list(
     for file in drs4_time_calibration_files:
         assert file.exists()
 
-    assert calibration_file_log.exists()
+    for file in systematic_correction_files:
+        assert file.exists()
 
     for file in r0_data:
         assert file.exists()
@@ -259,14 +260,18 @@ def sequence_file_list(
         run_summary_file,
         run_catalog,
         drs4_time_calibration_files,
-        calibration_file_log,
+        systematic_correction_files,
         r0_data
 ):
     for r0_file in r0_data:
         assert r0_file.exists()
+
     for file in drs4_time_calibration_files:
         assert file.exists()
-    assert calibration_file_log.exists()
+
+    for file in systematic_correction_files:
+        assert file.exists()
+
     assert run_summary_file.exists()
     assert run_catalog.exists()
 

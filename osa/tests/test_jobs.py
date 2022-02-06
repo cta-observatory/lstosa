@@ -171,7 +171,7 @@ def test_create_job_template_scheduler(
             '--drs4-pedestal-file={drs4_baseline_file}',
             '--time-calib-file={drs4_time_calibration_files[0]}',
             '--pedcal-file={calibration_file}',
-            '--systematic-correction-file=/path/to/PixelCalibration/LevelA/ffactor_systematics/20200117/v0.1.0/no_sys_corrected_calibration_scan_fit_20200101.0000.h5',
+            '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/LevelA/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
             '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/drive_log_20_01_17.txt',
             '--run-summary={run_summary_file}',
             '01807.{{0}}'.format(str(subruns).zfill(4)),
@@ -188,7 +188,7 @@ def test_create_job_template_local(
         drs4_time_calibration_files,
         drs4_baseline_file,
         calibration_file,
-        calibration_file_log,
+        systematic_correction_files,
         run_summary_file,
         r0_data
 ):
@@ -198,7 +198,8 @@ def test_create_job_template_local(
     for file in drs4_time_calibration_files:
         assert file.exists()
 
-    assert calibration_file_log.exists()
+    for file in systematic_correction_files:
+        assert file.exists()
 
     for file in r0_data:
         assert file.exists()
@@ -227,7 +228,7 @@ def test_create_job_template_local(
             '--drs4-pedestal-file={drs4_baseline_file}',
             '--time-calib-file={drs4_time_calibration_files[0]}',
             '--pedcal-file={calibration_file}',
-            '--systematic-correction-file=/path/to/PixelCalibration/LevelA/ffactor_systematics/20200117/v0.1.0/no_sys_corrected_calibration_scan_fit_20200101.0000.h5',
+            '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/LevelA/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
             '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/drive_log_20_01_17.txt',
             '--run-summary={run_summary_file}',
             '01807.{{0}}'.format(str(subruns).zfill(4)),

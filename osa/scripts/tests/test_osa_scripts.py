@@ -54,7 +54,7 @@ def test_all_help(script):
 
 def test_simulate_processing(
         drs4_time_calibration_files,
-        calibration_file_log,
+        systematic_correction_files,
         run_summary_file,
         r0_data
 ):
@@ -62,7 +62,8 @@ def test_simulate_processing(
     for file in drs4_time_calibration_files:
         assert file.exists()
 
-    assert calibration_file_log.exists()
+    for file in systematic_correction_files:
+        assert file.exists()
 
     for r0_file in r0_data:
         assert r0_file.exists()
@@ -111,21 +112,27 @@ def test_simulate_processing(
 
 def test_simulated_sequencer(
         drs4_time_calibration_files,
-        calibration_file_log,
+        systematic_correction_files,
         run_summary_file,
         run_catalog,
         r0_data
 ):
     assert run_summary_file.exists()
     assert run_catalog.exists()
+
     for r0_file in r0_data:
         assert r0_file.exists()
+
     for file in drs4_time_calibration_files:
         assert file.exists()
-    assert calibration_file_log.exists()
+
+    for file in systematic_correction_files:
+        assert file.exists()
+
     rc = run_program(
         "sequencer", "-c", "cfg/sequencer.cfg", "-d", "2020_01_17", "-s", "-t", "LST1"
     )
+
     assert rc.returncode == 0
     now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")
     assert rc.stdout == dedent(
