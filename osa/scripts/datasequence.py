@@ -21,6 +21,7 @@ def data_sequence(
         calibration_file: Path,
         pedestal_file: Path,
         time_calibration_file: Path,
+        systematic_correction_file: Path,
         drive_file: Path,
         run_summary: Path,
         run_str: str
@@ -33,6 +34,7 @@ def data_sequence(
     calibration_file: pathlib.Path
     pedestal_file: pathlib.Path
     time_calibration_file: pathlib.Path
+    systematic_correction_file: pathlib.Path
     drive_file: pathlib.Path
     run_summary: pathlib.Path
     run_str: str
@@ -52,6 +54,7 @@ def data_sequence(
             calibration_file,
             pedestal_file,
             time_calibration_file,
+            systematic_correction_file,
             drive_file,
             run_summary,
             run_str,
@@ -99,6 +102,7 @@ def r0_to_dl1(
         calibration_file: Path,
         pedestal_file: Path,
         time_calibration_file: Path,
+        systematic_correction_file: Path,
         drive_file: Path,
         run_summary: Path,
         run_str: str,
@@ -114,6 +118,7 @@ def r0_to_dl1(
     calibration_file: pathlib.Path
     pedestal_file: pathlib.Path
     time_calibration_file: pathlib.Path
+    systematic_correction_file: pathlib.Path
     drive_file: pathlib.Path
     run_summary: : pathlib.Path
         Path to the run summary file
@@ -138,6 +143,7 @@ def r0_to_dl1(
         f"--pedestal-file={pedestal_file}",
         f"--calibration-file={calibration_file}",
         f"--time-calibration-file={time_calibration_file}",
+        f"--systematic-correction-file={systematic_correction_file}",
         f"--pointing-file={drive_file}",
         f"--run-summary-path={run_summary}",
     ]
@@ -304,6 +310,7 @@ def main():
         calibration_file,
         drs4_ped_file,
         time_calibration_file,
+        systematic_correction_file,
         drive_log_file,
         run_summary_file,
         run_number,
@@ -319,6 +326,7 @@ def main():
         calibration_file,
         drs4_ped_file,
         time_calibration_file,
+        systematic_correction_file,
         drive_log_file,
         run_summary_file,
         run_number,

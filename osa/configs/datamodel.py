@@ -99,6 +99,8 @@ class SequenceData(Sequence):
         self.calibration = None
         self.pedestal = None
         self.drive = None
+        self.time_calibration = None
+        self.systematic_correction = None
         self.dl1status = None
         self.dl1abstatus = None
         self.muonstatus = None

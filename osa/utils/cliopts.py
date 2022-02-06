@@ -343,6 +343,11 @@ def data_sequence_argparser():
         help="Path of the time calibration file"
     )
     parser.add_argument(
+        "--systematic-correction-file",
+        type=Path,
+        help="Path of the systematic correction factor file"
+    )
+    parser.add_argument(
         "--drive-file",
         type=Path,
         help="Path of drive log file with pointing information"
@@ -398,6 +403,7 @@ def data_sequence_cli_parsing():
         opts.pedcal_file,
         opts.drs4_pedestal_file,
         opts.time_calib_file,
+        opts.systematic_correction_file,
         opts.drive_file,
         opts.run_summary,
         opts.run_number,
