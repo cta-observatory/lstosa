@@ -95,17 +95,19 @@ def parse_variables(class_instance):
         # calibrationfile   [0] .../20200218/pro/calibration_filters_52.Run02006.0000.h5
         # pedestalfile      [1] .../20200218/pro/drs4_pedestal.Run02005.0000.h5
         # timecalibfile     [2] .../20191124/pro/time_calibration.Run01625.0000.h5
-        # drivefile         [3] .../DrivePositioning/drive_log_20_02_18.txt
-        # runsummaryfile    [4] .../RunSummary/RunSummary_20200101.ecsv
-        # run_str           [5] 02006.0000
+        # systematic_corr   [3] .../20200101/pro/no_sys_corrected_calibration_scan_fit_20210514.0000.h5
+        # drivefile         [4] .../DrivePositioning/drive_log_20_02_18.txt
+        # runsummaryfile    [5] .../RunSummary/RunSummary_20200101.ecsv
+        # run_str           [6] 02006.0000
 
-        class_instance.ObservationRun = class_instance.args[5].split(".")[0]
+        run_subrun_id = class_instance.args[6]
+        class_instance.ObservationRun = run_subrun_id.split(".")[0]
         # use realpath to resolve symbolic links and return abspath
         calibration_file = os.path.realpath(class_instance.args[0])
         pedestal_file = os.path.realpath(class_instance.args[1])
         timecalibration_file = os.path.realpath(class_instance.args[2])
         class_instance.R0SubrunDataset = os.path.realpath(
-            f"{raw_dir}/{flat_date}/LST-1.1.Run{class_instance.args[5]}.fits.fz"
+            f"{raw_dir}/{flat_date}/LST-1.1.Run{run_subrun_id}.fits.fz"
         )
         class_instance.CoefficientsCalibrationFile = calibration_file
         class_instance.PedestalFile = pedestal_file
@@ -113,10 +115,10 @@ def parse_variables(class_instance):
         class_instance.PointingFile = os.path.realpath(class_instance.args[3])
         class_instance.RunSummaryFile = os.path.realpath(class_instance.args[4])
         class_instance.DL1SubrunDataset = os.path.realpath(
-            f"{outdir_dl1}/dl1_LST-1.Run{class_instance.args[5]}.h5"
+            f"{outdir_dl1}/dl1_LST-1.Run{run_subrun_id}.h5"
         )
         class_instance.MuonsSubrunDataset = os.path.realpath(
-            f"{muon_dir}/muons_LST-1.Run{class_instance.args[5]}.fits"
+            f"{muon_dir}/muons_LST-1.Run{run_subrun_id}.fits"
         )
 
     if class_instance.__name__ == "dl1ab":

@@ -145,6 +145,11 @@ activities:
               entityName: TimeCalibrationFile
               value: TimeCalibrationFile
               # filepath: /fefs/aswg/data/real/calibration/20191124/v00/time_calibration.Run1625.0000.hdf5
+            - role: "Systematic correction factor file"
+              description: "Systematic correction factor file"
+              entityName: SystematicCorrectionFile
+              value: SystematicCorrectionFile
+              # filepath: /fefs/aswg/data/real/monitoring/PixelCalibration/LevelA/ffactor_systematics/20210514/v0.8.2/no_sys_corrected_calibration_scan_fit_20210514.0000.h5
             - role: "Pointing file"
               description: "Pointing filename for DL1"
               entityName: PointingFile
