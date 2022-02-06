@@ -300,7 +300,7 @@ def get_systematic_correction_file(date: str) -> Path:
     # Search for the first sys correction file before the run, if nothing before,
     # use the first found
     dir_list = sorted(sys_dir.rglob('*/pro/ffactor_systematics*'))
-    if len(dir_list) == 0:
+    if not dir_list:
         raise IOError(
             f"No systematic correction file found for production pro in {sys_dir}\n"
         )
