@@ -71,8 +71,8 @@ def test_scheduler_env_variables(sequence_list, running_analysis_dir):
         '#SBATCH --job-name=LST1_01805',
         '#SBATCH --cpus-per-task=1',
         f'#SBATCH --chdir={running_analysis_dir}',
-        '#SBATCH --output=log/slurm_01805.%4a_%A.out',
-        '#SBATCH --error=log/slurm_01805.%4a_%A.err',
+        '#SBATCH --output=log/Run01805.%4a_jobid_%A.out',
+        '#SBATCH --error=log/Run01805.%4a_jobid_%A.err',
         '#SBATCH --partition=short',
         '#SBATCH --mem-per-cpu=3GB'
     ]
@@ -83,8 +83,8 @@ def test_scheduler_env_variables(sequence_list, running_analysis_dir):
         '#SBATCH --job-name=LST1_01807',
         '#SBATCH --cpus-per-task=1',
         f'#SBATCH --chdir={running_analysis_dir}',
-        '#SBATCH --output=log/slurm_01807.%4a_%A.out',
-        '#SBATCH --error=log/slurm_01807.%4a_%A.err',
+        '#SBATCH --output=log/Run01807.%4a_jobid_%A.out',
+        '#SBATCH --error=log/Run01807.%4a_jobid_%A.err',
         '#SBATCH --array=0-10',
         '#SBATCH --partition=long',
         '#SBATCH --mem-per-cpu=16GB'
@@ -103,8 +103,8 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     #SBATCH --job-name=LST1_01805
     #SBATCH --cpus-per-task=1
     #SBATCH --chdir={running_analysis_dir}
-    #SBATCH --output=log/slurm_01805.%4a_%A.out
-    #SBATCH --error=log/slurm_01805.%4a_%A.err
+    #SBATCH --output=log/Run01805.%4a_jobid_%A.out
+    #SBATCH --error=log/Run01805.%4a_jobid_%A.err
     #SBATCH --partition=short
     #SBATCH --mem-per-cpu=3GB""")
     assert header == output_string1
@@ -118,8 +118,8 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     #SBATCH --job-name=LST1_01807
     #SBATCH --cpus-per-task=1
     #SBATCH --chdir={running_analysis_dir}
-    #SBATCH --output=log/slurm_01807.%4a_%A.out
-    #SBATCH --error=log/slurm_01807.%4a_%A.err
+    #SBATCH --output=log/Run01807.%4a_jobid_%A.out
+    #SBATCH --error=log/Run01807.%4a_jobid_%A.err
     #SBATCH --array=0-10
     #SBATCH --partition=long
     #SBATCH --mem-per-cpu=16GB""")
@@ -143,8 +143,8 @@ def test_create_job_template_scheduler(
     #SBATCH --job-name=LST1_01807
     #SBATCH --cpus-per-task=1
     #SBATCH --chdir={Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0
-    #SBATCH --output=log/slurm_01807.%4a_%A.out
-    #SBATCH --error=log/slurm_01807.%4a_%A.err
+    #SBATCH --output=log/Run01807.%4a_jobid_%A.out
+    #SBATCH --error=log/Run01807.%4a_jobid_%A.err
     #SBATCH --array=0-10
     #SBATCH --partition={cfg.get('SLURM', 'PARTITION_DATA')}
     #SBATCH --mem-per-cpu={cfg.get('SLURM', 'MEMSIZE_DATA')}
@@ -171,10 +171,9 @@ def test_create_job_template_scheduler(
             '--drs4-pedestal-file={drs4_baseline_file}',
             '--time-calib-file={drs4_time_calibration_files[0]}',
             '--pedcal-file={calibration_file}',
+            '--systematic-correction-file=/path/to/PixelCalibration/LevelA/ffactor_systematics/20200117/v0.1.0/no_sys_corrected_calibration_scan_fit_20200101.0000.h5',
             '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/drive_log_20_01_17.txt',
             '--run-summary={run_summary_file}',
-            '--stderr=log/sequence_LST1_01807.{{0}}_{{1}}.err'.format(str(subruns).zfill(4), str(job_id)),
-            '--stdout=log/sequence_LST1_01807.{{0}}_{{1}}.out'.format(str(subruns).zfill(4), str(job_id)),
             '01807.{{0}}'.format(str(subruns).zfill(4)),
             'LST1'
         ])
@@ -189,10 +188,21 @@ def test_create_job_template_local(
         drs4_time_calibration_files,
         drs4_baseline_file,
         calibration_file,
-        run_summary_file
+        calibration_file_log,
+        run_summary_file,
+        r0_data
 ):
     """Check the job file in local mode (assuming no scheduler)."""
     from osa.job import create_job_template
+
+    for file in drs4_time_calibration_files:
+        assert file.exists()
+
+    assert calibration_file_log.exists()
+
+    for file in r0_data:
+        assert file.exists()
+
     options.test = True
     options.simulate = False
     content = create_job_template(sequence_list[1], get_content=True)
@@ -217,6 +227,7 @@ def test_create_job_template_local(
             '--drs4-pedestal-file={drs4_baseline_file}',
             '--time-calib-file={drs4_time_calibration_files[0]}',
             '--pedcal-file={calibration_file}',
+            '--systematic-correction-file=/path/to/PixelCalibration/LevelA/ffactor_systematics/20200117/v0.1.0/no_sys_corrected_calibration_scan_fit_20200101.0000.h5',
             '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/drive_log_20_01_17.txt',
             '--run-summary={run_summary_file}',
             '01807.{{0}}'.format(str(subruns).zfill(4)),

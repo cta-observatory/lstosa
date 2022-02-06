@@ -52,10 +52,17 @@ def test_all_help(script):
     run_program(script, "--help")
 
 
-def test_simulate_processing(drs4_time_calibration_files, run_summary_file, r0_data):
+def test_simulate_processing(
+        drs4_time_calibration_files,
+        calibration_file_log,
+        run_summary_file,
+        r0_data
+):
 
     for file in drs4_time_calibration_files:
         assert file.exists()
+
+    assert calibration_file_log.exists()
 
     for r0_file in r0_data:
         assert r0_file.exists()
@@ -104,6 +111,7 @@ def test_simulate_processing(drs4_time_calibration_files, run_summary_file, r0_d
 
 def test_simulated_sequencer(
         drs4_time_calibration_files,
+        calibration_file_log,
         run_summary_file,
         run_catalog,
         r0_data
@@ -114,6 +122,7 @@ def test_simulated_sequencer(
         assert r0_file.exists()
     for file in drs4_time_calibration_files:
         assert file.exists()
+    assert calibration_file_log.exists()
     rc = run_program(
         "sequencer", "-c", "cfg/sequencer.cfg", "-d", "2020_01_17", "-s", "-t", "LST1"
     )
@@ -206,6 +215,7 @@ def test_datasequence(running_analysis_dir):
     drs4_file = "drs4_pedestal.Run00001.0000.fits"
     calib_file = "calibration.Run00002.0000.hdf5"
     timecalib_file = "time_calibration.Run00002.0000.hdf5"
+    systematic_correction_file = "no_sys_corrected_calibration_scan_fit_20210514.0000.h5"
     drive_file = "drive_log_20200117.txt"
     runsummary_file = "RunSummary_20200117.ecsv"
     prod_id = "v0.1.0"
@@ -222,6 +232,7 @@ def test_datasequence(running_analysis_dir):
         f"--drs4-pedestal-file={drs4_file}",
         f"--pedcal-file={calib_file}",
         f"--time-calib-file={timecalib_file}",
+        f"--systematic-correction-file={systematic_correction_file}",
         f"--drive-file={drive_file}",
         f"--run-summary={runsummary_file}",
         run_number,

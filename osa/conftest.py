@@ -146,6 +146,21 @@ def calibration_file(calibration_dir):
 
 
 @pytest.fixture(scope="session")
+def calibration_file_log(calibration_dir):
+    """Mock calibration files for testing."""
+    calib_log_dir = calibration_dir / "log"
+    calib_log_dir.mkdir(parents=True, exist_ok=True)
+    calib_log = calib_log_dir / "calibration_filters_52.Run01805.0000.log"
+    calib_log.touch()
+    calib_log.write_text(
+        '  "systematic_correction_path": '
+        '"/path/to/PixelCalibration/LevelA/ffactor_systematics/'
+        '20200117/v0.1.0/no_sys_corrected_calibration_scan_fit_20200101.0000.h5",'
+    )
+    return calib_log
+
+
+@pytest.fixture(scope="session")
 def drs4_baseline_file(drs4_baseline_dir):
     """Mock calibration files for testing."""
     drs4_file = drs4_baseline_dir / "drs4_pedestal.Run01804.0000.h5"
@@ -212,12 +227,24 @@ def run_summary(run_summary_file):
 
 
 @pytest.fixture(scope="session")
-def sequence_list(running_analysis_dir, run_summary, drs4_time_calibration_files):
+def sequence_list(
+        running_analysis_dir,
+        run_summary,
+        drs4_time_calibration_files,
+        calibration_file_log,
+        r0_data,
+):
     """Creates a sequence list from a run summary file."""
     options.directory = running_analysis_dir
     options.simulate = True
     options.test = True
+
     for file in drs4_time_calibration_files:
+        assert file.exists()
+
+    assert calibration_file_log.exists()
+
+    for file in r0_data:
         assert file.exists()
 
     subrun_list = extractsubruns(run_summary)
@@ -232,12 +259,14 @@ def sequence_file_list(
         run_summary_file,
         run_catalog,
         drs4_time_calibration_files,
+        calibration_file_log,
         r0_data
 ):
     for r0_file in r0_data:
         assert r0_file.exists()
     for file in drs4_time_calibration_files:
         assert file.exists()
+    assert calibration_file_log.exists()
     assert run_summary_file.exists()
     assert run_catalog.exists()
 
