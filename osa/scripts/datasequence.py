@@ -24,6 +24,7 @@ def data_sequence(
         systematic_correction_file: Path,
         drive_file: Path,
         run_summary: Path,
+        pedestal_ids_file: Path,
         run_str: str
 ):
     """
@@ -37,6 +38,7 @@ def data_sequence(
     systematic_correction_file: pathlib.Path
     drive_file: pathlib.Path
     run_summary: pathlib.Path
+    pedestal_ids_file: pathlib.Path
     run_str: str
 
     Returns
@@ -57,6 +59,7 @@ def data_sequence(
             systematic_correction_file,
             drive_file,
             run_summary,
+            pedestal_ids_file,
             run_str,
             history_file,
         )
@@ -105,6 +108,7 @@ def r0_to_dl1(
         systematic_correction_file: Path,
         drive_file: Path,
         run_summary: Path,
+        pedestal_ids_file: Path,
         run_str: str,
         history_file: Path,
 ):
@@ -122,6 +126,8 @@ def r0_to_dl1(
     drive_file: pathlib.Path
     run_summary: : pathlib.Path
         Path to the run summary file
+    pedestal_ids_file: pathlib.Path
+        Path to file containing the interleaved pedestal event ids
     run_str: str
         XXXXX.XXXX (run_number.subrun_number)
     history_file: pathlib.Path
@@ -147,6 +153,9 @@ def r0_to_dl1(
         f"--pointing-file={drive_file}",
         f"--run-summary-path={run_summary}",
     ]
+
+    if pedestal_ids_file is not None:
+        cmd.append(f"--pedestal-ids-path={pedestal_ids_file}")
 
     if options.simulate:
         return 0
@@ -313,6 +322,7 @@ def main():
         systematic_correction_file,
         drive_log_file,
         run_summary_file,
+        pedestal_ids_file,
         run_number,
     ) = data_sequence_cli_parsing()
 
@@ -329,6 +339,7 @@ def main():
         systematic_correction_file,
         drive_log_file,
         run_summary_file,
+        pedestal_ids_file,
         run_number,
     )
     sys.exit(rc)

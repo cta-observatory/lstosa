@@ -508,8 +508,8 @@ def create_job_template(sequence, get_content=False):
     job_header = job_header_template(sequence)
 
     nightdir = lstdate_to_dir(options.date)
-    drivedir = cfg.get("LST1", "DRIVE_DIR")
-    run_summary_dir = cfg.get("LST1", "RUN_SUMMARY_DIR")
+    drivedir = Path(cfg.get("LST1", "DRIVE_DIR"))
+    run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
 
     if sequence.type == "PEDCALIB":
         command = "calibration_pipeline"
@@ -538,7 +538,8 @@ def create_job_template(sequence, get_content=False):
         commandargs.append(f"--pedcal-run={sequence.run:05d}")
 
     if sequence.type == "DATA":
-        run_summary_file = Path(run_summary_dir) / f"RunSummary_{nightdir}.ecsv"
+        run_summary_file = run_summary_dir / f"RunSummary_{nightdir}.ecsv"
+        drive_file = drivedir / sequence.drive
         commandargs.append(f"--prod-id={options.prod_id}")
         commandargs.append(f"--drs4-pedestal-file={sequence.pedestal.resolve()}")
         commandargs.append(f"--time-calib-file={sequence.time_calibration.resolve()}")
@@ -546,8 +547,16 @@ def create_job_template(sequence, get_content=False):
         commandargs.append(
             f"--systematic-correction-file={sequence.systematic_correction.resolve()}"
         )
-        commandargs.append(f"--drive-file={Path(drivedir).resolve() / sequence.drive}")
+        commandargs.append(f"--drive-file={drive_file.resolve()}")
         commandargs.append(f"--run-summary={run_summary_file.resolve()}")
+
+        if pedestal_ids_file_exists(sequence.run):
+            pedestal_ids_dir = Path(cfg.get("LST1", "PEDESTAL_FINDER_DIR")) / nightdir
+            pedestal_ids_file = (
+                pedestal_ids_dir / f"pedestal_ids_Run{sequence.run:05d}."
+                "{0}.format(str(subruns).zfill(4)).h5"
+            )
+            commandargs.append(f"--pedestal-ids-path={pedestal_ids_file}")
 
     python_imports = dedent(
         """\
@@ -883,3 +892,10 @@ def run_program_with_history_logging(
         raise ValueError(f"{command_args[0]} failed with output: \n {output.stdout}")
 
     return rc
+
+
+def pedestal_ids_file_exists(run_id: int) -> bool:
+    """Look for the files with pedestal interleaved event identification."""
+    pedestal_ids_dir = Path(cfg.get("LST1", "PEDESTAL_FINDER_DIR"))
+    file_list = sorted(pedestal_ids_dir.rglob(f"pedestal_ids_Run{run_id:05d}.*.h5"))
+    return bool(file_list)

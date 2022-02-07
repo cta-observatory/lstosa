@@ -92,15 +92,16 @@ def parse_variables(class_instance):
         )
 
     if class_instance.__name__ == "r0_to_dl1":
-        # calibrationfile   [0] .../20200218/pro/calibration_filters_52.Run02006.0000.h5
-        # pedestalfile      [1] .../20200218/pro/drs4_pedestal.Run02005.0000.h5
-        # timecalibfile     [2] .../20191124/pro/time_calibration.Run01625.0000.h5
-        # systematic_corr   [3] .../20200101/pro/no_sys_corrected_calibration_scan_fit_20210514.0000.h5
-        # drivefile         [4] .../DrivePositioning/drive_log_20_02_18.txt
-        # runsummaryfile    [5] .../RunSummary/RunSummary_20200101.ecsv
-        # run_str           [6] 02006.0000
+        # calibration_file   [0] .../20200218/pro/calibration_filters_52.Run02006.0000.h5
+        # drs4_pedestal_file [1] .../20200218/pro/drs4_pedestal.Run02005.0000.h5
+        # time_calib_file    [2] .../20191124/pro/time_calibration.Run01625.0000.h5
+        # systematic_corr    [3] .../20200101/pro/no_sys_corrected_calibration_scan_fit_20210514.0000.h5
+        # drive_file         [4] .../DrivePositioning/drive_log_20_02_18.txt
+        # run_summary_file   [5] .../RunSummary/RunSummary_20200101.ecsv
+        # pedestal_ids_file  [6] .../RunSummary/RunSummary_20200101.ecsv
+        # run_str            [7] 02006.0000
 
-        run_subrun_id = class_instance.args[6]
+        run_subrun_id = class_instance.args[7]
         class_instance.ObservationRun = run_subrun_id.split(".")[0]
         # use realpath to resolve symbolic links and return abspath
         calibration_file = os.path.realpath(class_instance.args[0])
