@@ -100,6 +100,21 @@ def drs4_time_calibration_files(calibration_base_dir):
 
 
 @pytest.fixture(scope="session")
+def systematic_correction_files(calibration_base_dir):
+    directory = calibration_base_dir / "ffactor_systematics"
+    directory1 = directory / "20200725" / "pro"
+    directory2 = directory / "20201110" / "pro"
+    directory1.mkdir(parents=True, exist_ok=True)
+    directory2.mkdir(parents=True, exist_ok=True)
+    file1 = directory1 / "ffactor_systematics_20200725.h5"
+    file2 = directory2 / "ffactor_systematics_20201110.h5"
+    sys_corr_file_list = [file1, file2]
+    for file in sys_corr_file_list:
+        file.touch()
+    return sys_corr_file_list
+
+
+@pytest.fixture(scope="session")
 def running_analysis_dir(base_test_dir):
     analysis_dir = base_test_dir / "running_analysis" / nightdir / prod_id
     analysis_dir.mkdir(parents=True, exist_ok=True)
@@ -212,12 +227,25 @@ def run_summary(run_summary_file):
 
 
 @pytest.fixture(scope="session")
-def sequence_list(running_analysis_dir, run_summary, drs4_time_calibration_files):
+def sequence_list(
+        running_analysis_dir,
+        run_summary,
+        drs4_time_calibration_files,
+        systematic_correction_files,
+        r0_data,
+):
     """Creates a sequence list from a run summary file."""
     options.directory = running_analysis_dir
     options.simulate = True
     options.test = True
+
     for file in drs4_time_calibration_files:
+        assert file.exists()
+
+    for file in systematic_correction_files:
+        assert file.exists()
+
+    for file in r0_data:
         assert file.exists()
 
     subrun_list = extractsubruns(run_summary)
@@ -232,12 +260,18 @@ def sequence_file_list(
         run_summary_file,
         run_catalog,
         drs4_time_calibration_files,
+        systematic_correction_files,
         r0_data
 ):
     for r0_file in r0_data:
         assert r0_file.exists()
+
     for file in drs4_time_calibration_files:
         assert file.exists()
+
+    for file in systematic_correction_files:
+        assert file.exists()
+
     assert run_summary_file.exists()
     assert run_catalog.exists()
 

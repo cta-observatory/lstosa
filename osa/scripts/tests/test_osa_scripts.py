@@ -52,9 +52,17 @@ def test_all_help(script):
     run_program(script, "--help")
 
 
-def test_simulate_processing(drs4_time_calibration_files, run_summary_file, r0_data):
+def test_simulate_processing(
+        drs4_time_calibration_files,
+        systematic_correction_files,
+        run_summary_file,
+        r0_data
+):
 
     for file in drs4_time_calibration_files:
+        assert file.exists()
+
+    for file in systematic_correction_files:
         assert file.exists()
 
     for r0_file in r0_data:
@@ -82,16 +90,16 @@ def test_simulate_processing(drs4_time_calibration_files, run_summary_file, r0_d
 
     with open(json_file_dl1) as file:
         dl1 = yaml.safe_load(file)
-    assert len(dl1["entity"]) == 15
+    assert len(dl1["entity"]) == 26
     assert len(dl1["activity"]) == 4
-    assert len(dl1["used"]) == 12
+    assert len(dl1["used"]) == 23
     assert len(dl1["wasGeneratedBy"]) == 7
 
     with open(json_file_dl2) as file:
         dl2 = yaml.safe_load(file)
-    assert len(dl2["entity"]) == 24
+    assert len(dl2["entity"]) == 35
     assert len(dl2["activity"]) == 6
-    assert len(dl2["used"]) == 20
+    assert len(dl2["used"]) == 31
     assert len(dl2["wasGeneratedBy"]) == 12
 
     rc = run_program("simulate_processing", "-p")
@@ -104,19 +112,27 @@ def test_simulate_processing(drs4_time_calibration_files, run_summary_file, r0_d
 
 def test_simulated_sequencer(
         drs4_time_calibration_files,
+        systematic_correction_files,
         run_summary_file,
         run_catalog,
         r0_data
 ):
     assert run_summary_file.exists()
     assert run_catalog.exists()
+
     for r0_file in r0_data:
         assert r0_file.exists()
+
     for file in drs4_time_calibration_files:
         assert file.exists()
+
+    for file in systematic_correction_files:
+        assert file.exists()
+
     rc = run_program(
         "sequencer", "-c", "cfg/sequencer.cfg", "-d", "2020_01_17", "-s", "-t", "LST1"
     )
+
     assert rc.returncode == 0
     now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")
     assert rc.stdout == dedent(
@@ -206,6 +222,7 @@ def test_datasequence(running_analysis_dir):
     drs4_file = "drs4_pedestal.Run00001.0000.fits"
     calib_file = "calibration.Run00002.0000.hdf5"
     timecalib_file = "time_calibration.Run00002.0000.hdf5"
+    systematic_correction_file = "no_sys_corrected_calibration_scan_fit_20210514.0000.h5"
     drive_file = "drive_log_20200117.txt"
     runsummary_file = "RunSummary_20200117.ecsv"
     prod_id = "v0.1.0"
@@ -222,6 +239,7 @@ def test_datasequence(running_analysis_dir):
         f"--drs4-pedestal-file={drs4_file}",
         f"--pedcal-file={calib_file}",
         f"--time-calib-file={timecalib_file}",
+        f"--systematic-correction-file={systematic_correction_file}",
         f"--drive-file={drive_file}",
         f"--run-summary={runsummary_file}",
         run_number,

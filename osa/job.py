@@ -3,8 +3,7 @@
 import datetime
 import logging
 import shutil
-import subprocess
-import sys
+import subprocess as sp
 import time
 from io import StringIO
 from pathlib import Path
@@ -46,6 +45,7 @@ __all__ = [
     "get_time_calibration_file",
     "get_calibration_file",
     "get_drs4_pedestal_file",
+    "get_systematic_correction_file"
 ]
 
 TAB = "\t".expandtabs(4)
@@ -282,6 +282,39 @@ def get_time_calibration_file(run_id: int) -> Path:
     return time_calibration_file.resolve()
 
 
+def get_systematic_correction_file(date: str) -> Path:
+    """
+    Return the systematic correction file for a given date.
+
+    Parameters
+    ----------
+    date : str
+        Date in the format YYYYMMDD.
+
+    Notes
+    -----
+    The search for the proper systematic correction file is based on
+    lstchain/scripts/onsite/onsite_create_calibration_file.py
+    """
+    sys_dir = Path(cfg.get("LST1", "SYSTEMATIC_DIR"))
+
+    # Search for the first sys correction file before the run, if nothing before,
+    # use the first found
+    dir_list = sorted(sys_dir.rglob('*/pro/ffactor_systematics*'))
+    if not dir_list:
+        raise IOError(
+            f"No systematic correction file found for production pro in {sys_dir}\n"
+        )
+    sys_date_list = sorted([file.parts[-3] for file in dir_list], reverse=True)
+    selected_date = next(
+        (day for day in sys_date_list if day <= date), sys_date_list[-1]
+    )
+
+    return Path(
+        f"{sys_dir}/{selected_date}/pro/ffactor_systematics_{selected_date}.h5"
+    ).resolve()
+
+
 def get_drs4_pedestal_file(run_id: int) -> Path:
     """
     Return the drs4 pedestal file corresponding to a given run id
@@ -336,6 +369,7 @@ def sequence_calibration_filenames(sequence_list):
         sequence.pedestal = get_drs4_pedestal_file(drs4_pedestal_run_id)
         sequence.calibration = get_calibration_file(pedcal_run_id)
         sequence.time_calibration = get_time_calibration_file(pedcal_run_id)
+        sequence.systematic_correction = get_systematic_correction_file(nightdir)
 
 
 def plot_job_statistics(sacct_output: pd.DataFrame, directory: Path):
@@ -384,8 +418,8 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
         f"--job-name={sequence.jobname}",
         "--cpus-per-task=1",
         f"--chdir={options.directory}",
-        f"--output=log/slurm_{sequence.run:05d}.%4a_%A.out",
-        f"--error=log/slurm_{sequence.run:05d}.%4a_%A.err",
+        f"--output=log/Run{sequence.run:05d}.%4a_jobid_%A.out",
+        f"--error=log/Run{sequence.run:05d}.%4a_jobid_%A.err",
     ]
 
     # Get the number of subruns. The number of subruns starts counting from 0.
@@ -509,6 +543,9 @@ def create_job_template(sequence, get_content=False):
         commandargs.append(f"--drs4-pedestal-file={sequence.pedestal.resolve()}")
         commandargs.append(f"--time-calib-file={sequence.time_calibration.resolve()}")
         commandargs.append(f"--pedcal-file={sequence.calibration.resolve()}")
+        commandargs.append(
+            f"--systematic-correction-file={sequence.systematic_correction.resolve()}"
+        )
         commandargs.append(f"--drive-file={Path(drivedir).resolve() / sequence.drive}")
         commandargs.append(f"--run-summary={run_summary_file.resolve()}")
 
@@ -540,19 +577,8 @@ def create_job_template(sequence, get_content=False):
     content += TAB + "os.environ['NUMBA_CACHE_DIR'] = tmpdirname\n"
 
     content += TAB + "proc = subprocess.run([\n"
-    for i in commandargs:
-        content += TAB * 2 + f"'{i}',\n"
-    if not options.test:
-        content += (
-            TAB * 2
-            + f"'--stderr=log/sequence_{sequence.jobname}."
-            + "{0}_{1}.err'.format(str(subruns).zfill(4), str(job_id)),\n"
-        )
-        content += (
-            TAB * 2
-            + f"'--stdout=log/sequence_{sequence.jobname}."
-            + "{0}_{1}.out'.format(str(subruns).zfill(4), str(job_id)),\n"
-        )
+    for arg in commandargs:
+        content += TAB * 2 + f"'{arg}',\n"
     if sequence.type == "DATA":
         content += (
             TAB * 2
@@ -599,10 +625,10 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
             else:
                 try:
                     log.debug(f"Launching script {sequence.script}")
-                    parent_jobid = subprocess.check_output(
+                    parent_jobid = sp.check_output(
                         commandargs, universal_newlines=True, shell=False
                     ).split()[0]
-                except subprocess.CalledProcessError as error:
+                except sp.CalledProcessError as error:
                     rc = error.returncode
                     log.exception(f"Command '{batch_command}' not found, error {rc}")
 
@@ -628,13 +654,13 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
                     "first subrun without scheduler"
                 )
                 commandargs = ["python", sequence.script]
-                subprocess.check_output(commandargs, shell=False)
+                sp.check_output(commandargs, shell=False)
             else:
                 log.info("Submitting jobs to the cluster.")
                 try:
                     log.debug(f"Launching script {sequence.script}")
-                    subprocess.check_output(commandargs, shell=False)
-                except subprocess.CalledProcessError as error:
+                    sp.check_output(commandargs, shell=False)
+                except sp.CalledProcessError as error:
                     log.exception(error)
 
             log.debug(stringify(commandargs))
@@ -651,7 +677,7 @@ def run_squeue() -> StringIO:
         return StringIO()
 
     out_fmt = "%i,%j,%T,%M"  # JOBID, NAME, STATE, TIME
-    return StringIO(subprocess.check_output(["squeue", "--me", "-o", out_fmt]).decode())
+    return StringIO(sp.check_output(["squeue", "--me", "-o", out_fmt]).decode())
 
 
 def get_squeue_output(squeue_output: StringIO) -> pd.DataFrame:
@@ -702,7 +728,7 @@ def run_sacct() -> StringIO:
         "-o",
         ",".join(FORMAT_SLURM),
     ]
-    return StringIO(subprocess.check_output(sacct_cmd).decode())
+    return StringIO(sp.check_output(sacct_cmd).decode())
 
 
 def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
@@ -838,12 +864,10 @@ def run_program_with_history_logging(
     rc: int
         Return code of the program
     """
-    try:
-        log.info(f"Executing {stringify(command_args)}")
-        rc = subprocess.run(command_args, check=True).returncode
-    except subprocess.CalledProcessError as error:
-        rc = error.returncode
-        log.exception(f"Could not execute {stringify(command_args)}, error: {error}")
+    log.info(f"Executing {stringify(command_args)}")
+
+    output = sp.run(command_args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding='utf-8')
+    rc = output.returncode
 
     history(
         run=run,
@@ -856,6 +880,6 @@ def run_program_with_history_logging(
     )
 
     if rc != 0:
-        sys.exit(rc)
+        raise ValueError(f"{command_args[0]} failed with output: \n {output.stdout}")
 
     return rc
