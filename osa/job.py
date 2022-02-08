@@ -47,7 +47,8 @@ __all__ = [
     "get_systematic_correction_file",
     "pedestal_ids_file_exists",
     "calibration_sequence_job_template",
-    "data_sequence_job_template"
+    "data_sequence_job_template",
+    "save_job_information"
 ]
 
 TAB = "\t".expandtabs(4)
@@ -388,6 +389,30 @@ def sequence_calibration_filenames(sequence_list):
         sequence.calibration = get_calibration_file(pedcal_run_id)
         sequence.time_calibration = get_time_calibration_file(pedcal_run_id)
         sequence.systematic_correction = get_systematic_correction_file(nightdir)
+
+
+def save_job_information():
+    """
+    Write job information from sacct (elapsed time, memory used, number of
+    completed, failed and running jobs in the queue) to a file.
+    """
+    # Set directory and file path
+    log_directory = Path(options.directory) / "log"
+    log_directory.mkdir(exist_ok=True, parents=True)
+    file_path = log_directory / "job_information.csv"
+
+    sacct_output = run_sacct()
+    jobs_df = get_sacct_output(sacct_output)
+
+    # Fetch sacct output and prepare the data
+    jobs_df_filtered = jobs_df.copy()
+    jobs_df_filtered = jobs_df_filtered.dropna()
+    # Remove the G from MaxRSS value and convert to float
+    jobs_df_filtered["MaxRSS"] = (
+        jobs_df_filtered["MaxRSS"].str.strip("G").astype(float)
+    )
+
+    jobs_df_filtered.to_csv(file_path, index=False, sep=",")
 
 
 def plot_job_statistics(sacct_output: pd.DataFrame, directory: Path):

@@ -14,7 +14,7 @@ from typing import Tuple, Iterable, List
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import are_all_jobs_correctly_finished
+from osa.job import are_all_jobs_correctly_finished, save_job_information
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.provenance.utils import store_conda_env_export
@@ -95,6 +95,7 @@ def main():
             sys.exit(-1)
 
         store_conda_env_export()
+        save_job_information()
         post_process(sequencer_tuple)
 
 
