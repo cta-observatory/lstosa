@@ -779,18 +779,20 @@ def run_sacct() -> StringIO:
         log.warning("No job info available since sacct command is not available")
         return StringIO()
 
-    start_date = (datetime.date.today() - datetime.timedelta(weeks=1)).isoformat()
     sacct_cmd = [
         "sacct",
         "-n",
         "--parsable2",
         "--delimiter=,",
         "--units=G",
-        "--starttime",
-        start_date,
         "-o",
         ",".join(FORMAT_SLURM),
     ]
+    if cfg.get("SLURM", "STARTTIME_DAYS_SACCT"):
+        days = int(cfg.get("SLURM", "STARTTIME_DAYS_SACCT"))
+        start_date = (datetime.date.today() - datetime.timedelta(days=days)).isoformat()
+        sacct_cmd.extend(["--starttime", start_date])
+
     return StringIO(sp.check_output(sacct_cmd).decode())
 
 
