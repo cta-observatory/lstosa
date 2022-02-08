@@ -560,8 +560,7 @@ def data_sequence_job_template(sequence):
         content += set_cache_dirs()
         content += "\n"
         # Use the SLURM env variables
-        content += "subruns = os.getenv('SLURM_ARRAY_TASK_ID')\n"
-        content += "job_id = os.getenv('SLURM_JOB_ID')\n"
+        content += "subruns = int(os.getenv('SLURM_ARRAY_TASK_ID'))\n"
     else:
         # Just process the first subrun without SLURM
         content += "subruns = 0\n"
@@ -636,7 +635,6 @@ def calibration_sequence_job_template(sequence):
         content += "\n"
         # Use the SLURM env variables
         content += "subruns = os.getenv('SLURM_ARRAY_TASK_ID')\n"
-        content += "job_id = os.getenv('SLURM_JOB_ID')\n"
     else:
         # Just process the first subrun without SLURM
         content += "subruns = 0\n"

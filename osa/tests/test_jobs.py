@@ -161,8 +161,7 @@ def test_create_job_template_scheduler(
     os.environ['CTAPIPE_CACHE'] = '/fefs/aswg/lstanalyzer/.ctapipe/ctapipe_cache'
     os.environ['CTAPIPE_SVC_PATH'] = '/fefs/aswg/lstanalyzer/.ctapipe/service'
     os.environ['MPLCONFIGDIR'] = '/fefs/aswg/lstanalyzer/.cache/matplotlib'
-    subruns = os.getenv('SLURM_ARRAY_TASK_ID')
-    job_id = os.getenv('SLURM_JOB_ID')
+    subruns = int(os.getenv('SLURM_ARRAY_TASK_ID'))
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         os.environ['NUMBA_CACHE_DIR'] = tmpdirname
@@ -205,8 +204,7 @@ def test_create_job_template_scheduler(
         os.environ['CTAPIPE_CACHE'] = '/fefs/aswg/lstanalyzer/.ctapipe/ctapipe_cache'
         os.environ['CTAPIPE_SVC_PATH'] = '/fefs/aswg/lstanalyzer/.ctapipe/service'
         os.environ['MPLCONFIGDIR'] = '/fefs/aswg/lstanalyzer/.cache/matplotlib'
-        subruns = os.getenv('SLURM_ARRAY_TASK_ID')
-        job_id = os.getenv('SLURM_JOB_ID')
+        subruns = int(os.getenv('SLURM_ARRAY_TASK_ID'))
 
         with tempfile.TemporaryDirectory() as tmpdirname:
             os.environ['NUMBA_CACHE_DIR'] = tmpdirname
