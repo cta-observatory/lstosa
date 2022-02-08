@@ -227,12 +227,23 @@ def run_summary(run_summary_file):
 
 
 @pytest.fixture(scope="session")
+def pedestal_ids_file(base_test_dir):
+    """Mock pedestal ids file for testing."""
+    pedestal_ids_dir = base_test_dir / "auxiliary/PedestalFinder/20200117"
+    pedestal_ids_dir.mkdir(parents=True, exist_ok=True)
+    file = pedestal_ids_dir / "pedestal_ids_Run01808.0000.h5"
+    file.touch()
+    return file
+
+
+@pytest.fixture(scope="session")
 def sequence_list(
         running_analysis_dir,
         run_summary,
         drs4_time_calibration_files,
         systematic_correction_files,
         r0_data,
+        pedestal_ids_file,
 ):
     """Creates a sequence list from a run summary file."""
     options.directory = running_analysis_dir
@@ -247,6 +258,8 @@ def sequence_list(
 
     for file in r0_data:
         assert file.exists()
+
+    assert pedestal_ids_file.exists()
 
     subrun_list = extractsubruns(run_summary)
     run_list = extractruns(subrun_list)

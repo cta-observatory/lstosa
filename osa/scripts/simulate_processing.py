@@ -121,11 +121,10 @@ def parse_template(template, idx):
     keep = False
     for line in template.splitlines():
         if keep:
+            line = line.replace("f'", "")
             line = line.replace("'", "")
             line = line.replace(",", "")
-            line = line.replace(r"{0}.format(str(subruns).zfill(4))", str(idx).zfill(4))
-            if "--stdout=" in line or "--stderr" in line:
-                continue
+            line = line.replace(r"{subruns:04d}", str(idx).zfill(4))
             args.append(line.strip())
         if "subprocess.run" in line:
             keep = True

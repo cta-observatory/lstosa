@@ -131,13 +131,17 @@ def test_create_job_template_scheduler(
         drs4_time_calibration_files,
         drs4_baseline_file,
         calibration_file,
-        run_summary_file
+        run_summary_file,
+        pedestal_ids_file,
 ):
     from osa.job import create_job_template
+
+    assert pedestal_ids_file.exists()
+
     options.test = False
     options.simulate = False
-    content = create_job_template(sequence_list[1], get_content=True)
-    expected_content = dedent(f"""\
+    content1 = create_job_template(sequence_list[1], get_content=True)
+    expected_content1 = dedent(f"""\
     #!/bin/env python
 
     #SBATCH --job-name=LST1_01807
@@ -174,13 +178,60 @@ def test_create_job_template_scheduler(
             '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/LevelA/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
             '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/drive_log_20_01_17.txt',
             '--run-summary={run_summary_file}',
-            '01807.{{0}}'.format(str(subruns).zfill(4)),
+            f'01807.{{subruns:04d}}',
             'LST1'
         ])
 
     sys.exit(proc.returncode)""")
+
+    content2 = create_job_template(sequence_list[2], get_content=True)
+    expected_content2 = dedent(f"""\
+        #!/bin/env python
+
+        #SBATCH --job-name=LST1_01808
+        #SBATCH --cpus-per-task=1
+        #SBATCH --chdir={Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0
+        #SBATCH --output=log/Run01808.%4a_jobid_%A.out
+        #SBATCH --error=log/Run01808.%4a_jobid_%A.err
+        #SBATCH --array=0-8
+        #SBATCH --partition={cfg.get('SLURM', 'PARTITION_DATA')}
+        #SBATCH --mem-per-cpu={cfg.get('SLURM', 'MEMSIZE_DATA')}
+
+        import os
+        import subprocess
+        import sys
+        import tempfile
+
+        os.environ['CTAPIPE_CACHE'] = '/fefs/aswg/lstanalyzer/.ctapipe/ctapipe_cache'
+        os.environ['CTAPIPE_SVC_PATH'] = '/fefs/aswg/lstanalyzer/.ctapipe/service'
+        os.environ['MPLCONFIGDIR'] = '/fefs/aswg/lstanalyzer/.cache/matplotlib'
+        subruns = os.getenv('SLURM_ARRAY_TASK_ID')
+        job_id = os.getenv('SLURM_JOB_ID')
+
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            os.environ['NUMBA_CACHE_DIR'] = tmpdirname
+            proc = subprocess.run([
+                'datasequence',
+                '--config',
+                '{Path.cwd()}/cfg/sequencer.cfg',
+                '--date=2020_01_17',
+                '--prod-id=v0.1.0',
+                '--drs4-pedestal-file={drs4_baseline_file}',
+                '--time-calib-file={drs4_time_calibration_files[0]}',
+                '--pedcal-file={calibration_file}',
+                '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/LevelA/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
+                '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/drive_log_20_01_17.txt',
+                '--run-summary={run_summary_file}',
+                f'--pedestal-ids-file={Path.cwd()}/test_osa/test_files0/auxiliary/PedestalFinder/20200117/pedestal_ids_Run01808.{{subruns:04d}}.h5',
+                f'01808.{{subruns:04d}}',
+                'LST1'
+            ])
+
+        sys.exit(proc.returncode)""")
+
     options.simulate = True
-    assert content == expected_content
+    assert content1 == expected_content1
+    assert content2 == expected_content2
 
 
 def test_create_job_template_local(
@@ -190,6 +241,7 @@ def test_create_job_template_local(
         calibration_file,
         systematic_correction_files,
         run_summary_file,
+        pedestal_ids_file,
         r0_data
 ):
     """Check the job file in local mode (assuming no scheduler)."""
@@ -204,10 +256,13 @@ def test_create_job_template_local(
     for file in r0_data:
         assert file.exists()
 
+    assert pedestal_ids_file.exists()
+
     options.test = True
     options.simulate = False
-    content = create_job_template(sequence_list[1], get_content=True)
-    expected_content = dedent(f"""\
+
+    content1 = create_job_template(sequence_list[1], get_content=True)
+    expected_content1 = dedent(f"""\
     #!/bin/env python
 
     import os
@@ -231,13 +286,48 @@ def test_create_job_template_local(
             '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/LevelA/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
             '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/drive_log_20_01_17.txt',
             '--run-summary={run_summary_file}',
-            '01807.{{0}}'.format(str(subruns).zfill(4)),
+            f'01807.{{subruns:04d}}',
             'LST1'
         ])
 
     sys.exit(proc.returncode)""")
+
+    content2 = create_job_template(sequence_list[2], get_content=True)
+    expected_content2 = dedent(f"""\
+        #!/bin/env python
+
+        import os
+        import subprocess
+        import sys
+        import tempfile
+
+        subruns = 0
+
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            os.environ['NUMBA_CACHE_DIR'] = tmpdirname
+            proc = subprocess.run([
+                'datasequence',
+                '--config',
+                '{Path.cwd()}/cfg/sequencer.cfg',
+                '--date=2020_01_17',
+                '--prod-id=v0.1.0',
+                '--drs4-pedestal-file={drs4_baseline_file}',
+                '--time-calib-file={drs4_time_calibration_files[0]}',
+                '--pedcal-file={calibration_file}',
+                '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/LevelA/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
+                '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/drive_log_20_01_17.txt',
+                '--run-summary={run_summary_file}',
+                f'--pedestal-ids-file={Path.cwd()}/test_osa/test_files0/auxiliary/PedestalFinder/20200117/pedestal_ids_Run01808.{{subruns:04d}}.h5',
+                f'01808.{{subruns:04d}}',
+                'LST1'
+            ])
+
+        sys.exit(proc.returncode)""")
+
     options.simulate = True
-    assert content == expected_content
+
+    assert content1 == expected_content1
+    assert content2 == expected_content2
 
 
 def test_create_job_scheduler_calibration(sequence_list):
@@ -428,3 +518,9 @@ def test_run_program_with_history_logging(running_analysis_dir):
     options.simulate = True
     assert rc == 0
     assert history_file.exists()
+
+
+def test_pedestal_ids_file_exists(pedestal_ids_file):
+    from osa.job import pedestal_ids_file_exists
+    pedestal_ids_file.exists()
+    assert pedestal_ids_file_exists(1808) is True

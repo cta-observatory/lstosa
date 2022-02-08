@@ -45,7 +45,8 @@ __all__ = [
     "get_time_calibration_file",
     "get_calibration_file",
     "get_drs4_pedestal_file",
-    "get_systematic_correction_file"
+    "get_systematic_correction_file",
+    "pedestal_ids_file_exists",
 ]
 
 TAB = "\t".expandtabs(4)
@@ -60,6 +61,17 @@ FORMAT_SLURM = [
     "State",
     "ExitCode",
 ]
+
+PYTHON_IMPORTS = dedent(
+    """\
+
+    import os
+    import subprocess
+    import sys
+    import tempfile
+
+    """
+)
 
 
 def are_all_jobs_correctly_finished(sequence_list):
@@ -550,25 +562,7 @@ def create_job_template(sequence, get_content=False):
         commandargs.append(f"--drive-file={drive_file.resolve()}")
         commandargs.append(f"--run-summary={run_summary_file.resolve()}")
 
-        if pedestal_ids_file_exists(sequence.run):
-            pedestal_ids_dir = Path(cfg.get("LST1", "PEDESTAL_FINDER_DIR")) / nightdir
-            pedestal_ids_file = (
-                pedestal_ids_dir / f"pedestal_ids_Run{sequence.run:05d}."
-                "{0}.format(str(subruns).zfill(4)).h5"
-            )
-            commandargs.append(f"--pedestal-ids-path={pedestal_ids_file}")
-
-    python_imports = dedent(
-        """\
-
-        import os
-        import subprocess
-        import sys
-        import tempfile
-
-        """
-    )
-    content = job_header + "\n" + python_imports
+    content = job_header + "\n" + PYTHON_IMPORTS
 
     if not options.test:
         content += set_cache_dirs()
@@ -586,14 +580,182 @@ def create_job_template(sequence, get_content=False):
     content += TAB + "os.environ['NUMBA_CACHE_DIR'] = tmpdirname\n"
 
     content += TAB + "proc = subprocess.run([\n"
+
     for arg in commandargs:
         content += TAB * 2 + f"'{arg}',\n"
+
     if sequence.type == "DATA":
-        content += (
-            TAB * 2
-            + "'{0}".format(str(sequence.run).zfill(5))
-            + ".{0}'.format(str(subruns).zfill(4)),\n"
+        if pedestal_ids_file_exists(sequence.run):
+            pedestal_ids_dir = Path(cfg.get("LST1", "PEDESTAL_FINDER_DIR")) / nightdir
+            pedestal_ids_file = (
+                pedestal_ids_dir /
+                f"pedestal_ids_Run{sequence.run:05d}.{{subruns:04d}}.h5"
+            )
+            content += (
+                TAB * 2 + f"f'--pedestal-ids-file={pedestal_ids_file.resolve()}',\n"
+            )
+
+        content += TAB * 2 + f"f'{sequence.run:05d}.{{subruns:04d}}',\n"
+
+    content += TAB * 2 + f"'{options.tel_id}'\n"
+    content += TAB + "])\n"
+    content += "\n"
+    content += "sys.exit(proc.returncode)"
+
+    if not options.simulate:
+        write_to_file(sequence.script, content)
+
+    if get_content:
+        return content
+
+
+def data_sequence_job_template(sequence, get_content=False):
+    """
+    This file contains instruction to be submitted to job scheduler.
+
+    Parameters
+    ----------
+    sequence : sequence object
+    get_content: bool
+
+    Returns
+    -------
+    job_template : string
+    """
+    # TODO: refactor this function creating wrappers that handle slurm part
+
+    # Get the job header template.
+    job_header = job_header_template(sequence)
+
+    nightdir = lstdate_to_dir(options.date)
+    drivedir = Path(cfg.get("LST1", "DRIVE_DIR"))
+    run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
+
+    commandargs = ["datasequence"]
+
+    if options.verbose:
+        commandargs.append("-v")
+    if options.simulate:
+        commandargs.append("-s")
+    if options.configfile:
+        commandargs.append("--config")
+        commandargs.append(f"{Path(options.configfile).resolve()}")
+    if sequence.type == "DATA" and options.no_dl2:
+        commandargs.append("--no-dl2")
+
+    commandargs.append(f"--date={options.date}")
+
+    run_summary_file = run_summary_dir / f"RunSummary_{nightdir}.ecsv"
+    drive_file = drivedir / sequence.drive
+    commandargs.append(f"--prod-id={options.prod_id}")
+    commandargs.append(f"--drs4-pedestal-file={sequence.pedestal.resolve()}")
+    commandargs.append(f"--time-calib-file={sequence.time_calibration.resolve()}")
+    commandargs.append(f"--pedcal-file={sequence.calibration.resolve()}")
+    commandargs.append(
+        f"--systematic-correction-file={sequence.systematic_correction.resolve()}"
+    )
+    commandargs.append(f"--drive-file={drive_file.resolve()}")
+    commandargs.append(f"--run-summary={run_summary_file.resolve()}")
+
+    content = job_header + "\n" + PYTHON_IMPORTS
+
+    if not options.test:
+        content += set_cache_dirs()
+        content += "\n"
+        # Use the SLURM env variables
+        content += "subruns = os.getenv('SLURM_ARRAY_TASK_ID')\n"
+        content += "job_id = os.getenv('SLURM_JOB_ID')\n"
+    else:
+        # Just process the first subrun without SLURM
+        content += "subruns = 0\n"
+
+    content += "\n"
+
+    content += "with tempfile.TemporaryDirectory() as tmpdirname:\n"
+    content += TAB + "os.environ['NUMBA_CACHE_DIR'] = tmpdirname\n"
+
+    content += TAB + "proc = subprocess.run([\n"
+
+    for arg in commandargs:
+        content += TAB * 2 + f"'{arg}',\n"
+
+    if pedestal_ids_file_exists(sequence.run):
+        pedestal_ids_dir = Path(cfg.get("LST1", "PEDESTAL_FINDER_DIR")) / nightdir
+        pedestal_ids_file = (
+            pedestal_ids_dir /
+            f"pedestal_ids_Run{sequence.run:05d}.{{subruns:04d}}.h5"
         )
+        content += (
+            TAB * 2 + f"f'--pedestal-ids-file={pedestal_ids_file.resolve()}',\n"
+        )
+
+    content += TAB * 2 + f"f'{sequence.run:05d}.{{subruns:04d}}',\n"
+
+    content += TAB * 2 + f"'{options.tel_id}'\n"
+    content += TAB + "])\n"
+    content += "\n"
+    content += "sys.exit(proc.returncode)"
+
+    if not options.simulate:
+        write_to_file(sequence.script, content)
+
+    if get_content:
+        return content
+
+
+def calibration_sequence_job_template(sequence, get_content=False):
+    """
+    This file contains instruction to be submitted to job scheduler.
+
+    Parameters
+    ----------
+    sequence : sequence object
+    get_content: bool
+
+    Returns
+    -------
+    job_template : string
+    """
+
+    # Get the job header template.
+    job_header = job_header_template(sequence)
+
+    commandargs = ["calibration_pipeline"]
+
+    if options.verbose:
+        commandargs.append("-v")
+    if options.simulate:
+        commandargs.append("-s")
+    if options.configfile:
+        commandargs.append("--config")
+        commandargs.append(f"{Path(options.configfile).resolve()}")
+
+    commandargs.append(f"--date={options.date}")
+    commandargs.append(f"--drs4-pedestal-run={sequence.previousrun:05d}")
+    commandargs.append(f"--pedcal-run={sequence.run:05d}")
+
+    content = job_header + "\n" + PYTHON_IMPORTS
+
+    if not options.test:
+        content += set_cache_dirs()
+        content += "\n"
+        # Use the SLURM env variables
+        content += "subruns = os.getenv('SLURM_ARRAY_TASK_ID')\n"
+        content += "job_id = os.getenv('SLURM_JOB_ID')\n"
+    else:
+        # Just process the first subrun without SLURM
+        content += "subruns = 0\n"
+
+    content += "\n"
+
+    content += "with tempfile.TemporaryDirectory() as tmpdirname:\n"
+    content += TAB + "os.environ['NUMBA_CACHE_DIR'] = tmpdirname\n"
+
+    content += TAB + "proc = subprocess.run([\n"
+
+    for arg in commandargs:
+        content += TAB * 2 + f"'{arg}',\n"
+
     content += TAB * 2 + f"'{options.tel_id}'\n"
     content += TAB + "])\n"
     content += "\n"
