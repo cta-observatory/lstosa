@@ -399,7 +399,7 @@ def merge_files(sequence_list, data_level="DL2"):
                 "lstchain_merge_hdf5_files",
                 f"--input-dir={data_dir}",
                 f"--output-file={merged_file}",
-                "--no-image=True",
+                "--no-image",
                 "--no-progress",
                 f"--run-number={sequence.run}",
                 f"--pattern={pattern}",
