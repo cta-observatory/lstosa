@@ -357,6 +357,11 @@ def data_sequence_argparser():
         type=Path,
         help="Path of run summary file with time reference information",
     )
+    parser.add_argument(
+        "--pedestal-ids-file",
+        type=Path,
+        help="Path to a file containing the ids of the interleaved pedestal events",
+    )
     parser.add_argument("run_number", help="Number of the run to be processed")
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
     return parser
@@ -406,6 +411,7 @@ def data_sequence_cli_parsing():
         opts.systematic_correction_file,
         opts.drive_file,
         opts.run_summary,
+        opts.pedestal_ids_file,
         opts.run_number,
     )
 

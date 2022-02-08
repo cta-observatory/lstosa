@@ -14,7 +14,7 @@ import yaml
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import create_job_template
+from osa.job import calibration_sequence_job_template, data_sequence_job_template
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.provenance.utils import get_log_config
@@ -121,11 +121,10 @@ def parse_template(template, idx):
     keep = False
     for line in template.splitlines():
         if keep:
+            line = line.replace("f'", "")
             line = line.replace("'", "")
             line = line.replace(",", "")
-            line = line.replace(r"{0}.format(str(subruns).zfill(4))", str(idx).zfill(4))
-            if "--stdout=" in line or "--stderr" in line:
-                continue
+            line = line.replace(r"{subruns:04d}", str(idx).zfill(4))
             args.append(line.strip())
         if "subprocess.run" in line:
             keep = True
@@ -161,16 +160,12 @@ def simulate_processing():
         processed = False
         for sub_list in sequence.subrun_list:
             if sub_list.runobj.type == "PEDCALIB":
-                args_cal = parse_template(
-                    create_job_template(sequence, get_content=True), 0
-                )
+                args_cal = parse_template(calibration_sequence_job_template(sequence), 0)
                 simulate_calibration(args_cal)
             elif sub_list.runobj.type == "DATA":
                 with mp.Pool() as poolproc:
                     args_proc = [
-                        parse_template(
-                            create_job_template(sequence, get_content=True), subrun_idx
-                        )
+                        parse_template(data_sequence_job_template(sequence), subrun_idx)
                         for subrun_idx in range(sub_list.subrun)
                     ]
                     processed = poolproc.map(simulate_subrun_processing, args_proc)
