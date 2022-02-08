@@ -134,13 +134,13 @@ def test_create_job_template_scheduler(
         run_summary_file,
         pedestal_ids_file,
 ):
-    from osa.job import create_job_template
+    from osa.job import data_sequence_job_template
 
     assert pedestal_ids_file.exists()
 
     options.test = False
     options.simulate = False
-    content1 = create_job_template(sequence_list[1], get_content=True)
+    content1 = data_sequence_job_template(sequence_list[1])
     expected_content1 = dedent(f"""\
     #!/bin/env python
 
@@ -184,7 +184,7 @@ def test_create_job_template_scheduler(
 
     sys.exit(proc.returncode)""")
 
-    content2 = create_job_template(sequence_list[2], get_content=True)
+    content2 = data_sequence_job_template(sequence_list[2])
     expected_content2 = dedent(f"""\
         #!/bin/env python
 
@@ -245,7 +245,7 @@ def test_create_job_template_local(
         r0_data
 ):
     """Check the job file in local mode (assuming no scheduler)."""
-    from osa.job import create_job_template
+    from osa.job import data_sequence_job_template
 
     for file in drs4_time_calibration_files:
         assert file.exists()
@@ -261,7 +261,7 @@ def test_create_job_template_local(
     options.test = True
     options.simulate = False
 
-    content1 = create_job_template(sequence_list[1], get_content=True)
+    content1 = data_sequence_job_template(sequence_list[1])
     expected_content1 = dedent(f"""\
     #!/bin/env python
 
@@ -292,7 +292,7 @@ def test_create_job_template_local(
 
     sys.exit(proc.returncode)""")
 
-    content2 = create_job_template(sequence_list[2], get_content=True)
+    content2 = data_sequence_job_template(sequence_list[2])
     expected_content2 = dedent(f"""\
         #!/bin/env python
 
@@ -332,10 +332,10 @@ def test_create_job_template_local(
 
 def test_create_job_scheduler_calibration(sequence_list):
     """Check the pilot job file for the calibration pipeline."""
-    from osa.job import create_job_template
+    from osa.job import calibration_sequence_job_template
     options.test = True
     options.simulate = False
-    content = create_job_template(sequence_list[0], get_content=True)
+    content = calibration_sequence_job_template(sequence_list[0])
     expected_content = dedent(f"""\
     #!/bin/env python
 
