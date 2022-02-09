@@ -36,7 +36,7 @@ dependencies:
   - sphinx-argparse
   - sphinx-autoapi
   - pip:
-      - lstchain~=0.9.0
+      - lstchain==0.9.1
       - pytest_runner
       - pytest-ordering
       - ctapipe_io_lst~=0.15.0
