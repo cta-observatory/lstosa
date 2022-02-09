@@ -29,7 +29,7 @@ __all__ = [
     "calibration_file_command",
 ]
 
-log = myLogger(logging.getLogger(__name__))
+log = myLogger(logging.getLogger())
 
 
 def is_calibration_produced(drs4_pedestal_run_id: str, pedcal_run_id: str) -> bool:
