@@ -46,8 +46,9 @@ def data_sequence(
     rc: int
         Return code of the last executed command.
     """
-    history_file = Path(options.directory) / \
-        f"sequence_{options.tel_id}_{run_str}.history"
+    history_file = (
+        Path(options.directory) / f"sequence_{options.tel_id}_{run_str}.history"
+    )
     level, rc = (4, 0) if options.simulate else historylevel(history_file, "DATA")
     log.info(f"Going to level {level}")
 
@@ -73,8 +74,7 @@ def data_sequence(
             log.info(f"Going to level {level}")
         else:
             level -= 2
-            log.info(f"No images stored in dl1ab. "
-                     f"Producing DL2. Going to level {level}")
+            log.info(f"No images stored in dl1ab. Producing DL2. Going to level {level}")
 
     if level == 2:
         rc = dl1_datacheck(run_str, history_file)
