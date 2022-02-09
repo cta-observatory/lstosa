@@ -9,11 +9,12 @@ from osa.configs.config import cfg
 from osa.job import historylevel, run_program_with_history_logging
 from osa.provenance.capture import trace
 from osa.utils.cliopts import data_sequence_cli_parsing
+from osa.utils.logging import myLogger
 from osa.utils.utils import lstdate_to_dir
 
 __all__ = ["data_sequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
 
-log = logging.getLogger()
+log = myLogger(logging.getLogger())
 
 
 def data_sequence(

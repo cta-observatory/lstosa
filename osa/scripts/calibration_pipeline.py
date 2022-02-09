@@ -14,10 +14,10 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import historylevel
-from osa.job import run_program_with_history_logging
+from osa.job import historylevel, run_program_with_history_logging
 from osa.provenance.capture import trace
 from osa.utils.cliopts import calibration_pipeline_cliparsing
+from osa.utils.logging import myLogger
 from osa.utils.utils import lstdate_to_dir
 
 __all__ = [
@@ -28,7 +28,7 @@ __all__ = [
     "calibration_file_command",
 ]
 
-log = logging.getLogger()
+log = myLogger(logging.getLogger())
 
 
 def is_calibration_produced(drs4_pedestal_run_id: str, pedcal_run_id: str) -> bool:
