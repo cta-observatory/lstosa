@@ -252,7 +252,7 @@ def extractsequences(run_list_sorted):
     """
 
     head = []  # this is a set with maximum 3 tuples consisting of [run, type, require]
-    store = []  # this is a set with runs which constitute every valid data sequence
+    sequences_to_analyze = []  # set with runs which constitute every valid data sequence
     require = {}
 
     for i in run_list_sorted:
@@ -264,6 +264,7 @@ def extractsequences(run_list_sorted):
                 # normal case
                 log.debug(f"appending [{currentrun}, {currenttype}, None]")
                 head.append([currentrun, currenttype, None])
+
         elif len(head) == 1:
             previousrun = head[0][0]
             previoustype = head[0][1]
@@ -298,17 +299,17 @@ def extractsequences(run_list_sorted):
                             f"[{currentrun}, {currenttype}, {previousreq}]"
                         )
                         head[0] = [currentrun, currenttype, previousreq]
-                        store.append(currentrun)
+                        sequences_to_analyze.append(currentrun)
                         require[currentrun] = previousreq
                 elif previoustype == "DATA":
                     whichreq = previousreq
-
                     log.debug(
                         f"D->D, " f"replacing [{currentrun}, {currenttype}, {whichreq}]"
                     )
                     head[0] = [currentrun, currenttype, whichreq]
-                    store.append(currentrun)
+                    sequences_to_analyze.append(currentrun)
                     require[currentrun] = whichreq
+
         elif len(head) == 2:
             previoustype = head[1][1]
             if currenttype == "DATA" and previoustype == "PEDCALIB":
@@ -320,7 +321,7 @@ def extractsequences(run_list_sorted):
                     f"P->C->D, appending [{currentrun}, {currenttype}, {previousrun}]"
                 )
                 head[0] = [currentrun, currenttype, previousrun]
-                store.append(currentrun)
+                sequences_to_analyze.append(currentrun)
                 # this is different from currentrun since it marks parent sequence run
                 require[currentrun] = previousrun
             elif currenttype == "DRS4" and previoustype == "PEDCALIB":
@@ -328,24 +329,22 @@ def extractsequences(run_list_sorted):
                 # and shifters decide to give another try
                 head.pop()
                 log.debug(
-                    "P->C->P, "
-                    f"deleting and replacing [{currentrun}, {currenttype}, None]"
+                    "P->C->P, deleting and replacing [{currentrun}, {currenttype}, None]"
                 )
-
                 head[0] = [currentrun, currenttype, None]
 
-    sequence_list = generate_workflow(run_list_sorted, store, require)
-    # ready to return the list of sequences
-    log.debug("Sequence list extracted")
-
-    if not store:
+    if not sequences_to_analyze:
         log.warning("No data sequences found for this date. Nothing to do. Exiting.")
         sys.exit(0)
+
+    sequence_list = generate_workflow(run_list_sorted, sequences_to_analyze, require)
+
+    log.debug("Sequence list extracted")
 
     return sequence_list
 
 
-def generate_workflow(run_list, store, require):
+def generate_workflow(run_list, sequences_to_analyze, require):
     """
     Store correct data sequences to give sequence
     numbers and parent dependencies
@@ -353,7 +352,7 @@ def generate_workflow(run_list, store, require):
     Parameters
     ----------
     run_list
-    store
+    sequences_to_analyze
     require
 
     Returns
@@ -362,7 +361,7 @@ def generate_workflow(run_list, store, require):
     """
     sequence_list = []
 
-    log.debug(f"The storage contains {len(store)} data sequences")
+    log.debug(f"There are {len(sequences_to_analyze)} data sequences")
 
     parent = None
     for run in run_list:
@@ -371,7 +370,7 @@ def generate_workflow(run_list, store, require):
         log.debug(f"Trying to assign run {run.run}, type {run.type} to sequence {n_seq}")
         if run.type == "DATA":
             try:
-                store.index(run.run)
+                sequences_to_analyze.index(run.run)
             except ValueError:
                 # there is nothing really wrong with that,
                 # just a DATA run without sequence
