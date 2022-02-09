@@ -25,8 +25,8 @@ from osa.job import (
 from osa.nightsummary.extract import (
     extractruns,
     extractsequences,
-    extractsequencesstereo,
     extractsubruns,
+    sort_run_list
 )
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.report import start
@@ -37,7 +37,6 @@ from osa.veto import get_closed_list, get_veto_list
 
 __all__ = [
     "single_process",
-    "stereo_process",
     "update_sequence_status",
     "get_status_for_sequence",
     "output_matrix",
@@ -104,7 +103,8 @@ def single_process(telescope):
     subrun_list = extractsubruns(summary_table)
     run_list = extractruns(subrun_list)
     # modifies run_list by adding the seq and parent info into runs
-    sequence_list = extractsequences(run_list)
+    sorted_run_list = sort_run_list(run_list)
+    sequence_list = extractsequences(sorted_run_list)
 
     # Workflow and submission
     # if not options.simulate:
@@ -129,46 +129,6 @@ def single_process(telescope):
         # updatesequencedb(sequence_list)
         report_sequences(sequence_list)
 
-    return sequence_list
-
-
-def stereo_process(telescope, s1_list, s2_list):
-    """
-    Runs the stereo process for two or more telescopes
-    Currently not implemented.
-
-    Parameters
-    ----------
-    telescope
-    s1_list
-    s2_list
-
-    Returns
-    -------
-    sequence_list : list
-    """
-    options.tel_id = telescope
-    options.directory = set_default_directory_if_needed()
-
-    # building the sequences
-    sequence_list = extractsequencesstereo(s1_list, s2_list)
-    # Workflow and Submission
-    # write_workflow(sequence_list)
-
-    # Adds the scripts
-    prepare_jobs(sequence_list)
-
-    # Update sequences objects with information from SLURM
-    update_job_info(sequence_list)
-
-    get_veto_list(sequence_list)
-    get_closed_list(sequence_list)
-    update_sequence_status(sequence_list)
-    submit_jobs(sequence_list)
-    # finalizing report
-    report_sequences(sequence_list)
-    # cleaning
-    options.directory = None
     return sequence_list
 
 

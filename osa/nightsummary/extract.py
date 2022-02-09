@@ -14,7 +14,6 @@ from osa.configs.datamodel import (
     RunObj,
     SequenceCalibration,
     SequenceData,
-    SequenceStereo,
     SubrunObj,
 )
 from osa.job import sequence_calibration_filenames, sequence_filenames
@@ -29,8 +28,8 @@ __all__ = [
     "extractsubruns",
     "extractruns",
     "extractsequences",
-    "extractsequencesstereo",
     "generate_workflow",
+    "sort_run_list"
 ]
 
 
@@ -175,7 +174,7 @@ def extractruns(subrun_list):
     return run_list
 
 
-def extractsequences(run_list):
+def sort_run_list(run_list):
     """
     Search for sequences composed out of
     a) Pedestal->Calibration->Data turns into independent runs
@@ -188,62 +187,73 @@ def extractsequences(run_list):
 
     Returns
     -------
-    sequence_list: Iterable
+    run_list: Iterable
     """
 
-    # sequence_list = []  # this is the list of sequence objects to return
-    head = []  # this is a set with maximum 3 tuples consisting of [run, type, require]
-    store = []  # this is a set with runs which constitute every valid data sequence
-    require = {}
-
-    # create a list of sources. For each, we should have
-    # at least a PED, CAL and some DATA. If not, then we use
-    # the previous PED and CAL. Try to sort this list so that
-    # the PED and CAL are in the beginning
+    # Create a list of sources. For each, we should have at least a DRS4, PEDCALIB and
+    # some DATA. If not, then we use the previous DRS4 and PEDCALIB. Try to sort this
+    # list so that the PED and CAL are in the beginning
     sources = []
     run_list_sorted = []
     pending = []
+    hasped = False
+    hascal = False
 
     for run in run_list:
-        # extract the basic info
         currentsrc = run.source_name
         currentrun = run.run
         currenttype = run.type
 
-        # skip runs not belonging to this telescope ID
-        # if (r.telescope!=options.tel_id): continue
-
         if currentsrc not in sources:
-            # log.debug(f"New source {currentsrc} detected, waiting for PED and CAL")
-            hasped = False
-            hascal = False
+            log.debug(f"New source {currentsrc} found")
             sources.append(currentsrc)
 
         if currenttype == "DRS4":
-            log.debug(f"Detected a new DRS4 run {currentrun} for {currentsrc}")
+            log.debug(f"Detected a new DRS4 run {currentrun}")
             hasped = True
             run_list_sorted.append(run)
         elif currenttype == "PEDCALIB":
-            log.debug(f"Detected a new PEDCALIB run {currentrun} for {currentsrc}")
+            log.debug(f"Detected a new PEDCALIB run {currentrun}")
             hascal = True
             run_list_sorted.append(run)
 
         if currenttype == "DATA":
-            if hasped is False or hascal is False:
+            if not hasped or not hascal:
                 log.debug(
                     f"Detected a new DATA run {currentrun} for "
-                    f"{currentsrc}, but still no PED/CAL"
+                    f"{currentsrc}, but no DRS4/PEDCAL runs yet"
                 )
                 pending.append(run)
             else:
                 # normal case, we have the PED, the SUB, then append the DATA
                 log.debug(f"Detected a new DATA run {currentrun} for {currentsrc}")
                 run_list_sorted.append(run)
+
     if pending:
         # we reached the end, we can add the pending runs
         log.debug("Adding the pending runs")
         for pr in pending:
             run_list_sorted.append(pr)
+
+    return run_list_sorted
+
+
+def extractsequences(run_list_sorted):
+    """
+    Create the sequence list from the sorted run list
+
+    Parameters
+    ----------
+    run_list_sorted
+
+    Returns
+    -------
+    sequence_list: Iterable
+    """
+
+    head = []  # this is a set with maximum 3 tuples consisting of [run, type, require]
+    store = []  # this is a set with runs which constitute every valid data sequence
+    require = {}
 
     for i in run_list_sorted:
         currentrun = i.run
@@ -307,9 +317,7 @@ def extractsequences(run_list):
                 previousrun = head[1][0]
                 head.pop()
                 log.debug(
-                    f"P->C->D,"
-                    f"appending "
-                    f"[{currentrun}, {currenttype}, {previousrun}]"
+                    f"P->C->D, appending [{currentrun}, {currenttype}, {previousrun}]"
                 )
                 head[0] = [currentrun, currenttype, previousrun]
                 store.append(currentrun)
@@ -335,35 +343,6 @@ def extractsequences(run_list):
         sys.exit(0)
 
     return sequence_list
-
-
-def extractsequencesstereo(seq1_list, seq2_list):
-    """
-    Build stereo sequences from two lists of single-telescope sequences.
-
-    Parameters
-    ----------
-    seq1_list
-    seq2_list
-
-    Returns
-    -------
-    stereo_seq_list: list
-        Stereo sequences list
-    """
-    stereo_seq_list = []
-    for seq1 in seq1_list:
-        if seq1.type == "DATA":
-            for seq2 in seq2_list:
-                if seq2.type == "DATA" and seq2.run == seq1.run:
-                    stereo_seq = SequenceStereo(seq1, seq2)
-                    stereo_seq.seq = len(stereo_seq_list)
-                    stereo_seq.jobname = f"{stereo_seq.telescope}_{stereo_seq.run:05d}"
-                    sequence_filenames(stereo_seq)
-                    stereo_seq_list.append(stereo_seq)
-                    break
-    log.debug(f"Appended {len(stereo_seq_list)} stereo sequences")
-    return stereo_seq_list
 
 
 def generate_workflow(run_list, store, require):
