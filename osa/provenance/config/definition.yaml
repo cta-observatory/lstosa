@@ -378,10 +378,10 @@ entities:
         description: "Coefficients calibration file in HDF5 format on the disk"
         type: File
         contentType: application/x-hdf
-#    SystematicsCorrectionFile:
-#        description: "Systematics correction file in HDF5 format on the disk"
-#        type: File
-#        contentType: application/x-hdf
+    SystematicsCorrectionFile:
+        description: "Systematics correction file in HDF5 format on the disk"
+        type: File
+        contentType: application/x-hdf
     TimeCalibrationFile:
         description: "Time calibration file in HDF5 format on the disk"
         type: File
