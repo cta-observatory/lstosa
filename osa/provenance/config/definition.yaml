@@ -155,6 +155,11 @@ activities:
               entityName: PointingFile
               value: PointingFile
               # filepath: /fefs/home/lapp/DrivePositioning/drive_log_20_02_18.txt
+            - role: "Interleaved pedestal events file"
+              description: "Interleaved pedestal events file"
+              entityName: InterleavedPedestalEventsFile
+              value: InterleavedPedestalEventsFile
+              # filepath: .../path/to/interleaved/pedestal/events.h5
             - role: "Run summary"
               description: "Run summary configuration"
               entityName: RunSummaryFile
@@ -380,6 +385,10 @@ entities:
         contentType: application/x-hdf
     SystematicCorrectionFile:
         description: "Systematic correction file in HDF5 format on the disk"
+        type: File
+        contentType: application/x-hdf
+    InterleavedPedestalEventsFile:
+        description: "Interleaved pedestal events file in HDF5 format on the disk"
         type: File
         contentType: application/x-hdf
     TimeCalibrationFile:
