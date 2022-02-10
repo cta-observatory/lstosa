@@ -99,10 +99,10 @@ activities:
 #              entityName: AnalysisConfigFile
 #              value: CalibrationConfigurationFile
 #              filepath: /fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/data/onsite_camera_calibration_param.json
-#            - role: "Systematics correction file"
-#              description: "Systematics correction file"
-#              entityName: SystematicsCorrectionFile
-#              value: SystematicsCorrectionFile
+#            - role: "Systematic correction file"
+#              description: "Systematic correction file"
+#              entityName: SystematicCorrectionFile
+#              value: SystematicCorrectionFile
 #              filepath: /path/to/ff_systematics_file.h5
 #            - role: "Time calibration file"
 #              description: "Time calibration file"
@@ -378,8 +378,8 @@ entities:
         description: "Coefficients calibration file in HDF5 format on the disk"
         type: File
         contentType: application/x-hdf
-    SystematicsCorrectionFile:
-        description: "Systematics correction file in HDF5 format on the disk"
+    SystematicCorrectionFile:
+        description: "Systematic correction file in HDF5 format on the disk"
         type: File
         contentType: application/x-hdf
     TimeCalibrationFile:
