@@ -1,11 +1,9 @@
 import datetime
-from pathlib import Path
 
 import pytest
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.utils import lstdate_to_dir
 
 options.date = "2020_01_17"
 options.tel_id = "LST1"
