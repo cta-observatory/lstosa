@@ -15,10 +15,19 @@ import pandas as pd
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.paths import (
+    pedestal_ids_file_exists,
+    get_drive_file,
+    get_summary_file, get_pedestal_ids_file
+)
 from osa.report import history
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
-from osa.utils.utils import date_in_yymmdd, lstdate_to_dir, time_to_seconds, stringify
+from osa.utils.utils import (
+    lstdate_to_dir,
+    time_to_seconds,
+    stringify
+)
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -28,7 +37,6 @@ __all__ = [
     "historylevel",
     "prepare_jobs",
     "sequence_filenames",
-    "sequence_calibration_filenames",
     "set_queue_values",
     "job_header_template",
     "plot_job_statistics",
@@ -41,11 +49,6 @@ __all__ = [
     "filter_jobs",
     "run_sacct",
     "run_squeue",
-    "get_time_calibration_file",
-    "get_calibration_file",
-    "get_drs4_pedestal_file",
-    "get_systematic_correction_file",
-    "pedestal_ids_file_exists",
     "calibration_sequence_job_template",
     "data_sequence_job_template",
     "save_job_information"
@@ -265,130 +268,10 @@ def prepare_jobs(sequence_list):
 
 def sequence_filenames(sequence):
     """Build names of the script, veto and history files."""
-    script_suffix = ".py"
-    history_suffix = ".history"
-    veto_suffix = ".veto"
     basename = f"sequence_{sequence.jobname}"
-
-    sequence.script = Path(options.directory) / f"{basename}{script_suffix}"
-    sequence.veto = Path(options.directory) / f"{basename}{veto_suffix}"
-    sequence.history = Path(options.directory) / f"{basename}{history_suffix}"
-
-
-def get_time_calibration_file(run_id: int) -> Path:
-    """
-    Return the time calibration file corresponding to a calibration run taken before
-    the run id given. If run_id is smaller than the first run id from the time
-    calibration files, return the first time calibration file available, which
-    corresponds to 1625.
-    """
-
-    time_calibration_dir = Path(cfg.get("LST1", "TIMECALIB_DIR"))
-    file_list = sorted(time_calibration_dir.rglob("pro/time_calibration.Run*.h5"))
-
-    if not file_list:
-        raise IOError("No time calibration file found")
-
-    for file in file_list:
-        run_in_list = int(file.name.split(".")[1].strip("Run"))
-        if run_id < 1625:
-            time_calibration_file = file_list[0]
-        elif run_in_list <= run_id:
-            time_calibration_file = file
-        else:
-            break
-
-    return time_calibration_file.resolve()
-
-
-def get_systematic_correction_file(date: str) -> Path:
-    """
-    Return the systematic correction file for a given date.
-
-    Parameters
-    ----------
-    date : str
-        Date in the format YYYYMMDD.
-
-    Notes
-    -----
-    The search for the proper systematic correction file is based on
-    lstchain/scripts/onsite/onsite_create_calibration_file.py
-    """
-    sys_dir = Path(cfg.get("LST1", "SYSTEMATIC_DIR"))
-
-    # Search for the first sys correction file before the run, if nothing before,
-    # use the first found
-    dir_list = sorted(sys_dir.rglob('*/pro/ffactor_systematics*'))
-    if not dir_list:
-        raise IOError(
-            f"No systematic correction file found for production pro in {sys_dir}\n"
-        )
-    sys_date_list = sorted([file.parts[-3] for file in dir_list], reverse=True)
-    selected_date = next(
-        (day for day in sys_date_list if day <= date), sys_date_list[-1]
-    )
-
-    return Path(
-        f"{sys_dir}/{selected_date}/pro/ffactor_systematics_{selected_date}.h5"
-    ).resolve()
-
-
-def get_drs4_pedestal_file(run_id: int) -> Path:
-    """
-    Return the drs4 pedestal file corresponding to a given run id
-    regardless of the date when the run was taken.
-    """
-    r0_dir = Path(cfg.get("LST1", "R0_DIR"))
-    drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
-
-    r0_file = sorted(r0_dir.rglob(f"LST-1.1.Run{run_id:05d}.0000.fits.fz"))
-    date_run = r0_file[0].parent.name
-    return (
-        drs4_pedestal_dir
-        / date_run
-        / f"pro/drs4_pedestal.Run{run_id:05d}.0000.h5"
-    )
-
-
-def get_calibration_file(run_id: int) -> Path:
-    """
-    Return the drs4 pedestal file corresponding to a given run id
-    regardless of the date when the run was taken.
-    """
-    r0_dir = Path(cfg.get("LST1", "R0_DIR"))
-    calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
-
-    r0_file = sorted(r0_dir.rglob(f"LST-1.1.Run{run_id:05d}.0000.fits.fz"))
-    date_run = r0_file[0].parent.name
-    return (
-        calib_dir
-        / date_run
-        / f"pro/calibration_filters_52.Run{run_id:05d}.0000.h5"
-    )
-
-
-def sequence_calibration_filenames(sequence_list):
-    """Build names of the calibration and drive files."""
-    nightdir = lstdate_to_dir(options.date)
-    yy_mm_dd = date_in_yymmdd(nightdir)
-    drive_file = f"drive_log_{yy_mm_dd}.txt"
-
-    for sequence in sequence_list:
-
-        if not sequence.parent_list:
-            drs4_pedestal_run_id = sequence.previousrun
-            pedcal_run_id = sequence.run
-        else:
-            drs4_pedestal_run_id = sequence.parent_list[0].previousrun
-            pedcal_run_id = sequence.parent_list[0].run
-
-        # Assign the calibration and drive files to the sequence object
-        sequence.drive = drive_file
-        sequence.pedestal = get_drs4_pedestal_file(drs4_pedestal_run_id)
-        sequence.calibration = get_calibration_file(pedcal_run_id)
-        sequence.time_calibration = get_time_calibration_file(pedcal_run_id)
-        sequence.systematic_correction = get_systematic_correction_file(nightdir)
+    sequence.script = Path(options.directory) / f"{basename}.py"
+    sequence.veto = Path(options.directory) / f"{basename}.veto"
+    sequence.history = Path(options.directory) / f"{basename}.history"
 
 
 def save_job_information():
@@ -549,9 +432,7 @@ def data_sequence_job_template(sequence):
     # Get the job header template.
     job_header = job_header_template(sequence)
 
-    nightdir = lstdate_to_dir(options.date)
-    drivedir = Path(cfg.get("LST1", "DRIVE_DIR"))
-    run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
+    flat_date = lstdate_to_dir(options.date)
 
     commandargs = ["datasequence"]
 
@@ -566,18 +447,13 @@ def data_sequence_job_template(sequence):
         commandargs.append("--no-dl2")
 
     commandargs.append(f"--date={options.date}")
-
-    run_summary_file = run_summary_dir / f"RunSummary_{nightdir}.ecsv"
-    drive_file = drivedir / sequence.drive
     commandargs.append(f"--prod-id={options.prod_id}")
-    commandargs.append(f"--drs4-pedestal-file={sequence.pedestal.resolve()}")
-    commandargs.append(f"--time-calib-file={sequence.time_calibration.resolve()}")
-    commandargs.append(f"--pedcal-file={sequence.calibration.resolve()}")
-    commandargs.append(
-        f"--systematic-correction-file={sequence.systematic_correction.resolve()}"
-    )
-    commandargs.append(f"--drive-file={drive_file.resolve()}")
-    commandargs.append(f"--run-summary={run_summary_file.resolve()}")
+    commandargs.append(f"--drs4-pedestal-file={sequence.pedestal}")
+    commandargs.append(f"--time-calib-file={sequence.time_calibration}")
+    commandargs.append(f"--pedcal-file={sequence.calibration}")
+    commandargs.append(f"--systematic-correction-file={sequence.systematic_correction}")
+    commandargs.append(f"--drive-file={get_drive_file(flat_date)}")
+    commandargs.append(f"--run-summary={get_summary_file(flat_date)}")
 
     content = job_header + "\n" + PYTHON_IMPORTS
 
@@ -601,14 +477,8 @@ def data_sequence_job_template(sequence):
         content += TAB * 2 + f"'{arg}',\n"
 
     if pedestal_ids_file_exists(sequence.run):
-        pedestal_ids_dir = Path(cfg.get("LST1", "PEDESTAL_FINDER_DIR")) / nightdir
-        pedestal_ids_file = (
-            pedestal_ids_dir /
-            f"pedestal_ids_Run{sequence.run:05d}.{{subruns:04d}}.h5"
-        )
-        content += (
-            TAB * 2 + f"f'--pedestal-ids-file={pedestal_ids_file.resolve()}',\n"
-        )
+        pedestal_ids_file = get_pedestal_ids_file(sequence.run, flat_date)
+        content += TAB * 2 + f"f'--pedestal-ids-file={pedestal_ids_file}',\n"
 
     content += TAB * 2 + f"f'{sequence.run:05d}.{{subruns:04d}}',\n"
 
@@ -973,10 +843,3 @@ def run_program_with_history_logging(
         raise ValueError(f"{command_args[0]} failed with output: \n {output.stdout}")
 
     return rc
-
-
-def pedestal_ids_file_exists(run_id: int) -> bool:
-    """Look for the files with pedestal interleaved event identification."""
-    pedestal_ids_dir = Path(cfg.get("LST1", "PEDESTAL_FINDER_DIR"))
-    file_list = sorted(pedestal_ids_dir.rglob(f"pedestal_ids_Run{run_id:05d}.*.h5"))
-    return bool(file_list)
