@@ -1,3 +1,5 @@
+"""Handle the paths of the analysis products."""
+
 import logging
 from pathlib import Path
 
@@ -35,7 +37,6 @@ def get_time_calibration_file(run_id: int) -> Path:
     calibration files, return the first time calibration file available, which
     corresponds to 1625.
     """
-
     time_calibration_dir = Path(cfg.get("LST1", "TIMECALIB_DIR"))
     file_list = sorted(time_calibration_dir.rglob("pro/time_calibration.Run*.h5"))
 

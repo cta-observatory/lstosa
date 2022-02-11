@@ -1,4 +1,4 @@
-"""Functions to deal with dates, directories and prod IDs."""
+"""Functions to deal with dates and prod IDs."""
 
 import inspect
 import logging

@@ -103,7 +103,9 @@ def calibration_sequence(drs4_pedestal_run_id: int, pedcal_run_id: int) -> int:
 
 @trace
 def drs4_pedestal(
-    drs4_pedestal_run_id: int, pedcal_run_id: int, history_file: Path
+        drs4_pedestal_run_id: int,
+        pedcal_run_id: int,
+        history_file: Path
 ) -> int:
     """
     Create a DRS4 pedestal file for baseline correction.
@@ -138,7 +140,9 @@ def drs4_pedestal(
 
 @trace
 def calibrate_charge(
-    drs4_pedestal_run_id: int, pedcal_run_id: int, history_file: Path
+        drs4_pedestal_run_id: int,
+        pedcal_run_id: int,
+        history_file: Path
 ) -> int:
     """
     Create the calibration file to transform from ADC counts to photo-electrons
