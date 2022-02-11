@@ -98,7 +98,7 @@ def parse_variables(class_instance):
         # systematic_corr    [3] .../20200101/pro/no_sys_corrected_calibration_scan_fit_20210514.0000.h5
         # drive_file         [4] .../DrivePositioning/drive_log_20_02_18.txt
         # run_summary_file   [5] .../RunSummary/RunSummary_20200101.ecsv
-        # pedestal_ids_file  [6] .../RunSummary/RunSummary_20200101.ecsv
+        # pedestal_ids_file  [6] .../path/to/interleaved/pedestal/events.h5
         # run_str            [7] 02006.0000
 
         run_subrun_id = class_instance.args[7]
@@ -115,14 +115,17 @@ def parse_variables(class_instance):
         class_instance.PedestalFile = pedestal_file
         class_instance.TimeCalibrationFile = timecalibration_file
         class_instance.SystematicCorrectionFile = systematic_correction_file
-        class_instance.PointingFile = os.path.realpath(class_instance.args[3])
-        class_instance.RunSummaryFile = os.path.realpath(class_instance.args[4])
+        class_instance.PointingFile = os.path.realpath(class_instance.args[4])
+        class_instance.RunSummaryFile = os.path.realpath(class_instance.args[5])
         class_instance.DL1SubrunDataset = os.path.realpath(
             f"{outdir_dl1}/dl1_LST-1.Run{run_subrun_id}.h5"
         )
         class_instance.MuonsSubrunDataset = os.path.realpath(
             f"{muon_dir}/muons_LST-1.Run{run_subrun_id}.fits"
         )
+        class_instance.InterleavedPedestalEventsFile = None
+        if class_instance.args[6] is not None:
+            class_instance.InterleavedPedestalEventsFile = os.path.realpath(class_instance.args[6])
 
     if class_instance.__name__ == "dl1ab":
         # run_str       [0] 02006.0000
