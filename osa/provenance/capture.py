@@ -357,7 +357,7 @@ def log_session(class_instance, start):
     if class_instance.__name__ in REDUCTION_TASKS:
         session_id = f"{class_instance.ObservationDate}{class_instance.ObservationRun}"
     else:
-        session_id = f"{class_instance.PedestalRun}{class_instance. CalibrationRun}"
+        session_id = f"{class_instance.PedestalRun}{class_instance.CalibrationRun}"
     # OSA specific
     # prov session is outside scripting and is run-wise
     # we may have different sessions/runs in the same log file
