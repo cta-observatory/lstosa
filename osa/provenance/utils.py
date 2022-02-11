@@ -63,8 +63,8 @@ def parse_variables(class_instance):
         # drs4_pedestal_run_id  [0] 1804
         # pedcal_run_id         [1] 1805
         # history_file          [2] .../20210913/v0.7.5/sequence_LST1_01805.0000.history
-        class_instance.PedestalRun = class_instance.args[0]
-        class_instance.CalibrationRun = class_instance.args[1]
+        class_instance.PedestalRun = f"{class_instance.args[0]:05d}"
+        class_instance.CalibrationRun = f"{class_instance.args[1]:05d}"
 
         pro = "pro"
         # TODO - massive reprocessing vs. next day processing
