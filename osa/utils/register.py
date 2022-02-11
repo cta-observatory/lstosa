@@ -7,8 +7,8 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.paths import destination_dir
 from osa.utils.logging import myLogger
-from osa.utils.utils import destination_dir
 from osa.veto import set_closed_sequence
 
 __all__ = [

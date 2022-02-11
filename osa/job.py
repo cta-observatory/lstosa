@@ -18,7 +18,8 @@ from osa.configs.config import cfg
 from osa.paths import (
     pedestal_ids_file_exists,
     get_drive_file,
-    get_summary_file, get_pedestal_ids_file
+    get_summary_file,
+    get_pedestal_ids_file
 )
 from osa.report import history
 from osa.utils.iofile import write_to_file

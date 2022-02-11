@@ -17,6 +17,7 @@ from osa.configs.config import cfg
 from osa.job import are_all_jobs_correctly_finished, save_job_information
 from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
 from osa.nightsummary.nightsummary import run_summary_table
+from osa.paths import destination_dir
 from osa.provenance.utils import store_conda_env_export
 from osa.raw import is_raw_data_available
 from osa.report import start
@@ -28,7 +29,6 @@ from osa.utils.utils import (
     is_day_closed,
     stringify,
     lstdate_to_dir,
-    destination_dir,
     create_lock,
     gettag,
 )

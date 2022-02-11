@@ -21,12 +21,9 @@ __all__ = [
     "is_day_closed",
     "get_prod_id",
     "date_in_yymmdd",
-    "destination_dir",
     "get_lock_file",
     "is_defined",
-    "destination_dir",
     "create_lock",
-    "get_input_file",
     "stringify",
     "gettag",
     "get_calib_prod_id",
@@ -34,8 +31,6 @@ __all__ = [
     "get_dl2_prod_id",
     "get_night_limit_timestamp",
     "time_to_seconds",
-    "datacheck_directory",
-    "get_datacheck_files",
     "DATACHECK_FILE_PATTERNS"
 ]
 
@@ -316,92 +311,6 @@ def date_in_yymmdd(date_string):
     return f"{year}_{month}_{day}"
 
 
-def destination_dir(concept, create_dir=True) -> Path:
-    """
-    Create final destination directory for each data level.
-    See Also osa.utils.register_run_concept_files
-
-    Parameters
-    ----------
-    concept : str
-        Expected: MUON, DL1AB, DATACHECK, DL2, PEDESTAL, CALIB, TIMECALIB
-    create_dir : bool
-        Set it to True (default) if you want to create the directory.
-        Otherwise, it just returns the path
-
-    Returns
-    -------
-    path : pathlib.Path
-        Path to the directory
-    """
-    nightdir = lstdate_to_dir(options.date)
-
-    if concept == "MUON":
-        directory = (
-            Path(cfg.get(options.tel_id, concept + "_DIR")) / nightdir / options.prod_id
-        )
-    elif concept in ["DL1AB", "DATACHECK"]:
-        directory = (
-            Path(cfg.get(options.tel_id, concept + "_DIR"))
-            / nightdir
-            / options.prod_id
-            / options.dl1_prod_id
-        )
-    elif concept in ["DL2", "DL3"]:
-        directory = (
-            Path(cfg.get(options.tel_id, concept + "_DIR"))
-            / nightdir
-            / options.prod_id
-            / options.dl2_prod_id
-        )
-    elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
-        directory = (
-            Path(cfg.get(options.tel_id, concept + "_DIR"))
-            / nightdir
-            / options.calib_prod_id
-        )
-    else:
-        log.warning(f"Concept {concept} not known")
-        directory = None
-
-    if not options.simulate and create_dir:
-        log.debug(f"Destination directory created for {concept}: {directory}")
-        directory.mkdir(parents=True, exist_ok=True)
-    else:
-        log.debug(f"SIMULATING creation of final directory for {concept}")
-
-    return directory
-
-
-def get_input_file(run_number: str) -> Path:
-    """
-    Get the input file for the given run number.
-
-    Parameters
-    ----------
-    run_number: str
-        String with the run number
-
-    Returns
-    -------
-    input_file: pathlib.Path
-
-    Raises
-    ------
-    IOError
-        If the input file cannot be found.
-    """
-    r0_path = Path(cfg.get("LST1", "R0_DIR")).absolute()
-
-    # Get raw data file.
-    file_list = list(r0_path.rglob(f"*/LST-1.1.Run{run_number}.0000*"))
-
-    if not file_list:
-        raise IOError(f"Files corresponding to run {run_number} not found in {r0_path}.")
-
-    return file_list[0]
-
-
 def stringify(args):
     """Join a list of arguments in a string."""
     return " ".join(map(str, args))
@@ -448,26 +357,3 @@ def time_to_seconds(timestring):
     else:
         raise ValueError("Time format not recognized.")
     return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
-
-
-def get_datacheck_files(pattern: str, directory: Path) -> list:
-    """Return a list of files matching the pattern."""
-    return [file for file in directory.glob(pattern)]
-
-
-def datacheck_directory(data_type: str, date: str) -> Path:
-    """Returns the path to the datacheck directory given the data type."""
-    if data_type in {"PEDESTAL", "CALIB"}:
-        directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / date / "pro/log"
-    elif data_type == "DL1":
-        directory = (
-            Path(cfg.get("LST1", f"{data_type}_DIR"))
-            / date
-            / options.prod_id
-            / options.dl1_prod_id
-        )
-    elif data_type == "LONGTERM":
-        directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / options.prod_id / date
-    else:
-        raise ValueError(f"Unknown data type: {data_type}")
-    return directory
