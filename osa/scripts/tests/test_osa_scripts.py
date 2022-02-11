@@ -90,17 +90,17 @@ def test_simulate_processing(
 
     with open(json_file_dl1) as file:
         dl1 = yaml.safe_load(file)
-    assert len(dl1["entity"]) == 16
-    assert len(dl1["activity"]) == 4
-    assert len(dl1["used"]) == 13
-    assert len(dl1["wasGeneratedBy"]) == 7
+    assert len(dl1["entity"]) == 11
+    assert len(dl1["activity"]) == 2
+    assert len(dl1["used"]) == 10
+    assert len(dl1["wasGeneratedBy"]) == 3
 
     with open(json_file_dl2) as file:
         dl2 = yaml.safe_load(file)
-    assert len(dl2["entity"]) == 25
-    assert len(dl2["activity"]) == 6
-    assert len(dl2["used"]) == 21
-    assert len(dl2["wasGeneratedBy"]) == 12
+    assert len(dl2["entity"]) == 20
+    assert len(dl2["activity"]) == 4
+    assert len(dl2["used"]) == 18
+    assert len(dl2["wasGeneratedBy"]) == 8
 
     rc = run_program("simulate_processing", "-p")
     assert rc.returncode == 0
