@@ -22,7 +22,7 @@ def directory_in_webserver(
         prod_id: str
 ) -> Path:
     """
-    Create directories in the datacheck web server and setup index.php file.
+    Create directories in the datacheck web server.
 
     Parameters
     ----------
@@ -49,11 +49,8 @@ def directory_in_webserver(
 
     destination_dir = DATACHECK_BASEDIR / DATACHECK_WEB_DIRS[datacheck_type]
 
-    index_php = cfg.get("WEBSERVER", "INDEX_PHP")
     remote_mkdir = ["ssh", host, "mkdir", "-p", destination_dir]
-    copy_index_php = ["scp", index_php, f"{host}:{destination_dir}/."]
     sp.run(remote_mkdir, check=True)
-    sp.run(copy_index_php, check=True)
 
     return destination_dir
 

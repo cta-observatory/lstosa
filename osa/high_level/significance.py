@@ -258,8 +258,6 @@ def main(date_obs, telescope, config):
     )
     cmd = ["ssh", host, "mkdir", "-p", dest_directory]
     subprocess.run(cmd, capture_output=True, check=True)
-    cmd = ["scp", cfg.get("WEBSERVER", "INDEXPHP"), f"{host}:{dest_directory}/."]
-    subprocess.run(cmd, capture_output=True, check=True)
 
     sources = list_of_source(options.date)
     log.info(f"Sources: {sources}")
