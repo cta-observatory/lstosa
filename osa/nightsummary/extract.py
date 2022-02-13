@@ -16,7 +16,8 @@ from osa.configs.datamodel import (
     SequenceData,
     SubrunObj,
 )
-from osa.job import sequence_calibration_filenames, sequence_filenames
+from osa.job import sequence_filenames
+from osa.paths import sequence_calibration_files
 from osa.nightsummary import database
 from osa.nightsummary.database import db_available
 from osa.utils.logging import myLogger
@@ -421,6 +422,6 @@ def generate_workflow(run_list, sequences_to_analyze, require):
                     break
 
     # insert the calibration file names
-    sequence_calibration_filenames(sequence_list)
+    sequence_calibration_files(sequence_list)
     log.debug("Workflow completed")
     return sequence_list

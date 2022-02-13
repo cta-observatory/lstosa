@@ -8,17 +8,15 @@ import logging
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.cliopts import copy_datacheck_parsing
-from osa.utils.logging import myLogger
-from osa.utils.utils import (
-    lstdate_to_dir,
-    is_day_closed,
+from osa.paths import (
     datacheck_directory,
     get_datacheck_files,
 )
-from osa.webserver.utils import copy_to_webserver, set_no_observations_flag
+from osa.utils.cliopts import copy_datacheck_parsing
+from osa.utils.logging import myLogger
 from osa.utils.utils import DATACHECK_FILE_PATTERNS
-
+from osa.utils.utils import lstdate_to_dir, is_day_closed
+from osa.webserver.utils import copy_to_webserver, set_no_observations_flag
 
 log = myLogger(logging.getLogger())
 

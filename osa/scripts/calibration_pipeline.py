@@ -15,10 +15,10 @@ from pathlib import Path
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import historylevel, run_program_with_history_logging
+from osa.paths import drs4_pedestal_exists, calibration_file_exists
 from osa.provenance.capture import trace
 from osa.utils.cliopts import calibration_pipeline_cliparsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_dir
 
 __all__ = [
     "calibration_sequence",
@@ -31,7 +31,7 @@ __all__ = [
 log = myLogger(logging.getLogger())
 
 
-def is_calibration_produced(drs4_pedestal_run_id: str, pedcal_run_id: str) -> bool:
+def is_calibration_produced(drs4_pedestal_run_id: int, pedcal_run_id: int) -> bool:
     """
     Check if both daily calibration (DRS4 baseline and
     charge calibration) files are already produced.
@@ -42,33 +42,7 @@ def is_calibration_produced(drs4_pedestal_run_id: str, pedcal_run_id: str) -> bo
     )
 
 
-def drs4_pedestal_exists(drs4_pedestal_run_id: str) -> bool:
-    """Return true if drs4 pedestal file was already produced."""
-    pedestal_dir = Path(cfg.get(options.tel_id, "PEDESTAL_DIR"))
-    date_obs = lstdate_to_dir(options.date)
-
-    drs4_pedestal_file = (
-        pedestal_dir / date_obs / options.calib_prod_id /
-        f"drs4_pedestal.Run{drs4_pedestal_run_id}.0000.h5"
-    )
-
-    return drs4_pedestal_file.exists()
-
-
-def calibration_file_exists(pedcal_run_id: str) -> bool:
-    """Return true if calibration file was already produced."""
-    calib_dir = Path(cfg.get(options.tel_id, "CALIB_DIR"))
-    date_obs = lstdate_to_dir(options.date)
-
-    pedcal_file = (
-        calib_dir / date_obs / options.calib_prod_id /
-        f"calibration_filters_52.Run{pedcal_run_id}.0000.h5"
-    )
-
-    return pedcal_file.exists()
-
-
-def drs4_pedestal_command(drs4_pedestal_run_id: str) -> list:
+def drs4_pedestal_command(drs4_pedestal_run_id: int) -> list:
     """Build the create_drs4_pedestal command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     return [
@@ -79,7 +53,7 @@ def drs4_pedestal_command(drs4_pedestal_run_id: str) -> list:
     ]
 
 
-def calibration_file_command(pedestal_run_id: str, pedcal_run_id: str) -> list:
+def calibration_file_command(pedestal_run_id: int, pedcal_run_id: int) -> list:
     """Build the create_calibration_file command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     return [
@@ -91,15 +65,15 @@ def calibration_file_command(pedestal_run_id: str, pedcal_run_id: str) -> list:
     ]
 
 
-def calibration_sequence(drs4_pedestal_run_id: str, pedcal_run_id: str) -> int:
+def calibration_sequence(drs4_pedestal_run_id: int, pedcal_run_id: int) -> int:
     """
     Handle the two stages for creating the daily calibration products:
     DRS4 pedestal and charge calibration files.
 
     Parameters
     ----------
-    drs4_pedestal_run_id : str
-    pedcal_run_id : str
+    drs4_pedestal_run_id : int
+    pedcal_run_id : int
 
     Returns
     -------
@@ -129,17 +103,19 @@ def calibration_sequence(drs4_pedestal_run_id: str, pedcal_run_id: str) -> int:
 
 @trace
 def drs4_pedestal(
-    drs4_pedestal_run_id: str, pedcal_run_id: str, history_file: Path
+        drs4_pedestal_run_id: int,
+        pedcal_run_id: int,
+        history_file: Path
 ) -> int:
     """
     Create a DRS4 pedestal file for baseline correction.
 
     Parameters
     ----------
-    drs4_pedestal_run_id : str
-        String with run number of the pedestal run
-    pedcal_run_id : str
-        String with run number of the pedcal run
+    drs4_pedestal_run_id : int
+        DRS4 pedestal run number
+    pedcal_run_id : int
+        PEDCALIB run number
     history_file : `pathlib.Path`
         Path to the history file
 
@@ -156,7 +132,7 @@ def drs4_pedestal(
     return run_program_with_history_logging(
         command_args=cmd,
         history_file=history_file,
-        run=drs4_pedestal_run_id,
+        run=f"{drs4_pedestal_run_id:05d}",
         prod_id=options.calib_prod_id,
         command=cmd[0],
     )
@@ -164,16 +140,18 @@ def drs4_pedestal(
 
 @trace
 def calibrate_charge(
-    drs4_pedestal_run_id: str, pedcal_run_id: str, history_file: Path
+        drs4_pedestal_run_id: int,
+        pedcal_run_id: int,
+        history_file: Path
 ) -> int:
     """
     Create the calibration file to transform from ADC counts to photo-electrons
 
     Parameters
     ----------
-    drs4_pedestal_run_id : str
+    drs4_pedestal_run_id : int
         String with run number of the pedestal run
-    pedcal_run_id : str
+    pedcal_run_id : int
         String with run number of the pedcal run
     history_file : `pathlib.Path`
         Path to the history file
@@ -194,7 +172,7 @@ def calibrate_charge(
     return run_program_with_history_logging(
         command_args=cmd,
         history_file=history_file,
-        run=pedcal_run_id,
+        run=f"{pedcal_run_id:05d}",
         prod_id=options.calib_prod_id,
         command=cmd[0],
     )
@@ -217,7 +195,8 @@ def main():
         pedcal_run_id=pedcal_run
     ):
         log.info(
-            f"Calibration already produced, runs {drs4_pedestal_run} and {pedcal_run}"
+            f"Calibration files already produced from "
+            f"runs {drs4_pedestal_run:05d} and {pedcal_run:05d}"
         )
         sys.exit(0)
 

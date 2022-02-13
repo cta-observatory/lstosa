@@ -225,12 +225,12 @@ def calibration_pipeline_argparser():
     )
     parser.add_argument(
         "--drs4-pedestal-run",
-        type=str,
+        type=int,
         help="DRS4 pedestal run number"
     )
     parser.add_argument(
         "--pedcal-run",
-        type=str,
+        type=int,
         help="Calibration run number"
     )
 

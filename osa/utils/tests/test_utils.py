@@ -1,11 +1,9 @@
 import datetime
-from pathlib import Path
 
 import pytest
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.utils import lstdate_to_dir
 
 options.date = "2020_01_17"
 options.tel_id = "LST1"
@@ -64,48 +62,6 @@ def test_lstdate_to_dir():
         lstdate_to_dir("2020-01-17")
 
 
-def test_destination_dir():
-    from osa.utils.utils import destination_dir
-
-    options.date = "2020_01_17"
-    datedir = lstdate_to_dir(options.date)
-    options.dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
-    options.dl2_prod_id = cfg.get("LST1", "DL2_PROD_ID")
-    options.prod_id = cfg.get("LST1", "PROD_ID")
-    base_directory = cfg.get("LST1", "BASE")
-    base_path = Path(base_directory)
-
-    data_types = {
-        "DL1AB": "DL1",
-        "DATACHECK": "DL1",
-        "MUON": "DL1",
-        "DL2": "DL2",
-    }
-
-    for concept, dst_dir in data_types.items():
-        directory = destination_dir(concept, create_dir=False)
-        if concept in ["DL1AB", "DATACHECK"]:
-            expected_directory = (
-                base_path / dst_dir / datedir / options.prod_id / options.dl1_prod_id
-            )
-        elif concept == "DL2":
-            expected_directory = (
-                base_path / dst_dir / datedir / options.prod_id / options.dl2_prod_id
-            )
-        else:
-            expected_directory = base_path / dst_dir / datedir / options.prod_id
-
-        assert directory == expected_directory
-
-
-def test_get_input_file(r0_data):
-    from osa.utils.utils import get_input_file
-    runs = ["01804", "01805", "01806", "01807"]
-    for run, r0_file in zip(runs, r0_data):
-        assert r0_file.exists()
-        assert get_input_file(run) == r0_file
-
-
 def test_time_to_seconds():
     from osa.utils.utils import time_to_seconds
     seconds_with_day = time_to_seconds("2-02:27:15")
@@ -140,16 +96,3 @@ def test_create_lock(base_test_dir):
     lock_path = base_test_dir / "test_lock.closed"
     is_closed = create_lock(lock_path)
     assert is_closed is False
-
-
-def test_get_datacheck_file(datacheck_dl1_files):
-    from osa.utils.utils import get_datacheck_files
-    for file in datacheck_dl1_files:
-        assert file.exists()
-    dl1_path = Path("test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84")
-    files = get_datacheck_files(pattern="datacheck*.pdf", directory=dl1_path)
-    expected_files = [
-        dl1_path / "datacheck_dl1_LST-1.Run01808.pdf",
-        dl1_path / "datacheck_dl1_LST-1.Run01807.pdf"
-    ]
-    assert set(files) == set(expected_files)

@@ -60,35 +60,39 @@ def parse_variables(class_instance):
         outdir_dl2 = Path(dl2_dir) / flat_date / options.prod_id / options.dl2_prod_id
 
     if class_instance.__name__ in ["drs4_pedestal", "calibrate_charge"]:
-        # drs4_pedestal_run_id  [0] 01804
-        # pedcal_run_id         [1] 01805
-        # history_file           [2] .../20210913/v0.7.5/sequence_LST1_01805.0000.history
-        class_instance.PedestalRun = class_instance.args[0]
-        class_instance.CalibrationRun = class_instance.args[1]
+        # drs4_pedestal_run_id  [0] 1804
+        # pedcal_run_id         [1] 1805
+        # history_file          [2] .../20210913/v0.7.5/sequence_LST1_01805.0000.history
+        class_instance.PedestalRun = f"{class_instance.args[0]:05d}"
+        class_instance.CalibrationRun = f"{class_instance.args[1]:05d}"
 
         pro = "pro"
         # TODO - massive reprocessing vs. next day processing
 
         # according to code in onsite scripts in lstchain
         class_instance.RawObservationFilePedestal = os.path.realpath(
-            f"{raw_dir}/{flat_date}/LST-1.1.Run{class_instance.args[0]}.fits.fz"
+            f"{raw_dir}/{flat_date}/LST-1.1.Run{class_instance.args[0]:05d}.fits.fz"
         )
         class_instance.RawObservationFileCalibration = os.path.realpath(
-            f"{raw_dir}/{flat_date}/LST-1.1.Run{class_instance.args[1]}.fits.fz"
+            f"{raw_dir}/{flat_date}/LST-1.1.Run{class_instance.args[1]:05d}.fits.fz"
         )
         class_instance.PedestalCheckPlot = os.path.realpath(
-            f"{pedestal_dir}/{flat_date}/{pro}/log/drs4_pedestal.Run{class_instance.args[0]}.0000.pdf"
+            f"{pedestal_dir}/{flat_date}/{pro}/"
+            f"log/drs4_pedestal.Run{class_instance.args[0]:05d}.0000.pdf"
         )
         class_instance.CalibrationCheckPlot = os.path.realpath(
-            f"{calib_dir}/{flat_date}/{pro}/log/calibration_filters_52.Run{class_instance.args[1]}.0000.pdf"
+            f"{calib_dir}/{flat_date}/{pro}/"
+            f"log/calibration_filters_52.Run{class_instance.args[1]:05d}.0000.pdf"
         )
 
-        # according to code in sequence_calibration_filenames from job.py
+        # according to code in sequence_calibration_files from paths.py
         class_instance.PedestalFile = os.path.realpath(
-            f"{pedestal_dir}/{flat_date}/{pro}/drs4_pedestal.Run{class_instance.args[0]}.0000.h5"
+            f"{pedestal_dir}/{flat_date}/{pro}/"
+            f"drs4_pedestal.Run{class_instance.args[0]:05d}.0000.h5"
         )
         class_instance.CoefficientsCalibrationFile = os.path.realpath(
-            f"{calib_dir}/{flat_date}/{pro}/calibration_filters_52.Run{class_instance.args[1]}.0000.h5"
+            f"{calib_dir}/{flat_date}/{pro}/"
+            f"calibration_filters_52.Run{class_instance.args[1]:05d}.0000.h5"
         )
 
     if class_instance.__name__ == "r0_to_dl1":
