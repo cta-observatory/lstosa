@@ -22,13 +22,7 @@ from osa.job import (
     run_sacct,
     run_squeue,
 )
-from osa.nightsummary.extract import (
-    extractruns,
-    extractsequences,
-    extractsubruns,
-    sort_run_list
-)
-from osa.nightsummary.nightsummary import run_summary_table
+from osa.nightsummary.extract import build_sequences
 from osa.report import start
 from osa.utils.cliopts import sequencer_cli_parsing, set_default_directory_if_needed
 from osa.utils.logging import myLogger
@@ -99,12 +93,7 @@ def single_process(telescope):
         return sequence_list
 
     # Build the sequences
-    summary_table = run_summary_table(options.date)
-    subrun_list = extractsubruns(summary_table)
-    run_list = extractruns(subrun_list)
-    # modifies run_list by adding the seq and parent info into runs
-    sorted_run_list = sort_run_list(run_list)
-    sequence_list = extractsequences(sorted_run_list)
+    sequence_list = build_sequences(options.date)
 
     # Workflow and submission
     # if not options.simulate:

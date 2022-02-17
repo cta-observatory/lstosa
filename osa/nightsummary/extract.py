@@ -2,6 +2,7 @@
 
 import logging
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 from astropy import units as u
@@ -17,9 +18,9 @@ from osa.configs.datamodel import (
     SubrunObj,
 )
 from osa.job import sequence_filenames
-from osa.paths import sequence_calibration_files
 from osa.nightsummary import database
-from osa.nightsummary.database import db_available
+from osa.nightsummary.nightsummary import run_summary_table
+from osa.paths import sequence_calibration_files
 from osa.utils.logging import myLogger
 from osa.utils.utils import lstdate_to_iso, lstdate_to_dir
 
@@ -30,7 +31,10 @@ __all__ = [
     "extractruns",
     "extractsequences",
     "generate_workflow",
-    "sort_run_list"
+    "sort_run_list",
+    "build_sequences",
+    "list_of_runs_and_sources",
+    "get_source_names_list"
 ]
 
 
@@ -105,7 +109,7 @@ def extractsubruns(summary_table):
 
     # Add metadata from TCU database if available
     # and store it in a ECSV file to be re-used
-    elif db_available():
+    elif database.db_available():
         run_table = Table(
             names=["run_id", "source_name", "source_ra", "source_dec"],
             dtype=["int32", str, "float64", "float64"],
@@ -425,3 +429,55 @@ def generate_workflow(run_list, sequences_to_analyze, require):
     sequence_calibration_files(sequence_list)
     log.debug("Workflow completed")
     return sequence_list
+
+
+def build_sequences(date: str):
+    """Build the list of sequences to process from a given date YYYY_MM_DD."""
+    summary_table = run_summary_table(date)
+    subrun_list = extractsubruns(summary_table)
+    run_list = extractruns(subrun_list)
+    # modifies run_list by adding the seq and parent info into runs
+    sorted_run_list = sort_run_list(run_list)
+    return extractsequences(sorted_run_list)
+
+
+def list_of_runs_and_sources(date_obs: str) -> dict:
+    """
+    Get the list of sources from the sequences' information.
+
+    Parameters
+    ----------
+    date_obs : str
+        Date of observation in format YYYY_MM_DD
+
+    Returns
+    -------
+    sources : Dict[str, list]
+    """
+
+    # Build the sequences
+    sequence_list = build_sequences(date_obs)
+
+    # Create a dictionary of sources and their corresponding sequences
+    source_dict = {sequence.run: sequence.source_name for sequence in sequence_list}
+
+    source_dict_grouped = defaultdict(list)
+    for key, val in sorted(source_dict.items()):
+        source_dict_grouped[val].append(key)
+
+    return dict(source_dict_grouped)
+
+
+def get_source_names_list(sequence_list):
+    """Return the list of sources names from the list of sequences."""
+    source_list = []
+    for sequence in sequence_list:
+        if sequence.source_name is not None and sequence.source_name not in source_list:
+            source_list.append(sequence.source_name)
+
+    log.info(f"List of sources: {source_list}")
+
+    if not source_list:
+        sys.exit("No sources found. Check the access to database. Exiting.")
+
+    return source_list

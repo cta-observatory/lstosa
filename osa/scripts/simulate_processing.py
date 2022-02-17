@@ -15,8 +15,7 @@ import yaml
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import calibration_sequence_job_template, data_sequence_job_template
-from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
-from osa.nightsummary.nightsummary import run_summary_table
+from osa.nightsummary.extract import build_sequences
 from osa.provenance.utils import get_log_config
 from osa.utils.cliopts import simprocparsing
 from osa.utils.logging import myLogger
@@ -149,11 +148,8 @@ def simulate_processing():
     """Simulate daily processing and capture provenance."""
     options.simulate = True
     options.test = True
-    summary_table = run_summary_table(options.date)
 
-    sub_run_list = extractsubruns(summary_table)
-    run_list = extractruns(sub_run_list)
-    sequence_list = extractsequences(run_list)
+    sequence_list = build_sequences(options.date)
 
     # simulate data calibration and reduction
     for sequence in sequence_list:
