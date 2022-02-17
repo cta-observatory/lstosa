@@ -19,6 +19,9 @@ ALL_SCRIPTS = [
     "show_run_summary",
     "provprocess",
     "simulate_processing",
+    "dl3_stage",
+    "theta2_significance",
+    "source_coordinates"
 ]
 
 options.date = "2020_01_17"

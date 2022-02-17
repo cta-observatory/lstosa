@@ -1,0 +1,11 @@
+[cuts]
+gammaness = 0.7
+intensity = 50
+wl = 0.0
+leakage_intensity_width_2 = 0.2
+
+[theta2]
+global_cut = 0.04
+range = [0, 1]
+norm_range_min = 0.5
+norm_range_max = 1

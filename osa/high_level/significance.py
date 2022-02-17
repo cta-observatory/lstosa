@@ -6,8 +6,6 @@ Based on Explore_DL2_data.ipynb from LST-1 analysis 2022 school.
 
 import logging
 import subprocess
-from collections import defaultdict
-from datetime import date, timedelta
 from pathlib import Path
 
 import astropy
@@ -15,6 +13,7 @@ import astropy.units as u
 import click
 import numpy as np
 import pandas as pd
+import toml
 from ctapipe.containers import EventType
 from gammapy.stats import WStatCountsStatistic
 from lstchain.io.io import dl2_params_lstcam_key
@@ -25,25 +24,26 @@ from matplotlib import pyplot as plt
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
-from osa.nightsummary.nightsummary import run_summary_table
+from osa.nightsummary.extract import list_of_runs_and_sources
+from osa.paths import DATACHECK_WEB_BASEDIR, DEFAULT_CFG
 from osa.utils.cliopts import (
     set_default_directory_if_needed,
     get_prod_id,
     get_dl2_prod_id
 )
 from osa.utils.logging import myLogger
-from osa.utils.utils import DATACHECK_BASEDIR
-from osa.utils.utils import lstdate_to_dir
+from osa.utils.utils import lstdate_to_dir, YESTERDAY
+
+__all__ = [
+    'create_hist',
+    'lima_significance',
+    'event_selection',
+    'plot_theta2',
+]
 
 log = myLogger(logging.getLogger(__name__))
 
-DEFAULT_CFG = Path(__file__).parent / '../../cfg/sequencer.cfg'
-
-THETA2_GLOBAL_CUT = 0.04
-THETA2_RANGE = (0, 1)
-NORM_RANGE_THETA2_MIN = 0.5
-NORM_RANGE_THETA2_MAX = 1
+SELECTION_CUTS_FILE = Path(__file__).parent / 'selection_cuts.toml'
 
 mpl_linewidth = 1.6
 mpl_rc = {
@@ -69,42 +69,13 @@ mpl_rc = {
 plt.style.use(mpl_rc)
 
 
-def list_of_source(date_obs: str) -> dict:
-    """
-    Get the list of sources from the sequences' information.
-
-    Parameters
-    ----------
-    date_obs : str
-
-    Returns
-    -------
-    sources : Dict[str, list]
-    """
-
-    # Build the sequences
-    summary_table = run_summary_table(date_obs)
-    subrun_list = extractsubruns(summary_table)
-    run_list = extractruns(subrun_list)
-    sequence_list = extractsequences(run_list)
-
-    # Create a dictionary of sources and their corresponding sequences
-    source_dict = {sequence.run: sequence.source_name for sequence in sequence_list}
-
-    source_dict_grouped = defaultdict(list)
-    for key, val in sorted(source_dict.items()):
-        source_dict_grouped[val].append(key)
-
-    return dict(source_dict_grouped)
-
-
-def create_hist(theta2_on, theta2_off):
-    nbins = round((THETA2_RANGE[1] / THETA2_GLOBAL_CUT) * 2)
+def create_hist(theta2_on, theta2_off, theta2_config: dict):
+    nbins = round((theta2_config["range"][1] / theta2_config["global_cut"]) * 2)
     hist_on, bin_edges_on = np.histogram(
-        theta2_on, density=False, bins=nbins, range=THETA2_RANGE
+        theta2_on, density=False, bins=nbins, range=tuple(theta2_config["range"])
     )
     hist_off, bin_edges_off = np.histogram(
-        theta2_off, density=False, bins=nbins, range=THETA2_RANGE
+        theta2_off, density=False, bins=nbins, range=tuple(theta2_config["range"])
     )
 
     bin_width = bin_edges_on[1] - bin_edges_off[0]
@@ -113,12 +84,19 @@ def create_hist(theta2_on, theta2_off):
     return hist_on, hist_off, bin_edges_on, bin_edges_off, bin_center
 
 
-def lima_significance(hist_on, hist_off, bin_edges_on, bin_edges_off, eff_time):
-    N_on = np.sum(hist_on[bin_edges_on[1:] <= THETA2_GLOBAL_CUT])
-    N_off = np.sum(hist_off[bin_edges_off[1:] <= THETA2_GLOBAL_CUT])
+def lima_significance(
+        hist_on,
+        hist_off,
+        bin_edges_on,
+        bin_edges_off,
+        eff_time,
+        theta2_config: dict,
+):
+    N_on = np.sum(hist_on[bin_edges_on[1:] <= theta2_config["global_cut"]])
+    N_off = np.sum(hist_off[bin_edges_off[1:] <= theta2_config["global_cut"]])
 
-    idx_min = (np.abs(bin_edges_on - NORM_RANGE_THETA2_MIN)).argmin()
-    idx_max = (np.abs(bin_edges_on - NORM_RANGE_THETA2_MAX)).argmin()
+    idx_min = (np.abs(bin_edges_on - theta2_config["norm_range_min"])).argmin()
+    idx_max = (np.abs(bin_edges_on - theta2_config["norm_range_max"])).argmin()
 
     Non_norm = np.sum(hist_on[idx_min:idx_max])
     Noff_norm = np.sum(hist_off[idx_min:idx_max])
@@ -141,8 +119,11 @@ def lima_significance(hist_on, hist_off, bin_edges_on, bin_edges_off, eff_time):
     return text_statistics, box_color
 
 
-def select_data(data):
-
+def event_selection(
+        data: pd.DataFrame,
+        selection_cuts: dict
+) -> pd.DataFrame:
+    """Return the dataframe with the selected events."""
     t_effective, _ = get_effective_time(data)
     gammaness = np.array(data.gammaness)
     leakage_intensity_width_2 = np.array(data.leakage_intensity_width_2)
@@ -151,24 +132,19 @@ def select_data(data):
     event_type = np.array(data.event_type)
     t_effective.to(u.min)
 
-    # Cuts. TODO: Use a config file.
-    gammaness_cut = 0.7
-    intensity_cut = 50
-    wl_cut = 0.0
     log.info(
-        f'Gammaness cut: {gammaness_cut}\n'
-        f'Intensity cut: {intensity_cut}\n'
-        f'Width/Length cut: {wl_cut}'
+        f'Gammaness cut: {selection_cuts["gammaness"]}\n'
+        f'Intensity cut: {selection_cuts["intensity"]}\n'
+        f'Width/Length cut: {selection_cuts["wl"]}'
     )
-
-    # Mask for data selection
+    # Mask for event selection
     condition = (
-        (gammaness > gammaness_cut) &
-        (intensity_cut < intensity) &
-        (wl > wl_cut) &
+        (gammaness > selection_cuts["gammaness"]) &
+        (intensity > selection_cuts["intensity"]) &
+        (wl > selection_cuts["wl"]) &
         (event_type != EventType.FLATFIELD.value) &
         (event_type != EventType.SKY_PEDESTAL.value) &
-        (leakage_intensity_width_2 < 0.2)
+        (leakage_intensity_width_2 < selection_cuts["leakage_intensity_width_2"])
     )
     return data[condition]
 
@@ -183,6 +159,7 @@ def plot_theta2(
         date_obs,
         runs,
         highlevel_dir,
+        theta2_config
 ):
     fig, ax = plt.subplots()
 
@@ -201,12 +178,12 @@ def plot_theta2(
         label='Background',
     )
     ax.set_xlim(0, 0.5)
-    ax.axvline(THETA2_GLOBAL_CUT, color='black', ls='--', alpha=0.75)
+    ax.axvline(theta2_config["global_cut"], color='black', ls='--', alpha=0.75)
     ax.set_xlabel("$\\theta^{2}$ [deg$^{2}$]")
     ax.set_ylabel("Counts")
     ax.legend(
         title=legend_text, facecolor=box_color, loc='upper right'
-    )._legend_box.align='left'
+    )._legend_box.align = 'left'
     ax.set_title(
         f"Source: {source_name}. Date: {date_obs.strftime('%Y-%m-%d')}\n Runs: {runs}"
     )
@@ -223,7 +200,7 @@ def plot_theta2(
     '-d',
     '--date-obs',
     type=click.DateTime(formats=["%Y_%m_%d"]),
-    default=(date.today() - timedelta(days=1)).strftime("%Y_%m_%d")
+    default=YESTERDAY.strftime("%Y_%m_%d")
 )
 @click.option(
     '-c', '--config',
@@ -231,9 +208,15 @@ def plot_theta2(
     default=DEFAULT_CFG,
     help='Read option defaults from the specified cfg file',
 )
-def main(date_obs, telescope, config):
+def main(
+        date_obs,
+        telescope="LST1",
+        config=DEFAULT_CFG,
+):
 
     log.setLevel(logging.INFO)
+
+    log.info(f"Config: {config}")
 
     # Initial setup of global parameters
     options.date = date_obs.strftime('%Y_%m_%d')
@@ -248,10 +231,11 @@ def main(date_obs, telescope, config):
     )
     highlevel_directory.mkdir(parents=True, exist_ok=True)
     host = cfg.get('WEBSERVER', 'HOST')
+    config = toml.load(SELECTION_CUTS_FILE)
 
     # Create high-level directory in the webserver
     dest_directory = (
-        DATACHECK_BASEDIR /
+        DATACHECK_WEB_BASEDIR /
         "high_level" /
         options.prod_id /
         date_obs.strftime('%Y-%m-%d')
@@ -259,12 +243,12 @@ def main(date_obs, telescope, config):
     cmd = ["ssh", host, "mkdir", "-p", dest_directory]
     subprocess.run(cmd, capture_output=True, check=True)
 
-    sources = list_of_source(options.date)
+    sources = list_of_runs_and_sources(options.date)
     log.info(f"Sources: {sources}")
 
     for source in sources:
         if source is not None:
-            data = pd.DataFrame()
+            df = pd.DataFrame()
             runs = sources[source]
             log.info(f"Source: {source}, runs: {runs}")
 
@@ -273,9 +257,11 @@ def main(date_obs, telescope, config):
                     dl2_directory / night_dir / options.prod_id / options.dl2_prod_id /
                     f"dl2_LST-1.Run{run:05d}.h5"
                 )
-                data = pd.concat([data, pd.read_hdf(input_file, key=dl2_params_lstcam_key)])
+                df = pd.concat(
+                    [df, pd.read_hdf(input_file, key=dl2_params_lstcam_key)]
+                )
 
-            selected_events = select_data(data)
+            selected_events = event_selection(data=df, selection_cuts=config["cuts"])
 
             try:
                 true_source_position = extract_source_position(
@@ -284,18 +270,23 @@ def main(date_obs, telescope, config):
                 )
                 off_source_position = [element * -1 for element in true_source_position]
 
-                theta2_on = np.array(compute_theta2(selected_events, true_source_position))
-                theta2_off = np.array(compute_theta2(selected_events, off_source_position))
+                theta2_on = np.array(
+                    compute_theta2(selected_events, true_source_position)
+                )
+                theta2_off = np.array(
+                    compute_theta2(selected_events, off_source_position)
+                )
 
                 hist_on, hist_off, bin_edges_on, bin_edges_off, bin_center = create_hist(
-                    theta2_on, theta2_off
+                    theta2_on, theta2_off, config["theta2"]
                 )
                 text, box_color = lima_significance(
                     hist_on=hist_on,
                     hist_off=hist_off,
                     bin_edges_on=bin_edges_on,
                     bin_edges_off=bin_edges_off,
-                    eff_time=get_effective_time(data)[0],
+                    eff_time=get_effective_time(df)[0],
+                    theta2_config=config["theta2"]
                 )
                 pdf_file = plot_theta2(
                     bin_center=bin_center,
@@ -307,6 +298,7 @@ def main(date_obs, telescope, config):
                     date_obs=date_obs,
                     runs=runs,
                     highlevel_dir=highlevel_directory,
+                    theta2_config=config["theta2"]
                 )
                 cmd = ["scp", pdf_file, f"{host}:{dest_directory}/."]
                 subprocess.run(cmd, capture_output=True, check=True)
