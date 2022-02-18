@@ -48,7 +48,7 @@ setup(
     extras_require=extras_require,
     install_requires=[
         "astropy~=4.2",
-        "lstchain==0.9.1",
+        "lstchain==0.9.2",
         "ctapipe~=0.12.0",
         "matplotlib~=3.5",
         "pyparsing~=2.4",
