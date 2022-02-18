@@ -19,7 +19,7 @@ from astropy.utils import iers
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.nightsummary.extract import build_sequences, get_source_names_list
+from osa.nightsummary.extract import build_sequences, get_source_list
 from osa.paths import destination_dir, DEFAULT_CFG, create_source_directories
 from osa.utils.cliopts import (
     set_default_directory_if_needed,
@@ -34,6 +34,12 @@ __all__ = [
     "batch_cmd_create_irf",
     "batch_cmd_create_dl3",
     "batch_cmd_create_index_dl3",
+    "get_irf_file",
+    "create_irf",
+    "produce_dl3_files",
+    "setup_global_options",
+    "cuts_subdirectory",
+    "create_obs_index"
 ]
 
 log = myLogger(logging.getLogger(__name__))
@@ -309,12 +315,11 @@ def main(
     """Produce the IRF and DL3 files tool in a run basis."""
     log.setLevel(logging.INFO)
 
-    log.info(f"Config: {config}")
-
     if verbose:
         log.setLevel(logging.DEBUG)
 
     log.info(f"=== DL3 stage for {date_obs.strftime('%Y-%m-%d')} ===")
+    log.debug(f"Config: {config.resolve()}")
 
     if local:
         options.test = True
@@ -332,7 +337,7 @@ def main(
     sequence_list = build_sequences(options.date)
 
     # Get the list of source names
-    source_list = get_source_names_list(sequence_list)
+    source_list = list(get_source_list(options.date))
 
     # Create a subdirectory inside the DL3 directory corresponding to the selection cuts
     std_cuts_dir = cuts_subdirectory()

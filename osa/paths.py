@@ -252,6 +252,12 @@ def destination_dir(concept, create_dir=True) -> Path:
             / nightdir
             / options.calib_prod_id
         )
+    elif concept == "HIGH_LEVEL":
+        directory = (
+            Path(cfg.get(options.tel_id, concept + "_DIR"))
+            / nightdir
+            / options.prod_id
+        )
     else:
         log.warning(f"Concept {concept} not known")
         directory = None
@@ -266,7 +272,7 @@ def destination_dir(concept, create_dir=True) -> Path:
 
 
 def create_source_directories(source_list: list, cuts_dir: Path):
-    """Create a subdirectory for each source"""
+    """Create a subdirectory for each source."""
     for source in source_list:
         if source is not None:
             source_dir = cuts_dir / source

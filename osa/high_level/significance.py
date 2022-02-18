@@ -6,7 +6,9 @@ Based on Explore_DL2_data.ipynb from LST-1 analysis 2022 school.
 
 import logging
 import subprocess
+from datetime import datetime
 from pathlib import Path
+from typing import MutableMapping, Any
 
 import astropy
 import astropy.units as u
@@ -24,8 +26,8 @@ from matplotlib import pyplot as plt
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.nightsummary.extract import list_of_runs_and_sources
-from osa.paths import DATACHECK_WEB_BASEDIR, DEFAULT_CFG
+from osa.nightsummary.extract import get_source_list
+from osa.paths import DEFAULT_CFG, destination_dir
 from osa.utils.cliopts import (
     set_default_directory_if_needed,
     get_prod_id,
@@ -40,6 +42,8 @@ __all__ = [
     'event_selection',
     'plot_theta2',
 ]
+
+from osa.webserver.utils import directory_in_webserver
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -69,13 +73,13 @@ mpl_rc = {
 plt.style.use(mpl_rc)
 
 
-def create_hist(theta2_on, theta2_off, theta2_config: dict):
-    nbins = round((theta2_config["range"][1] / theta2_config["global_cut"]) * 2)
+def create_hist(theta2_on, theta2_off, cuts: MutableMapping[str, Any]):
+    nbins = round((cuts["theta2_range"][1] / cuts["theta2_global_cut"]) * 2)
     hist_on, bin_edges_on = np.histogram(
-        theta2_on, density=False, bins=nbins, range=tuple(theta2_config["range"])
+        theta2_on, density=False, bins=nbins, range=tuple(cuts["theta2_range"])
     )
     hist_off, bin_edges_off = np.histogram(
-        theta2_off, density=False, bins=nbins, range=tuple(theta2_config["range"])
+        theta2_off, density=False, bins=nbins, range=tuple(cuts["theta2_range"])
     )
 
     bin_width = bin_edges_on[1] - bin_edges_off[0]
@@ -90,13 +94,14 @@ def lima_significance(
         bin_edges_on,
         bin_edges_off,
         eff_time,
-        theta2_config: dict,
+        cuts: MutableMapping[str, Any],
 ):
-    N_on = np.sum(hist_on[bin_edges_on[1:] <= theta2_config["global_cut"]])
-    N_off = np.sum(hist_off[bin_edges_off[1:] <= theta2_config["global_cut"]])
+    """Return the text containing LiMa significance and statistics for plotting them."""
+    N_on = np.sum(hist_on[bin_edges_on[1:] <= cuts["theta2_global_cut"]])
+    N_off = np.sum(hist_off[bin_edges_off[1:] <= cuts["theta2_global_cut"]])
 
-    idx_min = (np.abs(bin_edges_on - theta2_config["norm_range_min"])).argmin()
-    idx_max = (np.abs(bin_edges_on - theta2_config["norm_range_max"])).argmin()
+    idx_min = (np.abs(bin_edges_on - cuts["theta2_norm_range_min"])).argmin()
+    idx_max = (np.abs(bin_edges_on - cuts["theta2_norm_range_max"])).argmin()
 
     Non_norm = np.sum(hist_on[idx_min:idx_max])
     Noff_norm = np.sum(hist_off[idx_min:idx_max])
@@ -121,30 +126,23 @@ def lima_significance(
 
 def event_selection(
         data: pd.DataFrame,
-        selection_cuts: dict
+        cuts: MutableMapping[str, Any]
 ) -> pd.DataFrame:
     """Return the dataframe with the selected events."""
     t_effective, _ = get_effective_time(data)
     gammaness = np.array(data.gammaness)
-    leakage_intensity_width_2 = np.array(data.leakage_intensity_width_2)
-    intensity = np.array(data.intensity)
-    wl = np.array(data.wl)
     event_type = np.array(data.event_type)
     t_effective.to(u.min)
 
     log.info(
-        f'Gammaness cut: {selection_cuts["gammaness"]}\n'
-        f'Intensity cut: {selection_cuts["intensity"]}\n'
-        f'Width/Length cut: {selection_cuts["wl"]}'
+        f'Gammaness global cut: {cuts["gammaness_global_cut"]}\n'
+        f'Theta2 global cut: {cuts["theta2_global_cut"]}\n'
     )
     # Mask for event selection
     condition = (
-        (gammaness > selection_cuts["gammaness"]) &
-        (intensity > selection_cuts["intensity"]) &
-        (wl > selection_cuts["wl"]) &
+        (gammaness > cuts["gammaness_global_cut"]) &
         (event_type != EventType.FLATFIELD.value) &
-        (event_type != EventType.SKY_PEDESTAL.value) &
-        (leakage_intensity_width_2 < selection_cuts["leakage_intensity_width_2"])
+        (event_type != EventType.SKY_PEDESTAL.value)
     )
     return data[condition]
 
@@ -159,8 +157,9 @@ def plot_theta2(
         date_obs,
         runs,
         highlevel_dir,
-        theta2_config
+        cuts: MutableMapping[str, Any],
 ):
+    """Plot theta2 histogram and save the figure."""
     fig, ax = plt.subplots()
 
     ax.errorbar(
@@ -178,7 +177,7 @@ def plot_theta2(
         label='Background',
     )
     ax.set_xlim(0, 0.5)
-    ax.axvline(theta2_config["global_cut"], color='black', ls='--', alpha=0.75)
+    ax.axvline(cuts["theta2_global_cut"], color='black', ls='--', alpha=0.75)
     ax.set_xlabel("$\\theta^{2}$ [deg$^{2}$]")
     ax.set_ylabel("Counts")
     ax.legend(
@@ -208,104 +207,99 @@ def plot_theta2(
     default=DEFAULT_CFG,
     help='Read option defaults from the specified cfg file',
 )
+@click.option('-s', '--simulate', is_flag=True)
 def main(
-        date_obs,
-        telescope="LST1",
-        config=DEFAULT_CFG,
+        date_obs: datetime = YESTERDAY,
+        telescope: str = "LST1",
+        config: Path = DEFAULT_CFG,
+        simulate: bool = False,
 ):
-
+    """Plot theta2 histograms for each source from a given date."""
     log.setLevel(logging.INFO)
 
-    log.info(f"Config: {config}")
+    log.debug(f"Config: {config.resolve()}")
 
     # Initial setup of global parameters
     options.date = date_obs.strftime('%Y_%m_%d')
-    night_dir = lstdate_to_dir(options.date)
+    flat_date = lstdate_to_dir(options.date)
     options.tel_id = telescope
     options.prod_id = get_prod_id()
     options.dl2_prod_id = get_dl2_prod_id()
     options.directory = set_default_directory_if_needed()
     dl2_directory = Path(cfg.get('LST1', 'DL2_DIR'))
-    highlevel_directory = (
-        Path(cfg.get('LST1', 'HIGHLEVEL_DIR')) / night_dir / options.prod_id
-    )
-    highlevel_directory.mkdir(parents=True, exist_ok=True)
+    highlevel_directory = destination_dir("HIGH_LEVEL", create_dir=True)
     host = cfg.get('WEBSERVER', 'HOST')
-    config = toml.load(SELECTION_CUTS_FILE)
+    cuts = toml.load(SELECTION_CUTS_FILE)
 
-    # Create high-level directory in the webserver
-    dest_directory = (
-        DATACHECK_WEB_BASEDIR /
-        "high_level" /
-        options.prod_id /
-        date_obs.strftime('%Y-%m-%d')
-    )
-    cmd = ["ssh", host, "mkdir", "-p", dest_directory]
-    subprocess.run(cmd, capture_output=True, check=True)
-
-    sources = list_of_runs_and_sources(options.date)
+    sources = get_source_list(options.date)
     log.info(f"Sources: {sources}")
 
     for source in sources:
-        if source is not None:
-            df = pd.DataFrame()
-            runs = sources[source]
-            log.info(f"Source: {source}, runs: {runs}")
+        df = pd.DataFrame()
+        runs = sources[source]
+        log.info(f"Source: {source}, runs: {runs}")
 
-            for run in runs:
-                input_file = (
-                    dl2_directory / night_dir / options.prod_id / options.dl2_prod_id /
-                    f"dl2_LST-1.Run{run:05d}.h5"
-                )
-                df = pd.concat(
-                    [df, pd.read_hdf(input_file, key=dl2_params_lstcam_key)]
-                )
+        for run in runs:
+            input_file = (
+                dl2_directory / flat_date / options.prod_id / options.dl2_prod_id /
+                f"dl2_LST-1.Run{run:05d}.h5"
+            )
+            df = pd.concat(
+                [df, pd.read_hdf(input_file, key=dl2_params_lstcam_key)]
+            )
 
-            selected_events = event_selection(data=df, selection_cuts=config["cuts"])
+        selected_events = event_selection(data=df, cuts=cuts)
 
-            try:
-                true_source_position = extract_source_position(
-                    data=selected_events,
-                    observed_source_name=source
-                )
-                off_source_position = [element * -1 for element in true_source_position]
+        try:
+            true_source_position = extract_source_position(
+                data=selected_events,
+                observed_source_name=source
+            )
+            off_source_position = [element * -1 for element in true_source_position]
 
-                theta2_on = np.array(
-                    compute_theta2(selected_events, true_source_position)
-                )
-                theta2_off = np.array(
-                    compute_theta2(selected_events, off_source_position)
-                )
+            theta2_on = np.array(
+                compute_theta2(selected_events, true_source_position)
+            )
+            theta2_off = np.array(
+                compute_theta2(selected_events, off_source_position)
+            )
 
-                hist_on, hist_off, bin_edges_on, bin_edges_off, bin_center = create_hist(
-                    theta2_on, theta2_off, config["theta2"]
-                )
-                text, box_color = lima_significance(
-                    hist_on=hist_on,
-                    hist_off=hist_off,
-                    bin_edges_on=bin_edges_on,
-                    bin_edges_off=bin_edges_off,
-                    eff_time=get_effective_time(df)[0],
-                    theta2_config=config["theta2"]
-                )
-                pdf_file = plot_theta2(
-                    bin_center=bin_center,
-                    hist_on=hist_on,
-                    hist_off=hist_off,
-                    legend_text=text,
-                    box_color=box_color,
-                    source_name=source,
-                    date_obs=date_obs,
-                    runs=runs,
-                    highlevel_dir=highlevel_directory,
-                    theta2_config=config["theta2"]
+            hist_on, hist_off, bin_edges_on, bin_edges_off, bin_center = create_hist(
+                theta2_on, theta2_off, cuts
+            )
+            text, box_color = lima_significance(
+                hist_on=hist_on,
+                hist_off=hist_off,
+                bin_edges_on=bin_edges_on,
+                bin_edges_off=bin_edges_off,
+                eff_time=get_effective_time(df)[0],
+                cuts=cuts
+            )
+            pdf_file = plot_theta2(
+                bin_center=bin_center,
+                hist_on=hist_on,
+                hist_off=hist_off,
+                legend_text=text,
+                box_color=box_color,
+                source_name=source,
+                date_obs=date_obs,
+                runs=runs,
+                highlevel_dir=highlevel_directory,
+                cuts=cuts
+            )
+            if not simulate:
+                dest_directory = directory_in_webserver(
+                    host=host,
+                    datacheck_type="HIGH_LEVEL",
+                    date=flat_date,
+                    prod_id=options.prod_id
                 )
                 cmd = ["scp", pdf_file, f"{host}:{dest_directory}/."]
                 subprocess.run(cmd, capture_output=True, check=True)
 
-            except astropy.coordinates.name_resolve.NameResolveError:
-                log.warning(f"Source {source} not found in the catalog. Skipping.")
-                # TODO: get ra/dec from the TCU database instead
+        except astropy.coordinates.name_resolve.NameResolveError:
+            log.warning(f"Source {source} not found in the catalog. Skipping.")
+            # TODO: get ra/dec from the TCU database instead
 
 
 if __name__ == "__main__":

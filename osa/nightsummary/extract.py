@@ -33,8 +33,7 @@ __all__ = [
     "generate_workflow",
     "sort_run_list",
     "build_sequences",
-    "list_of_runs_and_sources",
-    "get_source_names_list"
+    "get_source_list"
 ]
 
 
@@ -441,9 +440,9 @@ def build_sequences(date: str):
     return extractsequences(sorted_run_list)
 
 
-def list_of_runs_and_sources(date_obs: str) -> dict:
+def get_source_list(date_obs: str) -> dict:
     """
-    Get the list of sources from the sequences' information.
+    Get the list of sources from the sequences' information and corresponding runs.
 
     Parameters
     ----------
@@ -459,25 +458,16 @@ def list_of_runs_and_sources(date_obs: str) -> dict:
     sequence_list = build_sequences(date_obs)
 
     # Create a dictionary of sources and their corresponding sequences
-    source_dict = {sequence.run: sequence.source_name for sequence in sequence_list}
+    source_dict = {
+        sequence.run: sequence.source_name for sequence in sequence_list
+        if sequence.source_name is not None
+    }
 
     source_dict_grouped = defaultdict(list)
     for key, val in sorted(source_dict.items()):
         source_dict_grouped[val].append(key)
 
-    return dict(source_dict_grouped)
-
-
-def get_source_names_list(sequence_list):
-    """Return the list of sources names from the list of sequences."""
-    source_list = []
-    for sequence in sequence_list:
-        if sequence.source_name is not None and sequence.source_name not in source_list:
-            source_list.append(sequence.source_name)
-
-    log.info(f"List of sources: {source_list}")
-
-    if not source_list:
+    if list(source_dict_grouped) is None:
         sys.exit("No sources found. Check the access to database. Exiting.")
 
-    return source_list
+    return dict(source_dict_grouped)
