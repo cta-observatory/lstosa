@@ -233,7 +233,7 @@ def produce_dl3_files(
                 list_of_job_id.append(job_id.stdout.strip())
 
             else:
-                log.info("Simulate launching scripts")
+                log.debug("Simulate launching scripts")
 
             log.debug(f"Executing {stringify(cmd2)}")
 
@@ -243,14 +243,16 @@ def produce_dl3_files(
 def create_obs_index(
         source_list: list,
         cuts_dir: Path,
-        list_of_job_id: list,
+        parent_jobs: list,
         simulate: bool = False
 ):
     """Creating observation index for each source."""
+    log.info("Creating observation index for each source.")
+
     for source in source_list:
         dl3_subdir = cuts_dir / source
 
-        cmd3 = batch_cmd_create_index_dl3(dl3_subdir, list_of_job_id)
+        cmd3 = batch_cmd_create_index_dl3(dl3_subdir, parent_jobs)
 
         if not simulate:
             log.info("Scheduling DL3 index job")
@@ -363,7 +365,12 @@ def main(
     )
 
     # Creating an observation file index for each source
-    create_obs_index(source_list, std_cuts_dir, list_of_job_id)
+    create_obs_index(
+        source_list=source_list,
+        cuts_dir=std_cuts_dir,
+        parent_jobs=list_of_job_id,
+        simulate=simulate
+    )
 
 
 if __name__ == "__main__":

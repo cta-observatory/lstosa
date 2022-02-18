@@ -130,10 +130,8 @@ def event_selection(
         cuts: MutableMapping[str, Any]
 ) -> pd.DataFrame:
     """Return the dataframe with the selected events."""
-    t_effective, _ = get_effective_time(data)
     gammaness = np.array(data.gammaness)
     event_type = np.array(data.event_type)
-    t_effective.to(u.min)
 
     log.info(
         f'Gammaness global cut: {cuts["gammaness_global_cut"]}\n'
@@ -239,6 +237,9 @@ def main(
         df = pd.DataFrame()
         runs = sources[source]
         log.info(f"Source: {source}, runs: {runs}")
+
+        if simulate:
+            continue
 
         for run in runs:
             input_file = (
