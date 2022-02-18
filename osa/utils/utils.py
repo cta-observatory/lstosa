@@ -31,7 +31,8 @@ __all__ = [
     "get_dl2_prod_id",
     "get_night_limit_timestamp",
     "time_to_seconds",
-    "DATACHECK_FILE_PATTERNS"
+    "DATACHECK_FILE_PATTERNS",
+    "YESTERDAY"
 ]
 
 log = myLogger(logging.getLogger(__name__))
@@ -47,6 +48,8 @@ DATACHECK_FILE_PATTERNS = {
 # Sets the amount of hours after midnight for the default OSA date
 # to be the current date, eg 4: 04:00:00 UTC, -4: 20:00:00 UTC day before
 LIMIT_NIGHT = 12
+
+YESTERDAY = datetime.today() - timedelta(days=1)
 
 
 def getcurrentdate(sep="_"):
@@ -84,13 +87,13 @@ def getcurrentdate(sep="_"):
     return string_date
 
 
-def night_directory():
+def night_directory() -> Path:
     """
     Path of the running_analysis directory for a certain night
 
     Returns
     -------
-    directory
+    directory : Path
         Path of the running_analysis directory for a certain night
     """
     log.debug(f"Getting analysis path for tel_id {options.tel_id}")

@@ -1,0 +1,5 @@
+gammaness_global_cut = 0.7
+thetha2_global_cut = 0.04
+theta2_range = [0, 1]
+theta2_norm_range_min = 0.5
+theta2_norm_range_max = 1

@@ -17,6 +17,7 @@ entry_points = {
         "simulate_processing = osa.scripts.simulate_processing:main",
         "calibration_pipeline = osa.scripts.calibration_pipeline:main",
         "dl3_stage = osa.workflow.dl3:main",
+        "theta2_significance = osa.high_level.significance:main",
         "source_coordinates = osa.nightsummary.set_source_coordinates:main",
     ]
 }
@@ -60,6 +61,7 @@ setup(
         "pydotplus",
         "psutil",
         "click",
+        "toml",
         "pymongo",
         "gammapy~=0.19.0",
     ],

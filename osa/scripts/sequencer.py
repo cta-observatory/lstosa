@@ -8,8 +8,6 @@ prepares a SLURM job array which launches the data sequences for every subrun.
 import logging
 import os
 from decimal import Decimal
-from glob import glob
-from os.path import join
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -22,13 +20,7 @@ from osa.job import (
     run_sacct,
     run_squeue,
 )
-from osa.nightsummary.extract import (
-    extractruns,
-    extractsequences,
-    extractsubruns,
-    sort_run_list
-)
-from osa.nightsummary.nightsummary import run_summary_table
+from osa.nightsummary.extract import build_sequences
 from osa.report import start
 from osa.utils.cliopts import sequencer_cli_parsing, set_default_directory_if_needed
 from osa.utils.logging import myLogger
@@ -87,7 +79,7 @@ def single_process(telescope):
     sequence_list = []
     options.tel_id = telescope
     options.directory = set_default_directory_if_needed()
-    options.log_directory = os.path.join(options.directory, "log")
+    options.log_directory = options.directory / "log"
 
     if not options.simulate:
         os.makedirs(options.log_directory, exist_ok=True)
@@ -99,12 +91,7 @@ def single_process(telescope):
         return sequence_list
 
     # Build the sequences
-    summary_table = run_summary_table(options.date)
-    subrun_list = extractsubruns(summary_table)
-    run_list = extractruns(subrun_list)
-    # modifies run_list by adding the seq and parent info into runs
-    sorted_run_list = sort_run_list(run_list)
-    sequence_list = extractsequences(sorted_run_list)
+    sequence_list = build_sequences(options.date)
 
     # Workflow and submission
     # if not options.simulate:
@@ -185,47 +172,38 @@ def update_sequence_status(seq_list):
             )
 
 
-def get_status_for_sequence(sequence, program):
+def get_status_for_sequence(sequence, data_level) -> int:
     """
     Get number of files produced for a given sequence and data level.
 
     Parameters
     ----------
     sequence
-    program : str
+    data_level : str
         Options: 'CALIB', 'DL1', 'DL1AB', 'DATACHECK', 'MUON' or 'DL2'
 
     Returns
     -------
     number_of_files : int
     """
-    if program == "DL1AB":
-        # Search for files in the dl1ab subdirectory
-        dl1ab_subdirectory = os.path.join(options.directory, options.dl1_prod_id)
-        files = glob(join(dl1ab_subdirectory, f"dl1_LST-1*{sequence.run}*.h5"))
+    if data_level == "DL1AB":
+        directory = options.directory / options.dl1_prod_id
+        files = list(directory.glob(f"dl1_LST-1*{sequence.run}*.h5"))
 
-    elif program == "DL2":
-        # Search for files in the dl1ab subdirectory
-        dl1ab_subdirectory = os.path.join(options.directory, options.dl2_prod_id)
-        files = glob(join(dl1ab_subdirectory, f"dl2_LST-1*{sequence.run}*.h5"))
+    elif data_level == "DL2":
+        directory = options.directory / options.dl2_prod_id
+        files = list(directory.glob(f"dl2_LST-1*{sequence.run}*.h5"))
 
-    elif program == "DATACHECK":
-        # Search for files in the dl1ab subdirectory
-        datacheck_subdirectory = os.path.join(options.directory, options.dl1_prod_id)
-        files = glob(
-            join(datacheck_subdirectory, f"datacheck_dl1_LST-1*{sequence.run}*.h5")
-        )
+    elif data_level == "DATACHECK":
+        directory = options.directory / options.dl1_prod_id
+        files = list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5"))
 
     else:
-        prefix = cfg.get("PATTERN", program + "PREFIX")
-        suffix = cfg.get("PATTERN", program + "SUFFIX")
-        files = glob(join(options.directory, f"{prefix}*{sequence.run}*{suffix}"))
+        prefix = cfg.get("PATTERN", data_level + "PREFIX")
+        suffix = cfg.get("PATTERN", data_level + "SUFFIX")
+        files = list(options.directory.glob(f"{prefix}*{sequence.run}*{suffix}"))
 
-    number_of_files = len(files)
-    log.debug(
-        f"Found {number_of_files} {program} files for sequence name {sequence.jobname}"
-    )
-    return number_of_files
+    return len(files)
 
 
 def report_sequences(sequence_list):

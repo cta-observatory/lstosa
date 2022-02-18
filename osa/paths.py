@@ -25,8 +25,15 @@ __all__ = [
     "get_datacheck_files",
     "get_drive_file",
     "get_summary_file",
-    "get_pedestal_ids_file"
+    "get_pedestal_ids_file",
+    "DATACHECK_WEB_BASEDIR",
+    "DEFAULT_CFG",
+    "create_source_directories",
 ]
+
+
+DATACHECK_WEB_BASEDIR = Path(cfg.get("WEBSERVER", "DATACHECK"))
+DEFAULT_CFG = Path(__file__).parent / '../cfg/sequencer.cfg'
 
 
 def get_run_date(run_id: int) -> str:
@@ -245,6 +252,12 @@ def destination_dir(concept, create_dir=True) -> Path:
             / nightdir
             / options.calib_prod_id
         )
+    elif concept == "HIGH_LEVEL":
+        directory = (
+            Path(cfg.get(options.tel_id, concept + "_DIR"))
+            / nightdir
+            / options.prod_id
+        )
     else:
         log.warning(f"Concept {concept} not known")
         directory = None
@@ -256,3 +269,11 @@ def destination_dir(concept, create_dir=True) -> Path:
         log.debug(f"SIMULATING creation of final directory for {concept}")
 
     return directory
+
+
+def create_source_directories(source_list: list, cuts_dir: Path):
+    """Create a subdirectory for each source."""
+    for source in source_list:
+        if source is not None:
+            source_dir = cuts_dir / source
+            source_dir.mkdir(parents=True, exist_ok=True)

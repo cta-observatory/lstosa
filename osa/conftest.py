@@ -153,6 +153,13 @@ def dl2_subdir(running_analysis_dir):
 
 
 @pytest.fixture(scope="session")
+def dl2_final_dir(base_test_dir):
+    directory = base_test_dir / "DL2" / "20200117" / prod_id / dl2_prod_id
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
+@pytest.fixture(scope="session")
 def calibration_file(calibration_dir):
     """Mock calibration files for testing."""
     calib_file = calibration_dir / "calibration_filters_52.Run01805.0000.h5"
@@ -182,6 +189,16 @@ def test_observed_data(running_analysis_dir, dl1b_subdir, dl2_subdir):
     datacheck_file.touch()
     dl2_file.touch()
     return dl1_file, dl1ab_file, dl2_file, muons_file, datacheck_file
+
+
+@pytest.fixture(scope="session")
+def dl2_merged(dl2_final_dir):
+    file_1 = dl2_final_dir / "dl2_LST-1.Run01807.h5"
+    file_2 = dl2_final_dir / "dl2_LST-1.Run01808.h5"
+    file_1.touch()
+    file_2.touch()
+
+    return file_1, file_2
 
 
 @pytest.fixture(scope="session")

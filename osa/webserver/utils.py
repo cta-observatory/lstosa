@@ -6,13 +6,12 @@ from pathlib import Path
 from typing import List
 
 from osa.configs.config import cfg
+from osa.paths import DATACHECK_WEB_BASEDIR
 from osa.utils.logging import myLogger
 
 __all__ = ["directory_in_webserver", "copy_to_webserver", "set_no_observations_flag"]
 
 log = myLogger(logging.getLogger(__name__))
-
-DATACHECK_BASEDIR = Path(cfg.get("WEBSERVER", "DATACHECK"))
 
 
 def directory_in_webserver(
@@ -44,10 +43,11 @@ def directory_in_webserver(
         "PEDESTAL": f"drs4/{prod_id}/{date}",
         "CALIB": f"enf_calibration/{prod_id}/{date}",
         "DL1": f"dl1/{prod_id}/{date}/pdf",
-        "LONGTERM": f"dl1/{prod_id}/{date}"
+        "LONGTERM": f"dl1/{prod_id}/{date}",
+        "HIGH_LEVEL": f"high_level/{prod_id}/{date}",
     }
 
-    destination_dir = DATACHECK_BASEDIR / DATACHECK_WEB_DIRS[datacheck_type]
+    destination_dir = DATACHECK_WEB_BASEDIR / DATACHECK_WEB_DIRS[datacheck_type]
 
     remote_mkdir = ["ssh", host, "mkdir", "-p", destination_dir]
     sp.run(remote_mkdir, check=True)

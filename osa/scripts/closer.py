@@ -15,7 +15,12 @@ from typing import Tuple, Iterable, List
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import are_all_jobs_correctly_finished, save_job_information
-from osa.nightsummary.extract import extractruns, extractsequences, extractsubruns
+from osa.nightsummary.extract import (
+    extractruns,
+    extractsequences,
+    extractsubruns,
+    sort_run_list
+)
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import destination_dir
 from osa.provenance.utils import store_conda_env_export
@@ -262,7 +267,8 @@ def is_finished_check(run_summary):
         # building the sequences (the same way as the sequencer)
         subrun_list = extractsubruns(run_summary)
         run_list = extractruns(subrun_list)
-        sequence_list = extractsequences(run_list)
+        sorted_run_list = sort_run_list(run_list)
+        sequence_list = extractsequences(sorted_run_list)
 
         if are_all_jobs_correctly_finished(sequence_list):
             sequence_success = True
