@@ -87,13 +87,13 @@ def getcurrentdate(sep="_"):
     return string_date
 
 
-def night_directory():
+def night_directory() -> Path:
     """
     Path of the running_analysis directory for a certain night
 
     Returns
     -------
-    directory
+    directory : Path
         Path of the running_analysis directory for a certain night
     """
     log.debug(f"Getting analysis path for tel_id {options.tel_id}")

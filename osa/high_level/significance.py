@@ -74,6 +74,7 @@ plt.style.use(mpl_rc)
 
 
 def create_hist(theta2_on, theta2_off, cuts: MutableMapping[str, Any]):
+    """Create the theta2 histogram assuming a given theta2 global cut."""
     nbins = round((cuts["theta2_range"][1] / cuts["theta2_global_cut"]) * 2)
     hist_on, bin_edges_on = np.histogram(
         theta2_on, density=False, bins=nbins, range=tuple(cuts["theta2_range"])
@@ -160,7 +161,7 @@ def plot_theta2(
         cuts: MutableMapping[str, Any],
 ):
     """Plot theta2 histogram and save the figure."""
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
 
     ax.errorbar(
         bin_center,

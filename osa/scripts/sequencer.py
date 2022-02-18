@@ -8,8 +8,6 @@ prepares a SLURM job array which launches the data sequences for every subrun.
 import logging
 import os
 from decimal import Decimal
-from glob import glob
-from os.path import join
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -81,7 +79,7 @@ def single_process(telescope):
     sequence_list = []
     options.tel_id = telescope
     options.directory = set_default_directory_if_needed()
-    options.log_directory = os.path.join(options.directory, "log")
+    options.log_directory = options.directory / "log"
 
     if not options.simulate:
         os.makedirs(options.log_directory, exist_ok=True)
@@ -174,45 +172,41 @@ def update_sequence_status(seq_list):
             )
 
 
-def get_status_for_sequence(sequence, program):
+def get_status_for_sequence(sequence, data_level) -> int:
     """
     Get number of files produced for a given sequence and data level.
 
     Parameters
     ----------
     sequence
-    program : str
+    data_level : str
         Options: 'CALIB', 'DL1', 'DL1AB', 'DATACHECK', 'MUON' or 'DL2'
 
     Returns
     -------
     number_of_files : int
     """
-    if program == "DL1AB":
+    if data_level == "DL1AB":
         # Search for files in the dl1ab subdirectory
-        dl1ab_subdirectory = os.path.join(options.directory, options.dl1_prod_id)
-        files = glob(join(dl1ab_subdirectory, f"dl1_LST-1*{sequence.run}*.h5"))
+        directory = options.directory / options.dl1_prod_id
+        files = directory.glob(f"dl1_LST-1*{sequence.run}*.h5")
 
-    elif program == "DL2":
-        # Search for files in the dl1ab subdirectory
-        dl1ab_subdirectory = os.path.join(options.directory, options.dl2_prod_id)
-        files = glob(join(dl1ab_subdirectory, f"dl2_LST-1*{sequence.run}*.h5"))
+    elif data_level == "DL2":
+        directory = options.directory / options.dl2_prod_id
+        files = directory.glob(f"dl2_LST-1*{sequence.run}*.h5")
 
-    elif program == "DATACHECK":
-        # Search for files in the dl1ab subdirectory
-        datacheck_subdirectory = os.path.join(options.directory, options.dl1_prod_id)
-        files = glob(
-            join(datacheck_subdirectory, f"datacheck_dl1_LST-1*{sequence.run}*.h5")
-        )
+    elif data_level == "DATACHECK":
+        directory = options.directory / options.dl1_prod_id
+        files = directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5")
 
     else:
-        prefix = cfg.get("PATTERN", program + "PREFIX")
-        suffix = cfg.get("PATTERN", program + "SUFFIX")
-        files = glob(join(options.directory, f"{prefix}*{sequence.run}*{suffix}"))
+        prefix = cfg.get("PATTERN", data_level + "PREFIX")
+        suffix = cfg.get("PATTERN", data_level + "SUFFIX")
+        files = options.directory.glob(f"{prefix}*{sequence.run}*{suffix}")
 
     number_of_files = len(files)
     log.debug(
-        f"Found {number_of_files} {program} files for sequence name {sequence.jobname}"
+        f"Found {number_of_files} {data_level} files for sequence {sequence.jobname}"
     )
     return number_of_files
 
