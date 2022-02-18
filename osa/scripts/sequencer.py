@@ -187,28 +187,23 @@ def get_status_for_sequence(sequence, data_level) -> int:
     number_of_files : int
     """
     if data_level == "DL1AB":
-        # Search for files in the dl1ab subdirectory
         directory = options.directory / options.dl1_prod_id
-        files = directory.glob(f"dl1_LST-1*{sequence.run}*.h5")
+        files = list(directory.glob(f"dl1_LST-1*{sequence.run}*.h5"))
 
     elif data_level == "DL2":
         directory = options.directory / options.dl2_prod_id
-        files = directory.glob(f"dl2_LST-1*{sequence.run}*.h5")
+        files = list(directory.glob(f"dl2_LST-1*{sequence.run}*.h5"))
 
     elif data_level == "DATACHECK":
         directory = options.directory / options.dl1_prod_id
-        files = directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5")
+        files = list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5"))
 
     else:
         prefix = cfg.get("PATTERN", data_level + "PREFIX")
         suffix = cfg.get("PATTERN", data_level + "SUFFIX")
-        files = options.directory.glob(f"{prefix}*{sequence.run}*{suffix}")
+        files = list(options.directory.glob(f"{prefix}*{sequence.run}*{suffix}"))
 
-    number_of_files = len(files)
-    log.debug(
-        f"Found {number_of_files} {data_level} files for sequence {sequence.jobname}"
-    )
-    return number_of_files
+    return len(files)
 
 
 def report_sequences(sequence_list):
