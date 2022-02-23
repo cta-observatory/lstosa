@@ -37,10 +37,19 @@ DEFAULT_CFG = Path(__file__).parent / '../cfg/sequencer.cfg'
 
 
 def get_run_date(run_id: int) -> str:
-    """Return the date of the run corresponding to the run id given."""
+    """
+    Return the date (YYYYMMDD) when the given run was taken. The search for this date
+    is done by looking at the parent directory containing the run.
+    """
     r0_dir = Path(cfg.get("LST1", "R0_DIR"))
-    r0_file = sorted(r0_dir.rglob(f"LST-1.1.Run{run_id:05d}.0000.fits.fz"))
-    return r0_file[0].parent.name
+    r0_files = sorted(r0_dir.rglob(f"20??????/LST-1.1.Run{run_id:05d}.0000.fits.fz"))
+    if len(r0_files) > 1:
+        raise IOError(f"Run {run_id} found duplicated in {r0_dir}")
+    elif len(r0_files) == 0:
+        raise IOError(f"No run {run_id} found in {r0_dir}")
+    else:
+        # Date in YYYYMMDD format corresponding to the run
+        return r0_files[0].parent.name
 
 
 def get_time_calibration_file(run_id: int) -> Path:
@@ -173,10 +182,10 @@ def sequence_calibration_files(sequence_list):
 
         if not sequence.parent_list:
             drs4_pedestal_run_id = sequence.previousrun
-            pedcal_run_id = sequence.run
+            pedcal_run_id = sequence.id
         else:
             drs4_pedestal_run_id = sequence.parent_list[0].previousrun
-            pedcal_run_id = sequence.parent_list[0].run
+            pedcal_run_id = sequence.parent_list[0].id
 
         # Assign the calibration files to the sequence object
         sequence.pedestal = get_drs4_pedestal_file(drs4_pedestal_run_id)
