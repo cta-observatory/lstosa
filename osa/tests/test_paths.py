@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.utils import lstdate_to_dir
@@ -106,3 +108,11 @@ def test_destination_dir():
             expected_directory = base_path / dst_dir / datedir / options.prod_id
 
         assert directory == expected_directory
+
+
+def test_get_run_date(r0_data):
+    from osa.paths import get_run_date
+    assert get_run_date(1807) == "20200117"
+
+    with pytest.raises(IOError):
+        get_run_date(1200)

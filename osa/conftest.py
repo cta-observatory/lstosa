@@ -4,7 +4,7 @@ Mock test data set for testing OSA.
 R0 files are in BASE_DIR/R0/YYYYMMDD
 
 Calibration files follow the structure:
-BASE_DIR/monitoring/PixelCalibration/LevelA/<calibration_product>/YYYYMMDD/<version>
+BASE_DIR/monitoring/PixelCalibration/Cat-A/<calibration_product>/YYYYMMDD/<version>
 Where <calibration_product> can be: drs4_baseline, calibration,
 drs4_time_sampling_from_FF, ffactor_systematics
 <version> will usually be "pro" (for production)
@@ -62,7 +62,7 @@ def run_catalog_dir(monitoring_dir):
 
 @pytest.fixture(scope="session")
 def calibration_base_dir(monitoring_dir):
-    base_dir = monitoring_dir / "PixelCalibration" / "LevelA"
+    base_dir = monitoring_dir / "PixelCalibration" / "Cat-A"
     base_dir.mkdir(parents=True, exist_ok=True)
     return base_dir
 
