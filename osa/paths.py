@@ -45,7 +45,7 @@ def get_run_date(run_id: int) -> str:
     r0_files = sorted(r0_dir.rglob(f"20??????/LST-1.1.Run{run_id:05d}.0000.fits.fz"))
     if len(r0_files) > 1:
         raise IOError(f"Run {run_id} found duplicated in {r0_dir}")
-    elif len(r0_files) == 0:
+    elif not r0_files:
         raise IOError(f"No run {run_id} found in {r0_dir}")
     else:
         # Date in YYYYMMDD format corresponding to the run
