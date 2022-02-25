@@ -69,11 +69,11 @@ def test_scheduler_env_variables(sequence_list, running_analysis_dir):
     env_variables = scheduler_env_variables(first_sequence)
     assert env_variables == [
         '#SBATCH --job-name=LST1_01805',
-        '#SBATCH --cpus-per-task=1',
+        '#SBATCH --time=1:15:00',
         f'#SBATCH --chdir={running_analysis_dir}',
         '#SBATCH --output=log/Run01805.%4a_jobid_%A.out',
         '#SBATCH --error=log/Run01805.%4a_jobid_%A.err',
-        '#SBATCH --partition=short',
+        f'#SBATCH --partition={cfg.get("SLURM", "PARTITION_PEDCALIB")}',
         '#SBATCH --mem-per-cpu=3GB'
     ]
     # Extract the second sequence
@@ -81,12 +81,12 @@ def test_scheduler_env_variables(sequence_list, running_analysis_dir):
     env_variables = scheduler_env_variables(second_sequence)
     assert env_variables == [
         '#SBATCH --job-name=LST1_01807',
-        '#SBATCH --cpus-per-task=1',
+        '#SBATCH --time=1:15:00',
         f'#SBATCH --chdir={running_analysis_dir}',
         '#SBATCH --output=log/Run01807.%4a_jobid_%A.out',
         '#SBATCH --error=log/Run01807.%4a_jobid_%A.err',
         '#SBATCH --array=0-10',
-        '#SBATCH --partition=long',
+        f'#SBATCH --partition={cfg.get("SLURM", "PARTITION_DATA")}',
         '#SBATCH --mem-per-cpu=16GB'
     ]
 
@@ -101,11 +101,11 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     #!/bin/env python
 
     #SBATCH --job-name=LST1_01805
-    #SBATCH --cpus-per-task=1
+    #SBATCH --time=1:15:00
     #SBATCH --chdir={running_analysis_dir}
     #SBATCH --output=log/Run01805.%4a_jobid_%A.out
     #SBATCH --error=log/Run01805.%4a_jobid_%A.err
-    #SBATCH --partition=short
+    #SBATCH --partition={cfg.get('SLURM', 'PARTITION_PEDCALIB')}
     #SBATCH --mem-per-cpu=3GB""")
     assert header == output_string1
 
@@ -116,12 +116,12 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     #!/bin/env python
     
     #SBATCH --job-name=LST1_01807
-    #SBATCH --cpus-per-task=1
+    #SBATCH --time=1:15:00
     #SBATCH --chdir={running_analysis_dir}
     #SBATCH --output=log/Run01807.%4a_jobid_%A.out
     #SBATCH --error=log/Run01807.%4a_jobid_%A.err
     #SBATCH --array=0-10
-    #SBATCH --partition=long
+    #SBATCH --partition={cfg.get('SLURM', 'PARTITION_DATA')}
     #SBATCH --mem-per-cpu=16GB""")
     assert header == output_string2
 
@@ -145,7 +145,7 @@ def test_create_job_template_scheduler(
     #!/bin/env python
 
     #SBATCH --job-name=LST1_01807
-    #SBATCH --cpus-per-task=1
+    #SBATCH --time=1:15:00
     #SBATCH --chdir={Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0
     #SBATCH --output=log/Run01807.%4a_jobid_%A.out
     #SBATCH --error=log/Run01807.%4a_jobid_%A.err
@@ -188,7 +188,7 @@ def test_create_job_template_scheduler(
         #!/bin/env python
 
         #SBATCH --job-name=LST1_01808
-        #SBATCH --cpus-per-task=1
+        #SBATCH --time=1:15:00
         #SBATCH --chdir={Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0
         #SBATCH --output=log/Run01808.%4a_jobid_%A.out
         #SBATCH --error=log/Run01808.%4a_jobid_%A.err

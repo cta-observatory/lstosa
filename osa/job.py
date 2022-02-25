@@ -343,7 +343,7 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
 
     sbatch_parameters = [
         f"--job-name={sequence.jobname}",
-        "--cpus-per-task=1",
+        f"--time={cfg.get('SLURM', 'WALLTIME')}",
         f"--chdir={options.directory}",
         f"--output=log/Run{sequence.run:05d}.%4a_jobid_%A.out",
         f"--error=log/Run{sequence.run:05d}.%4a_jobid_%A.err",
