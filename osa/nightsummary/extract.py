@@ -5,9 +5,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-from astropy import units as u
 from astropy.table import Table
-from astropy.time import Time
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -15,20 +13,18 @@ from osa.configs.datamodel import (
     RunObj,
     SequenceCalibration,
     SequenceData,
-    SubrunObj,
 )
 from osa.job import sequence_filenames
 from osa.nightsummary import database
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import sequence_calibration_files
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_iso, lstdate_to_dir
+from osa.utils.utils import lstdate_to_dir
 
 log = myLogger(logging.getLogger(__name__))
 
 __all__ = [
-    "extractsubruns",
-    "extractruns",
+    "extract_runs",
     "extractsequences",
     "generate_workflow",
     "sort_run_list",
@@ -37,7 +33,7 @@ __all__ = [
 ]
 
 
-def extractsubruns(summary_table):
+def extract_runs(summary_table):
     """
     Extract sub-wun wise information from RunSummary files.
 
@@ -50,39 +46,30 @@ def extractsubruns(summary_table):
 
     Returns
     -------
-    subrun_list
+    run_list
     """
-    subrun_list = []
+    run_list = []
 
     # Get information run-wise going through each row
     for run_id in summary_table["run_id"]:
-        sr = SubrunObj()
+
+        # Get information for each run from summary table
         run_info = summary_table.loc[run_id]
-        sr.subrun = run_info["n_subruns"]
-        sr.timestamp = Time(run_info["run_start"] * u.ns, format="unix").isot
-        sr.ucts_timestamp = run_info["ucts_timestamp"]
-        sr.dragon_reference_time = run_info["dragon_reference_time"]
-        sr.dragon_reference_module_id = run_info["dragon_reference_module_id"]
-        sr.dragon_reference_module_index = run_info["dragon_reference_module_index"]
-        sr.dragon_reference_counter = run_info["dragon_reference_counter"]
-        sr.dragon_reference_source = run_info["dragon_reference_source"]
+
+        # Initialize the run object
+        run = RunObj()
 
         try:
-            # Build run object
-            sr.runobj = RunObj()
-            sr.runobj.run_str = f"{run_info['run_id']:05d}"
-            sr.runobj.run = int(run_info["run_id"])
-            sr.runobj.type = run_info["run_type"]
-            sr.runobj.telescope = options.tel_id
-            sr.runobj.night = lstdate_to_iso(options.date)
-        except KeyError as err:
+            run.id = run_info["run_id"]
+            run.n_subruns = run_info["n_subruns"]
+            run.type = run_info["run_type"]
+            run.telescope = options.tel_id
+
+        except (KeyError,IndexError) as err:
             log.warning(f"Key error, {err}")
-        except IndexError as err:
-            log.warning(f"Index error, {err}")
+
         else:
-            sr.runobj.subrun_list.append(sr)
-            sr.runobj.subruns = len(sr.runobj.subrun_list)
-            subrun_list.append(sr)
+            run_list.append(run)
 
     # Before trying to access the information in the database, check if it is available
     # in the RunCatalog file (previously generated with the information in the database).
@@ -100,11 +87,11 @@ def extractsubruns(summary_table):
         # Get information run-wise going through each row of the RunCatalog file
         # and assign it to the corresponding run object.
         for run_id in source_catalog["run_id"]:
-            for sr in subrun_list:
-                if sr.runobj.run == run_id:
-                    sr.runobj.source_name = source_catalog.loc[run_id]["source_name"]
-                    sr.runobj.source_ra = source_catalog.loc[run_id]["source_ra"]
-                    sr.runobj.source_dec = source_catalog.loc[run_id]["source_dec"]
+            for run in run_list:
+                if run.id == run_id:
+                    run.source_name = source_catalog.loc[run_id]["source_name"]
+                    run.source_ra = source_catalog.loc[run_id]["source_ra"]
+                    run.source_dec = source_catalog.loc[run_id]["source_dec"]
 
     # Add metadata from TCU database if available
     # and store it in a ECSV file to be re-used
@@ -113,28 +100,28 @@ def extractsubruns(summary_table):
             names=["run_id", "source_name", "source_ra", "source_dec"],
             dtype=["int32", str, "float64", "float64"],
         )
-        for sr in subrun_list:
-            sr.runobj.source_name = database.query(
-                obs_id=sr.runobj.run,
+        for run in run_list:
+            run.source_name = database.query(
+                obs_id=run.id,
                 property_name="DriveControl_SourceName"
             )
-            sr.runobj.source_ra = database.query(
-                obs_id=sr.runobj.run,
+            run.source_ra = database.query(
+                obs_id=run.id,
                 property_name="DriveControl_RA_Target"
             )
-            sr.runobj.source_dec = database.query(
-                obs_id=sr.runobj.run,
+            run.source_dec = database.query(
+                obs_id=run.id,
                 property_name="DriveControl_Dec_Target"
             )
             # Store this source information (run_id, source_name, source_ra, source_dec)
             # into an astropy Table and save to disk. In this way, the information can be
             # dumped anytime later more easily than accessing the TCU database itself.
-            if sr.runobj.source_name is not None:
+            if run.source_name is not None:
                 line = [
-                    sr.runobj.run,
-                    sr.runobj.source_name,
-                    sr.runobj.source_ra,
-                    sr.runobj.source_dec
+                    run.id,
+                    run.source_name,
+                    run.source_ra,
+                    run.source_dec
                 ]
                 log.debug(f"Adding line with source info to RunCatalog: {line}")
                 run_table.add_row(line)
@@ -148,33 +135,10 @@ def extractsubruns(summary_table):
 
     log.debug("Subrun list extracted")
 
-    if not subrun_list:
+    if not run_list:
         log.warning("No runs found for this date. Nothing to do. Exiting.")
         sys.exit(0)
 
-    return subrun_list
-
-
-def extractruns(subrun_list):
-    """
-
-    Parameters
-    ----------
-    subrun_list
-        List of subruns
-
-    Returns
-    -------
-    run_list
-
-    """
-    run_list = []
-    for subrun in subrun_list:
-        if subrun.runobj not in run_list:
-            subrun.runobj.subruns = subrun.subrun
-            run_list.append(subrun.runobj)
-
-    log.debug("Run list extracted")
     return run_list
 
 
@@ -205,7 +169,7 @@ def sort_run_list(run_list):
 
     for run in run_list:
         currentsrc = run.source_name
-        currentrun = run.run
+        currentrun = run.id
         currenttype = run.type
 
         if currentsrc not in sources:
@@ -259,9 +223,9 @@ def extractsequences(run_list_sorted):
     sequences_to_analyze = []  # set with runs which constitute every valid data sequence
     require = {}
 
-    for i in run_list_sorted:
-        currentrun = i.run
-        currenttype = i.type
+    for run in run_list_sorted:
+        currentrun = run.id
+        currenttype = run.type
 
         if not head:
             if currenttype == "DRS4":
@@ -371,22 +335,22 @@ def generate_workflow(run_list, sequences_to_analyze, require):
     for run in run_list:
         # the next seq value to assign (if this happens)
         n_seq = len(sequence_list)
-        log.debug(f"Trying to assign run {run.run}, type {run.type} to sequence {n_seq}")
+        log.debug(f"Trying to assign run {run.id}, type {run.type} to sequence {n_seq}")
         if run.type == "DATA":
             try:
-                sequences_to_analyze.index(run.run)
+                sequences_to_analyze.index(run.id)
             except ValueError:
                 # there is nothing really wrong with that,
                 # just a DATA run without sequence
-                log.warning(f"There is no sequence for data run {run.run}")
+                log.warning(f"There is no sequence for data run {run.id}")
             else:
-                previousrun = require[run.run]
+                previousrun = require[run.id]
                 for sequence in sequence_list:
-                    if sequence.run == previousrun:
+                    if sequence.id == previousrun:
                         parent = sequence.seq
                         break
                 log.debug(
-                    f"Sequence {n_seq} assigned to run {run.run} whose "
+                    f"Sequence {n_seq} assigned to run {run.id} whose "
                     f"parent is {parent} with run {previousrun}"
                 )
                 sequence = SequenceData(run)
@@ -398,7 +362,7 @@ def generate_workflow(run_list, sequences_to_analyze, require):
                         break
 
                 sequence.previousrun = previousrun
-                sequence.jobname = f"{run.telescope}_{run.run:05d}"
+                sequence.jobname = f"{run.telescope}_{run.id:05d}"
                 sequence_filenames(sequence)
                 if sequence not in sequence_list:
                     sequence_list.append(sequence)
@@ -406,18 +370,18 @@ def generate_workflow(run_list, sequences_to_analyze, require):
             # calibration sequence are appended to the sequence
             # list if they are parent from data sequences
             for k in iter(require):
-                if run.run == require[k]:
-                    previousrun = require[run.run]
+                if run.id == require[k]:
+                    previousrun = require[run.id]
 
                     # we found that this calibration is required
                     sequence = SequenceCalibration(run)
                     sequence.seq = n_seq
                     sequence.parent = None
                     sequence.previousrun = previousrun
-                    sequence.jobname = f"{run.telescope}_{str(run.run).zfill(5)}"
+                    sequence.jobname = f"{run.telescope}_{run.id:05d}"
                     sequence_filenames(sequence)
                     log.debug(
-                        f"Sequence {sequence.seq} assigned to run {run.run} whose "
+                        f"Sequence {sequence.seq} assigned to run {run.id} whose "
                         f"parent is {sequence.parent} with run {sequence.previousrun}"
                     )
                     if sequence not in sequence_list:
@@ -433,8 +397,7 @@ def generate_workflow(run_list, sequences_to_analyze, require):
 def build_sequences(date: str):
     """Build the list of sequences to process from a given date YYYY_MM_DD."""
     summary_table = run_summary_table(date)
-    subrun_list = extractsubruns(summary_table)
-    run_list = extractruns(subrun_list)
+    run_list = extract_runs(summary_table)
     # modifies run_list by adding the seq and parent info into runs
     sorted_run_list = sort_run_list(run_list)
     return extractsequences(sorted_run_list)
@@ -459,7 +422,7 @@ def get_source_list(date_obs: str) -> dict:
 
     # Create a dictionary of sources and their corresponding sequences
     source_dict = {
-        sequence.run: sequence.source_name for sequence in sequence_list
+        sequence.id: sequence.source_name for sequence in sequence_list
         if sequence.source_name is not None
     }
 

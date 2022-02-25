@@ -152,23 +152,23 @@ def update_sequence_status(seq_list):
     for seq in seq_list:
         if seq.type == "PEDCALIB":
             seq.calibstatus = int(
-                Decimal(get_status_for_sequence(seq, "CALIB") * 100) / seq.subruns
+                Decimal(get_status_for_sequence(seq, "CALIB") * 100) / seq.n_subruns
             )
         elif seq.type == "DATA":
             seq.dl1status = int(
-                Decimal(get_status_for_sequence(seq, "DL1") * 100) / seq.subruns
+                Decimal(get_status_for_sequence(seq, "DL1") * 100) / seq.n_subruns
             )
             seq.dl1abstatus = int(
-                Decimal(get_status_for_sequence(seq, "DL1AB") * 100) / seq.subruns
+                Decimal(get_status_for_sequence(seq, "DL1AB") * 100) / seq.n_subruns
             )
             seq.datacheckstatus = int(
-                Decimal(get_status_for_sequence(seq, "DATACHECK") * 100) / seq.subruns
+                Decimal(get_status_for_sequence(seq, "DATACHECK") * 100) / seq.n_subruns
             )
             seq.muonstatus = int(
-                Decimal(get_status_for_sequence(seq, "MUON") * 100) / seq.subruns
+                Decimal(get_status_for_sequence(seq, "MUON") * 100) / seq.n_subruns
             )
             seq.dl2status = int(
-                Decimal(get_status_for_sequence(seq, "DL2") * 100) / seq.subruns
+                Decimal(get_status_for_sequence(seq, "DL2") * 100) / seq.n_subruns
             )
 
 
@@ -188,20 +188,20 @@ def get_status_for_sequence(sequence, data_level) -> int:
     """
     if data_level == "DL1AB":
         directory = options.directory / options.dl1_prod_id
-        files = list(directory.glob(f"dl1_LST-1*{sequence.run}*.h5"))
+        files = list(directory.glob(f"dl1_LST-1*{sequence.id}*.h5"))
 
     elif data_level == "DL2":
         directory = options.directory / options.dl2_prod_id
-        files = list(directory.glob(f"dl2_LST-1*{sequence.run}*.h5"))
+        files = list(directory.glob(f"dl2_LST-1*{sequence.id}*.h5"))
 
     elif data_level == "DATACHECK":
         directory = options.directory / options.dl1_prod_id
-        files = list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5"))
+        files = list(directory.glob(f"datacheck_dl1_LST-1*{sequence.id}*.h5"))
 
     else:
         prefix = cfg.get("PATTERN", data_level + "PREFIX")
         suffix = cfg.get("PATTERN", data_level + "SUFFIX")
-        files = list(options.directory.glob(f"{prefix}*{sequence.run}*{suffix}"))
+        files = list(options.directory.glob(f"{prefix}*{sequence.id}*{suffix}"))
 
     return len(files)
 
@@ -245,8 +245,8 @@ def report_sequences(sequence_list):
             sequence.seq,
             sequence.parent,
             sequence.type,
-            sequence.run,
-            sequence.subruns,
+            sequence.id,
+            sequence.n_subruns,
             sequence.source_name,
             sequence.action,
             sequence.tries,

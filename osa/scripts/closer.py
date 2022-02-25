@@ -16,9 +16,8 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import are_all_jobs_correctly_finished, save_job_information
 from osa.nightsummary.extract import (
-    extractruns,
+    extract_runs,
     extractsequences,
-    extractsubruns,
     sort_run_list
 )
 from osa.nightsummary.nightsummary import run_summary_table
@@ -265,8 +264,7 @@ def is_finished_check(run_summary):
     sequence_success = False
     if run_summary is not None:
         # building the sequences (the same way as the sequencer)
-        subrun_list = extractsubruns(run_summary)
-        run_list = extractruns(subrun_list)
+        run_list = extract_runs(run_summary)
         sorted_run_list = sort_run_list(run_list)
         sequence_list = extractsequences(sorted_run_list)
 
@@ -308,12 +306,12 @@ def merge_dl1_datacheck(seq_list) -> List[str]:
                 "-D",
                 options.directory,
                 "-o",
-                f"log/merge_dl1_datacheck_{sequence.run:05d}_%j.out",
+                f"log/merge_dl1_datacheck_{sequence.id:05d}_%j.out",
                 "-e",
-                f"log/merge_dl1_datacheck_{sequence.run:05d}_%j.err",
+                f"log/merge_dl1_datacheck_{sequence.id:05d}_%j.err",
                 "lstchain_check_dl1",
                 "--input-file",
-                f"{dl1_dir}/datacheck_dl1_LST-1.Run{sequence.run:05d}.*.h5",
+                f"{dl1_dir}/datacheck_dl1_LST-1.Run{sequence.id:05d}.*.h5",
                 f"--output-dir={dl1_dir}",
                 f"--muons-dir={muons_dir}",
             ]
@@ -356,13 +354,13 @@ def extract_provenance(seq_list):
                 "-D",
                 options.directory,
                 "-o",
-                f"log/provenance_{sequence.run:05d}_%j.log",
+                f"log/provenance_{sequence.id:05d}_%j.log",
                 "provprocess",
                 "-c",
                 options.configfile,
                 drs4_pedestal_run_id,
                 pedcal_run_id,
-                f"{sequence.run:05d}",
+                f"{sequence.id:05d}",
                 nightdir,
                 options.prod_id,
             ]
@@ -395,20 +393,20 @@ def merge_files(sequence_list, data_level="DL2"):
 
     for sequence in sequence_list:
         if sequence.type == "DATA":
-            merged_file = Path(data_dir) / f"{prefix}_LST-1.Run{sequence.run:05d}.h5"
+            merged_file = Path(data_dir) / f"{prefix}_LST-1.Run{sequence.id:05d}.h5"
 
             cmd = [
                 "sbatch",
                 "-D",
                 options.directory,
                 "-o",
-                f"log/merge_{prefix}_{sequence.run:05d}_%j.log",
+                f"log/merge_{prefix}_{sequence.id:05d}_%j.log",
                 "lstchain_merge_hdf5_files",
                 f"--input-dir={data_dir}",
                 f"--output-file={merged_file}",
                 "--no-image",
                 "--no-progress",
-                f"--run-number={sequence.run}",
+                f"--run-number={sequence.id}",
                 f"--pattern={pattern}",
             ]
 

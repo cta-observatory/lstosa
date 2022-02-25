@@ -182,10 +182,10 @@ def sequence_calibration_files(sequence_list):
 
         if not sequence.parent_list:
             drs4_pedestal_run_id = sequence.previousrun
-            pedcal_run_id = sequence.run
+            pedcal_run_id = sequence.id
         else:
             drs4_pedestal_run_id = sequence.parent_list[0].previousrun
-            pedcal_run_id = sequence.parent_list[0].run
+            pedcal_run_id = sequence.parent_list[0].id
 
         # Assign the calibration files to the sequence object
         sequence.pedestal = get_drs4_pedestal_file(drs4_pedestal_run_id)

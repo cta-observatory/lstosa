@@ -21,7 +21,7 @@ import pytest
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.nightsummary.extract import extractruns, extractsubruns, extractsequences
+from osa.nightsummary.extract import extract_runs, extractsequences
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.scripts.tests.test_osa_scripts import run_program
 from osa.utils.utils import lstdate_to_dir
@@ -278,8 +278,7 @@ def sequence_list(
 
     assert pedestal_ids_file.exists()
 
-    subrun_list = extractsubruns(run_summary)
-    run_list = extractruns(subrun_list)
+    run_list = extract_runs(run_summary)
     options.test = False
     return extractsequences(run_list)
 
@@ -390,4 +389,3 @@ def run_catalog(run_catalog_dir):
     catalog_file.touch()
     catalog_file.write_text(source_information)
     return catalog_file
-

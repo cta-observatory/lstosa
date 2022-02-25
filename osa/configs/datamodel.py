@@ -1,15 +1,4 @@
-class Period(object):
-    def __init__(self):
-        self.period = None
-
-
-class Night(Period):
-    def __init__(self):
-        super(Night, self).__init__()
-        self.night = None
-
-
-class Telescope(Night):
+class Telescope(object):
     def __init__(self):
         super(Telescope, self).__init__()
         self.telescope = None
@@ -23,21 +12,12 @@ class Source(Telescope):
         self.source_dec = None
 
 
-class Wobble(Source):
-    def __init__(self):
-        super(Wobble, self).__init__()
-        self.sourcewobble = None
-        self.wobble = None
-
-
-class RunObj(Wobble):
+class RunObj(Source):
     def __init__(self):
         super(RunObj, self).__init__()
-        self.run_str = None
-        self.run = None
+        self.id = None
         self.type = None
-        self.subrun_list = []
-        self.subruns = None
+        self.n_subruns = None
 
 
 class SubrunObj(RunObj):
@@ -45,16 +25,7 @@ class SubrunObj(RunObj):
         super(SubrunObj, self).__init__()
         self.runobj = None
         self.subrun = None
-        self.kind = None
-        self.timestamp = None
-        self.time = None
         self.date = None
-        self.ucts_timestamp = None
-        self.dragon_reference_time = None
-        self.dragon_reference_module_id = None
-        self.dragon_reference_module_index = None
-        self.dragon_reference_counter = None
-        self.dragon_reference_source = None
 
 
 class Sequence(RunObj):
@@ -69,15 +40,12 @@ class Sequence(RunObj):
         self.veto = None
         self.closed = None
         self.history = None
-        self.queue = None
         self.jobname = None
         self.jobid = None
         self.action = None
         self.tries = None
         self.state = None
-        self.jobhost = None
         self.cputime = None
-        self.walltime = None
         self.exit = None
 
     def associate(self, r):

@@ -25,21 +25,21 @@ def data_sequence(
         drive_file: Path,
         run_summary: Path,
         pedestal_ids_file: Path,
-        run_str: str
+        run_subrun_id: str
 ):
     """
     Performs all the steps to process a whole run.
 
     Parameters
     ----------
-    calibration_file: pathlib.Path
-    pedestal_file: pathlib.Path
-    time_calibration_file: pathlib.Path
-    systematic_correction_file: pathlib.Path
-    drive_file: pathlib.Path
-    run_summary: pathlib.Path
-    pedestal_ids_file: pathlib.Path
-    run_str: str
+    calibration_file : pathlib.Path
+    pedestal_file : pathlib.Path
+    time_calibration_file : pathlib.Path
+    systematic_correction_file : pathlib.Path
+    drive_file : pathlib.Path
+    run_summary : pathlib.Path
+    pedestal_ids_file : pathlib.Path
+    run_subrun_id : str
 
     Returns
     -------
@@ -47,7 +47,7 @@ def data_sequence(
         Return code of the last executed command.
     """
     history_file = (
-        Path(options.directory) / f"sequence_{options.tel_id}_{run_str}.history"
+        Path(options.directory) / f"sequence_{options.tel_id}_{run_subrun_id}.history"
     )
     level, rc = (4, 0) if options.simulate else historylevel(history_file, "DATA")
     log.info(f"Going to level {level}")
@@ -61,14 +61,14 @@ def data_sequence(
             drive_file,
             run_summary,
             pedestal_ids_file,
-            run_str,
+            run_subrun_id,
             history_file,
         )
         level -= 1
         log.info(f"Going to level {level}")
 
     if level == 3:
-        rc = dl1ab(run_str, history_file)
+        rc = dl1ab(run_subrun_id, history_file)
         if cfg.getboolean("lstchain", "store_image_dl1ab"):
             level -= 1
             log.info(f"Going to level {level}")
@@ -77,7 +77,7 @@ def data_sequence(
             log.info(f"No images stored in dl1ab. Producing DL2. Going to level {level}")
 
     if level == 2:
-        rc = dl1_datacheck(run_str, history_file)
+        rc = dl1_datacheck(run_subrun_id, history_file)
         if options.no_dl2:
             level = 0
             log.info(f"No DL2 are going to be produced. Going to level {level}")
@@ -90,12 +90,12 @@ def data_sequence(
             level = 0
             log.info(f"No DL2 are going to be produced. Going to level {level}")
         else:
-            rc = dl1_to_dl2(run_str, history_file)
+            rc = dl1_to_dl2(run_subrun_id, history_file)
             level -= 1
             log.info(f"Going to level {level}")
 
     if level == 0:
-        log.info(f"Job for sequence {run_str} finished without fatal errors")
+        log.info(f"Job for sequence {run_subrun_id} finished without fatal errors")
 
     return rc
 

@@ -67,15 +67,10 @@ def finished_assignments(sequence_list):
         ]
         rawdir = get_raw_dir()
         if sequence_list is not None:
-            for s in sequence_list:
-                rawnum += s.subruns
-        data_files = glob(
-            join(
-                rawdir,
-                f'*{cfg.get("PATTERN", "R0PREFIX")}*{cfg.get("PATTERN", "R0SUFFIX")}*',
-            )
-        )
-        disk_space = sum(getsize(d) for d in data_files)
+            for seq in sequence_list:
+                rawnum += seq.n_subruns
+        r0_data_files = rawdir.glob('LST-1.1.Run*.fits.fz')
+        disk_space = sum(getsize(file) for file in r0_data_files)
         disk_space_GB_f = float(disk_space) / (1000 * 1000 * 1000)
         disk_space_GB = int(round(disk_space_GB_f, 0))
 

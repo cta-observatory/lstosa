@@ -645,16 +645,25 @@ def provprocess_argparser():
         help="use this flag to reset session and remove log file",
     )
     parser.add_argument(
-        "drs4_pedestal_run_id", help="Number of the drs4_pedestal used in the calibration"
+        "drs4_pedestal_run_id",
+        type=int,
+        help="Number of the drs4_pedestal used in the calibration"
     )
     parser.add_argument(
-        "pedcal_run_id", help="Number of the used pedcal used in the calibration"
+        "pedcal_run_id",
+        type=int,
+        help="Number of the used pedcal used in the calibration"
     )
     parser.add_argument(
-        "run", help="Number of the run whose provenance is to be extracted"
+        "run",
+        type=int,
+        help="Number of the run whose provenance is to be extracted"
     )
     parser.add_argument(
-        "date", action="store", type=str, help="Observation starting date YYYYMMDD"
+        "date",
+        action="store",
+        type=str,
+        help="Observation starting date YYYYMMDD"
     )
     parser.add_argument("prod_id", action="store", type=str, help="Production ID")
 

@@ -117,7 +117,7 @@ def are_all_jobs_correctly_finished(sequence_list):
                 continue
             else:
                 log.warning(
-                    f"Job {sequence.seq} (run {sequence.run}) not "
+                    f"Job {sequence.seq} (run {sequence.id}) not "
                     f"correctly finished [level {out}]"
                 )
                 flag = False
@@ -345,12 +345,12 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
         f"--job-name={sequence.jobname}",
         "--cpus-per-task=1",
         f"--chdir={options.directory}",
-        f"--output=log/Run{sequence.run:05d}.%4a_jobid_%A.out",
-        f"--error=log/Run{sequence.run:05d}.%4a_jobid_%A.err",
+        f"--output=log/Run{sequence.id:05d}.%4a_jobid_%A.out",
+        f"--error=log/Run{sequence.id:05d}.%4a_jobid_%A.err",
     ]
 
     # Get the number of subruns. The number of subruns starts counting from 0.
-    subruns = int(sequence.subrun_list[-1].subrun) - 1
+    subruns = int(sequence.n_subruns - 1)
 
     # Depending on the type of sequence, we need to set
     # different sbatch environment variables
@@ -477,11 +477,11 @@ def data_sequence_job_template(sequence):
     for arg in commandargs:
         content += TAB * 2 + f"'{arg}',\n"
 
-    if pedestal_ids_file_exists(sequence.run):
-        pedestal_ids_file = get_pedestal_ids_file(sequence.run, flat_date)
+    if pedestal_ids_file_exists(sequence.id):
+        pedestal_ids_file = get_pedestal_ids_file(sequence.id, flat_date)
         content += TAB * 2 + f"f'--pedestal-ids-file={pedestal_ids_file}',\n"
 
-    content += TAB * 2 + f"f'{sequence.run:05d}.{{subruns:04d}}',\n"
+    content += TAB * 2 + f"f'{sequence.id:05d}.{{subruns:04d}}',\n"
 
     content += TAB * 2 + f"'{options.tel_id}'\n"
     content += TAB + "])\n"
@@ -522,7 +522,7 @@ def calibration_sequence_job_template(sequence):
 
     commandargs.append(f"--date={options.date}")
     commandargs.append(f"--drs4-pedestal-run={sequence.previousrun:05d}")
-    commandargs.append(f"--pedcal-run={sequence.run:05d}")
+    commandargs.append(f"--pedcal-run={sequence.id:05d}")
 
     content = job_header + "\n" + PYTHON_IMPORTS
 

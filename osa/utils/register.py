@@ -21,14 +21,14 @@ __all__ = [
 log = myLogger(logging.getLogger(__name__))
 
 
-def register_files(run_str, analysis_dir, prefix, suffix, output_dir) -> None:
+def register_files(run_id, analysis_dir, prefix, suffix, output_dir) -> None:
     """
     Copy files into final data directory destination and register
     them into the DB (to be implemented).
 
     Parameters
     ----------
-    run_str: str
+    run_id: int
         Run number
     analysis_dir: pathlib.Path
         analysis directory
@@ -40,7 +40,7 @@ def register_files(run_str, analysis_dir, prefix, suffix, output_dir) -> None:
         prefix of the data file
     """
 
-    file_list = analysis_dir.rglob(f"{prefix}*{run_str}*{suffix}")
+    file_list = analysis_dir.rglob(f"{prefix}*{run_id}*{suffix}")
 
     for input_file in file_list:
         output_file = output_dir / input_file.name
@@ -82,14 +82,14 @@ def create_symlinks(input_file, output_file, prefix, suffix):
         input_file.symlink_to(output_file.resolve())
 
 
-def register_run_concept_files(run_string, concept):
+def register_run_concept_files(run_id: int, concept: str):
     """
     Prepare files to be moved to final destination directories
     from the running_analysis original directory.
 
     Parameters
     ----------
-    run_string: str
+    run_id: int
     concept: str
     """
 
@@ -98,7 +98,7 @@ def register_run_concept_files(run_string, concept):
     if concept == "DL2":
         initial_dir = initial_dir / options.dl2_prod_id
 
-    elif concept in ["DL1AB", "DATACHECK"]:
+    elif concept in {"DL1AB", "DATACHECK"}:
         initial_dir = initial_dir / options.dl1_prod_id
 
     output_dir = destination_dir(concept, create_dir=False)
@@ -106,11 +106,17 @@ def register_run_concept_files(run_string, concept):
     prefix = cfg.get("PATTERN", concept + "PREFIX")
     suffix = cfg.get("PATTERN", concept + "SUFFIX")
 
-    log.debug(f"Registering {data_level} file for {prefix}*{run_string}*{suffix}")
-    if concept in [
-        "DL1AB", "DATACHECK", "PEDESTAL", "CALIB", "TIMECALIB", "MUON", "DL2"
-    ]:
-        register_files(run_string, initial_dir, prefix, suffix, output_dir)
+    log.debug(f"Registering {data_level} file for {prefix}*{run_id}*{suffix}")
+    if concept in {
+        "DL1AB",
+        "DATACHECK",
+        "PEDESTAL",
+        "CALIB",
+        "TIMECALIB",
+        "MUON",
+        "DL2",
+    }:
+        register_files(run_id, initial_dir, prefix, suffix, output_dir)
     else:
         log.warning(f"Concept {concept} not known")
 
@@ -154,27 +160,27 @@ def register_non_existing_file(file_path, concept, seq_list):
     """
     for sequence in seq_list:
         if sequence.type == "DATA":
-            run_str_found = re.search(sequence.run_str, str(file_path))
+            run_str_found = re.search(sequence.id, str(file_path))
 
             if run_str_found is not None:
                 log.debug(f"Registering file {run_str_found}")
-                register_run_concept_files(sequence.run_str, concept)
+                register_run_concept_files(sequence.id, concept)
                 if options.seqtoclose is None and not file_path.exists():
                     log.debug("File does not exists")
 
         elif sequence.type in ["PEDCALIB", "DRS4"]:
-            calib_run_str_found = re.search(str(sequence.run), str(file_path))
-            drs4_run_str_found = re.search(str(sequence.previousrun), str(file_path))
+            calib_run_str_found = re.search(sequence.run, str(file_path))
+            drs4_run_str_found = re.search(sequence.previousrun, str(file_path))
 
             if calib_run_str_found is not None:
                 log.debug(f"Registering file {calib_run_str_found}")
-                register_run_concept_files(str(sequence.run), concept)
+                register_run_concept_files(sequence.id, concept)
                 if options.seqtoclose is None and not file_path.exists():
                     log.debug("File does not exists")
 
             if drs4_run_str_found is not None:
                 log.debug(f"Registering file {drs4_run_str_found}")
-                register_run_concept_files(str(sequence.previousrun), concept)
+                register_run_concept_files(sequence.previousrun, concept)
                 if options.seqtoclose is None and not file_path.exists():
                     log.debug("File does not exists")
 

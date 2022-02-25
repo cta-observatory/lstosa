@@ -18,4 +18,4 @@ def test_build_sequences(sequence_list):
     from osa.nightsummary.extract import build_sequences
     extracted_seq_list = build_sequences(date='2020_01_17')
     for sequence, extracted_seq in zip(sequence_list, extracted_seq_list):
-        assert sequence.run == extracted_seq.run
+        assert sequence.id == extracted_seq.id

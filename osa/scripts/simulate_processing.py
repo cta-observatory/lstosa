@@ -154,18 +154,18 @@ def simulate_processing():
     # simulate data calibration and reduction
     for sequence in sequence_list:
         processed = False
-        for sub_list in sequence.subrun_list:
-            if sub_list.runobj.type == "PEDCALIB":
-                args_cal = parse_template(calibration_sequence_job_template(sequence), 0)
-                simulate_calibration(args_cal)
-            elif sub_list.runobj.type == "DATA":
-                with mp.Pool() as poolproc:
-                    args_proc = [
-                        parse_template(data_sequence_job_template(sequence), subrun_idx)
-                        for subrun_idx in range(sub_list.subrun)
-                    ]
-                    processed = poolproc.map(simulate_subrun_processing, args_proc)
+        if sequence.type == "PEDCALIB":
+            args_cal = parse_template(calibration_sequence_job_template(sequence), 0)
+            simulate_calibration(args_cal)
+        elif sequence.type == "DATA":
+            with mp.Pool() as poolproc:
+                args_proc = [
+                    parse_template(data_sequence_job_template(sequence), subrun_idx)
+                    for subrun_idx in range(sequence.n_subruns)
+                ]
+                processed = poolproc.map(simulate_subrun_processing, args_proc)
         drs4_pedestal_run_id = str(sequence.pedestal).split(".")[1].replace("Run", "")
+        print(drs4_pedestal_run_id)
         pedcal_run_id = str(sequence.calibration).split(".")[1].replace("Run", "")
 
         # produce prov if overwrite prov arg
@@ -177,11 +177,11 @@ def simulate_processing():
                 options.configfile,
                 drs4_pedestal_run_id,
                 pedcal_run_id,
-                sequence.run_str,
+                f"{sequence.id:05d}",
                 options.directory,
                 options.prod_id,
             ]
-            log.info(f"Processing provenance for run {sequence.run_str}")
+            log.info(f"Processing provenance for run {sequence.id}")
             subprocess.run(args_pp, check=True)
 
 

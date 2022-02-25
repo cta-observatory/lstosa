@@ -59,7 +59,7 @@ def test_sequence_filenames(running_analysis_dir, sequence_list):
     for sequence in sequence_list:
         sequence_filenames(sequence)
         assert sequence.script == running_analysis_dir / \
-               f"sequence_LST1_{sequence.run:05d}.py"
+               f"sequence_LST1_{sequence.id:05d}.py"
 
 
 def test_scheduler_env_variables(sequence_list, running_analysis_dir):
