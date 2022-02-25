@@ -1,3 +1,5 @@
+"""Script to reprocess a list of dates without overwhelming the job system manager."""
+
 import logging
 import subprocess as sp
 import time
@@ -66,7 +68,7 @@ def get_list_of_dates(dates_file):
     'dates-file',
     type=click.Path(exists=True),
 )
-def main(config: Path, no_dl2: bool, dates_file: Path):
+def main(dates_file: Path, config: Path = DEFAULT_CFG, no_dl2: bool = False):
     """
     Run the onsite massive reprocessing for all the dates listed in the input file.
     The input file should list the dates in the format YYYY_MM_DD one date per line.
@@ -77,7 +79,7 @@ def main(config: Path, no_dl2: bool, dates_file: Path):
 
     # Check slurm queue status
     check_job_status_and_wait()
-    
+
     for date in list_of_dates:
         run_sequencer(date, config, no_dl2)
         log.info("Waiting 2 minutes to launch the process of the next date...")
