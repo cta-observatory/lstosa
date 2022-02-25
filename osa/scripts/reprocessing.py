@@ -10,7 +10,6 @@ import click
 from osa.paths import DEFAULT_CFG
 from osa.utils.logging import myLogger
 
-
 log = myLogger(logging.getLogger(__name__))
 
 
@@ -68,7 +67,7 @@ def get_list_of_dates(dates_file):
     'dates-file',
     type=click.Path(exists=True),
 )
-def main(dates_file: Path, config: Path = DEFAULT_CFG, no_dl2: bool = False):
+def main(dates_file: Path = None, config: Path = DEFAULT_CFG, no_dl2: bool = False):
     """
     Run the onsite massive reprocessing for all the dates listed in the input file.
     The input file should list the dates in the format YYYY_MM_DD one date per line.
