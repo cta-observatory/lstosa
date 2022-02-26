@@ -20,6 +20,7 @@ entry_points = {
         "theta2_significance = osa.high_level.significance:main",
         "source_coordinates = osa.nightsummary.set_source_coordinates:main",
         "reprocessing = osa.scripts.reprocessing:main",
+        "reprocess_longterm = osa.scripts.reprocess_longterm:main",
     ]
 }
 
