@@ -42,7 +42,7 @@ def directory_in_webserver(
     DATACHECK_WEB_DIRS = {
         "PEDESTAL": f"drs4/{prod_id}/{date}",
         "CALIB": f"enf_calibration/{prod_id}/{date}",
-        "DL1": f"dl1/{prod_id}/{date}/pdf",
+        "DL1AB": f"dl1/{prod_id}/{date}/pdf",
         "LONGTERM": f"dl1/{prod_id}/{date}",
         "HIGH_LEVEL": f"high_level/{prod_id}/{date}",
     }
@@ -81,7 +81,7 @@ def copy_to_webserver(
     for file in files:
         log.info(f"Copying {file}")
         copy_file = ["scp", file, f"{host}:{destination_dir}/."]
-        sp.run(copy_file, check=True)
+        sp.run(copy_file, check=True, stdout=sp.DEVNULL, stderr=sp.DEVNULL)
 
 
 def set_no_observations_flag(host, datedir, prod_id):
