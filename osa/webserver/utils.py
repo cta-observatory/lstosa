@@ -81,7 +81,7 @@ def copy_to_webserver(
     for file in files:
         log.info(f"Copying {file}")
         copy_file = ["scp", file, f"{host}:{destination_dir}/."]
-        sp.run(copy_file, check=True)
+        sp.run(copy_file, check=True, stdout=sp.DEVNULL, stderr=sp.DEVNULL)
 
 
 def set_no_observations_flag(host, datedir, prod_id):

@@ -196,7 +196,7 @@ def sequence_calibration_files(sequence_list):
 
 def get_datacheck_files(pattern: str, directory: Path) -> list:
     """Return a list of files matching the pattern."""
-    return [file for file in directory.glob(pattern)]
+    return sorted(directory.glob(pattern))
 
 
 def datacheck_directory(data_type: str, date: str) -> Path:
@@ -217,7 +217,7 @@ def datacheck_directory(data_type: str, date: str) -> Path:
     return directory
 
 
-def destination_dir(concept, create_dir=True) -> Path:
+def destination_dir(concept: str, create_dir: bool = True) -> Path:
     """
     Create final destination directory for each data level.
     See Also osa.utils.register_run_concept_files
