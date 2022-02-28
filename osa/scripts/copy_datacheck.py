@@ -70,7 +70,7 @@ def main():
         copy_to_webserver(files, data_type, nightdir, options.prod_id)
 
         # Check if all files are copied
-        all_files_are_copied = are_files_copied(pattern, files)
+        all_files_are_copied = are_files_copied(data_type, files)
 
     # Flatten the list of lists for easy check of no_observations flag
     datacheck_files = [item for sublist in lists_datacheck_files for item in sublist]
