@@ -203,13 +203,8 @@ def datacheck_directory(data_type: str, date: str) -> Path:
     """Returns the path to the datacheck directory given the data type."""
     if data_type in {"PEDESTAL", "CALIB"}:
         directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / date / "pro/log"
-    elif data_type == "DL1":
-        directory = (
-            Path(cfg.get("LST1", f"{data_type}_DIR"))
-            / date
-            / options.prod_id
-            / options.dl1_prod_id
-        )
+    elif data_type == "DL1AB":
+        directory = destination_dir("DL1AB", create_dir=False)
     elif data_type == "LONGTERM":
         directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / options.prod_id / date
     else:
@@ -241,21 +236,21 @@ def destination_dir(concept: str, create_dir: bool = True) -> Path:
         directory = (
             Path(cfg.get(options.tel_id, concept + "_DIR")) / nightdir / options.prod_id
         )
-    elif concept in ["DL1AB", "DATACHECK"]:
+    elif concept in {"DL1AB", "DATACHECK"}:
         directory = (
             Path(cfg.get(options.tel_id, concept + "_DIR"))
             / nightdir
             / options.prod_id
             / options.dl1_prod_id
         )
-    elif concept in ["DL2", "DL3"]:
+    elif concept in {"DL2", "DL3"}:
         directory = (
             Path(cfg.get(options.tel_id, concept + "_DIR"))
             / nightdir
             / options.prod_id
             / options.dl2_prod_id
         )
-    elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
+    elif concept in {"PEDESTAL", "CALIB", "TIMECALIB"}:
         directory = (
             Path(cfg.get(options.tel_id, concept + "_DIR"))
             / nightdir

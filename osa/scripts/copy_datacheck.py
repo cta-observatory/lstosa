@@ -20,29 +20,31 @@ from osa.webserver.utils import copy_to_webserver, set_no_observations_flag
 log = myLogger(logging.getLogger())
 
 
-def are_files_copied(pattern: str, files: list) -> bool:
+def are_files_copied(data_type: str, files: list) -> bool:
     """Check if all files of a given data type are copied."""
     n_files = len(files)
 
     if n_files == 0:
-        log.warning(f"No {pattern} files found.")
+        log.warning(f"No {data_type} files found.")
         return False
 
-    elif pattern == "PEDESTAL" and n_files != 1:
+    elif data_type == "PEDESTAL" and n_files != 1:
         log.warning(f"Expected at least 1 PDF file, {n_files} found.")
         return False
 
-    elif pattern == "CALIB" and n_files != 1:
+    elif data_type == "CALIB" and n_files != 1:
         log.warning(f"Expected at least 1 PDF file, {n_files} found.")
         return False
 
-    elif pattern == "DL1" and n_files != get_number_of_runs():
+    elif data_type == "DL1AB" and n_files != get_number_of_runs():
         log.warning(f"Expected {get_number_of_runs()} PDF files, {n_files} found.")
         return False
 
-    elif pattern == "LONGTERM" and n_files != 3:
+    elif data_type == "LONGTERM" and n_files != 3:
         log.warning(f"Expected 3 DL1 check files (HTML, h5 and log), {n_files} found.")
         return False
+
+    return True
 
 
 def main():
@@ -50,9 +52,11 @@ def main():
     log.setLevel(logging.INFO)
 
     log.info(
+        "\n___________________________________________________________________________"
         "Expected PDF datacheck files: DRS4, ENF calibration & run-wise DL1.\n"
         "Additionally, daily DL1 log, HTML and h5 files should be copied.\n"
         "If any of these are missing it might happen that they are not produced yet.\n"
+        "___________________________________________________________________________\n"
     )
 
     copy_datacheck_parsing()
@@ -90,7 +94,7 @@ def get_number_of_runs():
     Get the run sequence processed list for the given date by globbing the
     run-wise DL1 files.
     """
-    dl1_directory = destination_dir("DL1", create_dir=False)
+    dl1_directory = destination_dir("DL1AB", create_dir=False)
     list_files = list(dl1_directory.glob("dl1_LST-1.Run?????.h5"))
     return len(list_files)
 
