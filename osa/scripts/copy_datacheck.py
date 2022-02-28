@@ -52,11 +52,13 @@ def main():
     log.setLevel(logging.INFO)
 
     log.info(
-        "\n___________________________________________________________________________"
-        "Expected PDF datacheck files: DRS4, ENF calibration & run-wise DL1.\n"
-        "Additionally, daily DL1 log, HTML and h5 files should be copied.\n"
-        "If any of these are missing it might happen that they are not produced yet.\n"
-        "___________________________________________________________________________\n"
+        """
+        ___________________________________________________________________________
+        Expected PDF datacheck files: DRS4, ENF calibration & run-wise DL1.
+        Additionally, daily DL1 log, HTML and h5 files should be copied.
+        If any of these are missing it might happen that they are not produced yet.
+        ___________________________________________________________________________
+        """
     )
 
     copy_datacheck_parsing()
