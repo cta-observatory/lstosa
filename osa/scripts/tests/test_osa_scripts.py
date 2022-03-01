@@ -41,9 +41,10 @@ def run_program(*args):
     result = sp.run(args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8", check=True)
 
     if result.returncode != 0:
+        new_line = "\n"
         raise ValueError(
-            f"Running {args[0]} failed with return code {result.returncode}"
-            f", output: \n {result.stdout}"
+            f"Running {args[0]} failed with return code {result.returncode}, output: "
+            f"{new_line.join(result.stdout)}"
         )
 
     return result
@@ -155,8 +156,7 @@ def test_sequencer(sequence_file_list):
 
 def test_autocloser(running_analysis_dir):
     result = run_program(
-        "python",
-        "osa/scripts/autocloser.py",
+        "autocloser",
         "--config",
         "cfg/sequencer.cfg",
         "--date",
@@ -166,10 +166,6 @@ def test_autocloser(running_analysis_dir):
     )
     assert os.path.exists(running_analysis_dir)
     assert result.stdout.split()[-1] == "Exit"
-    assert os.path.exists(
-        "./test_osa/test_files0/running_analysis/20200117/v0.1.0/"
-        "AutoCloser_Incidences_tmp.txt"
-    )
 
 
 def test_closer(r0_dir, running_analysis_dir, test_observed_data):
