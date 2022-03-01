@@ -2,12 +2,12 @@
 
 import datetime
 import logging
-import os
 from argparse import ArgumentParser, ArgumentTypeError
 from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.paths import analysis_path, DEFAULT_CFG
 from osa.utils.logging import myLogger
 from osa.utils.utils import (
     get_calib_prod_id,
@@ -15,9 +15,8 @@ from osa.utils.utils import (
     get_dl2_prod_id,
     get_prod_id,
     getcurrentdate,
-    night_directory,
     is_defined,
-)
+    set_prod_ids, )
 
 __all__ = [
     "closer_argparser",
@@ -30,7 +29,6 @@ __all__ = [
     "sequencer_argparser",
     "sequencer_cli_parsing",
     "set_default_date_if_needed",
-    "set_default_directory_if_needed",
     "simprocparsing",
     "sequencer_webmaker_argparser",
     "valid_date",
@@ -45,40 +43,54 @@ __all__ = [
 log = myLogger(logging.getLogger(__name__))
 
 
+def valid_date(string):
+    """Check if the string is a valid date."""
+    try:
+        return datetime.datetime.strptime(string, "%Y_%m_%d")
+    except ValueError:
+        msg = f"Not a valid date: '{string}'."
+        raise ArgumentTypeError(msg)
+
+
+common_parser = ArgumentParser(add_help=False)
+common_parser.add_argument(
+    "-c",
+    "--config",
+    type=Path,
+    default=DEFAULT_CFG,
+    help="use specific config file [default cfg/sequencer.cfg]",
+)
+common_parser.add_argument(
+    "-d",
+    "--date",
+    help="observation ending date YYYY_MM_DD [default today]",
+)
+common_parser.add_argument(
+    "-s",
+    "--simulate",
+    action="store_true",
+    default=False,
+    help="do not run, just show what would happen",
+)
+common_parser.add_argument(
+    "-t",
+    "--test",
+    action="store_true",
+    default=False,
+    help="Avoiding interaction with SLURM",
+)
+common_parser.add_argument(
+    "-v",
+    "--verbose",
+    action="store_true",
+    default=False,
+    help="make lots of noise for debugging",
+)
+
+
 def closer_argparser():
-    parser = ArgumentParser()
-    parser.add_argument(
-        "-c",
-        "--config",
-        action="store",
-        dest="configfile",
-        default="./cfg/sequencer.cfg",
-        help="use specific config file [default cfg/sequencer.cfg]",
-    )
-    parser.add_argument(
-        "-d",
-        "--date",
-        action="store",
-        type=str,
-        dest="date",
-        help="observation ending date YYYY_MM_DD [default today]",
-    )
-    parser.add_argument(
-        "-s",
-        "--simulate",
-        action="store_true",
-        dest="simulate",
-        default=False,
-        help="do not run, just show what would happen",
-    )
-    parser.add_argument(
-        "-t",
-        "--test",
-        action="store_true",
-        dest="test",
-        default=False,
-        help="Avoiding interaction with SLURM",
-    )
+    parser = ArgumentParser(parents=[common_parser])
+
     parser.add_argument(
         "-y",
         "--yes",
@@ -86,28 +98,6 @@ def closer_argparser():
         dest="noninteractive",
         default=False,
         help="assume yes to all questions",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        dest="verbose",
-        default=False,
-        help="make lots of noise for debugging",
-    )
-    parser.add_argument(
-        "--stderr",
-        action="store",
-        type=str,
-        dest="stderr",
-        help="file for standard error",
-    )
-    parser.add_argument(
-        "--stdout",
-        action="store",
-        type=str,
-        dest="stdout",
-        help="file for standard output",
     )
     parser.add_argument(
         "--seq",
@@ -132,96 +122,28 @@ def closercliparsing():
     opts = closer_argparser().parse_args()
 
     # set global variables
-    options.configfile = os.path.abspath(opts.configfile)
-    options.stderr = opts.stderr
-    options.stdout = opts.stdout
-    options.date = opts.date
-    options.noninteractive = opts.noninteractive
-    options.simulate = opts.simulate
-    options.test = opts.test
-    options.verbose = opts.verbose
+    set_common_globals(opts)
     options.seqtoclose = opts.seqtoclose
-    options.tel_id = opts.tel_id
     options.no_dl2 = opts.no_dl2
+    options.noninteractive = opts.noninteractive
 
     log.debug(f"the options are {opts}")
 
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
-    options.directory = set_default_directory_if_needed()
-    options.prod_id = get_prod_id()
-
-    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
-        options.calib_prod_id = get_calib_prod_id()
-    else:
-        options.calib_prod_id = options.prod_id
-
-    if cfg.get("LST1", "DL1_PROD_ID") is not None:
-        options.dl1_prod_id = get_dl1_prod_id()
-    else:
-        options.dl1_prod_id = options.prod_id
-
-    if cfg.get("LST1", "DL2_PROD_ID") is not None:
-        options.dl2_prod_id = get_dl2_prod_id()
-    else:
-        options.dl2_prod_id = options.prod_id
+    options.directory = analysis_path(options.tel_id)
+    set_prod_ids()
 
 
 def calibration_pipeline_argparser():
     """Command line parser for the calibration pipeline."""
-    parser = ArgumentParser()
-    parser.add_argument(
-        "-c",
-        "--config",
-        action="store",
-        dest="configfile",
-        default=None,
-        help="use specific config file [default cfg/sequencer.cfg]",
-    )
-    parser.add_argument(
-        "-d",
-        "--date",
-        action="store",
-        type=str,
-        dest="date",
-        help="observation ending date YYYY_MM_DD [default today]",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        dest="verbose",
-        default=False,
-        help="make lots of noise for debugging",
-    )
-    parser.add_argument(
-        "--stderr",
-        action="store",
-        type=str,
-        dest="stderr",
-        help="file for standard error",
-    )
-    parser.add_argument(
-        "--stdout",
-        action="store",
-        type=str,
-        dest="stdout",
-        help="file for standard output",
-    )
+    parser = ArgumentParser(parents=[common_parser])
     parser.add_argument(
         "--prod-id",
         action="store",
         type=str,
         dest="prod_id",
         help="Set the prod ID to define data directories",
-    )
-    parser.add_argument(
-        "-s",
-        "--simulate",
-        action="store_true",
-        dest="simulate",
-        default=False,
-        help="do not submit sequences as jobs",
     )
     parser.add_argument(
         "--drs4-pedestal-run",
@@ -247,9 +169,7 @@ def calibration_pipeline_cliparsing():
     opts = calibration_pipeline_argparser().parse_args()
 
     # set global variables
-    options.configfile = opts.configfile
-    options.stderr = opts.stderr
-    options.stdout = opts.stdout
+    options.configfile = opts.config
     options.date = opts.date
     options.verbose = opts.verbose
     options.prod_id = opts.prod_id
@@ -258,7 +178,7 @@ def calibration_pipeline_cliparsing():
 
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
-    options.directory = set_default_directory_if_needed()
+    options.directory = analysis_path(options.tel_id)
     if cfg.get("LST1", "CALIB_PROD_ID") is not None:
         options.calib_prod_id = get_calib_prod_id()
     else:
@@ -267,53 +187,8 @@ def calibration_pipeline_cliparsing():
 
 
 def data_sequence_argparser():
-    parser = ArgumentParser()
-    parser.add_argument(
-        "-c",
-        "--config",
-        action="store",
-        dest="configfile",
-        default=None,
-        help="use specific config file [default cfg/sequencer.cfg]",
-    )
-    parser.add_argument(
-        "-d",
-        "--date",
-        action="store",
-        type=str,
-        dest="date",
-        help="observation ending date YYYY_MM_DD [default today]",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        dest="verbose",
-        default=False,
-        help="make lots of noise for debugging",
-    )
-    parser.add_argument(
-        "--stderr",
-        action="store",
-        type=str,
-        dest="stderr",
-        help="file for standard error",
-    )
-    parser.add_argument(
-        "--stdout",
-        action="store",
-        type=str,
-        dest="stdout",
-        help="file for standard output",
-    )
-    parser.add_argument(
-        "-s",
-        "--simulate",
-        action="store_true",
-        dest="simulate",
-        default=False,
-        help="do not submit sequences as jobs",
-    )
+    parser = ArgumentParser(parents=[common_parser])
+
     parser.add_argument(
         "--prod-id",
         action="store",
@@ -373,9 +248,7 @@ def data_sequence_cli_parsing():
     opts = data_sequence_argparser().parse_args()
 
     # set global variables
-    options.configfile = opts.configfile
-    options.stderr = opts.stderr
-    options.stdout = opts.stdout
+    options.configfile = opts.config.resolve()
     options.date = opts.date
     options.verbose = opts.verbose
     options.simulate = opts.simulate
@@ -387,22 +260,9 @@ def data_sequence_cli_parsing():
 
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
-    options.directory = set_default_directory_if_needed()
+    options.directory = analysis_path(options.tel_id)
 
-    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
-        options.calib_prod_id = get_calib_prod_id()
-    else:
-        options.calib_prod_id = options.prod_id
-
-    if cfg.get("LST1", "DL1_PROD_ID") is not None:
-        options.dl1_prod_id = get_dl1_prod_id()
-    else:
-        options.dl1_prod_id = options.prod_id
-
-    if cfg.get("LST1", "DL2_PROD_ID") is not None:
-        options.dl2_prod_id = get_dl2_prod_id()
-    else:
-        options.dl2_prod_id = options.prod_id
+    set_prod_ids()
 
     return (
         opts.pedcal_file,
@@ -418,38 +278,9 @@ def data_sequence_cli_parsing():
 
 def sequencer_argparser():
     """Argument parser for sequencer script."""
-    parser = ArgumentParser()
-    # options which define variables
-    parser.add_argument(
-        "-c",
-        "--config",
-        action="store",
-        dest="configfile",
-        default=None,
-        help="use specific config file [default cfg/sequencer.cfg]",
-    )
-    parser.add_argument(
-        "-d",
-        "--date",
-        action="store",
-        type=str,
-        dest="date",
-        help="observation ending date YYYY_MM_DD [default today]",
-    )
-    # boolean options
-    parser.add_argument(
-        "-s",
-        "--simulate",
-        action="store_true",
-        default=False,
-        help="do not submit sequences as jobs",
-    )
-    parser.add_argument(
-        "-t",
-        "--test",
-        action="store_true",
-        default=False,
-        help="Test locally avoiding interaction with job scheduler",
+    parser = ArgumentParser(
+        description="Build the jobs for each run and process them for a given date",
+        parents=[common_parser]
     )
     parser.add_argument(
         "--no-submit",
@@ -471,28 +302,6 @@ def sequencer_argparser():
         help="Do not produce DL2 files (default False)",
     )
     parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        dest="verbose",
-        default=False,
-        help="Increase verbosity for debugging",
-    )
-    parser.add_argument(
-        "--stderr",
-        action="store",
-        type=str,
-        dest="stderr",
-        help="file for standard error",
-    )
-    parser.add_argument(
-        "--stdout",
-        action="store",
-        type=str,
-        dest="stdout",
-        help="file for standard output",
-    )
-    parser.add_argument(
         "tel_id",
         choices=["ST", "LST1", "LST2", "all"],
         help="telescope identifier LST1, LST2, ST or all.",
@@ -506,97 +315,34 @@ def sequencer_cli_parsing():
     opts = sequencer_argparser().parse_args()
 
     # set global variables
-    options.configfile = opts.configfile
-    options.stderr = opts.stderr
-    options.stdout = opts.stdout
-    options.date = opts.date
-    options.simulate = opts.simulate
-    options.test = opts.test
+    set_common_globals(opts)
     options.no_submit = opts.no_submit
     options.no_calib = opts.no_calib
     options.no_dl2 = opts.no_dl2
-    options.verbose = opts.verbose
-    options.tel_id = opts.tel_id
 
     log.debug(f"the options are {opts}")
 
-    options.prod_id = get_prod_id()
-
-    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
-        options.calib_prod_id = get_calib_prod_id()
-    else:
-        options.calib_prod_id = options.prod_id
-
-    if cfg.get("LST1", "DL1_PROD_ID") is not None:
-        options.dl1_prod_id = get_dl1_prod_id()
-    else:
-        options.dl1_prod_id = options.prod_id
-
-    if cfg.get("LST1", "DL2_PROD_ID") is not None:
-        options.dl2_prod_id = get_dl2_prod_id()
-    else:
-        options.dl2_prod_id = options.prod_id
+    set_prod_ids()
 
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
-    options.directory = set_default_directory_if_needed()
+    options.directory = analysis_path(options.tel_id)
 
 
 def rawcopycliparsing():
     parser = ArgumentParser()
     parser.add_argument(
-        "-c",
-        "--config",
-        action="store",
-        dest="configfile",
-        default=None,
-        help="use specific config file [default rawcopy.cfg]",
-    )
-    parser.add_argument(
-        "-d",
-        "--date",
-        action="store",
-        type=str,
-        dest="date",
-        help="observation ending date YYYY_MM_DD [default today]",
-    )
-    parser.add_argument(
         "--nocheck",
         action="store_true",
-        dest="nocheck",
         default=False,
         help="Skip checking if the daily activity is set over",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        dest="verbose",
-        default=False,
-        help="make lots of noise for debugging",
-    )
-    parser.add_argument(
-        "--stderr",
-        action="store",
-        type=str,
-        dest="stderr",
-        help="file for standard error",
-    )
-    parser.add_argument(
-        "--stdout",
-        action="store",
-        type=str,
-        dest="stdout",
-        help="file for standard output",
     )
 
     # parse the command line
     (opts, args) = parser.parse_args()
 
     # set global variables
-    options.configfile = opts.configfile
-    options.stderr = opts.stderr
-    options.stdout = opts.stdout
+    options.configfile = opts.config
     options.date = opts.date
     options.nocheck = opts.nocheck
     options.verbose = opts.verbose
@@ -626,8 +372,8 @@ def provprocess_argparser():
         "-c",
         "--config",
         action="store",
-        dest="configfile",
-        default="cfg/sequencer.cfg",
+        type=Path,
+        default=DEFAULT_CFG,
         help="use specific config file [default cfg/sequencer.cfg]",
     )
     parser.add_argument(
@@ -676,7 +422,7 @@ def provprocessparsing():
     options.run = opts.run
     options.date = opts.date
     options.prod_id = get_prod_id()
-    options.configfile = os.path.abspath(opts.configfile)
+    options.configfile = opts.config.resolve()
     options.filter = opts.filter
     options.quit = opts.quit
 
@@ -696,8 +442,6 @@ def simproc_argparser():
     parser.add_argument(
         "-c",
         "--config",
-        action="store",
-        dest="configfile",
         default="cfg/sequencer.cfg",
         help="use specific config file [default cfg/sequencer.cfg]",
     )
@@ -734,30 +478,14 @@ def simprocparsing():
 
     # set global variables
     options.prod_id = get_prod_id()
-    options.configfile = opts.configfile
+    options.configfile = opts.config
     options.provenance = opts.provenance
     options.force = opts.force
     options.append = opts.append
 
 
 def copy_datacheck_argparser():
-    parser = ArgumentParser()
-    parser.add_argument(
-        "-d",
-        "--date",
-        action="store",
-        type=str,
-        dest="date",
-        help="observation ending date YYYY_MM_DD [default today]",
-    )
-    parser.add_argument(
-        "-c",
-        "--config",
-        action="store",
-        dest="configfile",
-        default="cfg/sequencer.cfg",
-        help="use specific config file [default cfg/sequencer.cfg]",
-    )
+    parser = ArgumentParser(parents=[common_parser])
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
     return parser
 
@@ -770,9 +498,9 @@ def copy_datacheck_parsing():
     # set global variables
     options.date = opts.date
     options.tel_id = opts.tel_id
-    options.configfile = opts.configfile
+    options.configfile = opts.config
     options.date = set_default_date_if_needed()
-    options.directory = set_default_directory_if_needed()
+    options.directory = analysis_path(options.tel_id)
     options.prod_id = get_prod_id()
 
     if cfg.get("LST1", "DL1_PROD_ID") is not None:
@@ -781,25 +509,10 @@ def copy_datacheck_parsing():
         options.dl1_prod_id = options.prod_id
 
 
-def valid_date(string):
-    try:
-        return datetime.datetime.strptime(string, "%Y_%m_%d")
-    except ValueError:
-        msg = f"Not a valid date: '{string}'."
-        raise ArgumentTypeError(msg)
-
-
 def sequencer_webmaker_argparser():
     parser = ArgumentParser(
-        description="Script to make an xhtml from LSTOSA sequencer output"
-    )
-    parser.add_argument("-d", "--date", help="Date - format YYYY_MM_DD", type=valid_date)
-    parser.add_argument(
-        "-c",
-        "--config-file",
-        dest="osa_config_file",
-        default="cfg/sequencer.cfg",
-        help="OSA config file.",
+        description="Script to make an xhtml from LSTOSA sequencer output",
+        parents=[common_parser]
     )
     options.tel_id = "LST1"
     options.prod_id = get_prod_id()
@@ -814,8 +527,10 @@ def set_default_date_if_needed():
     return getcurrentdate()
 
 
-def set_default_directory_if_needed():
-    if is_defined(options.directory):
-        return options.directory
-
-    return night_directory()
+def set_common_globals(opts):
+    options.configfile = opts.config.resolve()
+    options.date = opts.date
+    options.simulate = opts.simulate
+    options.test = opts.test
+    options.verbose = opts.verbose
+    options.tel_id = opts.tel_id
