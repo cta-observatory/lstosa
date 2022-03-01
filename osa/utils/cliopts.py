@@ -25,7 +25,6 @@ __all__ = [
     "data_sequence_cli_parsing",
     "data_sequence_argparser",
     "provprocessparsing",
-    "rawcopycliparsing",
     "sequencer_argparser",
     "sequencer_cli_parsing",
     "set_default_date_if_needed",
@@ -63,7 +62,7 @@ common_parser.add_argument(
 common_parser.add_argument(
     "-d",
     "--date",
-    help="observation ending date YYYY_MM_DD [default today]",
+    help="date (YYYY_MM_DD) of the start of the night",
 )
 common_parser.add_argument(
     "-s",
@@ -77,15 +76,16 @@ common_parser.add_argument(
     "--test",
     action="store_true",
     default=False,
-    help="Avoiding interaction with SLURM",
+    help="Avoid interaction with SLURM",
 )
 common_parser.add_argument(
     "-v",
     "--verbose",
     action="store_true",
     default=False,
-    help="make lots of noise for debugging",
+    help="Activate debugging mode",
 )
+# TODO: add here the tel_id common option
 
 
 def closer_argparser():
@@ -329,43 +329,6 @@ def sequencer_cli_parsing():
     options.directory = analysis_path(options.tel_id)
 
 
-def rawcopycliparsing():
-    parser = ArgumentParser()
-    parser.add_argument(
-        "--nocheck",
-        action="store_true",
-        default=False,
-        help="Skip checking if the daily activity is set over",
-    )
-
-    # parse the command line
-    (opts, args) = parser.parse_args()
-
-    # set global variables
-    options.configfile = opts.config
-    options.date = opts.date
-    options.nocheck = opts.nocheck
-    options.verbose = opts.verbose
-
-    log.debug(f"the options are {opts}")
-    log.debug(f"the argument is {args}")
-
-    # mapping the telescope argument to an option
-    # parameter (it might become an option in the future)
-    if len(args) != 1:
-        log.error("incorrect number of arguments, type -h for help")
-    elif args[0] == "ST":
-        log.error("not yet ready for telescope ST")
-    elif args[0] not in ["LST1", "LST2"]:
-        log.error("wrong telescope id, use 'LST1', 'LST2' or 'ST'")
-    options.tel_id = args[0]
-
-    # setting the default date and directory if needed
-    options.date = set_default_date_if_needed()
-
-    return args
-
-
 def provprocess_argparser():
     parser = ArgumentParser()
     parser.add_argument(
@@ -391,7 +354,8 @@ def provprocess_argparser():
         help="use this flag to reset session and remove log file",
     )
     parser.add_argument(
-        "drs4_pedestal_run_id", help="Number of the drs4_pedestal used in the calibration"
+        "drs4_pedestal_run_id",
+        help="Number of the drs4_pedestal used in the calibration"
     )
     parser.add_argument(
         "pedcal_run_id", help="Number of the used pedcal used in the calibration"
@@ -421,20 +385,10 @@ def provprocessparsing():
     options.pedcal_run_id = opts.pedcal_run_id
     options.run = opts.run
     options.date = opts.date
-    options.prod_id = get_prod_id()
     options.configfile = opts.config.resolve()
     options.filter = opts.filter
     options.quit = opts.quit
-
-    if cfg.get("LST1", "DL1_PROD_ID") is not None:
-        options.dl1_prod_id = get_dl1_prod_id()
-    else:
-        options.dl1_prod_id = options.prod_id
-
-    if cfg.get("LST1", "DL2_PROD_ID") is not None:
-        options.dl2_prod_id = get_dl2_prod_id()
-    else:
-        options.dl2_prod_id = options.prod_id
+    set_prod_ids()
 
 
 def simproc_argparser():
@@ -528,6 +482,7 @@ def set_default_date_if_needed():
 
 
 def set_common_globals(opts):
+    """Define common global variables using options module."""
     options.configfile = opts.config.resolve()
     options.date = opts.date
     options.simulate = opts.simulate

@@ -17,7 +17,9 @@ from osa.configs.config import cfg
 from osa.paths import analysis_path, DEFAULT_CFG
 from osa.utils.cliopts import valid_date
 from osa.utils.logging import myLogger
-from osa.utils.utils import night_finished_flag, lstdate_to_dir, is_day_closed, get_prod_id
+from osa.utils.utils import (
+    night_finished_flag, lstdate_to_dir, is_day_closed, get_prod_id
+)
 from osa.webserver.utils import set_no_observations_flag
 
 __all__ = ["Telescope", "Sequence"]
@@ -75,6 +77,7 @@ parser.add_argument("tel_id", type=str, choices=["LST1"])
 
 
 def example_seq():
+    """Example sequence table output for testing."""
     return "./extra/example_sequencer.txt"
 
 
@@ -329,14 +332,14 @@ class Sequence(object):
         """Check that all analysis products are 100% complete."""
         if no_dl2:
             if (
-                self.dict_sequence["Tel"] != "ST"
+                    self.dict_sequence["Tel"] != "ST"
                     and self.dict_sequence["DL1%"] == "100"
                     and self.dict_sequence["DL1AB%"] == "100"
                     and self.dict_sequence["MUONS%"] == "100"
             ):
                 return True
         elif (
-            self.dict_sequence["Tel"] != "ST"
+                self.dict_sequence["Tel"] != "ST"
                 and self.dict_sequence["DL1%"] == "100"
                 and self.dict_sequence["DL1AB%"] == "100"
                 and self.dict_sequence["MUONS%"] == "100"
@@ -347,14 +350,14 @@ class Sequence(object):
     def is_flawless(self, no_dl2: bool):
         log.debug("Check if flawless")
         if (
-            self.dict_sequence["Type"] == "DATA"
+                self.dict_sequence["Type"] == "DATA"
                 and self.dict_sequence["Exit"] == "0:0"
                 and self.is_100(no_dl2=no_dl2)
                 and self.dict_sequence["State"] == "COMPLETED"
         ):
             return True
         if (
-            self.dict_sequence["Type"] == "PEDCALIB"
+                self.dict_sequence["Type"] == "PEDCALIB"
                 and self.dict_sequence["Exit"] == "0:0"
                 and self.dict_sequence["State"] == "COMPLETED"
         ):
