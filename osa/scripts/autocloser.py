@@ -26,7 +26,6 @@ __all__ = ["Telescope", "Sequence"]
 
 log = myLogger(logging.getLogger())
 
-
 parser = argparse.ArgumentParser(
     description="Automatic completion and sequence closer."
 )
@@ -330,14 +329,15 @@ class Sequence(object):
 
     def is_100(self, no_dl2: bool):
         """Check that all analysis products are 100% complete."""
-        if no_dl2:
-            if (
-                    self.dict_sequence["Tel"] != "ST"
-                    and self.dict_sequence["DL1%"] == "100"
-                    and self.dict_sequence["DL1AB%"] == "100"
-                    and self.dict_sequence["MUONS%"] == "100"
-            ):
-                return True
+        if (
+                no_dl2
+                and self.dict_sequence["Tel"] != "ST"
+                and self.dict_sequence["DL1%"] == "100"
+                and self.dict_sequence["DL1AB%"] == "100"
+                and self.dict_sequence["MUONS%"] == "100"
+        ):
+            return True
+
         elif (
                 self.dict_sequence["Tel"] != "ST"
                 and self.dict_sequence["DL1%"] == "100"
@@ -347,7 +347,11 @@ class Sequence(object):
         ):
             return True
 
+        else:
+            return False
+
     def is_flawless(self, no_dl2: bool):
+        """Check that all jobs statuses are completed."""
         log.debug("Check if flawless")
         if (
                 self.dict_sequence["Type"] == "DATA"
@@ -429,7 +433,6 @@ def is_night_time(hour):
 
 
 def understand_sequence(seq, no_dl2: bool):
-
     if no_dl2:
         log.info("Assumed no DL2 production")
 
