@@ -14,14 +14,13 @@ from osa.utils.logging import myLogger
 
 __all__ = [
     "getcurrentdate",
-    "night_directory",
     "get_lstchain_version",
     "lstdate_to_dir",
     "lstdate_to_iso",
     "is_day_closed",
     "get_prod_id",
     "date_in_yymmdd",
-    "get_lock_file",
+    "night_finished_flag",
     "is_defined",
     "create_lock",
     "stringify",
@@ -32,7 +31,8 @@ __all__ = [
     "get_night_limit_timestamp",
     "time_to_seconds",
     "DATACHECK_FILE_PATTERNS",
-    "YESTERDAY"
+    "YESTERDAY",
+    "set_prod_ids"
 ]
 
 log = myLogger(logging.getLogger(__name__))
@@ -85,29 +85,6 @@ def getcurrentdate(sep="_"):
     string_date = now.strftime(f"%Y{sep}%m{sep}%d")
     log.debug(f"Date string by default {string_date}")
     return string_date
-
-
-def night_directory() -> Path:
-    """
-    Path of the running_analysis directory for a certain night
-
-    Returns
-    -------
-    directory : Path
-        Path of the running_analysis directory for a certain night
-    """
-    log.debug(f"Getting analysis path for tel_id {options.tel_id}")
-    date = lstdate_to_dir(options.date)
-    options.prod_id = get_prod_id()
-    directory = Path(cfg.get(options.tel_id, "ANALYSIS_DIR")) / date / options.prod_id
-
-    if not directory.exists() and not options.simulate:
-        directory.mkdir(parents=True, exist_ok=True)
-    else:
-        log.debug("SIMULATE the creation of the analysis directory.")
-
-    log.debug(f"Analysis directory: {directory}")
-    return directory
 
 
 def get_lstchain_version():
@@ -226,7 +203,7 @@ def create_lock(lockfile) -> bool:
     return False
 
 
-def get_lock_file() -> Path:
+def night_finished_flag() -> Path:
     """
     Create night-is-finished lock file.
 
@@ -243,17 +220,15 @@ def get_lock_file() -> Path:
     return lock_file.resolve()
 
 
-def lstdate_to_iso(date_string):
+def lstdate_to_iso(date_string: str) -> str:
     """Function to change from YYYY_MM_DD to YYYY-MM-DD."""
-    date_format = "%Y_%m_%d"
-    datetime.strptime(date_string, date_format)
+    datetime.strptime(date_string, "%Y_%m_%d")
     return date_string.replace("_", "-")
 
 
-def lstdate_to_dir(date_string):
+def lstdate_to_dir(date_string: str) -> str:
     """Function to change from YYYY_MM_DD to YYYYMMDD."""
-    date_format = "%Y_%m_%d"
-    datetime.strptime(date_string, date_format)
+    datetime.strptime(date_string, "%Y_%m_%d")
     return date_string.replace("_", "")
 
 
@@ -289,7 +264,7 @@ def get_night_limit_timestamp():
 
 def is_day_closed() -> bool:
     """Get the name and Check for the existence of the Closer flag file."""
-    flag_file = get_lock_file()
+    flag_file = night_finished_flag()
     return flag_file.exists()
 
 
@@ -360,3 +335,23 @@ def time_to_seconds(timestring):
     else:
         raise ValueError("Time format not recognized.")
     return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+
+
+def set_prod_ids():
+    """Set the product IDs."""
+    options.prod_id = get_prod_id()
+
+    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
+        options.calib_prod_id = get_calib_prod_id()
+    else:
+        options.calib_prod_id = options.prod_id
+
+    if cfg.get("LST1", "DL1_PROD_ID") is not None:
+        options.dl1_prod_id = get_dl1_prod_id()
+    else:
+        options.dl1_prod_id = options.prod_id
+
+    if cfg.get("LST1", "DL2_PROD_ID") is not None:
+        options.dl2_prod_id = get_dl2_prod_id()
+    else:
+        options.dl2_prod_id = options.prod_id

@@ -27,12 +27,8 @@ from matplotlib import pyplot as plt
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.nightsummary.extract import get_source_list
-from osa.paths import DEFAULT_CFG, destination_dir
-from osa.utils.cliopts import (
-    set_default_directory_if_needed,
-    get_prod_id,
-    get_dl2_prod_id
-)
+from osa.paths import DEFAULT_CFG, destination_dir, analysis_path
+from osa.utils.cliopts import get_prod_id, get_dl2_prod_id
 from osa.utils.logging import myLogger
 from osa.utils.utils import lstdate_to_dir, YESTERDAY
 
@@ -224,7 +220,7 @@ def main(
     options.tel_id = telescope
     options.prod_id = get_prod_id()
     options.dl2_prod_id = get_dl2_prod_id()
-    options.directory = set_default_directory_if_needed()
+    options.directory = analysis_path(options.tel_id)
     dl2_directory = Path(cfg.get('LST1', 'DL2_DIR'))
     highlevel_directory = destination_dir("HIGH_LEVEL", create_dir=True)
     host = cfg.get('WEBSERVER', 'HOST')

@@ -30,7 +30,7 @@ from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import myLogger
 from osa.utils.register import register_found_pattern
 from osa.utils.utils import (
-    get_lock_file,
+    night_finished_flag,
     is_day_closed,
     stringify,
     lstdate_to_dir,
@@ -224,13 +224,13 @@ def post_process_files(seq_list: list):
 
 def set_closed_with_file():
     """Write the analysis report to the closer file."""
-    closer_file = get_lock_file()
+    night_finished_file = night_finished_flag()
     is_closed = False
     if not options.simulate:
         # Generate NightFinished lock file
-        is_closed = create_lock(closer_file)
+        is_closed = create_lock(night_finished_file)
     else:
-        log.debug(f"Simulate the creation of lock file {closer_file}")
+        log.debug(f"Simulate the creation of lock file {night_finished_file}")
 
     return is_closed
 

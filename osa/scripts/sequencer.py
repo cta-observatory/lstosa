@@ -21,8 +21,9 @@ from osa.job import (
     run_squeue,
 )
 from osa.nightsummary.extract import build_sequences
+from osa.paths import analysis_path
 from osa.report import start
-from osa.utils.cliopts import sequencer_cli_parsing, set_default_directory_if_needed
+from osa.utils.cliopts import sequencer_cli_parsing
 from osa.utils.logging import myLogger
 from osa.utils.utils import is_day_closed, gettag
 from osa.veto import get_closed_list, get_veto_list
@@ -78,7 +79,7 @@ def single_process(telescope):
     # Define global variables and create night directory
     sequence_list = []
     options.tel_id = telescope
-    options.directory = set_default_directory_if_needed()
+    options.directory = analysis_path(options.tel_id)
     options.log_directory = options.directory / "log"
 
     if not options.simulate:

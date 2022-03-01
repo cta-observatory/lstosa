@@ -6,7 +6,7 @@ from pathlib import Path
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_dir, date_in_yymmdd
+from osa.utils.utils import lstdate_to_dir, date_in_yymmdd, get_prod_id
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -29,11 +29,35 @@ __all__ = [
     "DATACHECK_WEB_BASEDIR",
     "DEFAULT_CFG",
     "create_source_directories",
+    "analysis_path"
 ]
 
 
 DATACHECK_WEB_BASEDIR = Path(cfg.get("WEBSERVER", "DATACHECK"))
 DEFAULT_CFG = Path(__file__).parent / '../cfg/sequencer.cfg'
+
+
+def analysis_path(tel) -> Path:
+    """
+    Path of the running_analysis directory for a certain date
+
+    Returns
+    -------
+    directory : Path
+        Path of the running_analysis directory for a certain date
+    """
+    log.debug(f"Getting analysis path for telescope {tel}")
+    flat_date = lstdate_to_dir(options.date)
+    options.prod_id = get_prod_id()
+    directory = Path(cfg.get(tel, "ANALYSIS_DIR")) / flat_date / options.prod_id
+
+    if not options.simulate:
+        directory.mkdir(parents=True, exist_ok=True)
+    else:
+        log.debug("SIMULATE the creation of the analysis directory.")
+
+    log.debug(f"Analysis directory: {directory}")
+    return directory
 
 
 def get_run_date(run_id: int) -> str:
