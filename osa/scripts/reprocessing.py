@@ -60,7 +60,7 @@ def get_list_of_dates(dates_file):
     help="Do not run the DL2 step."
 )
 @click.option(
-    "--s", "--simulate",
+    "-s", "--simulate",
     is_flag=True,
     help="Activate simulation mode."
 )
