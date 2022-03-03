@@ -20,11 +20,11 @@ def number_of_pending_jobs():
     return output.count(b"\n")
 
 
-def run_sequencer(date, config: Path, no_dl2: bool):
+def run_script(script: str, date, config: Path, no_dl2: bool):
     """Run the sequencer for a given date."""
     # Get full path to the osa config file
     osa_config = Path(config).resolve()
-    cmd = ["sequencer", "--config", str(osa_config), "--date", date]
+    cmd = [script, "--config", str(osa_config), "--date", date]
 
     # Avoid running the DL2 step if requested
     if no_dl2:
@@ -63,13 +63,16 @@ def get_list_of_dates(dates_file):
     default=DEFAULT_CFG,
     help='Path to the OSA config file.',
 )
-@click.argument(
-    'dates-file',
-    type=click.Path(exists=True),
-)
-def main(dates_file: Path = None, config: Path = DEFAULT_CFG, no_dl2: bool = False):
+@click.argument('script', type=click.Choice(['sequencer', 'closer', 'copy_datacheck']))
+@click.argument('dates-file', type=click.Path(exists=True))
+def main(
+        script: str = None,
+        dates_file: Path = None,
+        config: Path = DEFAULT_CFG,
+        no_dl2: bool = False
+):
     """
-    Run the onsite massive reprocessing for all the dates listed in the input file.
+    Loop over the dates listed in the input file and launch the script for each of them.
     The input file should list the dates in the format YYYY_MM_DD one date per line.
     """
     logging.basicConfig(level=logging.INFO)
@@ -80,8 +83,8 @@ def main(dates_file: Path = None, config: Path = DEFAULT_CFG, no_dl2: bool = Fal
     check_job_status_and_wait()
 
     for date in list_of_dates:
-        run_sequencer(date, config, no_dl2)
-        log.info("Waiting 2 minutes to launch the process of the next date...")
+        run_script(script, date, config, no_dl2)
+        log.info("Waiting 2 minutes to launch the process for the next date...")
         time.sleep(120)
 
         # Check slurm queue status and sleep for a while to avoid overwhelming the queue
