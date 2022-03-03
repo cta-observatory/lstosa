@@ -20,26 +20,28 @@ def number_of_pending_jobs():
     return output.count(b"\n")
 
 
-def run_script(script: str, date, config: Path, no_dl2: bool):
+def run_script(script: str, date, config: Path, no_dl2: bool, simulate: bool):
     """Run the sequencer for a given date."""
-    # Get full path to the osa config file
     osa_config = Path(config).resolve()
+
     cmd = [script, "--config", str(osa_config), "--date", date]
 
-    # Avoid running the DL2 step if requested
     if no_dl2:
         cmd.append("--no-dl2")
+
+    if simulate:
+        cmd.append("--simulate")
 
     # Append the telescope to the command in the last place
     cmd.append("LST1")
 
-    log.info(f"Running {' '.join(cmd)}")
+    log.info(f"\nRunning {' '.join(cmd)}")
     sp.run(cmd)
 
 
 def check_job_status_and_wait():
     """Check the status of the jobs in the queue and wait for them to finish."""
-    while number_of_pending_jobs() > 3000:
+    while number_of_pending_jobs() > 2500:
         log.info("Waiting 2 hours for slurm queue to decrease...")
         time.sleep(7200)
 
@@ -58,6 +60,11 @@ def get_list_of_dates(dates_file):
     help="Do not run the DL2 step."
 )
 @click.option(
+    "--s", "--simulate",
+    is_flag=True,
+    help="Activate simulation mode."
+)
+@click.option(
     '-c', '--config',
     type=click.Path(exists=True),
     default=DEFAULT_CFG,
@@ -69,7 +76,8 @@ def main(
         script: str = None,
         dates_file: Path = None,
         config: Path = DEFAULT_CFG,
-        no_dl2: bool = False
+        no_dl2: bool = False,
+        simulate: bool = False
 ):
     """
     Loop over the dates listed in the input file and launch the script for each of them.
@@ -83,9 +91,9 @@ def main(
     check_job_status_and_wait()
 
     for date in list_of_dates:
-        run_script(script, date, config, no_dl2)
-        log.info("Waiting 2 minutes to launch the process for the next date...")
-        time.sleep(120)
+        run_script(script, date, config, no_dl2, simulate)
+        log.info("Waiting 1 minute to launch the process for the next date...\n")
+        time.sleep(60)
 
         # Check slurm queue status and sleep for a while to avoid overwhelming the queue
         check_job_status_and_wait()
