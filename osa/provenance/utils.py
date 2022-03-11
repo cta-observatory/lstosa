@@ -40,7 +40,7 @@ def parse_variables(class_instance):
     # LST1
 
     flat_date = lstdate_to_dir(options.date)
-    configfile_dl1 = cfg.get("lstchain", "dl1ab_config")
+    configfile_dl1b = cfg.get("lstchain", "dl1b_config")
     configfile_dl2 = cfg.get("lstchain", "dl2_config")
     raw_dir = cfg.get("LST1", "R0_DIR")
     rf_models_directory = cfg.get("lstchain", "RF_MODELS")
@@ -134,7 +134,7 @@ def parse_variables(class_instance):
     if class_instance.__name__ == "dl1ab":
         # run_str       [0] 02006.0000
 
-        class_instance.Analysisconfigfile_dl1 = os.path.realpath(configfile_dl1)
+        class_instance.Analysisconfigfile_dl1 = os.path.realpath(configfile_dl1b)
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
         class_instance.StoreImage = cfg.getboolean("lstchain", "store_image_dl1ab")
         class_instance.DL1SubrunDataset = os.path.realpath(
