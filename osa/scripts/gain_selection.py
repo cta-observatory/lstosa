@@ -3,22 +3,39 @@
 import logging
 import subprocess as sp
 from pathlib import Path
+<<<<<<< HEAD
+from astropy.table import Table
+from textwrap import dedent
+
+import click
+
+from lstchain.paths import run_info_from_filename
+=======
 from textwrap import dedent
 
 import click
 from astropy.table import Table
 from lstchain.paths import run_info_from_filename
 
+>>>>>>> 17b5b33318a76378bd1bf7ee1477e74f3efee5d4
 from osa.scripts.reprocessing import get_list_of_dates
 from osa.utils.logging import myLogger
 
 log = myLogger(logging.getLogger(__name__))
 
+<<<<<<< HEAD
+PATH = "PATH=/fefs/aswg/software/gain_selection/bin:$PATH"
+=======
 EXECUTABLE = "PATH=/fefs/aswg/software/gain_selection/bin:$PATH"
+>>>>>>> 17b5b33318a76378bd1bf7ee1477e74f3efee5d4
 
 
 def get_sbatch_script(
         run_id,
+<<<<<<< HEAD
+        subrun,
+=======
+>>>>>>> 17b5b33318a76378bd1bf7ee1477e74f3efee5d4
         input_file,
         output_dir,
         log_dir,
@@ -31,9 +48,15 @@ def get_sbatch_script(
     #!/bin/bash
     
     #SBATCH -D {log_dir}
+<<<<<<< HEAD
+    #SBATCH -o "gain_selection_{run_id:05d}_{subrun:04d}_%j.log"
+    #SBATCH --job-name "gain_selection_{run_id:05d}"
+    #SBATCH --export {PATH} 
+=======
     #SBATCH -o "gain_selection_{run_id:05d}_%j.log"
     #SBATCH --job-name "gain_selection_{run_id:05d}"
     #SBATCH --export {EXECUTABLE} 
+>>>>>>> 17b5b33318a76378bd1bf7ee1477e74f3efee5d4
     
     lst_select_gain {input_file} {output_dir} {ref_time} {ref_counter} {module} {ref_source}
     """)
@@ -60,13 +83,21 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
 
         r0_dir = Path(f"/fefs/aswg/data/real/R0/{date}")
         input_files = r0_dir.glob(f"LST-1.1.Run{run_id:05d}.????.fits.fz")
+<<<<<<< HEAD
+            
+=======
 
+>>>>>>> 17b5b33318a76378bd1bf7ee1477e74f3efee5d4
         for file in input_files:
             run_info = run_info_from_filename(file)
             job_file = log_dir / f"gain_selection_{run_info.run:05d}.{run_info.subrun:04d}.sh"
             with open(job_file, "w") as f:
                 f.write(get_sbatch_script(
                     run_id,
+<<<<<<< HEAD
+                    run_info.subrun,
+=======
+>>>>>>> 17b5b33318a76378bd1bf7ee1477e74f3efee5d4
                     file,
                     output_dir,
                     log_dir,
@@ -77,7 +108,25 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
                 ))
             sp.run(["sbatch", job_file], check=True)
 
+<<<<<<< HEAD
+            
+def check_failed_jobs(output_basedir: Path = None):
+    failed_jobs = []
+    log_dir = output_basedir / "log"
+    filenames = log_dir.glob('gain_selection*.log')
+    
+    for line in fileinput.input(filenames):
+        if re.search('FAILED', line):
+            job_id = fileinput.filename()[-12:-4]
+            failed_jobs.append(job_id)
+            
+    if len(failed_jobs) != 0:    
+        print('The following jobs failed: {}'.format(failed_jobs))
 
+                                  
+=======
+
+>>>>>>> 17b5b33318a76378bd1bf7ee1477e74f3efee5d4
 @click.command()
 @click.argument('dates-file', type=click.Path(exists=True, path_type=Path))
 @click.argument('output-basedir', type=click.Path(path_type=Path))
@@ -88,13 +137,22 @@ def main(dates_file: Path, output_basedir: Path):
     YYYYMMDD one date per line.
     """
     log.setLevel(logging.DEBUG)
+<<<<<<< HEAD
+    
+=======
 
+>>>>>>> 17b5b33318a76378bd1bf7ee1477e74f3efee5d4
     list_of_dates = get_list_of_dates(dates_file)
 
     for date in list_of_dates:
         apply_gain_selection(date, output_basedir)
 
     log.info("Done! No more dates to process.")
+<<<<<<< HEAD
+    
+    check_failed_jobs(output_basedir)
+=======
+>>>>>>> 17b5b33318a76378bd1bf7ee1477e74f3efee5d4
 
 
 if __name__ == "__main__":
