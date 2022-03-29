@@ -16,7 +16,6 @@ from osa.configs.config import cfg
 from osa.utils.cliopts import get_prod_id
 from osa.utils.cliopts import set_default_directory_if_needed, valid_date
 from osa.utils.logging import myLogger
-from osa.webserver.utils import set_no_observations_flag
 
 __all__ = ["Telescope", "Sequence"]
 
@@ -162,10 +161,6 @@ class Telescope(object):
             log.warning(
                 f"Sequencer for {self.telescope} is empty! Ignoring {self.telescope}"
             )
-
-            if not args.simulate and not args.test:
-                host = cfg.get("WEBSERVER", "HOST")
-                set_no_observations_flag(host, nightdir, options.prod_id)
             return
         self.incidence = Incidence(self.telescope)
 
