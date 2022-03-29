@@ -29,6 +29,7 @@ def get_sbatch_script(
         module,
         ref_source
 ):
+    """Build the sbatch job pilot script for running the gain selection."""
     return dedent(f"""\
     #!/bin/bash
     
@@ -42,6 +43,11 @@ def get_sbatch_script(
 
 
 def apply_gain_selection(date: str, output_basedir: Path = None):
+    """
+    Submit the jobs to apply the gain selection to the data for a given date
+    on a subrun-by-subrun basis.
+    """
+
     run_summary_dir = Path("/fefs/aswg/data/real/monitoring/RunSummary")
     run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
     summary_table = Table.read(run_summary_file)
@@ -82,6 +88,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
 
 
 def check_failed_jobs(output_basedir: Path = None):
+    """Search for failed jobs in the log directory."""
     failed_jobs = []
     log_dir = output_basedir / "log"
     filenames = log_dir.glob('gain_selection*.log')
@@ -91,21 +98,21 @@ def check_failed_jobs(output_basedir: Path = None):
             job_id = fileinput.filename()[-12:-4]
             failed_jobs.append(job_id)
 
-    if len(failed_jobs) != 0:    
-        log.info(f'The following jobs failed: {failed_jobs}')
+    if len(failed_jobs) != 0:
+        log.warning(f'The following jobs failed: {failed_jobs}')
 
 
 @click.command()
 @click.argument('dates-file', type=click.Path(exists=True, path_type=Path))
 @click.argument('output-basedir', type=click.Path(path_type=Path))
-def main(dates_file: Path, output_basedir: Path):
+def main(dates_file: Path = None, output_basedir: Path = None):
     """
     Loop over the dates listed in the input file and launch the gain selection
     script for each of them. The input file should list the dates in the format
     YYYYMMDD one date per line.
     """
     log.setLevel(logging.DEBUG)
-    
+
     list_of_dates = get_list_of_dates(dates_file)
 
     for date in list_of_dates:
