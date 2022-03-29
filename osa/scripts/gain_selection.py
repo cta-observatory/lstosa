@@ -119,7 +119,7 @@ def main(dates_file: Path = None, output_basedir: Path = None):
         apply_gain_selection(date, output_basedir)
 
     log.info("Done! No more dates to process.")
-    
+
     check_failed_jobs(output_basedir)
 
 
