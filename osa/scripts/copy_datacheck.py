@@ -72,8 +72,9 @@ def main():
         log.info(f"Looking for {pattern}")
         directory = datacheck_directory(data_type=data_type, date=nightdir)
         files = get_datacheck_files(pattern, directory)
-        lists_datacheck_files.append(files)
-        copy_to_webserver(files, data_type, nightdir, options.prod_id)
+        if len(files) != 0:
+	    lists_datacheck_files.append(files)
+            copy_to_webserver(files, data_type, nightdir, options.prod_id)
 
         # Check if all files are copied
         all_files_are_copied = are_files_copied(data_type, files)
