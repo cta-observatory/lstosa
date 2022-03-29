@@ -1,14 +1,15 @@
 """Script to run the gain selection over a list of dates."""
-
+import fileinput
 import logging
+import re
 import subprocess as sp
 from pathlib import Path
-from astropy.table import Table
 from textwrap import dedent
 
 import click
-
+from astropy.table import Table
 from lstchain.paths import run_info_from_filename
+
 from osa.scripts.reprocessing import get_list_of_dates
 from osa.utils.logging import myLogger
 
@@ -61,7 +62,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
 
         r0_dir = Path(f"/fefs/aswg/data/real/R0/{date}")
         input_files = r0_dir.glob(f"LST-1.1.Run{run_id:05d}.????.fits.fz")
-            
+
         for file in input_files:
             run_info = run_info_from_filename(file)
             job_file = log_dir / f"gain_selection_{run_info.run:05d}.{run_info.subrun:04d}.sh"
@@ -79,21 +80,21 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
                 ))
             sp.run(["sbatch", job_file], check=True)
 
-            
+
 def check_failed_jobs(output_basedir: Path = None):
     failed_jobs = []
     log_dir = output_basedir / "log"
     filenames = log_dir.glob('gain_selection*.log')
-    
+
     for line in fileinput.input(filenames):
         if re.search('FAILED', line):
             job_id = fileinput.filename()[-12:-4]
             failed_jobs.append(job_id)
-            
-    if len(failed_jobs) != 0:    
-        print('The following jobs failed: {}'.format(failed_jobs))
 
-                                  
+    if len(failed_jobs) != 0:    
+        log.info(f'The following jobs failed: {failed_jobs}')
+
+
 @click.command()
 @click.argument('dates-file', type=click.Path(exists=True, path_type=Path))
 @click.argument('output-basedir', type=click.Path(path_type=Path))
