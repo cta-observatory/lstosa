@@ -98,29 +98,33 @@ def check_failed_jobs(output_basedir: Path = None):
             job_id = fileinput.filename()[-12:-4]
             failed_jobs.append(job_id)
 
-    if len(failed_jobs) != 0:
+    if not failed_jobs:
+        log.info('All jobs finished successfully.')
+    else:
         log.warning(f'The following jobs failed: {failed_jobs}')
 
 
 @click.command()
+@click.option('--check', is_flag=True, default=False, help='Check for failed jobs.')
 @click.argument('dates-file', type=click.Path(exists=True, path_type=Path))
 @click.argument('output-basedir', type=click.Path(path_type=Path))
-def main(dates_file: Path = None, output_basedir: Path = None):
+def main(dates_file: Path = None, output_basedir: Path = None, check: bool = False):
     """
     Loop over the dates listed in the input file and launch the gain selection
     script for each of them. The input file should list the dates in the format
     YYYYMMDD one date per line.
     """
-    log.setLevel(logging.DEBUG)
+    log.setLevel(logging.INFO)
 
-    list_of_dates = get_list_of_dates(dates_file)
+    if check:
+        check_failed_jobs(output_basedir)
+    else:
+        list_of_dates = get_list_of_dates(dates_file)
 
-    for date in list_of_dates:
-        apply_gain_selection(date, output_basedir)
+        for date in list_of_dates:
+            apply_gain_selection(date, output_basedir)
 
-    log.info("Done! No more dates to process.")
-
-    check_failed_jobs(output_basedir)
+        log.info("Done! No more dates to process.")
 
 
 if __name__ == "__main__":
