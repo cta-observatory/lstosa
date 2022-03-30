@@ -21,6 +21,7 @@ entry_points = {
         "source_coordinates = osa.nightsummary.set_source_coordinates:main",
         "reprocessing = osa.scripts.reprocessing:main",
         "reprocess_longterm = osa.scripts.reprocess_longterm:main",
+        "gain_selection = osa.scripts.gain_selection:main",
     ]
 }
 
