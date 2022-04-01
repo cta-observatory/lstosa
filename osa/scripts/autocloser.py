@@ -148,11 +148,6 @@ class Telescope(object):
             log.warning(
                 f"Sequencer for {self.telescope} is empty! Ignoring {self.telescope}"
             )
-
-            if not simulate and not test:
-                host = cfg.get("WEBSERVER", "HOST")
-                flat_date = lstdate_to_dir(date)
-                set_no_observations_flag(host, flat_date, options.prod_id)
             return
 
     def __iter__(self):

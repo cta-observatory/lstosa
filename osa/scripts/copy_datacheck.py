@@ -7,15 +7,14 @@ directories whenever they are needed.
 import logging
 
 from osa.configs import options
-from osa.configs.config import cfg
 from osa.paths import (
     datacheck_directory,
     get_datacheck_files, destination_dir,
 )
 from osa.utils.cliopts import copy_datacheck_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import DATACHECK_FILE_PATTERNS, lstdate_to_dir, is_day_closed
-from osa.webserver.utils import copy_to_webserver, set_no_observations_flag
+from osa.utils.utils import DATACHECK_FILE_PATTERNS, lstdate_to_dir
+from osa.webserver.utils import copy_to_webserver
 
 log = myLogger(logging.getLogger())
 
@@ -64,31 +63,25 @@ def main():
     copy_datacheck_parsing()
     nightdir = lstdate_to_dir(options.date)
 
-    lists_datacheck_files = []
-
     all_files_are_copied = False
 
     for data_type, pattern in DATACHECK_FILE_PATTERNS.items():
         log.info(f"Looking for {pattern}")
         directory = datacheck_directory(data_type=data_type, date=nightdir)
         files = get_datacheck_files(pattern, directory)
-        lists_datacheck_files.append(files)
-        copy_to_webserver(files, data_type, nightdir, options.prod_id)
+        if len(files) != 0:
+            copy_to_webserver(files, data_type, nightdir, options.prod_id)
 
         # Check if all files are copied
         all_files_are_copied = are_files_copied(data_type, files)
 
-    # Flatten the list of lists for easy check of no_observations flag
-    datacheck_files = [item for sublist in lists_datacheck_files for item in sublist]
-
-    if not datacheck_files and is_day_closed():
-        log.warning("No observations. Setting no_observations flag.")
-        set_no_observations_flag(cfg.get("WEBSERVER", "HOST"), nightdir, options.prod_id)
-
     if all_files_are_copied:
         log.info("All datacheck files copied. No more files are expected.")
     else:
-        log.warning("Not all datacheck files were copied. Check for problems.")
+        log.warning(
+            "Not all datacheck files were copied. Check for problems or whether "
+            "data were actually taken."
+        )
 
 
 def get_number_of_runs():

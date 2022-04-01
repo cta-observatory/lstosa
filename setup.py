@@ -22,6 +22,7 @@ entry_points = {
         "source_coordinates = osa.nightsummary.set_source_coordinates:main",
         "reprocessing = osa.scripts.reprocessing:main",
         "reprocess_longterm = osa.scripts.reprocess_longterm:main",
+        "gain_selection = osa.scripts.gain_selection:main",
     ]
 }
 
@@ -52,7 +53,7 @@ setup(
     extras_require=extras_require,
     install_requires=[
         "astropy~=4.2",
-        "lstchain==0.9.3",
+        "lstchain==0.9.4",
         "ctapipe~=0.12.0",
         "matplotlib~=3.5",
         "numpy<1.22.0a0",
