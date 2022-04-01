@@ -3,7 +3,6 @@ Script to handle the automatic closing of the OSA
 checking that all jobs are correctly finished.
 """
 
-import argparse
 import datetime
 import glob
 import logging
@@ -13,76 +12,21 @@ import sys
 from pathlib import Path
 
 from osa.configs import options
-from osa.configs.config import cfg
-from osa.paths import analysis_path, DEFAULT_CFG
-from osa.utils.cliopts import valid_date
+from osa.paths import analysis_path
+from osa.utils.cliopts import autocloser_cli_parser
 from osa.utils.logging import myLogger
 from osa.utils.utils import (
-    night_finished_flag, lstdate_to_dir, is_day_closed, get_prod_id
+    night_finished_flag,
+    is_day_closed,
+    get_prod_id,
+    is_night_time,
+    cron_lock,
+    example_seq
 )
-from osa.webserver.utils import set_no_observations_flag
 
 __all__ = ["Telescope", "Sequence"]
 
 log = myLogger(logging.getLogger())
-
-parser = argparse.ArgumentParser(
-    description="Automatic completion and sequence closer."
-)
-parser.add_argument(
-    "-v", "--verbose", action="store_true", help="Turn on verbose mode"
-)
-parser.add_argument(
-    "-t",
-    "--test",
-    action="store_true",
-    help="Test mode with example sequences, only works locally",
-)
-parser.add_argument(
-    "-s",
-    "--simulate",
-    action="store_true",
-    help="Create nothing, only simulate closer (safe mode)",
-)
-parser.add_argument(
-    "--ignore-cronlock", action="store_true", help='Ignore "cron.lock"'
-)
-parser.add_argument(
-    "-d",
-    "--date",
-    help="Date - format YYYY_MM_DD",
-    type=valid_date
-)
-parser.add_argument(
-    "-f",
-    "--force",
-    action="store_true",
-    help="Force the autocloser to close the day"
-)
-parser.add_argument(
-    "--no-dl2",
-    action="store_true",
-    default=False,
-    help="Disregard the production of DL2 files",
-)
-parser.add_argument(
-    "-r", "--runwise", action="store_true", help="Close the day run-wise."
-)
-parser.add_argument(
-    "-c", "--config-file", type=Path, default=DEFAULT_CFG, help="OSA config file."
-)
-parser.add_argument("-l", "--log", type=Path, default=None, help="Write log to a file.")
-parser.add_argument("tel_id", type=str, choices=["LST1"])
-
-
-def example_seq():
-    """Example sequence table output for testing."""
-    return "./extra/example_sequencer.txt"
-
-
-def cron_lock(tel) -> Path:
-    """Create a lock file for the cron jobs."""
-    return analysis_path(tel) / "cron.lock"
 
 
 class Telescope(object):
@@ -173,10 +117,6 @@ class Telescope(object):
         cron_lock(self.telescope).touch()
         self.locked = True
         return True
-
-    def is_transferred(self):
-        log.debug(f"Checking if raw data is completely transferred for {self.telescope}")
-        return all("Expecting more raw data" not in line for line in self.header_lines)
 
     def simulate_sequencer(self, date, config_file, test):
         if test:
@@ -379,6 +319,7 @@ class Sequence(object):
         return bool(subrun_nrs and len(subrun_nrs) == int(self.dict_sequence["Subruns"]))
 
     def close(self, date: str, simulate: bool = False, test: bool = False):
+        """Close the sequence by calling the 'closer' script."""
         log.info("Closing sequence...")
         if simulate:
             closerArgs = [
@@ -420,14 +361,8 @@ class Sequence(object):
         return True
 
 
-def is_night_time(hour):
-    if 8 <= hour <= 18:
-        return False
-    log.error("It is dark outside...")
-    return True
-
-
 def understand_sequence(seq, no_dl2: bool):
+    """Check if sequence is completed and ready to be closed."""
     if no_dl2:
         log.info("Assumed no DL2 production")
 
@@ -456,7 +391,8 @@ def understand_sequence(seq, no_dl2: bool):
 
 
 def main():
-    args = parser.parse_args()
+    """Check for job completion and close sequence if necessary."""
+    args = autocloser_cli_parser().parse_args()
 
     # for the console output
     log.setLevel(logging.INFO)
@@ -530,11 +466,8 @@ def main():
             seq.close()
 
     # skip these checks if closing is forced
-    if not args.force:
-        if not telescope.is_transferred():
-            log.warning(f"More raw data expected for {args.tel}!")
-        if not all(seq.readyToClose for seq in telescope):
-            log.warning(f"{args.tel} is NOT ready to close!")
+    if not args.force and not all(seq.readyToClose for seq in telescope):
+        log.warning(f"{args.tel} is NOT ready to close!")
 
     log.info(f"Closing {args.tel_id}...")
 
