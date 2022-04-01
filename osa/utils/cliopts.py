@@ -38,7 +38,8 @@ __all__ = [
     "get_calib_prod_id",
     "calibration_pipeline_cliparsing",
     "calibration_pipeline_argparser",
-    "autocloser_cli_parser"
+    "autocloser_cli_parser",
+    "common_parser"
 ]
 
 log = myLogger(logging.getLogger(__name__))
@@ -491,35 +492,16 @@ def set_common_globals(opts):
     options.test = opts.test
     options.verbose = opts.verbose
     options.tel_id = opts.tel_id
-    
+
 
 def autocloser_cli_parser():
+    """Define the command line parser for the autocloser."""
     parser = ArgumentParser(
-        description="Automatic job completion check and sequence closer."
-    )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Turn on verbose mode"
-    )
-    parser.add_argument(
-        "-t",
-        "--test",
-        action="store_true",
-        help="Test mode with example sequences, only works locally",
-    )
-    parser.add_argument(
-        "-s",
-        "--simulate",
-        action="store_true",
-        help="Create nothing, only simulate closer (safe mode)",
+        description="Automatic job completion check and sequence closer.",
+        parents=[common_parser]
     )
     parser.add_argument(
         "--ignore-cronlock", action="store_true", help='Ignore "cron.lock"'
-    )
-    parser.add_argument(
-        "-d",
-        "--date",
-        help="Date - format YYYY_MM_DD",
-        type=valid_date
     )
     parser.add_argument(
         "-f",
@@ -537,8 +519,7 @@ def autocloser_cli_parser():
         "-r", "--runwise", action="store_true", help="Close the day run-wise."
     )
     parser.add_argument(
-        "-c", "--config-file", type=Path, default=DEFAULT_CFG, help="OSA config file."
+        "-l", "--log", type=Path, default=None, help="Write log to a file."
     )
-    parser.add_argument("-l", "--log", type=Path, default=None, help="Write log to a file.")
     parser.add_argument("tel_id", type=str, choices=["LST1"])
     return parser
