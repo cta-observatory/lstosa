@@ -7,9 +7,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from socket import gethostname
 
+import osa.paths
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.paths import analysis_path
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
 
@@ -376,4 +376,4 @@ def example_seq():
 
 def cron_lock(tel) -> Path:
     """Create a lock file for the cron jobs."""
-    return analysis_path(tel) / "cron.lock"
+    return osa.paths.analysis_path(tel) / "cron.lock"
