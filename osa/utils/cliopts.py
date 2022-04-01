@@ -16,7 +16,8 @@ from osa.utils.utils import (
     get_prod_id,
     getcurrentdate,
     is_defined,
-    set_prod_ids, )
+    set_prod_ids
+)
 
 __all__ = [
     "closer_argparser",
@@ -37,6 +38,7 @@ __all__ = [
     "get_calib_prod_id",
     "calibration_pipeline_cliparsing",
     "calibration_pipeline_argparser",
+    "autocloser_cli_parser"
 ]
 
 log = myLogger(logging.getLogger(__name__))
@@ -489,3 +491,54 @@ def set_common_globals(opts):
     options.test = opts.test
     options.verbose = opts.verbose
     options.tel_id = opts.tel_id
+    
+
+def autocloser_cli_parser():
+    parser = ArgumentParser(
+        description="Automatic job completion check and sequence closer."
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Turn on verbose mode"
+    )
+    parser.add_argument(
+        "-t",
+        "--test",
+        action="store_true",
+        help="Test mode with example sequences, only works locally",
+    )
+    parser.add_argument(
+        "-s",
+        "--simulate",
+        action="store_true",
+        help="Create nothing, only simulate closer (safe mode)",
+    )
+    parser.add_argument(
+        "--ignore-cronlock", action="store_true", help='Ignore "cron.lock"'
+    )
+    parser.add_argument(
+        "-d",
+        "--date",
+        help="Date - format YYYY_MM_DD",
+        type=valid_date
+    )
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Force the autocloser to close the day"
+    )
+    parser.add_argument(
+        "--no-dl2",
+        action="store_true",
+        default=False,
+        help="Disregard the production of DL2 files",
+    )
+    parser.add_argument(
+        "-r", "--runwise", action="store_true", help="Close the day run-wise."
+    )
+    parser.add_argument(
+        "-c", "--config-file", type=Path, default=DEFAULT_CFG, help="OSA config file."
+    )
+    parser.add_argument("-l", "--log", type=Path, default=None, help="Write log to a file.")
+    parser.add_argument("tel_id", type=str, choices=["LST1"])
+    return parser
