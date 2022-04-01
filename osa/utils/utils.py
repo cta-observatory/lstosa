@@ -9,6 +9,7 @@ from socket import gethostname
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.paths import analysis_path
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
 
@@ -32,7 +33,10 @@ __all__ = [
     "time_to_seconds",
     "DATACHECK_FILE_PATTERNS",
     "YESTERDAY",
-    "set_prod_ids"
+    "set_prod_ids",
+    "is_night_time",
+    "cron_lock",
+    "example_seq"
 ]
 
 log = myLogger(logging.getLogger(__name__))
@@ -355,3 +359,21 @@ def set_prod_ids():
         options.dl2_prod_id = get_dl2_prod_id()
     else:
         options.dl2_prod_id = options.prod_id
+
+
+def is_night_time(hour):
+    """Check if it is nighttime."""
+    if 8 <= hour <= 18:
+        return False
+    log.error("It is dark outside...")
+    return True
+
+
+def example_seq():
+    """Example sequence table output for testing."""
+    return "./extra/example_sequencer.txt"
+
+
+def cron_lock(tel) -> Path:
+    """Create a lock file for the cron jobs."""
+    return analysis_path(tel) / "cron.lock"
