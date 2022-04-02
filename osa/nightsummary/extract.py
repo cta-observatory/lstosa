@@ -3,6 +3,7 @@
 import logging
 import sys
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 
 from astropy import units as u
@@ -22,7 +23,7 @@ from osa.nightsummary import database
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import sequence_calibration_files
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_iso, lstdate_to_dir
+from osa.utils.utils import date_to_iso, date_to_dir
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -74,7 +75,7 @@ def extractsubruns(summary_table):
             sr.runobj.run = int(run_info["run_id"])
             sr.runobj.type = run_info["run_type"]
             sr.runobj.telescope = options.tel_id
-            sr.runobj.night = lstdate_to_iso(options.date)
+            sr.runobj.night = date_to_iso(options.date)
         except KeyError as err:
             log.warning(f"Key error, {err}")
         except IndexError as err:
@@ -86,7 +87,7 @@ def extractsubruns(summary_table):
 
     # Before trying to access the information in the database, check if it is available
     # in the RunCatalog file (previously generated with the information in the database).
-    nightdir = lstdate_to_dir(options.date)
+    nightdir = date_to_dir(options.date)
     source_catalog_dir = Path(cfg.get("LST1", "RUN_CATALOG"))
     source_catalog_dir.mkdir(parents=True, exist_ok=True)
     source_catalog_file = source_catalog_dir / f"RunCatalog_{nightdir}.ecsv"
@@ -430,8 +431,8 @@ def generate_workflow(run_list, sequences_to_analyze, require):
     return sequence_list
 
 
-def build_sequences(date: str):
-    """Build the list of sequences to process from a given date YYYY_MM_DD."""
+def build_sequences(date: datetime):
+    """Build the list of sequences to process from a given date."""
     summary_table = run_summary_table(date)
     subrun_list = extractsubruns(summary_table)
     run_list = extractruns(subrun_list)
@@ -440,14 +441,13 @@ def build_sequences(date: str):
     return extractsequences(sorted_run_list)
 
 
-def get_source_list(date_obs: str) -> dict:
+def get_source_list(date: datetime) -> dict:
     """
     Get the list of sources from the sequences' information and corresponding runs.
 
     Parameters
     ----------
-    date_obs : str
-        Date of observation in format YYYY_MM_DD
+    date : datetime
 
     Returns
     -------
@@ -455,7 +455,7 @@ def get_source_list(date_obs: str) -> dict:
     """
 
     # Build the sequences
-    sequence_list = build_sequences(date_obs)
+    sequence_list = build_sequences(date)
 
     # Create a dictionary of sources and their corresponding sequences
     source_dict = {

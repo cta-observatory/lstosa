@@ -14,7 +14,7 @@ datasequence_history_file = (
 calibration_history_file = (
         extra_files / "history_files/sequence_LST1_04183.history"
 )
-options.date = "2020_01_17"
+options.date = "2020-01-17"
 options.tel_id = "LST1"
 options.prod_id = "v0.1.0"
 
@@ -169,7 +169,7 @@ def test_create_job_template_scheduler(
             'datasequence',
             '--config',
             '{Path.cwd()}/cfg/sequencer.cfg',
-            '--date=2020_01_17',
+            '--date=2020-01-17',
             '--prod-id=v0.1.0',
             '--drs4-pedestal-file={drs4_baseline_file}',
             '--time-calib-file={drs4_time_calibration_files[0]}',
@@ -212,7 +212,7 @@ def test_create_job_template_scheduler(
                 'datasequence',
                 '--config',
                 '{Path.cwd()}/cfg/sequencer.cfg',
-                '--date=2020_01_17',
+                '--date=2020-01-17',
                 '--prod-id=v0.1.0',
                 '--drs4-pedestal-file={drs4_baseline_file}',
                 '--time-calib-file={drs4_time_calibration_files[0]}',
@@ -276,7 +276,7 @@ def test_create_job_template_local(
             'datasequence',
             '--config',
             '{Path.cwd()}/cfg/sequencer.cfg',
-            '--date=2020_01_17',
+            '--date=2020-01-17',
             '--prod-id=v0.1.0',
             '--drs4-pedestal-file={drs4_baseline_file}',
             '--time-calib-file={drs4_time_calibration_files[0]}',
@@ -307,7 +307,7 @@ def test_create_job_template_local(
                 'datasequence',
                 '--config',
                 '{Path.cwd()}/cfg/sequencer.cfg',
-                '--date=2020_01_17',
+                '--date=2020-01-17',
                 '--prod-id=v0.1.0',
                 '--drs4-pedestal-file={drs4_baseline_file}',
                 '--time-calib-file={drs4_time_calibration_files[0]}',
@@ -350,7 +350,7 @@ def test_create_job_scheduler_calibration(sequence_list):
             'calibration_pipeline',
             '--config',
             '{Path.cwd()}/cfg/sequencer.cfg',
-            '--date=2020_01_17',
+            '--date=2020-01-17',
             '--drs4-pedestal-run=01804',
             '--pedcal-run=01805',
             'LST1'

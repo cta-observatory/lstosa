@@ -10,7 +10,7 @@ from pathlib import Path
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.logging import myLogger
-from osa.utils.utils import get_lstchain_version, lstdate_to_dir
+from osa.utils.utils import get_lstchain_version, date_to_dir
 
 __all__ = ["parse_variables", "get_log_config", "store_conda_env_export"]
 
@@ -39,7 +39,7 @@ def parse_variables(class_instance):
     # 02006.0000
     # LST1
 
-    flat_date = lstdate_to_dir(options.date)
+    flat_date = date_to_dir(options.date)
     configfile_dl1b = cfg.get("lstchain", "dl1b_config")
     configfile_dl2 = cfg.get("lstchain", "dl2_config")
     raw_dir = cfg.get("LST1", "R0_DIR")

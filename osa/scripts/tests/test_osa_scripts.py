@@ -24,7 +24,7 @@ ALL_SCRIPTS = [
     "source_coordinates"
 ]
 
-options.date = "2020_01_17"
+options.date = datetime.datetime.fromisoformat("2020-01-17")
 options.tel_id = "LST1"
 options.prod_id = "v0.1.0"
 options.dl1_prod_id = "tailcut84"
@@ -134,14 +134,14 @@ def test_simulated_sequencer(
         assert file.exists()
 
     rc = run_program(
-        "sequencer", "-c", "cfg/sequencer.cfg", "-d", "2020_01_17", "-s", "-t", "LST1"
+        "sequencer", "-c", "cfg/sequencer.cfg", "-d", "2020-01-17", "-s", "-t", "LST1"
     )
 
     assert rc.returncode == 0
     now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")
     assert rc.stdout == dedent(
         f"""\
-        ================================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Night: 2020_01_17 ==================================
+        =================================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Date: 2020-01-17 ===================================
         Tel   Seq  Parent  Type      Run   Subruns  Source        Action  Tries  JobID  State  CPU_time  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%  
         LST1    0  None    PEDCALIB  1805  5        None          None    None   None   None   None      None  None  None    None    None        None  
         LST1    1       0  DATA      1807  11       Crab          None    None   None   None   None      None     0       0       0           0     0  
@@ -160,7 +160,7 @@ def test_autocloser(running_analysis_dir):
         "--config",
         "cfg/sequencer.cfg",
         "--date",
-        "2020_01_17",
+        "2020-01-17",
         "--test",
         "LST1",
     )
@@ -182,7 +182,7 @@ def test_closer(r0_dir, running_analysis_dir, test_observed_data):
         assert obs_file.exists()
 
     run_program(
-        "closer", "-c", "cfg/sequencer.cfg", "-y", "-v", "-t", "-d", "2020_01_17", "LST1"
+        "closer", "-c", "cfg/sequencer.cfg", "-y", "-v", "-t", "-d", "2020-01-17", "LST1"
     )
     conda_env_export = running_analysis_dir / "log" / "conda_env.yml"
     closed_seq_file = running_analysis_dir / "sequence_LST1_01805.closed"
@@ -232,7 +232,7 @@ def test_datasequence(running_analysis_dir):
         "datasequence",
         "--config",
         "cfg/sequencer.cfg",
-        "--date=2020_01_17",
+        "--date=2020-01-17",
         "--simulate",
         f"--prod-id={prod_id}",
         f"--drs4-pedestal-file={drs4_file}",
@@ -257,7 +257,7 @@ def test_calibration_pipeline(running_analysis_dir):
         "calibration_pipeline",
         "--config",
         "cfg/sequencer.cfg",
-        "--date=2020_01_17",
+        "--date=2020-01-17",
         "--simulate",
         f"--prod-id={prod_id}",
         f"--drs4-pedestal-run={drs4_run_number}",
@@ -323,7 +323,7 @@ def test_daily_longterm_cmd():
 
 
 def test_observation_finished():
-    """Check if observation is finished for `options.date=2020_01_17`."""
+    """Check if observation is finished for `options.date=2020-01-17`."""
     from osa.scripts.closer import observation_finished
     date1 = datetime.datetime(2020, 1, 21, 12, 0, 0)
     assert observation_finished(date=date1) is True
@@ -333,7 +333,7 @@ def test_observation_finished():
 
 def test_no_runs_found():
     output = sp.run(
-        ["sequencer", "-s", "-d", "2015_01_01", "LST1"],
+        ["sequencer", "-s", "-d", "2015-01-01", "LST1"],
         text=True,
         stdout=sp.PIPE,
         stderr=sp.PIPE

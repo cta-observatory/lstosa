@@ -25,9 +25,9 @@ from osa.report import history
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
 from osa.utils.utils import (
-    lstdate_to_dir,
+    date_to_dir,
     time_to_seconds,
-    stringify
+    stringify, date_to_iso
 )
 
 log = myLogger(logging.getLogger(__name__))
@@ -433,7 +433,7 @@ def data_sequence_job_template(sequence):
     # Get the job header template.
     job_header = job_header_template(sequence)
 
-    flat_date = lstdate_to_dir(options.date)
+    flat_date = date_to_dir(options.date)
 
     commandargs = ["datasequence"]
 
@@ -447,7 +447,7 @@ def data_sequence_job_template(sequence):
     if sequence.type == "DATA" and options.no_dl2:
         commandargs.append("--no-dl2")
 
-    commandargs.append(f"--date={options.date}")
+    commandargs.append(f"--date={date_to_iso(options.date)}")
     commandargs.append(f"--prod-id={options.prod_id}")
     commandargs.append(f"--drs4-pedestal-file={sequence.pedestal}")
     commandargs.append(f"--time-calib-file={sequence.time_calibration}")
@@ -520,7 +520,7 @@ def calibration_sequence_job_template(sequence):
         commandargs.append("--config")
         commandargs.append(f"{Path(options.configfile).resolve()}")
 
-    commandargs.append(f"--date={options.date}")
+    commandargs.append(f"--date={date_to_iso(options.date)}")
     commandargs.append(f"--drs4-pedestal-run={sequence.previousrun:05d}")
     commandargs.append(f"--pedcal-run={sequence.run:05d}")
 

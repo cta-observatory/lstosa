@@ -21,7 +21,7 @@ from osa.utils.utils import (
     get_prod_id,
     is_night_time,
     cron_lock,
-    example_seq
+    example_seq, date_to_iso
 )
 
 __all__ = ["Telescope", "Sequence"]
@@ -29,7 +29,7 @@ __all__ = ["Telescope", "Sequence"]
 log = myLogger(logging.getLogger())
 
 
-class Telescope(object):
+class Telescope:
     """
 
     Parameters
@@ -37,7 +37,7 @@ class Telescope(object):
     telescope : str
         Options: LST1, LST2 or ST
     date : str
-        Date in format YYYY_MM_DD
+        Date in format YYYY-MM-DD
 
     Attributes
     ----------
@@ -152,7 +152,6 @@ class Telescope(object):
             stdout_tmp = self.stdout.read()
             log.info(stdout_tmp)
             self.seq_lines = stdout_tmp.split("\n")
-        return
 
     def parse_sequencer(self):
         log.debug(f"Parsing sequencer table of {self.telescope}")
@@ -167,7 +166,6 @@ class Telescope(object):
                 self.keyLine = line
             elif header:
                 self.header_lines.append(line)
-        return
 
     def build_sequences(self):
         log.debug(f"Creating Sequence objects for {self.telescope}")
@@ -198,7 +196,7 @@ class Telescope(object):
             closer_cmd = [
                 "closer",
                 "-c",
-                config_file,
+                str(config_file),
                 "-v",
                 "-y",
                 "-d",
@@ -224,7 +222,7 @@ class Telescope(object):
         return True
 
 
-class Sequence(object):
+class Sequence:
     """
     As for now the keys for the 'dict_sequence' are:
     (LST1) Tel Seq Parent Type Run Subruns Source Wobble Action Tries JobID
@@ -248,7 +246,6 @@ class Sequence(object):
         log.debug("Parsing sequence")
         self.dict_sequence = dict(zip(self.keyLine.split(), self.sequence.split()))
         log.debug(self.dict_sequence)
-        return
 
     def is_closed(self):
         return self.dict_sequence["Action"] == "Closed"
@@ -273,7 +270,7 @@ class Sequence(object):
         ):
             return True
 
-        elif (
+        if (
                 self.dict_sequence["Tel"] != "ST"
                 and self.dict_sequence["DL1%"] == "100"
                 and self.dict_sequence["DL1AB%"] == "100"
@@ -282,8 +279,7 @@ class Sequence(object):
         ):
             return True
 
-        else:
-            return False
+        return False
 
     def is_flawless(self, no_dl2: bool):
         """Check that all jobs statuses are completed."""
@@ -351,7 +347,7 @@ class Sequence(object):
         closer = subprocess.Popen(
             closerArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
-        stdout, stderr = closer.communicate()
+        stdout, _ = closer.communicate()
         if closer.returncode != 0:
             log.warning(
                 f"closer returned error code {closer.returncode}! See output: {stdout}"
@@ -423,20 +419,19 @@ def main():
         log.debug("Closing run-wise")
 
     if args.date:
-        date = args.date.strftime("%Y_%m_%d")
+        options.date = args.date
         hour = 12
     else:
-        date = datetime.datetime.now().strftime("%Y_%m_%d")
+        options.date = datetime.datetime.now()
         hour = datetime.datetime.now().hour
 
-    options.date = date
     options.tel_id = args.tel_id
     options.prod_id = get_prod_id()
 
     message = (
         f"========== Starting {Path(__file__).stem}"
         f" at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        f" for night {date} ==========="
+        f" for night {date_to_iso(options.date)} ==========="
     )
     log.info(message)
 
@@ -444,13 +439,13 @@ def main():
         sys.exit(1)
 
     elif is_day_closed():
-        log.info(f"Night {options.date} already closed for {options.tel_id}")
+        log.info(f"Date {date_to_iso(options.date)} already closed for {options.tel_id}")
         sys.exit(0)
 
     # create telescope and sequence objects
     log.info("Simulating sequencer...")
 
-    telescope = Telescope(args.tel_id, date)
+    telescope = Telescope(args.tel_id, options.date)
 
     log.info(f"Processing {args.tel_id}...")
 
@@ -472,8 +467,8 @@ def main():
     log.info(f"Closing {args.tel_id}...")
 
     if not telescope.close(
-            date=date,
-            config_file=args.config_file,
+            date=date_to_iso(options.date),
+            config_file=args.config,
             test=args.test
     ):
         log.warning(f"Could not close the day for {args.tel}!")

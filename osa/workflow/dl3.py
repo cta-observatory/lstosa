@@ -269,7 +269,7 @@ def create_obs_index(
 
 def setup_global_options(date_obs, telescope):
     """Set up the global options arguments."""
-    options.date = date_obs.strftime('%Y_%m_%d')
+    options.date = date_obs
     options.tel_id = telescope
     options.prod_id = get_prod_id()
     options.dl2_prod_id = get_dl2_prod_id()
@@ -293,8 +293,8 @@ def cuts_subdirectory() -> Path:
 @click.option(
     '-d',
     '--date-obs',
-    type=click.DateTime(formats=["%Y_%m_%d"]),
-    default=YESTERDAY.strftime("%Y_%m_%d")
+    type=click.DateTime(formats=["%Y-%m-%d"]),
+    default=YESTERDAY
 )
 @click.option(
     '-c', '--config',

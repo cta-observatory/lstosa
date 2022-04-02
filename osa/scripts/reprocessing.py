@@ -81,7 +81,7 @@ def main(
 ):
     """
     Loop over the dates listed in the input file and launch the script for each of them.
-    The input file should list the dates in the format YYYY_MM_DD one date per line.
+    The input file should list the dates in the format YYYY-MM-DD one date per line.
     """
     logging.basicConfig(level=logging.INFO)
 

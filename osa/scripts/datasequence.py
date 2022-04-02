@@ -10,7 +10,7 @@ from osa.job import historylevel, run_program_with_history_logging
 from osa.provenance.capture import trace
 from osa.utils.cliopts import data_sequence_cli_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_dir
+from osa.utils.utils import date_to_dir
 
 __all__ = ["data_sequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
 
@@ -138,7 +138,7 @@ def r0_to_dl1(
         Return code of the executed command.
     """
     command = cfg.get("lstchain", "r0_to_dl1")
-    night_dir = lstdate_to_dir(options.date)
+    night_dir = date_to_dir(options.date)
     r0_dir = Path(cfg.get("LST1", "R0_DIR")) / night_dir
     r0_file = r0_dir / f"LST-1.1.Run{run_str}.fits.fz"
     dl1a_config = Path(cfg.get("lstchain", "dl1a_config"))

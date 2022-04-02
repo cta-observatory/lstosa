@@ -33,9 +33,9 @@ from osa.utils.utils import (
     night_finished_flag,
     is_day_closed,
     stringify,
-    lstdate_to_dir,
+    date_to_dir,
     create_lock,
-    gettag,
+    gettag, date_to_iso,
 )
 
 __all__ = [
@@ -78,7 +78,7 @@ def main():
         sys.exit(0)
 
     elif is_day_closed():
-        log.info(f"Night {options.date} already closed for {options.tel_id}")
+        log.info(f"Date {date_to_iso(options.date)} already closed for {options.tel_id}")
         sys.exit(0)
     else:
         if options.seqtoclose is not None:
@@ -86,7 +86,7 @@ def main():
 
         sequencer_tuple = [False, []]
 
-        if is_raw_data_available():
+        if is_raw_data_available(options.date):
             # proceed normally
             log.debug(f"Checking sequencer_tuple {sequencer_tuple}")
             night_summary_table = run_summary_table(options.date)
@@ -240,9 +240,7 @@ def observation_finished(date=datetime.utcnow()) -> bool:
     We consider the observation as finished if it is later
     than 08:00 UTC of the next day set by `options.date`
     """
-    next_morning_limit = (
-        datetime.strptime(options.date, "%Y_%m_%d") + timedelta(days=1, hours=8)
-    )
+    next_morning_limit = options.date + timedelta(days=1, hours=8)
     return date > next_morning_limit
 
 
@@ -273,14 +271,13 @@ def is_finished_check(run_summary):
         if are_all_jobs_correctly_finished(sequence_list):
             sequence_success = True
         else:
-            log.info(
-                "Raw files are transferred but the jobs did not correctly/yet finish"
-            )
+            log.info("Jobs did not correctly/yet finish")
 
     else:
         # empty file (no sensible data)
         sequence_success = True
         sequence_list = []
+
     return [sequence_success, sequence_list]
 
 
@@ -322,7 +319,8 @@ def merge_dl1_datacheck(seq_list) -> List[str]:
                     cmd,
                     encoding="utf-8",
                     capture_output=True,
-                    text=True
+                    text=True,
+                    check=True,
                 )
                 list_job_id.append(job.stdout.strip())
             else:
@@ -345,7 +343,7 @@ def extract_provenance(seq_list):
     """
     log.info("Extract provenance run wise")
 
-    nightdir = lstdate_to_dir(options.date)
+    nightdir = date_to_dir(options.date)
 
     for sequence in seq_list:
         if sequence.type == "DATA":
@@ -371,7 +369,7 @@ def extract_provenance(seq_list):
                     and not options.test
                     and shutil.which('sbatch') is not None
             ):
-                subprocess.run(cmd)
+                subprocess.run(cmd, check=True)
             else:
                 log.debug("Simulate launching scripts")
 
@@ -380,10 +378,10 @@ def get_pattern(data_level) -> Tuple[str, str]:
     """Return the subrun wise file pattern for the data level."""
     if data_level == "DL1AB":
         return "dl1_LST-1.Run?????.????.h5", "dl1"
-    elif data_level == "DL2":
+    if data_level == "DL2":
         return "dl2_LST-1.Run?????.????.h5", "dl2"
-    else:
-        raise ValueError(f"Unknown data level {data_level}")
+
+    raise ValueError(f"Unknown data level {data_level}")
 
 
 def merge_files(sequence_list, data_level="DL2"):
@@ -419,14 +417,14 @@ def merge_files(sequence_list, data_level="DL2"):
                     and not options.test
                     and shutil.which('sbatch') is not None
             ):
-                subprocess.run(cmd)
+                subprocess.run(cmd, check=True)
             else:
                 log.debug("Simulate launching scripts")
 
 
 def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
     """Build the daily longterm command."""
-    nightdir = lstdate_to_dir(options.date)
+    nightdir = date_to_dir(options.date)
     dl1_dir = destination_dir("DL1AB", create_dir=False)
     muons_dir = destination_dir("MUON", create_dir=False)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
@@ -453,7 +451,7 @@ def daily_datacheck(cmd: List[str]):
     log.debug(f"Executing {stringify(cmd)}")
 
     if not options.simulate and not options.test and shutil.which('sbatch') is not None:
-        subprocess.run(cmd)
+        subprocess.run(cmd, check=True)
     else:
         log.debug("Simulate launching scripts")
 

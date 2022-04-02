@@ -4,23 +4,24 @@ import pytest
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.utils.utils import date_to_iso
 
-options.date = "2020_01_17"
+options.date = datetime.datetime.fromisoformat("2020-01-17")
 options.tel_id = "LST1"
 options.prod_id = "v0.1.0"
 
 
 def test_get_current_date():
-    from osa.utils.utils import getcurrentdate
+    from osa.utils.utils import current_date
 
     # Both having the same separator
     now = datetime.datetime.utcnow()
     if now.hour < 12:
         # In our convention, date changes at 12:00 pm
         yesterday_lst_date = now - datetime.timedelta(hours=12)
-        assert getcurrentdate("_") == yesterday_lst_date.strftime("%Y_%m_%d")
+        assert date_to_iso(current_date()) == date_to_iso(yesterday_lst_date)
     else:
-        assert getcurrentdate("_") == now.strftime("%Y_%m_%d")
+        assert date_to_iso(current_date()) == date_to_iso(now)
 
 
 def test_analysis_path(running_analysis_dir):
@@ -55,11 +56,9 @@ def test_date_in_yymmdd():
     assert date_in_yymmdd("20200113") == "20_01_13"
 
 
-def test_lstdate_to_dir():
-    from osa.utils.utils import lstdate_to_dir
-    assert lstdate_to_dir("2020_01_17") == "20200117"
-    with pytest.raises(ValueError):
-        lstdate_to_dir("2020-01-17")
+def test_date_to_dir():
+    from osa.utils.utils import date_to_dir
+    assert date_to_dir(options.date) == "20200117"
 
 
 def test_time_to_seconds():

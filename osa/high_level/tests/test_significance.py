@@ -29,7 +29,7 @@ def test_significance(
     assert pedestal_ids_file.exists()
 
     output = sp.run(
-        ["theta2_significance", "-d", "2020_01_17", "-s", "LST1"],
+        ["theta2_significance", "-d", "2020-01-17", "-s", "LST1"],
         text=True,
         stdout=sp.PIPE,
         stderr=sp.PIPE

@@ -2,7 +2,7 @@
 
 import datetime
 import logging
-from argparse import ArgumentParser, ArgumentTypeError
+from argparse import ArgumentParser
 from pathlib import Path
 
 from osa.configs import options
@@ -14,9 +14,9 @@ from osa.utils.utils import (
     get_dl1_prod_id,
     get_dl2_prod_id,
     get_prod_id,
-    getcurrentdate,
     is_defined,
-    set_prod_ids
+    set_prod_ids,
+    current_date
 )
 
 __all__ = [
@@ -46,12 +46,8 @@ log = myLogger(logging.getLogger(__name__))
 
 
 def valid_date(string):
-    """Check if the string is a valid date."""
-    try:
-        return datetime.datetime.strptime(string, "%Y_%m_%d")
-    except ValueError:
-        msg = f"Not a valid date: '{string}'."
-        raise ArgumentTypeError(msg)
+    """Check if the string is a valid date and return a datetime object."""
+    return datetime.datetime.strptime(string, "%Y-%m-%d")
 
 
 common_parser = ArgumentParser(add_help=False)
@@ -60,19 +56,20 @@ common_parser.add_argument(
     "--config",
     type=Path,
     default=DEFAULT_CFG,
-    help="use specific config file [default cfg/sequencer.cfg]",
+    help="Use specific config file [default cfg/sequencer.cfg]",
 )
 common_parser.add_argument(
     "-d",
     "--date",
-    help="date (YYYY_MM_DD) of the start of the night",
+    help="Date (YYYY-MM-DD) of the start of the night",
+    type=valid_date,
 )
 common_parser.add_argument(
     "-s",
     "--simulate",
     action="store_true",
     default=False,
-    help="do not run, just show what would happen",
+    help="Do not run, just simulate what would happen",
 )
 common_parser.add_argument(
     "-t",
@@ -423,7 +420,7 @@ def simproc_argparser():
     #     action="store",
     #     type=str,
     #     dest="date",
-    #     help="observation ending date YYYY_MM_DD [default today]",
+    #     help="observation ending date YYYY-MM-DD [default today]",
     # )
     # parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
 
@@ -478,10 +475,11 @@ def sequencer_webmaker_argparser():
 
 
 def set_default_date_if_needed():
+    """Check if the date is set, if not set it to yesterday."""
     if is_defined(options.date):
         return options.date
 
-    return getcurrentdate()
+    return current_date()
 
 
 def set_common_globals(opts):

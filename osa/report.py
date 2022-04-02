@@ -10,6 +10,7 @@ from osa.configs.config import cfg
 from osa.raw import get_raw_dir
 from osa.utils.iofile import append_to_file
 from osa.utils.logging import myLogger
+from osa.utils.utils import date_to_iso
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -22,7 +23,8 @@ def start(parent_tag: str):
     simple_parent_tag = parent_tag.rsplit("(")[0]
     header(
         f"Starting {simple_parent_tag} at {now.strftime('%Y-%m-%d %H:%M')} "
-        f"UTC for LST, Telescope: {options.tel_id}, Night: {options.date}"
+        f"UTC for LST, Telescope: {options.tel_id}, "
+        f"Date: {options.date.strftime('%Y-%m-%d')}"
     )
 
 
@@ -65,10 +67,10 @@ def finished_assignments(sequence_list):
             "DATACHECK",
             "DL2",
         ]
-        rawdir = get_raw_dir()
+        rawdir = get_raw_dir(options.date)
         if sequence_list is not None:
-            for s in sequence_list:
-                rawnum += s.subruns
+            for seq in sequence_list:
+                rawnum += seq.subruns
         data_files = glob(
             join(
                 rawdir,
@@ -100,7 +102,7 @@ def finished_assignments(sequence_list):
     now_string = f"{datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
 
     dictionary = {
-        "NIGHT": options.date,
+        "NIGHT": date_to_iso(options.date),
         "TELESCOPE": options.tel_id,
         "IS_CLOSED": 1,
         "SEQUENCES": len(sequence_list),

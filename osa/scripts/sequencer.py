@@ -25,7 +25,7 @@ from osa.paths import analysis_path
 from osa.report import start
 from osa.utils.cliopts import sequencer_cli_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import is_day_closed, gettag
+from osa.utils.utils import is_day_closed, gettag, date_to_iso
 from osa.veto import get_closed_list, get_veto_list
 
 __all__ = [
@@ -69,7 +69,7 @@ def single_process(telescope):
     Parameters
     ----------
     telescope : str
-        Options: 'LST1', 'LST2' or 'ST'
+        Options: 'LST1'
 
     Returns
     -------
@@ -88,7 +88,9 @@ def single_process(telescope):
     is_report_needed = True
 
     if is_day_closed():
-        log.info(f"Day {options.date} for {options.tel_id} already closed")
+        log.info(
+            f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}"
+        )
         return sequence_list
 
     # Build the sequences

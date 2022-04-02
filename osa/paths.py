@@ -6,7 +6,7 @@ from pathlib import Path
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_dir, date_in_yymmdd, get_prod_id
+from osa.utils import utils
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -47,8 +47,8 @@ def analysis_path(tel) -> Path:
         Path of the running_analysis directory for a certain date
     """
     log.debug(f"Getting analysis path for telescope {tel}")
-    flat_date = lstdate_to_dir(options.date)
-    options.prod_id = get_prod_id()
+    flat_date = utils.date_to_dir(options.date)
+    options.prod_id = utils.get_prod_id()
     directory = Path(cfg.get(tel, "ANALYSIS_DIR")) / flat_date / options.prod_id
 
     if not options.simulate:
@@ -177,7 +177,7 @@ def calibration_file_exists(run_id: int) -> bool:
 
 def get_drive_file(date: str) -> Path:
     """Return the drive file corresponding to a given date in YYYYMMDD format."""
-    yy_mm_dd = date_in_yymmdd(date)
+    yy_mm_dd = utils.date_in_yymmdd(date)
     drive_dir = Path(cfg.get("LST1", "DRIVE_DIR"))
     return (drive_dir / f"drive_log_{yy_mm_dd}.txt").resolve()
 
@@ -200,7 +200,7 @@ def get_pedestal_ids_file(run_id: int, date: str) -> Path:
 
 def sequence_calibration_files(sequence_list):
     """Build names of the calibration files for each sequence in the list."""
-    flat_date = lstdate_to_dir(options.date)
+    flat_date = utils.date_to_dir(options.date)
 
     for sequence in sequence_list:
 
@@ -254,7 +254,7 @@ def destination_dir(concept: str, create_dir: bool = True) -> Path:
     path : pathlib.Path
         Path to the directory
     """
-    nightdir = lstdate_to_dir(options.date)
+    nightdir = utils.date_to_dir(options.date)
 
     if concept == "MUON":
         directory = (

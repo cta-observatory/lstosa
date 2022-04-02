@@ -14,10 +14,9 @@ from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
 
 __all__ = [
-    "getcurrentdate",
     "get_lstchain_version",
-    "lstdate_to_dir",
-    "lstdate_to_iso",
+    "date_to_dir",
+    "date_to_iso",
     "is_day_closed",
     "get_prod_id",
     "date_in_yymmdd",
@@ -36,7 +35,8 @@ __all__ = [
     "set_prod_ids",
     "is_night_time",
     "cron_lock",
-    "example_seq"
+    "example_seq",
+    "current_date"
 ]
 
 log = myLogger(logging.getLogger(__name__))
@@ -49,46 +49,26 @@ DATACHECK_FILE_PATTERNS = {
     "DL1AB": "datacheck_dl1*.pdf",
     "LONGTERM": "DL1_datacheck_*.*"
 }
-# Sets the amount of hours after midnight for the default OSA date
-# to be the current date, eg 4: 04:00:00 UTC, -4: 20:00:00 UTC day before
-LIMIT_NIGHT = 12
 
 YESTERDAY = datetime.today() - timedelta(days=1)
 
 
-def getcurrentdate(sep="_"):
+def current_date() -> datetime:
     """
     Get current data following LST data-taking convention in which the date
     changes at 12:00 pm instead of 00:00 or 12:00 am to cover a natural
-    data-taking night. This why a night offset is taken into account.
-
-    Parameters
-    ----------
-    sep: string
-        Separator
+    data-taking night.
 
     Returns
     -------
-    string_date: string
-        Date in string format using the given separator
+    date: datetime.datetime
+        Current date following LST data-taking convention.
     """
-    now = datetime.utcnow()
-    if (now.hour >= LIMIT_NIGHT >= 0) or (
-            now.hour < LIMIT_NIGHT + 24 and LIMIT_NIGHT < 0
-    ):
-        # today, nothing to do
-        pass
-    elif LIMIT_NIGHT >= 0:
-        # yesterday
-        gap = timedelta(hours=24)
-        now = now - gap
-    else:
-        # tomorrow
-        gap = timedelta(hours=24)
-        now = now + gap
-    string_date = now.strftime(f"%Y{sep}%m{sep}%d")
-    log.debug(f"Date string by default {string_date}")
-    return string_date
+    return (
+        datetime.now() - timedelta(days=1)
+        if datetime.now().hour < 12
+        else datetime.now()
+    )
 
 
 def get_lstchain_version():
@@ -217,23 +197,21 @@ def night_finished_flag() -> Path:
         Path of the lock file
     """
     basename = cfg.get("LSTOSA", "end_of_activity")
-    date = lstdate_to_dir(options.date)
+    date = date_to_dir(options.date)
     close_directory = Path(cfg.get(options.tel_id, "CLOSER_DIR"))
     lock_file = close_directory / date / options.prod_id / basename
     log.debug(f"Looking for lock file {lock_file}")
     return lock_file.resolve()
 
 
-def lstdate_to_iso(date_string: str) -> str:
-    """Function to change from YYYY_MM_DD to YYYY-MM-DD."""
-    datetime.strptime(date_string, "%Y_%m_%d")
-    return date_string.replace("_", "-")
+def date_to_iso(date: datetime) -> str:
+    """Function to change from YYYY-MM-DD to YYYY-MM-DD."""
+    return date.strftime("%Y-%m-%d")
 
 
-def lstdate_to_dir(date_string: str) -> str:
-    """Function to change from YYYY_MM_DD to YYYYMMDD."""
-    datetime.strptime(date_string, "%Y_%m_%d")
-    return date_string.replace("_", "")
+def date_to_dir(date: datetime) -> str:
+    """Function to change from YYYY-MM-DD to YYYYMMDD format (used for directories)."""
+    return date.strftime("%Y%m%d")
 
 
 def is_defined(variable):
@@ -254,7 +232,7 @@ def get_night_limit_timestamp():
     user = cfg.get("MYSQL", "user")
     database = cfg.get("MYSQL", "database")
     table = cfg.get("MYSQL", "nighttimes")
-    night = lstdate_to_iso(options.date)
+    night = date_to_iso(options.date)
     selections = ["END"]
     conditions = {"NIGHT": night}
     matrix = select_db(server, user, database, table, selections, conditions)
@@ -311,7 +289,7 @@ def time_to_seconds(timestring):
 
     Parameters
     ----------
-    timestring: str
+    timestring: str or None
         Time in format (D-)HH:MM:SS
 
     Returns
