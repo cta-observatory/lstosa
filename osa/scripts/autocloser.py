@@ -30,20 +30,7 @@ log = myLogger(logging.getLogger())
 
 
 class Telescope:
-    """
-
-    Parameters
-    ----------
-    telescope : str
-        Options: LST1, LST2 or ST
-    date : str
-        Date in format YYYY-MM-DD
-
-    Attributes
-    ----------
-    sequences: list of autocloser.Sequence
-        Holds a Sequence object for each Sequence/Run belonging to the telescope.
-    """
+    """Handle the telescope sequences, simulate and check them."""
 
     def __init__(
             self,
@@ -53,6 +40,20 @@ class Telescope:
             test: bool = False,
             simulate: bool = False
     ):
+        """
+        Parameters
+        ----------
+        telescope : str
+            Options: LST1, LST2 or ST
+        date : str
+            Date in format YYYY-MM-DD
+        ignore_cronlock : bool
+            Ignore cron lock file
+        test : bool
+            Run sequencer in test mode
+        simulate : bool
+            Run sequencer in simulation mode
+        """
 
         self.telescope = telescope
         # necessary to make sure that cron.lock gets deleted in the end
@@ -98,11 +99,13 @@ class Telescope:
         return iter(self.sequences)
 
     def __del__(self):
+        """Delete cron lock file if it exists."""
         if self.locked:
             log.debug(f"Deleting {self.cron_lock}")
             os.remove(self.cron_lock)
 
     def is_closed(self):
+        """Check if night is finished flag exists."""
         log.debug(f"Checking if {self.telescope} is closed")
         if night_finished_flag():
             self.closed = True
@@ -119,6 +122,7 @@ class Telescope:
         return True
 
     def simulate_sequencer(self, date, config_file, test):
+        """Launch the sequencer in simulation mode."""
         if test:
             self.read_file()
         else:
@@ -147,6 +151,7 @@ class Telescope:
         return True
 
     def read_file(self):
+        """Read an example sequencer output."""
         log.debug(f"Reading example of a sequencer output {example_seq()}")
         with open(example_seq(), "r") as self.stdout:
             stdout_tmp = self.stdout.read()
@@ -154,6 +159,7 @@ class Telescope:
             self.seq_lines = stdout_tmp.split("\n")
 
     def parse_sequencer(self):
+        """Parse the sequencer output lines."""
         log.debug(f"Parsing sequencer table of {self.telescope}")
         header = True
         data = False
@@ -168,6 +174,7 @@ class Telescope:
                 self.header_lines.append(line)
 
     def build_sequences(self):
+        """Build the sequences from the sequencer output."""
         log.debug(f"Creating Sequence objects for {self.telescope}")
         self.sequences = [Sequence(self.keyLine, line) for line in self.data_lines]
         return bool(self.sequences)
@@ -179,6 +186,7 @@ class Telescope:
             simulate: bool = False,
             test: bool = False
     ):
+        """Launch the closer command."""
         log.info("Closing...")
         if simulate:
             closer_cmd = [

@@ -33,6 +33,7 @@ def get_check_raw_dir(date: datetime) -> Path:
 
 
 def get_raw_dir(date: datetime) -> Path:
+    """Get the raw R0 directory."""
     night_dir = date_to_dir(date)
     r0_dir = Path(cfg.get(options.tel_id, "R0_DIR")) / night_dir
     return r0_dir if options.tel_id == "LST1" else None

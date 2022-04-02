@@ -85,7 +85,9 @@ def main():
         flat_date = yesterday.strftime("%Y%m%d")
 
     if is_day_closed():
-        log.info(f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}")
+        log.info(
+            f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}"
+        )
         sys.exit(1)
 
     run_summary_directory = Path("/fefs/aswg/data/real/monitoring/RunSummary")
