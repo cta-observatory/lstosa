@@ -326,7 +326,6 @@ class Sequence:
             closerArgs = [
                 "closer",
                 "-s",
-                "-v",
                 "-y",
                 "-d",
                 date,
@@ -336,7 +335,6 @@ class Sequence:
         else:
             closerArgs = [
                 "closer",
-                "-v",
                 "-y",
                 "-d",
                 date,
@@ -458,15 +456,19 @@ def main():
     log.info(f"Processing {args.tel_id}...")
 
     # loop over sequences
-    for seq in telescope:
-        log.info(f"Processing sequence {seq.dict_sequence['Run']}...")
+    for sequence in telescope:
+        log.info(f"Processing sequence {sequence.dict_sequence['Run']}...")
 
-        if not understand_sequence(seq, no_dl2=args.no_dl2):
-            log.warning(f"Could not interpret sequence {seq.dict_sequence['Run']}")
+        if not understand_sequence(sequence, no_dl2=args.no_dl2):
+            log.warning(f"Could not interpret sequence {sequence.dict_sequence['Run']}")
             continue
 
-        if args.runwise and seq.readyToClose and not seq.closed:
-            seq.close()
+        if args.runwise and sequence.readyToClose and not sequence.closed:
+            sequence.close(
+                date=date,
+                test=args.test,
+                simulate=args.simulate,
+            )
 
     # skip these checks if closing is forced
     if not args.force and not all(seq.readyToClose for seq in telescope):
