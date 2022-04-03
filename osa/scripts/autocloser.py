@@ -15,6 +15,7 @@ from osa.configs import options
 from osa.paths import analysis_path
 from osa.utils.cliopts import autocloser_cli_parser
 from osa.utils.logging import myLogger
+from osa.utils.mail import send_warning_mail
 from osa.utils.utils import (
     night_finished_flag,
     is_day_closed,
@@ -36,23 +37,23 @@ class Telescope:
             self,
             telescope,
             date,
+            config_file: Path,
             ignore_cronlock: bool = False,
             test: bool = False,
-            simulate: bool = False
     ):
         """
         Parameters
         ----------
         telescope : str
-            Options: LST1, LST2 or ST
+            Options: LST1
         date : str
             Date in format YYYY-MM-DD
+        config_file : pathlib.Path
+            Path to the configuration file
         ignore_cronlock : bool
             Ignore cron lock file
         test : bool
             Run sequencer in test mode
-        simulate : bool
-            Run sequencer in simulation mode
         """
 
         self.telescope = telescope
@@ -80,7 +81,7 @@ class Telescope:
         if not self.lock_automatic_sequencer() and not ignore_cronlock:
             log.warning(f"{self.telescope} already locked! Ignoring {self.telescope}")
             return
-        if not self.simulate_sequencer(date, test, simulate):
+        if not self.simulate_sequencer(date, config_file, test):
             log.warning(
                 f"Simulation of the sequencer failed "
                 f"for {self.telescope}! Ignoring {self.telescope}"
@@ -90,10 +91,8 @@ class Telescope:
         self.parse_sequencer()
 
         if not self.build_sequences():
-            log.warning(
-                f"Sequencer for {self.telescope} is empty! Ignoring {self.telescope}"
-            )
-            return
+            log.info(f"Sequencer for {self.telescope} is empty! Exiting.")
+            sys.exit()
 
     def __iter__(self):
         return iter(self.sequences)
@@ -107,7 +106,7 @@ class Telescope:
     def is_closed(self):
         """Check if night is finished flag exists."""
         log.debug(f"Checking if {self.telescope} is closed")
-        if night_finished_flag():
+        if night_finished_flag().exists():
             self.closed = True
             return True
         return False
@@ -121,7 +120,7 @@ class Telescope:
         self.locked = True
         return True
 
-    def simulate_sequencer(self, date, config_file, test):
+    def simulate_sequencer(self, date: str, config_file: Path, test: bool):
         """Launch the sequencer in simulation mode."""
         if test:
             self.read_file()
@@ -130,7 +129,7 @@ class Telescope:
                 "sequencer",
                 "-s",
                 "-c",
-                config_file,
+                str(config_file),
                 "-d",
                 date,
                 self.telescope,
@@ -174,7 +173,7 @@ class Telescope:
                 self.header_lines.append(line)
 
     def build_sequences(self):
-        """Build the sequences from the sequencer output."""
+        """Build the sequences and return True if there are any."""
         log.debug(f"Creating Sequence objects for {self.telescope}")
         self.sequences = [Sequence(self.keyLine, line) for line in self.data_lines]
         return bool(self.sequences)
@@ -361,7 +360,9 @@ class Sequence:
                 f"closer returned error code {closer.returncode}! See output: {stdout}"
             )
             return False
+
         self.closed = True
+
         return True
 
 
@@ -391,6 +392,7 @@ def understand_sequence(seq, no_dl2: bool):
         log.info("Is flawless")
         seq.readyToClose = True
         return True
+
     return False
 
 
@@ -435,25 +437,25 @@ def main():
 
     options.tel_id = args.tel_id
     options.prod_id = get_prod_id()
+    date = date_to_iso(options.date)
 
-    message = (
-        f"========== Starting {Path(__file__).stem}"
-        f" at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        f" for night {date_to_iso(options.date)} ==========="
+    log.info(
+        f"========== Starting {Path(__file__).stem} at "
+        f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        f" for date {date} ==========="
     )
-    log.info(message)
 
     if is_night_time(hour):
         sys.exit(1)
 
     elif is_day_closed():
-        log.info(f"Date {date_to_iso(options.date)} already closed for {options.tel_id}")
+        log.info(f"Date {date} already closed for {options.tel_id}")
         sys.exit(0)
 
     # create telescope and sequence objects
     log.info("Simulating sequencer...")
 
-    telescope = Telescope(args.tel_id, options.date)
+    telescope = Telescope(args.tel_id, date, args.config)
 
     log.info(f"Processing {args.tel_id}...")
 
@@ -475,12 +477,14 @@ def main():
     log.info(f"Closing {args.tel_id}...")
 
     if not telescope.close(
-            date=date_to_iso(options.date),
+            date=date,
             config_file=args.config,
             test=args.test
     ):
         log.warning(f"Could not close the day for {args.tel}!")
-        # TODO send email, executing the closer failed!
+        # Send email, if later than 18:00 UTC and telescope is not ready to close
+        if hour > 18:
+            send_warning_mail(date=date)
 
     log.info("Exit")
 
