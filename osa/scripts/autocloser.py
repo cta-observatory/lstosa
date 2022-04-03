@@ -193,7 +193,6 @@ class Telescope:
                 "-s",
                 "-c",
                 str(config_file),
-                "-v",
                 "-y",
                 "-d",
                 date,
@@ -204,7 +203,6 @@ class Telescope:
                 "closer",
                 "-c",
                 str(config_file),
-                "-v",
                 "-y",
                 "-d",
                 date,
@@ -472,7 +470,7 @@ def main():
 
     # skip these checks if closing is forced
     if not args.force and not all(seq.readyToClose for seq in telescope):
-        log.warning(f"{args.tel} is NOT ready to close!")
+        log.warning(f"{args.tel_id} is NOT ready to close!")
 
     log.info(f"Closing {args.tel_id}...")
 
@@ -481,7 +479,7 @@ def main():
             config_file=args.config,
             test=args.test
     ):
-        log.warning(f"Could not close the day for {args.tel}!")
+        log.warning(f"Could not close the day for {args.tel_id}!")
         # Send email, if later than 18:00 UTC and telescope is not ready to close
         if hour > 18:
             send_warning_mail(date=date)
