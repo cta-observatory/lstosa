@@ -367,7 +367,7 @@ class Sequence:
 def understand_sequence(seq, no_dl2: bool):
     """Check if sequence is completed and ready to be closed."""
     if no_dl2:
-        log.info("Assumed no DL2 production")
+        log.debug("Assumed no DL2 production")
 
     if seq.is_closed():
         seq.understood = True
@@ -470,7 +470,7 @@ def main():
 
     # skip these checks if closing is forced
     if not args.force and not all(seq.readyToClose for seq in telescope):
-        log.warning(f"{args.tel_id} is NOT ready to close!")
+        sys.exit(f"{args.tel_id} is NOT ready to close. Exiting.")
 
     log.info(f"Closing {args.tel_id}...")
 
