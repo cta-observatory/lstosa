@@ -121,7 +121,9 @@ def ask_for_closing():
 
     if options.noninteractive:
         return
+
     answer_check = False
+
     while not answer_check:
         try:
             if options.simulate:
@@ -175,6 +177,7 @@ def post_process(seq_tuple):
 
     if options.seqtoclose is None:
         return set_closed_with_file()
+
     return False
 
 
