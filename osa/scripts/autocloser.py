@@ -434,6 +434,7 @@ def main():
     options.tel_id = args.tel_id
     options.prod_id = get_prod_id()
     date = date_to_iso(options.date)
+    options.configfile = args.config
 
     log.info(
         f"========== Starting {Path(__file__).stem} at "
