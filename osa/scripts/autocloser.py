@@ -181,33 +181,29 @@ class Telescope:
     def close(
             self,
             date: str,
-            config_file,
+            config: Path,
+            no_dl2: bool,
             simulate: bool = False,
-            test: bool = False
+            test: bool = False,
     ):
         """Launch the closer command."""
         log.info("Closing...")
+
+        closer_cmd = [
+            "closer",
+            "-c",
+            str(config),
+            "-y",
+            "-d",
+            date,
+            self.telescope,
+        ]
+
         if simulate:
-            closer_cmd = [
-                "closer",
-                "-s",
-                "-c",
-                str(config_file),
-                "-y",
-                "-d",
-                date,
-                self.telescope,
-            ]
-        else:
-            closer_cmd = [
-                "closer",
-                "-c",
-                str(config_file),
-                "-y",
-                "-d",
-                date,
-                self.telescope,
-            ]
+            closer_cmd.insert(1, "-s")
+
+        if no_dl2:
+            closer_cmd.insert(1, "--no-dl2")
 
         if test:
             self.closed = True
@@ -306,7 +302,10 @@ class Sequence:
         return False
 
     def has_all_subruns(self):
-        """Check that all subruns are complete."""
+        """
+        Check that all subruns are complete by checking the
+        total number of subrun wise DL1 files.
+        """
         if self.dict_sequence["Type"] == "PEDCALIB":
             log.debug("Cannot check for missing subruns for CALIBRATION sequence")
             return True
@@ -319,40 +318,41 @@ class Sequence:
         )
         return bool(subrun_nrs and len(subrun_nrs) == int(self.dict_sequence["Subruns"]))
 
-    def close(self, date: str, config: Path, simulate: bool = False, test: bool = False):
-        """Close the sequence by calling the 'closer' script."""
+    def close(
+            self,
+            date: str,
+            config: Path,
+            no_dl2: bool,
+            simulate: bool = False,
+            test: bool = False
+    ):
+        """Close the sequence by calling the 'closer' script for a given sequence."""
         log.info("Closing sequence...")
+
+        closer_cmd = [
+            "closer",
+            "-c",
+            str(config),
+            "-y",
+            "-d",
+            date,
+            f"--seq={self.dict_sequence['Run']}",
+            self.dict_sequence["Tel"],
+        ]
+
         if simulate:
-            closerArgs = [
-                "closer",
-                "-c",
-                str(config),
-                "-s",
-                "-y",
-                "-d",
-                date,
-                f"--seq={self.dict_sequence['Run']}",
-                self.dict_sequence["Tel"],
-            ]
-        else:
-            closerArgs = [
-                "closer",
-                "-c",
-                str(config),
-                "-y",
-                "-d",
-                date,
-                f"--seq={self.dict_sequence['Run']}",
-                self.dict_sequence["Tel"],
-            ]
+            closer_cmd.insert(1, "-s")
+
+        if no_dl2:
+            closer_cmd.insert(1, "--no-dl2")
 
         if test:
             self.closed = True
             return True
 
-        log.debug(f"Executing {' '.join(closerArgs)}")
+        log.debug(f"Executing {' '.join(closer_cmd)}")
         closer = subprocess.Popen(
-            closerArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+            closer_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
         stdout, _ = closer.communicate()
         if closer.returncode != 0:
@@ -368,9 +368,6 @@ class Sequence:
 
 def understand_sequence(seq, no_dl2: bool):
     """Check if sequence is completed and ready to be closed."""
-    if no_dl2:
-        log.debug("Assumed no DL2 production")
-
     if seq.is_closed():
         seq.understood = True
         log.info("Is closed")
@@ -428,6 +425,9 @@ def main():
     if args.runwise:
         log.debug("Closing run-wise")
 
+    if args.no_dl2:
+        log.debug("Assumed no DL2 production")
+
     if args.date:
         options.date = args.date
         hour = 12
@@ -459,7 +459,7 @@ def main():
 
     log.info(f"Processing {args.tel_id}...")
 
-    # loop over sequences
+    # Loop over the sequences
     for sequence in telescope:
         log.info(f"Processing sequence {sequence.dict_sequence['Run']}...")
 
@@ -471,8 +471,9 @@ def main():
             sequence.close(
                 date=date,
                 config=args.config,
-                test=args.test,
+                no_dl2=args.no_dl2,
                 simulate=args.simulate,
+                test=args.test,
             )
 
     # skip these checks if closing is forced
@@ -483,7 +484,9 @@ def main():
 
     if not telescope.close(
             date=date,
-            config_file=args.config,
+            config=args.config,
+            no_dl2=args.no_dl2,
+            simulate=args.simulate,
             test=args.test
     ):
         log.warning(f"Could not close the day for {args.tel_id}!")
