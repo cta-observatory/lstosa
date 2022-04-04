@@ -319,12 +319,14 @@ class Sequence:
         )
         return bool(subrun_nrs and len(subrun_nrs) == int(self.dict_sequence["Subruns"]))
 
-    def close(self, date: str, simulate: bool = False, test: bool = False):
+    def close(self, date: str, config: Path, simulate: bool = False, test: bool = False):
         """Close the sequence by calling the 'closer' script."""
         log.info("Closing sequence...")
         if simulate:
             closerArgs = [
                 "closer",
+                "-c",
+                str(config),
                 "-s",
                 "-y",
                 "-d",
@@ -335,6 +337,8 @@ class Sequence:
         else:
             closerArgs = [
                 "closer",
+                "-c",
+                str(config),
                 "-y",
                 "-d",
                 date,
@@ -434,7 +438,6 @@ def main():
     options.tel_id = args.tel_id
     options.prod_id = get_prod_id()
     date = date_to_iso(options.date)
-    options.configfile = args.config
 
     log.info(
         f"========== Starting {Path(__file__).stem} at "
@@ -467,6 +470,7 @@ def main():
         if args.runwise and sequence.readyToClose and not sequence.closed:
             sequence.close(
                 date=date,
+                config=args.config,
                 test=args.test,
                 simulate=args.simulate,
             )
