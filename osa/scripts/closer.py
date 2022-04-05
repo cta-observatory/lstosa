@@ -214,8 +214,14 @@ def post_process_files(seq_list: list):
         dst_path = destination_dir(concept, create_dir=True)
 
         log.debug(f"Checking if {concept} files need to be moved to {dst_path}")
+
         for file_path in output_files_set.copy():
+
             file = str(file_path)
+            # If seqtoclose is set, we only want to close that sequence
+            if options.seqtoclose is not None and file.find(options.seqtoclose) == -1:
+                continue
+
             pattern_found = pattern_re.search(file)
             if pattern_found:
                 log.debug(f"Pattern {concept} found, {pattern_found} in {file}")
