@@ -52,7 +52,7 @@ setup(
     extras_require=extras_require,
     install_requires=[
         "astropy~=4.2",
-        "lstchain==0.9.4",
+        "lstchain==0.9.6",
         "ctapipe~=0.12.0",
         "matplotlib~=3.5",
         "numpy<1.22.0a0",
