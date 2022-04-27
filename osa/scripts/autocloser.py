@@ -369,7 +369,8 @@ class Sequence(object):
         if self.dictSequence["Type"] == "PEDCALIB":
             log.debug("Cannot check for missing subruns in the middle for CALIBRATION")
             return True
-        search_str = f"{analysis_path(self.dictSequence['Tel'])}/dl1*{int(self.dictSequence['Run']):05d}*.h5"
+        search_str = f"{analysis_path(self.dictSequence['Tel'])}/" \
+                     f"dl1*{int(self.dictSequence['Run']):05d}*.h5"
         subrun_nrs = sorted(
             [int(os.path.basename(f).split(".")[2]) for f in glob.glob(search_str)]
         )
@@ -593,7 +594,7 @@ if __name__ == "__main__":
 
     if args.onlyIncidences and args.force:
         log.error(
-            "The command line arguments 'onlyIncidences' and 'force' are incompatible with each other"
+            "The command line arguments 'onlyIncidences' and 'force' are incompatible"
         )
         sys.exit(1)
 

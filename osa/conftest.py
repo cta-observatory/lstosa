@@ -390,4 +390,3 @@ def run_catalog(run_catalog_dir):
     catalog_file.touch()
     catalog_file.write_text(source_information)
     return catalog_file
-

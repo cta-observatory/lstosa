@@ -32,12 +32,12 @@ def get_sbatch_script(
     """Build the sbatch job pilot script for running the gain selection."""
     return dedent(f"""\
     #!/bin/bash
-    
+
     #SBATCH -D {log_dir}
     #SBATCH -o "gain_selection_{run_id:05d}_{subrun:04d}_%j.log"
     #SBATCH --job-name "gain_selection_{run_id:05d}"
-    #SBATCH --export {PATH} 
-    
+    #SBATCH --export {PATH}
+
     lst_select_gain {input_file} {output_dir} {ref_time} {ref_counter} {module} {ref_source}
     """)
 

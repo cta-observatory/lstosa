@@ -186,7 +186,7 @@ def provlist2provdoc(provlist):
                     records[progen_id] = progen
                 ent.wasDerivedFrom(progen)
             for k, v in provdict.items():
-                if k not in["session_tag", "hash", "hash_type"]:
+                if k not in ["session_tag", "hash", "hash_type"]:
                     ent.add_attributes({k: str(v)})
         # agent
     return pdoc
