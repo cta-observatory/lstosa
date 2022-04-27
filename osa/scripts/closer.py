@@ -23,7 +23,6 @@ from osa.nightsummary.extract import (
 )
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import destination_dir
-from osa.provenance.utils import store_conda_env_export
 from osa.raw import is_raw_data_available
 from osa.report import start
 from osa.utils.cliopts import closercliparsing
@@ -99,7 +98,6 @@ def main():
             log.error("Never thought about this possibility, please check the code")
             sys.exit(-1)
 
-        store_conda_env_export()
         save_job_information()
         post_process(sequencer_tuple)
 

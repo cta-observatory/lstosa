@@ -12,7 +12,7 @@ from osa.configs.config import cfg
 from osa.utils.logging import myLogger
 from osa.utils.utils import get_lstchain_version, lstdate_to_dir
 
-__all__ = ["parse_variables", "get_log_config", "store_conda_env_export"]
+__all__ = ["parse_variables", "get_log_config"]
 
 REDUCTION_TASKS = ["r0_to_dl1", "dl1ab", "dl1_datacheck", "dl1_to_dl2"]
 
@@ -231,11 +231,3 @@ def get_log_config():
         log_config = std_logger_file.read_text()
 
     return log_config
-
-
-def store_conda_env_export():
-    """Store file with `conda env export` output to log the packages versions used."""
-    analysis_log_dir = Path(options.directory) / "log"
-    analysis_log_dir.mkdir(parents=True, exist_ok=True)
-    conda_env_file = analysis_log_dir / "conda_env.yml"
-    subprocess.run(["conda", "env", "export", "--file", str(conda_env_file)], check=True)
