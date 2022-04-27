@@ -172,7 +172,14 @@ def test_autocloser(running_analysis_dir):
     )
 
 
-def test_closer(r0_dir, running_analysis_dir, test_observed_data):
+def test_closer(
+        r0_data,
+        running_analysis_dir,
+        test_observed_data,
+        run_summary_file,
+        drs4_time_calibration_files,
+        systematic_correction_files,
+):
     # First assure that the end of night flag is not set and remove it otherwise
     night_finished_flag = Path(
         "./test_osa/test_files0/OSA/Closer/20200117/v0.1.0/NightFinished.txt"
@@ -180,15 +187,20 @@ def test_closer(r0_dir, running_analysis_dir, test_observed_data):
     if night_finished_flag.exists():
         night_finished_flag.unlink()
 
-    assert r0_dir.exists()
+    for r0_file in r0_data:
+        assert r0_file.exists()
+    for file in drs4_time_calibration_files:
+        assert file.exists()
+    for file in systematic_correction_files:
+        assert file.exists()
     assert running_analysis_dir.exists()
+    assert run_summary_file.exists()
     for obs_file in test_observed_data:
         assert obs_file.exists()
 
     run_program(
-        "closer", "-c", "cfg/sequencer.cfg", "-y", "-v", "-t", "-d", "2020_01_17", "LST1"
+        "closer", "-y", "-v", "-t", "-d", "2020_01_17", "LST1"
     )
-    conda_env_export = running_analysis_dir / "log" / "conda_env.yml"
     closed_seq_file = running_analysis_dir / "sequence_LST1_01805.closed"
 
     # Check that files have been moved to their final destinations
@@ -217,7 +229,6 @@ def test_closer(r0_dir, running_analysis_dir, test_observed_data):
     )
 
     assert night_finished_flag.exists()
-    assert conda_env_export.exists()
     assert closed_seq_file.exists()
 
 
