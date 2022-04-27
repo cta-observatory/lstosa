@@ -1,9 +1,11 @@
 """Open the lstosa configuration file."""
 
+import configparser
 import logging
 import sys
-import configparser
 from pathlib import Path
+
+from importlib_resources import files
 
 from osa.configs import options
 from osa.utils.logging import myLogger
@@ -22,9 +24,14 @@ def read_config():
     config: ConfigParser
         Configuration file cfg
     """
+
+    DEFAULT_CFG = files("osa").joinpath("configs/sequencer.cfg")
+
     for idx, arg in enumerate(sys.argv):
         if arg in ["-c", "--config"]:
             options.configfile = sys.argv[idx + 1]
+        else:
+            options.configfile = DEFAULT_CFG
 
     file = options.configfile
 
