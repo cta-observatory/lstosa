@@ -8,7 +8,7 @@ from astropy.table import Table
 
 from osa.configs.config import cfg
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_dir, stringify
+from osa.utils.utils import date_to_dir, stringify
 
 __all__ = ["produce_run_summary_file", "get_run_summary_file", "run_summary_table"]
 
@@ -16,16 +16,15 @@ __all__ = ["produce_run_summary_file", "get_run_summary_file", "run_summary_tabl
 log = myLogger(logging.getLogger(__name__))
 
 
-def produce_run_summary_file(date: str) -> None:
+def produce_run_summary_file(date) -> None:
     """
     Produce the run summary using the lstchain script.
 
     Parameters
     ----------
-    date : str
-        Date in the format YYYY_MM_DD
+    date : datetime.datetime
     """
-    nightdir = lstdate_to_dir(date)
+    nightdir = date_to_dir(date)
     r0_dir = Path(cfg.get("LST1", "R0_DIR"))
     run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
 
@@ -45,7 +44,7 @@ def produce_run_summary_file(date: str) -> None:
         log.exception(f"Subprocess error: {error}")
 
 
-def run_summary_table(date: str) -> Table:
+def run_summary_table(date) -> Table:
     """
     Reads the run summary ECSV file containing as a Table with the following content:
      - run_id, datatype: int64
@@ -61,8 +60,7 @@ def run_summary_table(date: str) -> Table:
 
     Parameters
     ----------
-    date : str
-        Date in the format YYYY_MM_DD
+    date : datetime.datetime
 
     Returns
     -------
@@ -81,19 +79,18 @@ def run_summary_table(date: str) -> Table:
     return table
 
 
-def get_run_summary_file(date: str) -> Path:
+def get_run_summary_file(date) -> Path:
     """
     Builds the file name of the run summary ECSV file.
 
     Parameters
     ----------
-    date : str
-        Date in the format YYYY_MM_DD
+    date : datetime.datetime
 
     Returns
     -------
     run_summary_file : pathlib.Path
         File name of the run summary ECSV file
     """
-    nightdir = lstdate_to_dir(date)
+    nightdir = date_to_dir(date)
     return Path(cfg.get("LST1", "RUN_SUMMARY_DIR")) / f"RunSummary_{nightdir}.ecsv"

@@ -20,11 +20,10 @@ from astropy.utils import iers
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.nightsummary.extract import build_sequences, get_source_list
-from osa.paths import destination_dir, DEFAULT_CFG, create_source_directories
-from osa.utils.cliopts import (
-    set_default_directory_if_needed,
-    get_prod_id, get_dl2_prod_id
+from osa.paths import (
+    destination_dir, DEFAULT_CFG, create_source_directories, analysis_path
 )
+from osa.utils.cliopts import get_prod_id, get_dl2_prod_id
 from osa.utils.logging import myLogger
 from osa.utils.utils import stringify, YESTERDAY
 
@@ -270,11 +269,11 @@ def create_obs_index(
 
 def setup_global_options(date_obs, telescope):
     """Set up the global options arguments."""
-    options.date = date_obs.strftime('%Y_%m_%d')
+    options.date = date_obs
     options.tel_id = telescope
     options.prod_id = get_prod_id()
     options.dl2_prod_id = get_dl2_prod_id()
-    options.directory = set_default_directory_if_needed()
+    options.directory = analysis_path(options.tel_id)
 
 
 def cuts_subdirectory() -> Path:
@@ -294,8 +293,8 @@ def cuts_subdirectory() -> Path:
 @click.option(
     '-d',
     '--date-obs',
-    type=click.DateTime(formats=["%Y_%m_%d"]),
-    default=YESTERDAY.strftime("%Y_%m_%d")
+    type=click.DateTime(formats=["%Y-%m-%d"]),
+    default=YESTERDAY
 )
 @click.option(
     '-c', '--config',

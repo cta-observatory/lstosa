@@ -10,7 +10,7 @@ from osa.job import historylevel, run_program_with_history_logging
 from osa.provenance.capture import trace
 from osa.utils.cliopts import data_sequence_cli_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_dir
+from osa.utils.utils import date_to_dir
 
 __all__ = ["data_sequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
 
@@ -138,9 +138,10 @@ def r0_to_dl1(
         Return code of the executed command.
     """
     command = cfg.get("lstchain", "r0_to_dl1")
-    night_dir = lstdate_to_dir(options.date)
+    night_dir = date_to_dir(options.date)
     r0_dir = Path(cfg.get("LST1", "R0_DIR")) / night_dir
     r0_file = r0_dir / f"LST-1.1.Run{run_str}.fits.fz"
+    dl1a_config = Path(cfg.get("lstchain", "dl1a_config"))
 
     cmd = [
         command,
@@ -150,6 +151,7 @@ def r0_to_dl1(
         f"--calibration-file={calibration_file}",
         f"--time-calibration-file={time_calibration_file}",
         f"--systematic-correction-file={systematic_correction_file}",
+        f"--config={dl1a_config}",
         f"--pointing-file={drive_file}",
         f"--run-summary-path={run_summary}",
     ]
@@ -191,7 +193,7 @@ def dl1ab(run_str: str, history_file: Path):
     # Create a new subdirectory for the dl1ab output
     dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
     dl1ab_subdirectory.mkdir(parents=True, exist_ok=True)
-    dl1ab_config_file = Path(cfg.get("lstchain", "dl1ab_config"))
+    dl1b_config_file = Path(cfg.get("lstchain", "dl1b_config"))
     # DL1a input file from base running_analysis directory
     input_dl1_datafile = Path(options.directory) / f"dl1_LST-1.Run{run_str}.h5"
     # DL1b output file to be stored in the dl1ab subdirectory
@@ -203,7 +205,7 @@ def dl1ab(run_str: str, history_file: Path):
         command,
         f"--input-file={input_dl1_datafile}",
         f"--output-file={output_dl1_datafile}",
-        f"--config={dl1ab_config_file}",
+        f"--config={dl1b_config_file}",
     ]
     if not cfg.getboolean("lstchain", "store_image_dl1ab"):
         cmd.append("--no-image=True")
@@ -218,7 +220,7 @@ def dl1ab(run_str: str, history_file: Path):
         prod_id=options.dl1_prod_id,
         command=command,
         input_file=input_dl1_datafile.name,
-        config_file=dl1ab_config_file.name,
+        config_file=dl1b_config_file.name,
     )
 
 
@@ -238,7 +240,7 @@ def dl1_datacheck(run_str: str, history_file: Path):
     """
     # Create a new subdirectory for the dl1ab output
     dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
-    dl1ab_config_file = Path(cfg.get("lstchain", "dl1ab_config"))
+    dl1b_config_file = Path(cfg.get("lstchain", "dl1b_config"))
     input_dl1_datafile = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
     output_directory = Path(options.directory) / options.dl1_prod_id
     output_directory.mkdir(parents=True, exist_ok=True)
@@ -264,7 +266,7 @@ def dl1_datacheck(run_str: str, history_file: Path):
         prod_id=options.dl1_prod_id,
         command=command,
         input_file=input_dl1_datafile.name,
-        config_file=dl1ab_config_file.name,
+        config_file=dl1b_config_file.name,
     )
 
 

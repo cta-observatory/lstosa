@@ -16,7 +16,7 @@ import sys
 from osa import __version__
 
 sys.path.insert(0, os.path.abspath(".."))
-sys.argv.extend(["-c", "../cfg/sequencer.cfg"])
+sys.argv.extend(["-c", "configs/sequencer.cfg"])
 
 suppress_warnings = ["ref.citation"]  # ignore citation not referenced warnings
 

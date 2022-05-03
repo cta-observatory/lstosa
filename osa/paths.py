@@ -6,7 +6,8 @@ from pathlib import Path
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_dir, date_in_yymmdd
+from osa.utils import utils
+from osa.configs.config import DEFAULT_CFG
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -29,11 +30,34 @@ __all__ = [
     "DATACHECK_WEB_BASEDIR",
     "DEFAULT_CFG",
     "create_source_directories",
+    "analysis_path"
 ]
 
 
 DATACHECK_WEB_BASEDIR = Path(cfg.get("WEBSERVER", "DATACHECK"))
-DEFAULT_CFG = Path(__file__).parent / '../cfg/sequencer.cfg'
+
+
+def analysis_path(tel) -> Path:
+    """
+    Path of the running_analysis directory for a certain date
+
+    Returns
+    -------
+    directory : Path
+        Path of the running_analysis directory for a certain date
+    """
+    log.debug(f"Getting analysis path for telescope {tel}")
+    flat_date = utils.date_to_dir(options.date)
+    options.prod_id = utils.get_prod_id()
+    directory = Path(cfg.get(tel, "ANALYSIS_DIR")) / flat_date / options.prod_id
+
+    if not options.simulate:
+        directory.mkdir(parents=True, exist_ok=True)
+    else:
+        log.debug("SIMULATE the creation of the analysis directory.")
+
+    log.debug(f"Analysis directory: {directory}")
+    return directory
 
 
 def get_run_date(run_id: int) -> str:
@@ -153,7 +177,7 @@ def calibration_file_exists(run_id: int) -> bool:
 
 def get_drive_file(date: str) -> Path:
     """Return the drive file corresponding to a given date in YYYYMMDD format."""
-    yy_mm_dd = date_in_yymmdd(date)
+    yy_mm_dd = utils.date_in_yymmdd(date)
     drive_dir = Path(cfg.get("LST1", "DRIVE_DIR"))
     return (drive_dir / f"drive_log_{yy_mm_dd}.txt").resolve()
 
@@ -176,7 +200,7 @@ def get_pedestal_ids_file(run_id: int, date: str) -> Path:
 
 def sequence_calibration_files(sequence_list):
     """Build names of the calibration files for each sequence in the list."""
-    flat_date = lstdate_to_dir(options.date)
+    flat_date = utils.date_to_dir(options.date)
 
     for sequence in sequence_list:
 
@@ -196,20 +220,15 @@ def sequence_calibration_files(sequence_list):
 
 def get_datacheck_files(pattern: str, directory: Path) -> list:
     """Return a list of files matching the pattern."""
-    return [file for file in directory.glob(pattern)]
+    return sorted(directory.glob(pattern))
 
 
 def datacheck_directory(data_type: str, date: str) -> Path:
     """Returns the path to the datacheck directory given the data type."""
     if data_type in {"PEDESTAL", "CALIB"}:
         directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / date / "pro/log"
-    elif data_type == "DL1":
-        directory = (
-            Path(cfg.get("LST1", f"{data_type}_DIR"))
-            / date
-            / options.prod_id
-            / options.dl1_prod_id
-        )
+    elif data_type == "DL1AB":
+        directory = destination_dir("DL1AB", create_dir=False)
     elif data_type == "LONGTERM":
         directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / options.prod_id / date
     else:
@@ -217,7 +236,7 @@ def datacheck_directory(data_type: str, date: str) -> Path:
     return directory
 
 
-def destination_dir(concept, create_dir=True) -> Path:
+def destination_dir(concept: str, create_dir: bool = True) -> Path:
     """
     Create final destination directory for each data level.
     See Also osa.utils.register_run_concept_files
@@ -235,27 +254,27 @@ def destination_dir(concept, create_dir=True) -> Path:
     path : pathlib.Path
         Path to the directory
     """
-    nightdir = lstdate_to_dir(options.date)
+    nightdir = utils.date_to_dir(options.date)
 
     if concept == "MUON":
         directory = (
             Path(cfg.get(options.tel_id, concept + "_DIR")) / nightdir / options.prod_id
         )
-    elif concept in ["DL1AB", "DATACHECK"]:
+    elif concept in {"DL1AB", "DATACHECK"}:
         directory = (
             Path(cfg.get(options.tel_id, concept + "_DIR"))
             / nightdir
             / options.prod_id
             / options.dl1_prod_id
         )
-    elif concept in ["DL2", "DL3"]:
+    elif concept in {"DL2", "DL3"}:
         directory = (
             Path(cfg.get(options.tel_id, concept + "_DIR"))
             / nightdir
             / options.prod_id
             / options.dl2_prod_id
         )
-    elif concept in ["PEDESTAL", "CALIB", "TIMECALIB"]:
+    elif concept in {"PEDESTAL", "CALIB", "TIMECALIB"}:
         directory = (
             Path(cfg.get(options.tel_id, concept + "_DIR"))
             / nightdir

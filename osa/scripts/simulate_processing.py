@@ -8,6 +8,7 @@ python osa/scripts/simulate_processing.py"""
 import logging
 import multiprocessing as mp
 import subprocess
+from datetime import datetime
 from pathlib import Path
 
 import yaml
@@ -19,7 +20,7 @@ from osa.nightsummary.extract import build_sequences
 from osa.provenance.utils import get_log_config
 from osa.utils.cliopts import simprocparsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_dir
+from osa.utils.utils import date_to_dir
 
 __all__ = [
     "parse_template",
@@ -192,9 +193,9 @@ def main():
     simprocparsing()
 
     # date and tel_id hardcoded for the moment
-    options.date = "2020_01_17"
+    options.date = datetime.fromisoformat("2020-01-17")
     options.tel_id = "LST1"
-    options.directory = lstdate_to_dir(options.date)
+    options.directory = date_to_dir(options.date)
 
     log.info("Running simulate processing")
 

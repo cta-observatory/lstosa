@@ -3,16 +3,15 @@
 import logging
 import os
 import re
-import subprocess
 import sys
 from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.logging import myLogger
-from osa.utils.utils import get_lstchain_version, lstdate_to_dir
+from osa.utils.utils import get_lstchain_version, date_to_dir
 
-__all__ = ["parse_variables", "get_log_config", "store_conda_env_export"]
+__all__ = ["parse_variables", "get_log_config"]
 
 REDUCTION_TASKS = ["r0_to_dl1", "dl1ab", "dl1_datacheck", "dl1_to_dl2"]
 
@@ -21,14 +20,14 @@ def parse_variables(class_instance):
     """Parse variables needed in model"""
 
     # calibration_pipeline.py
-    # -c cfg/sequencer.cfg
+    # -c sequencer.cfg
     # -d 2020_02_18
     # --drs4-pedestal-run 01804
     # --pedcal-run 01805
     # LST1
 
     # datasequence.py
-    # -c cfg/sequencer.cfg
+    # -c sequencer.cfg
     # -d 2020_02_18
     # --prod-id v0.4.3_v00
     # --pedcal-file .../20200218/pro/calibration_filters_52.Run02006.0000.h5
@@ -39,8 +38,8 @@ def parse_variables(class_instance):
     # 02006.0000
     # LST1
 
-    flat_date = lstdate_to_dir(options.date)
-    configfile_dl1 = cfg.get("lstchain", "dl1ab_config")
+    flat_date = date_to_dir(options.date)
+    configfile_dl1b = cfg.get("lstchain", "dl1b_config")
     configfile_dl2 = cfg.get("lstchain", "dl2_config")
     raw_dir = cfg.get("LST1", "R0_DIR")
     rf_models_directory = cfg.get("lstchain", "RF_MODELS")
@@ -99,7 +98,7 @@ def parse_variables(class_instance):
         # calibration_file   [0] .../20200218/pro/calibration_filters_52.Run02006.0000.h5
         # drs4_pedestal_file [1] .../20200218/pro/drs4_pedestal.Run02005.0000.h5
         # time_calib_file    [2] .../20191124/pro/time_calibration.Run01625.0000.h5
-        # systematic_corr    [3] .../20200101/pro/no_sys_corrected_calibration_scan_fit_20210514.0000.h5
+        # systematic_corr    [3] .../20200101/pro/no_sys_corrected_calib_20210514.0000.h5
         # drive_file         [4] .../DrivePositioning/drive_log_20_02_18.txt
         # run_summary_file   [5] .../RunSummary/RunSummary_20200101.ecsv
         # pedestal_ids_file  [6] .../path/to/interleaved/pedestal/events.h5
@@ -134,7 +133,7 @@ def parse_variables(class_instance):
     if class_instance.__name__ == "dl1ab":
         # run_str       [0] 02006.0000
 
-        class_instance.Analysisconfigfile_dl1 = os.path.realpath(configfile_dl1)
+        class_instance.Analysisconfigfile_dl1 = os.path.realpath(configfile_dl1b)
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
         class_instance.StoreImage = cfg.getboolean("lstchain", "store_image_dl1ab")
         class_instance.DL1SubrunDataset = os.path.realpath(
@@ -231,11 +230,3 @@ def get_log_config():
         log_config = std_logger_file.read_text()
 
     return log_config
-
-
-def store_conda_env_export():
-    """Store file with `conda env export` output to log the packages versions used."""
-    analysis_log_dir = Path(options.directory) / "log"
-    analysis_log_dir.mkdir(parents=True, exist_ok=True)
-    conda_env_file = analysis_log_dir / "conda_env.yml"
-    subprocess.run(["conda", "env", "export", "--file", str(conda_env_file)], check=True)

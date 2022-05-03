@@ -1,10 +1,11 @@
+from datetime import datetime
 from pathlib import Path
 
 import pytest
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.utils import lstdate_to_dir
+from osa.utils.utils import date_to_dir
 
 
 def test_get_calibration_file(r0_data):
@@ -79,8 +80,8 @@ def test_get_datacheck_file(datacheck_dl1_files):
 def test_destination_dir():
     from osa.paths import destination_dir
 
-    options.date = "2020_01_17"
-    datedir = lstdate_to_dir(options.date)
+    options.date = datetime.fromisoformat("2020-01-17")
+    datedir = date_to_dir(options.date)
     options.dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
     options.dl2_prod_id = cfg.get("LST1", "DL2_PROD_ID")
     options.prod_id = cfg.get("LST1", "PROD_ID")

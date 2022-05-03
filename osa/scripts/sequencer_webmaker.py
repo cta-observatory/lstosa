@@ -7,7 +7,7 @@ from pathlib import Path
 from osa.configs import options
 from osa.utils.cliopts import sequencer_webmaker_argparser
 from osa.utils.logging import myLogger
-from osa.utils.utils import is_day_closed, lstdate_to_iso
+from osa.utils.utils import is_day_closed, date_to_iso
 
 log = myLogger(logging.getLogger())
 
@@ -54,7 +54,8 @@ def matrix_to_html_table(matrix, column_class, header, footer):
 
 def webhead(header):
     print(
-        '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">'
+        '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"'
+        '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">'
     )
     print('<html xmlns="http://www.w3.org/1999/xhtml">')
     print(" <head>")
@@ -76,26 +77,25 @@ def main():
     args = sequencer_webmaker_argparser().parse_args()
 
     if args.date:
-        year = args.date.year
-        month = args.date.month
-        day = args.date.day
-        options.date = f"{year:04}_{month:02}_{day:02}"
-        strdate = f"{year:04}{month:02}{day:02}"
+        options.date = args.date
+        flat_date = args.date.strftime("%Y%m%d")
     else:
         # yesterday by default
         yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
         options.date = yesterday.strftime("%Y_%m_%d")
-        strdate = yesterday.strftime("%Y%m%d")
+        flat_date = yesterday.strftime("%Y%m%d")
 
     if is_day_closed():
-        log.info(f"Day {options.date} for {options.tel_id} already closed")
+        log.info(
+            f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}"
+        )
         sys.exit(1)
 
     run_summary_directory = Path("/fefs/aswg/data/real/monitoring/RunSummary")
-    run_summary_file = run_summary_directory / f"RunSummary_{strdate}.ecsv"
+    run_summary_file = run_summary_directory / f"RunSummary_{flat_date}.ecsv"
 
     if not run_summary_file.is_file():
-        print(f"No RunSummary file found for {strdate}")
+        print(f"No RunSummary file found for {date_to_iso(options.date)}")
         sys.exit(1)
 
     # Print the output into a web page
@@ -150,7 +150,7 @@ def main():
         sys.exit(1)
     else:
         print(
-            f'<p>Processing data from: {lstdate_to_iso(options.date)}. Last updated: '
+            f'<p>Processing data from: {date_to_iso(options.date)}. Last updated: '
             f'{datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC</p>'
         )
 

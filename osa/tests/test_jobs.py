@@ -14,7 +14,7 @@ datasequence_history_file = (
 calibration_history_file = (
         extra_files / "history_files/sequence_LST1_04183.history"
 )
-options.date = "2020_01_17"
+options.date = "2020-01-17"
 options.tel_id = "LST1"
 options.prod_id = "v0.1.0"
 
@@ -69,11 +69,11 @@ def test_scheduler_env_variables(sequence_list, running_analysis_dir):
     env_variables = scheduler_env_variables(first_sequence)
     assert env_variables == [
         '#SBATCH --job-name=LST1_01805',
-        '#SBATCH --cpus-per-task=1',
+        '#SBATCH --time=1:15:00',
         f'#SBATCH --chdir={running_analysis_dir}',
         '#SBATCH --output=log/Run01805.%4a_jobid_%A.out',
         '#SBATCH --error=log/Run01805.%4a_jobid_%A.err',
-        '#SBATCH --partition=short',
+        f'#SBATCH --partition={cfg.get("SLURM", "PARTITION_PEDCALIB")}',
         '#SBATCH --mem-per-cpu=3GB'
     ]
     # Extract the second sequence
@@ -81,12 +81,12 @@ def test_scheduler_env_variables(sequence_list, running_analysis_dir):
     env_variables = scheduler_env_variables(second_sequence)
     assert env_variables == [
         '#SBATCH --job-name=LST1_01807',
-        '#SBATCH --cpus-per-task=1',
+        '#SBATCH --time=1:15:00',
         f'#SBATCH --chdir={running_analysis_dir}',
         '#SBATCH --output=log/Run01807.%4a_jobid_%A.out',
         '#SBATCH --error=log/Run01807.%4a_jobid_%A.err',
         '#SBATCH --array=0-10',
-        '#SBATCH --partition=long',
+        f'#SBATCH --partition={cfg.get("SLURM", "PARTITION_DATA")}',
         '#SBATCH --mem-per-cpu=16GB'
     ]
 
@@ -101,11 +101,11 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     #!/bin/env python
 
     #SBATCH --job-name=LST1_01805
-    #SBATCH --cpus-per-task=1
+    #SBATCH --time=1:15:00
     #SBATCH --chdir={running_analysis_dir}
     #SBATCH --output=log/Run01805.%4a_jobid_%A.out
     #SBATCH --error=log/Run01805.%4a_jobid_%A.err
-    #SBATCH --partition=short
+    #SBATCH --partition={cfg.get('SLURM', 'PARTITION_PEDCALIB')}
     #SBATCH --mem-per-cpu=3GB""")
     assert header == output_string1
 
@@ -116,12 +116,12 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     #!/bin/env python
     
     #SBATCH --job-name=LST1_01807
-    #SBATCH --cpus-per-task=1
+    #SBATCH --time=1:15:00
     #SBATCH --chdir={running_analysis_dir}
     #SBATCH --output=log/Run01807.%4a_jobid_%A.out
     #SBATCH --error=log/Run01807.%4a_jobid_%A.err
     #SBATCH --array=0-10
-    #SBATCH --partition=long
+    #SBATCH --partition={cfg.get('SLURM', 'PARTITION_DATA')}
     #SBATCH --mem-per-cpu=16GB""")
     assert header == output_string2
 
@@ -145,7 +145,7 @@ def test_create_job_template_scheduler(
     #!/bin/env python
 
     #SBATCH --job-name=LST1_01807
-    #SBATCH --cpus-per-task=1
+    #SBATCH --time=1:15:00
     #SBATCH --chdir={Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0
     #SBATCH --output=log/Run01807.%4a_jobid_%A.out
     #SBATCH --error=log/Run01807.%4a_jobid_%A.err
@@ -168,8 +168,8 @@ def test_create_job_template_scheduler(
         proc = subprocess.run([
             'datasequence',
             '--config',
-            '{Path.cwd()}/cfg/sequencer.cfg',
-            '--date=2020_01_17',
+            '{Path.cwd()}/osa/configs/sequencer.cfg',
+            '--date=2020-01-17',
             '--prod-id=v0.1.0',
             '--drs4-pedestal-file={drs4_baseline_file}',
             '--time-calib-file={drs4_time_calibration_files[0]}',
@@ -188,7 +188,7 @@ def test_create_job_template_scheduler(
         #!/bin/env python
 
         #SBATCH --job-name=LST1_01808
-        #SBATCH --cpus-per-task=1
+        #SBATCH --time=1:15:00
         #SBATCH --chdir={Path.cwd()}/test_osa/test_files0/running_analysis/20200117/v0.1.0
         #SBATCH --output=log/Run01808.%4a_jobid_%A.out
         #SBATCH --error=log/Run01808.%4a_jobid_%A.err
@@ -211,8 +211,8 @@ def test_create_job_template_scheduler(
             proc = subprocess.run([
                 'datasequence',
                 '--config',
-                '{Path.cwd()}/cfg/sequencer.cfg',
-                '--date=2020_01_17',
+                '{Path.cwd()}/osa/configs/sequencer.cfg',
+                '--date=2020-01-17',
                 '--prod-id=v0.1.0',
                 '--drs4-pedestal-file={drs4_baseline_file}',
                 '--time-calib-file={drs4_time_calibration_files[0]}',
@@ -275,8 +275,8 @@ def test_create_job_template_local(
         proc = subprocess.run([
             'datasequence',
             '--config',
-            '{Path.cwd()}/cfg/sequencer.cfg',
-            '--date=2020_01_17',
+            '{Path.cwd()}/osa/configs/sequencer.cfg',
+            '--date=2020-01-17',
             '--prod-id=v0.1.0',
             '--drs4-pedestal-file={drs4_baseline_file}',
             '--time-calib-file={drs4_time_calibration_files[0]}',
@@ -306,8 +306,8 @@ def test_create_job_template_local(
             proc = subprocess.run([
                 'datasequence',
                 '--config',
-                '{Path.cwd()}/cfg/sequencer.cfg',
-                '--date=2020_01_17',
+                '{Path.cwd()}/osa/configs/sequencer.cfg',
+                '--date=2020-01-17',
                 '--prod-id=v0.1.0',
                 '--drs4-pedestal-file={drs4_baseline_file}',
                 '--time-calib-file={drs4_time_calibration_files[0]}',
@@ -349,8 +349,8 @@ def test_create_job_scheduler_calibration(sequence_list):
         proc = subprocess.run([
             'calibration_pipeline',
             '--config',
-            '{Path.cwd()}/cfg/sequencer.cfg',
-            '--date=2020_01_17',
+            '{Path.cwd()}/osa/configs/sequencer.cfg',
+            '--date=2020-01-17',
             '--drs4-pedestal-run=01804',
             '--pedcal-run=01805',
             'LST1'

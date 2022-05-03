@@ -27,14 +27,10 @@ from matplotlib import pyplot as plt
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.nightsummary.extract import get_source_list
-from osa.paths import DEFAULT_CFG, destination_dir
-from osa.utils.cliopts import (
-    set_default_directory_if_needed,
-    get_prod_id,
-    get_dl2_prod_id
-)
+from osa.paths import DEFAULT_CFG, destination_dir, analysis_path
+from osa.utils.cliopts import get_prod_id, get_dl2_prod_id
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_dir, YESTERDAY
+from osa.utils.utils import date_to_dir, YESTERDAY
 
 __all__ = [
     'create_hist',
@@ -193,12 +189,12 @@ def plot_theta2(
 
 
 @click.command()
-@click.argument('telescope', type=click.Choice(['LST1', 'LST2']))
+@click.argument('telescope', type=click.Choice(['LST1']))
 @click.option(
     '-d',
-    '--date-obs',
-    type=click.DateTime(formats=["%Y_%m_%d"]),
-    default=YESTERDAY.strftime("%Y_%m_%d")
+    '--date',
+    type=click.DateTime(formats=["%Y-%m-%d"]),
+    default=YESTERDAY.strftime("%Y-%m-%d")
 )
 @click.option(
     '-c', '--config',
@@ -208,7 +204,7 @@ def plot_theta2(
 )
 @click.option('-s', '--simulate', is_flag=True)
 def main(
-        date_obs: datetime = YESTERDAY,
+        date: datetime = YESTERDAY,
         telescope: str = "LST1",
         config: Path = DEFAULT_CFG,
         simulate: bool = False,
@@ -219,18 +215,18 @@ def main(
     log.debug(f"Config: {config.resolve()}")
 
     # Initial setup of global parameters
-    options.date = date_obs.strftime('%Y_%m_%d')
-    flat_date = lstdate_to_dir(options.date)
+    options.date = date
+    flat_date = date_to_dir(date)
     options.tel_id = telescope
     options.prod_id = get_prod_id()
     options.dl2_prod_id = get_dl2_prod_id()
-    options.directory = set_default_directory_if_needed()
+    options.directory = analysis_path(options.tel_id)
     dl2_directory = Path(cfg.get('LST1', 'DL2_DIR'))
     highlevel_directory = destination_dir("HIGH_LEVEL", create_dir=True)
     host = cfg.get('WEBSERVER', 'HOST')
     cuts = toml.load(SELECTION_CUTS_FILE)
 
-    sources = get_source_list(options.date)
+    sources = get_source_list(date)
     log.info(f"Sources: {sources}")
 
     for source in sources:
@@ -284,7 +280,7 @@ def main(
                 legend_text=text,
                 box_color=box_color,
                 source_name=source,
-                date_obs=date_obs,
+                date_obs=date,
                 runs=runs,
                 highlevel_dir=highlevel_directory,
                 cuts=cuts

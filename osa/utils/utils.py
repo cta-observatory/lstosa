@@ -7,21 +7,20 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from socket import gethostname
 
+import osa.paths
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
 
 __all__ = [
-    "getcurrentdate",
-    "night_directory",
     "get_lstchain_version",
-    "lstdate_to_dir",
-    "lstdate_to_iso",
+    "date_to_dir",
+    "date_to_iso",
     "is_day_closed",
     "get_prod_id",
     "date_in_yymmdd",
-    "get_lock_file",
+    "night_finished_flag",
     "is_defined",
     "create_lock",
     "stringify",
@@ -32,7 +31,12 @@ __all__ = [
     "get_night_limit_timestamp",
     "time_to_seconds",
     "DATACHECK_FILE_PATTERNS",
-    "YESTERDAY"
+    "YESTERDAY",
+    "set_prod_ids",
+    "is_night_time",
+    "cron_lock",
+    "example_seq",
+    "current_date"
 ]
 
 log = myLogger(logging.getLogger(__name__))
@@ -42,72 +46,29 @@ DATACHECK_PRODUCTS = ["drs4", "enf_calibration", "dl1"]
 DATACHECK_FILE_PATTERNS = {
     "PEDESTAL": "drs4*.pdf",
     "CALIB": "calibration*.pdf",
-    "DL1": "datacheck_dl1*.pdf",
+    "DL1AB": "datacheck_dl1*.pdf",
     "LONGTERM": "DL1_datacheck_*.*"
 }
-# Sets the amount of hours after midnight for the default OSA date
-# to be the current date, eg 4: 04:00:00 UTC, -4: 20:00:00 UTC day before
-LIMIT_NIGHT = 12
 
 YESTERDAY = datetime.today() - timedelta(days=1)
 
 
-def getcurrentdate(sep="_"):
+def current_date() -> datetime:
     """
     Get current data following LST data-taking convention in which the date
     changes at 12:00 pm instead of 00:00 or 12:00 am to cover a natural
-    data-taking night. This why a night offset is taken into account.
-
-    Parameters
-    ----------
-    sep: string
-        Separator
+    data-taking night.
 
     Returns
     -------
-    string_date: string
-        Date in string format using the given separator
+    date: datetime.datetime
+        Current date following LST data-taking convention.
     """
-    now = datetime.utcnow()
-    if (now.hour >= LIMIT_NIGHT >= 0) or (
-            now.hour < LIMIT_NIGHT + 24 and LIMIT_NIGHT < 0
-    ):
-        # today, nothing to do
-        pass
-    elif LIMIT_NIGHT >= 0:
-        # yesterday
-        gap = timedelta(hours=24)
-        now = now - gap
-    else:
-        # tomorrow
-        gap = timedelta(hours=24)
-        now = now + gap
-    string_date = now.strftime(f"%Y{sep}%m{sep}%d")
-    log.debug(f"Date string by default {string_date}")
-    return string_date
-
-
-def night_directory() -> Path:
-    """
-    Path of the running_analysis directory for a certain night
-
-    Returns
-    -------
-    directory : Path
-        Path of the running_analysis directory for a certain night
-    """
-    log.debug(f"Getting analysis path for tel_id {options.tel_id}")
-    date = lstdate_to_dir(options.date)
-    options.prod_id = get_prod_id()
-    directory = Path(cfg.get(options.tel_id, "ANALYSIS_DIR")) / date / options.prod_id
-
-    if not directory.exists() and not options.simulate:
-        directory.mkdir(parents=True, exist_ok=True)
-    else:
-        log.debug("SIMULATE the creation of the analysis directory.")
-
-    log.debug(f"Analysis directory: {directory}")
-    return directory
+    return (
+        datetime.now() - timedelta(days=1)
+        if datetime.now().hour < 12
+        else datetime.now()
+    )
 
 
 def get_lstchain_version():
@@ -226,7 +187,7 @@ def create_lock(lockfile) -> bool:
     return False
 
 
-def get_lock_file() -> Path:
+def night_finished_flag() -> Path:
     """
     Create night-is-finished lock file.
 
@@ -236,25 +197,21 @@ def get_lock_file() -> Path:
         Path of the lock file
     """
     basename = cfg.get("LSTOSA", "end_of_activity")
-    date = lstdate_to_dir(options.date)
+    date = date_to_dir(options.date)
     close_directory = Path(cfg.get(options.tel_id, "CLOSER_DIR"))
     lock_file = close_directory / date / options.prod_id / basename
     log.debug(f"Looking for lock file {lock_file}")
     return lock_file.resolve()
 
 
-def lstdate_to_iso(date_string):
-    """Function to change from YYYY_MM_DD to YYYY-MM-DD."""
-    date_format = "%Y_%m_%d"
-    datetime.strptime(date_string, date_format)
-    return date_string.replace("_", "-")
+def date_to_iso(date: datetime) -> str:
+    """Function to change from YYYY-MM-DD to YYYY-MM-DD."""
+    return date.strftime("%Y-%m-%d")
 
 
-def lstdate_to_dir(date_string):
-    """Function to change from YYYY_MM_DD to YYYYMMDD."""
-    date_format = "%Y_%m_%d"
-    datetime.strptime(date_string, date_format)
-    return date_string.replace("_", "")
+def date_to_dir(date: datetime) -> str:
+    """Function to change from YYYY-MM-DD to YYYYMMDD format (used for directories)."""
+    return date.strftime("%Y%m%d")
 
 
 def is_defined(variable):
@@ -275,7 +232,7 @@ def get_night_limit_timestamp():
     user = cfg.get("MYSQL", "user")
     database = cfg.get("MYSQL", "database")
     table = cfg.get("MYSQL", "nighttimes")
-    night = lstdate_to_iso(options.date)
+    night = date_to_iso(options.date)
     selections = ["END"]
     conditions = {"NIGHT": night}
     matrix = select_db(server, user, database, table, selections, conditions)
@@ -289,7 +246,7 @@ def get_night_limit_timestamp():
 
 def is_day_closed() -> bool:
     """Get the name and Check for the existence of the Closer flag file."""
-    flag_file = get_lock_file()
+    flag_file = night_finished_flag()
     return flag_file.exists()
 
 
@@ -332,7 +289,7 @@ def time_to_seconds(timestring):
 
     Parameters
     ----------
-    timestring: str
+    timestring: str or None
         Time in format (D-)HH:MM:SS
 
     Returns
@@ -360,3 +317,41 @@ def time_to_seconds(timestring):
     else:
         raise ValueError("Time format not recognized.")
     return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+
+
+def set_prod_ids():
+    """Set the product IDs."""
+    options.prod_id = get_prod_id()
+
+    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
+        options.calib_prod_id = get_calib_prod_id()
+    else:
+        options.calib_prod_id = options.prod_id
+
+    if cfg.get("LST1", "DL1_PROD_ID") is not None:
+        options.dl1_prod_id = get_dl1_prod_id()
+    else:
+        options.dl1_prod_id = options.prod_id
+
+    if cfg.get("LST1", "DL2_PROD_ID") is not None:
+        options.dl2_prod_id = get_dl2_prod_id()
+    else:
+        options.dl2_prod_id = options.prod_id
+
+
+def is_night_time(hour):
+    """Check if it is nighttime."""
+    if 8 <= hour <= 18:
+        return False
+    log.error("It is dark outside...")
+    return True
+
+
+def example_seq():
+    """Example sequence table output for testing."""
+    return "./extra/example_sequencer.txt"
+
+
+def cron_lock(tel) -> Path:
+    """Create a lock file for the cron jobs."""
+    return osa.paths.analysis_path(tel) / "cron.lock"

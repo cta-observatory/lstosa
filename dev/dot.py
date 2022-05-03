@@ -10,11 +10,11 @@ def write_workflow(sequence_list):
 
     from osa.configs.config import cfg
     from osa.utils.iofile import write_to_file
-    from osa.utils.utils import lstdate_to_dir
+    from osa.utils.utils import date_to_dir
 
     dot_basename = "{0}_{1}_{2}{3}".format(
         cfg.get("LSTOSA", "WORKFLOWPREFIX"),
-        lstdate_to_dir(options.date),
+        date_to_dir(options.date),
         options.tel_id,
         cfg.get("LSTOSA", "GRAPHSUFFIX"),
     )

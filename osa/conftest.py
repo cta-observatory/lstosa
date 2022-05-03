@@ -24,10 +24,11 @@ from osa.configs.config import cfg
 from osa.nightsummary.extract import extract_runs, extractsequences
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.scripts.tests.test_osa_scripts import run_program
-from osa.utils.utils import lstdate_to_dir
+from osa.utils.utils import date_to_dir
+from datetime import datetime
 
-date = "2020_01_17"
-nightdir = lstdate_to_dir(date)
+date = datetime.fromisoformat("2020-01-17")
+nightdir = date_to_dir(date)
 prod_id = "v0.1.0"
 dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
 dl2_prod_id = cfg.get("LST1", "DL2_PROD_ID")
@@ -304,7 +305,7 @@ def sequence_file_list(
     assert run_summary_file.exists()
     assert run_catalog.exists()
 
-    run_program("sequencer", "-d", "2020_01_17", "--no-submit", "-t", "LST1")
+    run_program("sequencer", "-d", "2020-01-17", "--no-submit", "-t", "LST1")
     return [
         running_analysis_dir / "sequence_LST1_01805.py",
         running_analysis_dir / "sequence_LST1_01807.py",
