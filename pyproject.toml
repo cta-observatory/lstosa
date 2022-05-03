@@ -1,3 +1,11 @@
+[build-system]
+requires = ["setuptools >= 45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+version_scheme = "release-branch-semver"
+write_to = "osa/_version.py"
+
 [tool.black]
 line-length = 100
 include = '\.pyi?$'

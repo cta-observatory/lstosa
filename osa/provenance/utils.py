@@ -3,7 +3,6 @@
 import logging
 import os
 import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -12,7 +11,7 @@ from osa.configs.config import cfg
 from osa.utils.logging import myLogger
 from osa.utils.utils import get_lstchain_version, lstdate_to_dir
 
-__all__ = ["parse_variables", "get_log_config", "store_conda_env_export"]
+__all__ = ["parse_variables", "get_log_config"]
 
 REDUCTION_TASKS = ["r0_to_dl1", "dl1ab", "dl1_datacheck", "dl1_to_dl2"]
 
@@ -99,7 +98,7 @@ def parse_variables(class_instance):
         # calibration_file   [0] .../20200218/pro/calibration_filters_52.Run02006.0000.h5
         # drs4_pedestal_file [1] .../20200218/pro/drs4_pedestal.Run02005.0000.h5
         # time_calib_file    [2] .../20191124/pro/time_calibration.Run01625.0000.h5
-        # systematic_corr    [3] .../20200101/pro/no_sys_corrected_calibration_scan_fit_20210514.0000.h5
+        # systematic_corr    [3] .../20200101/pro/no_sys_corrected_calib_20210514.0000.h5
         # drive_file         [4] .../DrivePositioning/drive_log_20_02_18.txt
         # run_summary_file   [5] .../RunSummary/RunSummary_20200101.ecsv
         # pedestal_ids_file  [6] .../path/to/interleaved/pedestal/events.h5
@@ -231,11 +230,3 @@ def get_log_config():
         log_config = std_logger_file.read_text()
 
     return log_config
-
-
-def store_conda_env_export():
-    """Store file with `conda env export` output to log the packages versions used."""
-    analysis_log_dir = Path(options.directory) / "log"
-    analysis_log_dir.mkdir(parents=True, exist_ok=True)
-    conda_env_file = analysis_log_dir / "conda_env.yml"
-    subprocess.run(["conda", "env", "export", "--file", str(conda_env_file)], check=True)
