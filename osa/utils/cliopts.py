@@ -56,7 +56,7 @@ common_parser.add_argument(
     "--config",
     type=Path,
     default=DEFAULT_CFG,
-    help="Use specific config file [default cfg/sequencer.cfg]",
+    help="Use specific config file [default configs/sequencer.cfg]",
 )
 common_parser.add_argument(
     "-d",
@@ -337,7 +337,7 @@ def provprocess_argparser():
         action="store",
         type=Path,
         default=DEFAULT_CFG,
-        help="use specific config file [default cfg/sequencer.cfg]",
+        help="use specific config file [default configs/sequencer.cfg]",
     )
     parser.add_argument(
         "-f",
@@ -396,8 +396,8 @@ def simproc_argparser():
     parser.add_argument(
         "-c",
         "--config",
-        default="cfg/sequencer.cfg",
-        help="use specific config file [default cfg/sequencer.cfg]",
+        default="configs/sequencer.cfg",
+        help="use specific config file [default configs/sequencer.cfg]",
     )
     parser.add_argument(
         "-p", action="store_true", dest="provenance", help="produce provenance files"

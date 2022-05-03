@@ -7,6 +7,7 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.logging import myLogger
 from osa.utils import utils
+from osa.configs.config import DEFAULT_CFG
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -34,7 +35,6 @@ __all__ = [
 
 
 DATACHECK_WEB_BASEDIR = Path(cfg.get("WEBSERVER", "DATACHECK"))
-DEFAULT_CFG = Path(__file__).parent / '../cfg/sequencer.cfg'
 
 
 def analysis_path(tel) -> Path:

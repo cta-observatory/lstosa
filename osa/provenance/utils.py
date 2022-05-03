@@ -20,14 +20,14 @@ def parse_variables(class_instance):
     """Parse variables needed in model"""
 
     # calibration_pipeline.py
-    # -c cfg/sequencer.cfg
+    # -c sequencer.cfg
     # -d 2020_02_18
     # --drs4-pedestal-run 01804
     # --pedcal-run 01805
     # LST1
 
     # datasequence.py
-    # -c cfg/sequencer.cfg
+    # -c sequencer.cfg
     # -d 2020_02_18
     # --prod-id v0.4.3_v00
     # --pedcal-file .../20200218/pro/calibration_filters_52.Run02006.0000.h5

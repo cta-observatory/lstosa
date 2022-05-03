@@ -157,8 +157,6 @@ def test_sequencer(sequence_file_list):
 def test_autocloser(running_analysis_dir):
     result = run_program(
         "autocloser",
-        "--config",
-        "cfg/sequencer.cfg",
         "--date",
         "2020-01-17",
         "--test",
@@ -241,8 +239,6 @@ def test_datasequence(running_analysis_dir):
 
     output = run_program(
         "datasequence",
-        "--config",
-        "cfg/sequencer.cfg",
         "--date=2020-01-17",
         "--simulate",
         f"--prod-id={prod_id}",
@@ -266,8 +262,6 @@ def test_calibration_pipeline(running_analysis_dir):
 
     output = run_program(
         "calibration_pipeline",
-        "--config",
-        "cfg/sequencer.cfg",
         "--date=2020-01-17",
         "--simulate",
         f"--prod-id={prod_id}",

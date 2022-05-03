@@ -1,6 +1,6 @@
 """Command line arguments shared variables across all modules."""
 
-configfile = "cfg/sequencer.cfg"
+configfile = None
 stdout = None
 stderr = None
 date = None
