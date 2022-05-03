@@ -78,7 +78,7 @@ def test_simulate_processing(
     assert rc.returncode == 0
 
     prov_dl1_path = Path("./test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84/log")
-    prov_dl2_path = Path("./test_osa/test_files0/DL2/20200117/v0.1.0/tailcut84_model1/log")
+    prov_dl2_path = Path("./test_osa/test_files0/DL2/20200117/v0.1.0/model2/log")
     prov_file_dl1 = prov_dl1_path / "calibration_to_dl1_01807_prov.log"
     prov_file_dl2 = prov_dl2_path / "calibration_to_dl2_01807_prov.log"
     json_file_dl1 = prov_dl1_path / "calibration_to_dl1_01807_prov.json"
@@ -215,7 +215,7 @@ def test_closer(
         "datacheck_dl1_LST-1.Run01808.0011.h5"
     )
     assert os.path.exists(
-        "./test_osa/test_files0/DL2/20200117/v0.1.0/tailcut84_model1/"
+        "./test_osa/test_files0/DL2/20200117/v0.1.0/model2/"
         "dl2_LST-1.Run01808.0011.h5"
     )
     # Assert that the link to dl1 and muons files have been created
