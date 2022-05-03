@@ -92,3 +92,6 @@ target
 NightSummary/
 testweb.sh
 misc/
+
+# Ignore generated _version.py
+_version.py
