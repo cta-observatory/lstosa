@@ -168,7 +168,7 @@ def test_create_job_template_scheduler(
         proc = subprocess.run([
             'datasequence',
             '--config',
-            '{Path.cwd()}/cfg/sequencer.cfg',
+            '{Path.cwd()}/osa/configs/sequencer.cfg',
             '--date=2020-01-17',
             '--prod-id=v0.1.0',
             '--drs4-pedestal-file={drs4_baseline_file}',
@@ -211,7 +211,7 @@ def test_create_job_template_scheduler(
             proc = subprocess.run([
                 'datasequence',
                 '--config',
-                '{Path.cwd()}/cfg/sequencer.cfg',
+                '{Path.cwd()}/osa/configs/sequencer.cfg',
                 '--date=2020-01-17',
                 '--prod-id=v0.1.0',
                 '--drs4-pedestal-file={drs4_baseline_file}',
@@ -275,7 +275,7 @@ def test_create_job_template_local(
         proc = subprocess.run([
             'datasequence',
             '--config',
-            '{Path.cwd()}/cfg/sequencer.cfg',
+            '{Path.cwd()}/osa/configs/sequencer.cfg',
             '--date=2020-01-17',
             '--prod-id=v0.1.0',
             '--drs4-pedestal-file={drs4_baseline_file}',
@@ -306,7 +306,7 @@ def test_create_job_template_local(
             proc = subprocess.run([
                 'datasequence',
                 '--config',
-                '{Path.cwd()}/cfg/sequencer.cfg',
+                '{Path.cwd()}/osa/configs/sequencer.cfg',
                 '--date=2020-01-17',
                 '--prod-id=v0.1.0',
                 '--drs4-pedestal-file={drs4_baseline_file}',
@@ -349,7 +349,7 @@ def test_create_job_scheduler_calibration(sequence_list):
         proc = subprocess.run([
             'calibration_pipeline',
             '--config',
-            '{Path.cwd()}/cfg/sequencer.cfg',
+            '{Path.cwd()}/osa/configs/sequencer.cfg',
             '--date=2020-01-17',
             '--drs4-pedestal-run=01804',
             '--pedcal-run=01805',
