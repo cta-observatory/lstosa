@@ -78,7 +78,7 @@ def test_simulate_processing(
     assert rc.returncode == 0
 
     prov_dl1_path = Path("./test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84/log")
-    prov_dl2_path = Path("./test_osa/test_files0/DL2/20200117/v0.1.0/tailcut84_model1/log")
+    prov_dl2_path = Path("./test_osa/test_files0/DL2/20200117/v0.1.0/model2/log")
     prov_file_dl1 = prov_dl1_path / "calibration_to_dl1_01807_prov.log"
     prov_file_dl2 = prov_dl2_path / "calibration_to_dl2_01807_prov.log"
     json_file_dl1 = prov_dl1_path / "calibration_to_dl1_01807_prov.json"
@@ -172,7 +172,14 @@ def test_autocloser(running_analysis_dir):
     )
 
 
-def test_closer(r0_dir, running_analysis_dir, test_observed_data):
+def test_closer(
+        r0_data,
+        running_analysis_dir,
+        test_observed_data,
+        run_summary_file,
+        drs4_time_calibration_files,
+        systematic_correction_files,
+):
     # First assure that the end of night flag is not set and remove it otherwise
     night_finished_flag = Path(
         "./test_osa/test_files0/OSA/Closer/20200117/v0.1.0/NightFinished.txt"
@@ -180,15 +187,20 @@ def test_closer(r0_dir, running_analysis_dir, test_observed_data):
     if night_finished_flag.exists():
         night_finished_flag.unlink()
 
-    assert r0_dir.exists()
+    for r0_file in r0_data:
+        assert r0_file.exists()
+    for file in drs4_time_calibration_files:
+        assert file.exists()
+    for file in systematic_correction_files:
+        assert file.exists()
     assert running_analysis_dir.exists()
+    assert run_summary_file.exists()
     for obs_file in test_observed_data:
         assert obs_file.exists()
 
     run_program(
-        "closer", "-c", "cfg/sequencer.cfg", "-y", "-v", "-t", "-d", "2020_01_17", "LST1"
+        "closer", "-y", "-v", "-t", "-d", "2020_01_17", "LST1"
     )
-    conda_env_export = running_analysis_dir / "log" / "conda_env.yml"
     closed_seq_file = running_analysis_dir / "sequence_LST1_01805.closed"
 
     # Check that files have been moved to their final destinations
@@ -203,7 +215,7 @@ def test_closer(r0_dir, running_analysis_dir, test_observed_data):
         "datacheck_dl1_LST-1.Run01808.0011.h5"
     )
     assert os.path.exists(
-        "./test_osa/test_files0/DL2/20200117/v0.1.0/tailcut84_model1/"
+        "./test_osa/test_files0/DL2/20200117/v0.1.0/model2/"
         "dl2_LST-1.Run01808.0011.h5"
     )
     # Assert that the link to dl1 and muons files have been created
@@ -217,7 +229,6 @@ def test_closer(r0_dir, running_analysis_dir, test_observed_data):
     )
 
     assert night_finished_flag.exists()
-    assert conda_env_export.exists()
     assert closed_seq_file.exists()
 
 
