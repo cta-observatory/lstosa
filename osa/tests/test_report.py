@@ -9,7 +9,7 @@ def test_finished_assignments(sequence_list):
     now = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
 
     assert finished_dict["END"] == now
-    assert finished_dict["NIGHT"] == "2020_01_17"
+    assert finished_dict["NIGHT"] == "2020-01-17"
     assert finished_dict["TELESCOPE"] == "LST1"
     assert finished_dict["RAW_GB"] == 0
     assert finished_dict["FILES_RAW"] == 25

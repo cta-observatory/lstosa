@@ -3,8 +3,8 @@ Script to handle the automatic closing of the OSA
 checking that all jobs are correctly finished.
 """
 
-import argparse
 import datetime
+import glob
 import logging
 import os
 import subprocess
@@ -12,143 +12,76 @@ import sys
 from pathlib import Path
 
 from osa.configs import options
-from osa.configs.config import cfg
-from osa.utils.cliopts import get_prod_id
-from osa.utils.cliopts import set_default_directory_if_needed, valid_date
+from osa.paths import analysis_path
+from osa.utils.cliopts import autocloser_cli_parser
 from osa.utils.logging import myLogger
+from osa.utils.mail import send_warning_mail
+from osa.utils.utils import (
+    night_finished_flag,
+    is_day_closed,
+    get_prod_id,
+    is_night_time,
+    cron_lock,
+    example_seq, date_to_iso
+)
 
 __all__ = ["Telescope", "Sequence"]
 
 log = myLogger(logging.getLogger())
 
 
-# settings / global variables
-def argument_parser():
-    parser = argparse.ArgumentParser(
-        description="This script is an automatic error handler and closer for lstosa."
-    )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Turn on verbose mode"
-    )
-    parser.add_argument(
-        "-t",
-        "--test",
-        action="store_true",
-        help="Test mode with example sequences, only works locally",
-    )
-    parser.add_argument(
-        "-s",
-        "--simulate",
-        action="store_true",
-        help="Create nothing, only simulate closer (safe mode)",
-    )
-    parser.add_argument(
-        "--ignorecronlock", action="store_true", help='Ignore "cron.lock"'
-    )
-    parser.add_argument(
-        "-i",
-        "--onlyIncidences",
-        action="store_true",
-        help="Writing down only incidences, not closing",
-    )
-    parser.add_argument("-d", "--date", help="Date - format YYYY_MM_DD", type=valid_date)
-    parser.add_argument(
-        "-f", "--force", action="store_true", help="Force the autocloser to close the day"
-    )
-    parser.add_argument(
-        "-e",
-        "--equal",
-        action="store_true",
-        help="Skip check for equal amount of sequences",
-    )
-    parser.add_argument(
-        "-w",
-        "--woIncidences",
-        action="store_true",
-        help="Close without writing down incidences.",
-    )
-    parser.add_argument(
-        "-r", "--runwise", action="store_true", help="Close the day run-wise."
-    )
-    parser.add_argument(
-        "-c",
-        "--config-file",
-        dest="osa_config_file",
-        default="cfg/sequencer.cfg",
-        help="OSA config file.",
-    )
-    parser.add_argument("-l", "--log", default="", help="Write log to a file.")
-    parser.add_argument("tel", nargs="*", choices=["LST1"])
-    return parser
+class Telescope:
+    """Handle the telescope sequences, simulate and check them."""
 
+    def __init__(
+            self,
+            telescope,
+            date,
+            config_file: Path,
+            ignore_cronlock: bool = False,
+            test: bool = False,
+    ):
+        """
+        Parameters
+        ----------
+        telescope : str
+            Options: LST1
+        date : str
+            Date in format YYYY-MM-DD
+        config_file : pathlib.Path
+            Path to the configuration file
+        ignore_cronlock : bool
+            Ignore cron lock file
+        test : bool
+            Run sequencer in test mode
+        """
 
-def analysis_path(tel):
-    options.tel_id = tel
-    options.date = f"{year:04}_{month:02}_{day:02}"
-    return set_default_directory_if_needed()
-
-
-def closedFlag(tel):
-    if args.test:
-        return f"./{tel}/NightFinished.txt"
-    basename = cfg.get("LSTOSA", "end_of_activity")
-    return Path(cfg.get(tel, "CLOSER_DIR")) / nightdir / prod_id / basename
-
-
-def exampleSeq():
-    return "./extra/example_sequencer.txt"
-
-
-def cronLock(tel):
-    return f"{analysis_path(tel)}/cron.lock"
-
-
-def incidencesFile(tel):
-    return f"{analysis_path(tel)}/Incidences.txt"
-
-
-def incidencesFileTmp(tel):
-    return f"{analysis_path(tel)}/AutoCloser_Incidences_tmp.txt"
-
-
-class Telescope(object):
-    """
-
-    Parameters
-    ----------
-    telescope : str
-        Options: LST1, LST2 or ST
-
-    Attributes
-    ----------
-    sequences: list of autocloser.Sequence
-        Holds a Sequence object for each Sequence/Run belonging to the
-        telescope.
-    """
-
-    def __init__(self, telescope):
         self.telescope = telescope
         # necessary to make sure that cron.lock gets deleted in the end
-        self.cl = cronLock(self.telescope)
+        self.cron_lock = cron_lock(self.telescope)
+        self.keyLine = None
         self.locked = False
         self.closed = False
         self.header_lines = []
         self.data_lines = []
         self.sequences = []
+        self.seq_lines = None
+        self.stdout = None
+        self.stderr = None
 
         if self.is_closed():
             log.info(f"{self.telescope} is already closed! Ignoring {self.telescope}")
             return
-        if not os.path.exists(analysis_path(self.telescope)):
+        if not analysis_path(self.telescope).exists():
             log.warning(
-                f"'Analysis' folder does not exist for {self.telescope}! "
+                f"Analysis directory does not exist for {self.telescope}! "
                 f"Ignoring {self.telescope}"
             )
             return
-        if not self.lockAutomaticSequencer() and not args.ignorecronlock:
+        if not self.lock_automatic_sequencer() and not ignore_cronlock:
             log.warning(f"{self.telescope} already locked! Ignoring {self.telescope}")
             return
-        if not self.simulate_sequencer():
+        if not self.simulate_sequencer(date, config_file, test):
             log.warning(
                 f"Simulation of the sequencer failed "
                 f"for {self.telescope}! Ignoring {self.telescope}"
@@ -157,81 +90,79 @@ class Telescope(object):
 
         self.parse_sequencer()
 
-        if not self.build_Sequences():
-            log.warning(
-                f"Sequencer for {self.telescope} is empty! Ignoring {self.telescope}"
-            )
-            return
-        self.incidence = Incidence(self.telescope)
+        if not self.build_sequences():
+            log.info(f"Sequencer for {self.telescope} is empty! Exiting.")
+            sys.exit()
 
     def __iter__(self):
         return iter(self.sequences)
 
-    def __del__(self, log=log, os=os):
+    def __del__(self):
+        """Delete cron lock file if it exists."""
         if self.locked:
-            log.debug(f"Deleting {self.cl}")
-            os.remove(self.cl)
+            log.debug(f"Deleting {self.cron_lock}")
+            os.remove(self.cron_lock)
 
     def is_closed(self):
+        """Check if night is finished flag exists."""
         log.debug(f"Checking if {self.telescope} is closed")
-        if os.path.isfile(closedFlag(self.telescope)):
+        if night_finished_flag().exists():
             self.closed = True
             return True
         return False
 
-    def lockAutomaticSequencer(self):
-        if os.path.isfile(cronLock(self.telescope)):
+    def lock_automatic_sequencer(self):
+        """Check for cron lock file or create it if it does not exist."""
+        if cron_lock(self.telescope).exists():
             return False
-        log.debug(f"Creating {cronLock(self.telescope)}")
-        open(cronLock(self.telescope), "a").close()
+        log.debug(f"Creating {cron_lock(self.telescope)}")
+        cron_lock(self.telescope).touch()
         self.locked = True
         return True
 
-    def is_transferred(self):
-        log.debug(f"Checking if raw data is completely transferred for {self.telescope}")
-        return all("Expecting more raw data" not in line for line in self.header_lines)
-
-    def simulate_sequencer(self):
-        if args.test:
+    def simulate_sequencer(self, date: str, config_file: Path, test: bool):
+        """Launch the sequencer in simulation mode."""
+        if test:
             self.read_file()
         else:
-            seqArgs = [
+            sequencer_cmd = [
                 "sequencer",
                 "-s",
                 "-c",
-                args.osa_config_file,
+                str(config_file),
                 "-d",
-                f"{year:04}_{month:02}_{day:02}",
+                date,
                 self.telescope,
             ]
-            log.debug(f"Executing {' '.join(seqArgs)}")
-            seqr = subprocess.Popen(
-                seqArgs,
+            log.debug(f"Executing {' '.join(sequencer_cmd)}")
+            sequencer = subprocess.Popen(
+                sequencer_cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 universal_newlines=True,
             )
-            self.stdout, self.stderr = seqr.communicate()
+            self.stdout, self.stderr = sequencer.communicate()
             log.info(self.stdout)
-            if seqr.returncode != 0:
-                log.warning(f"Sequencer returns error code {seqr.returncode}")
+            if sequencer.returncode != 0:
+                log.warning(f"Sequencer returns error code {sequencer.returncode}")
                 return False
-            self.seqLines = self.stdout.split("\n")
+            self.seq_lines = self.stdout.split("\n")
         return True
 
     def read_file(self):
-        log.debug(f"Reading example of a sequencer output {exampleSeq()}")
-        with open(exampleSeq(), "r") as self.stdout:
+        """Read an example sequencer output."""
+        log.debug(f"Reading example of a sequencer output {example_seq()}")
+        with open(example_seq(), "r") as self.stdout:
             stdout_tmp = self.stdout.read()
             log.info(stdout_tmp)
-            self.seqLines = stdout_tmp.split("\n")
-        return
+            self.seq_lines = stdout_tmp.split("\n")
 
     def parse_sequencer(self):
+        """Parse the sequencer output lines."""
         log.debug(f"Parsing sequencer table of {self.telescope}")
         header = True
         data = False
-        for line in self.seqLines:
+        for line in self.seq_lines:
             if data and line:
                 self.data_lines.append(line)
             elif "Tel   Seq" in line:
@@ -240,46 +171,47 @@ class Telescope(object):
                 self.keyLine = line
             elif header:
                 self.header_lines.append(line)
-        return
 
-    def build_Sequences(self):
+    def build_sequences(self):
+        """Build the sequences and return True if there are any."""
         log.debug(f"Creating Sequence objects for {self.telescope}")
         self.sequences = [Sequence(self.keyLine, line) for line in self.data_lines]
         return bool(self.sequences)
 
-    def close(self):
+    def close(
+            self,
+            date: str,
+            config: Path,
+            no_dl2: bool,
+            simulate: bool = False,
+            test: bool = False,
+    ):
+        """Launch the closer command."""
         log.info("Closing...")
-        if args.simulate:
-            closerArgs = [
-                "closer",
-                "-s",
-                "-c",
-                args.osa_config_file,
-                "-v",
-                "-y",
-                "-d",
-                f"{year:04}_{month:02}_{day:02}",
-                self.telescope,
-            ]
-        else:
-            closerArgs = [
-                "closer",
-                "-c",
-                args.osa_config_file,
-                "-v",
-                "-y",
-                "-d",
-                f"{year:04}_{month:02}_{day:02}",
-                self.telescope,
-            ]
 
-        if args.test:
+        closer_cmd = [
+            "closer",
+            "-c",
+            str(config),
+            "-y",
+            "-d",
+            date,
+            self.telescope,
+        ]
+
+        if simulate:
+            closer_cmd.insert(1, "-s")
+
+        if no_dl2:
+            closer_cmd.insert(1, "--no-dl2")
+
+        if test:
             self.closed = True
             return True
 
-        log.debug(f"Executing {' '.join(closerArgs)}")
+        log.debug(f"Executing {' '.join(closer_cmd)}")
         closer = subprocess.Popen(
-            closerArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False
+            closer_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False
         )
         stdout, _ = closer.communicate()
         if closer.returncode != 0:
@@ -291,16 +223,17 @@ class Telescope(object):
         return True
 
 
-class Sequence(object):
+class Sequence:
     """
-    As for now the keys for the 'dictSequence' are:
+    As for now the keys for the 'dict_sequence' are:
     (LST1) Tel Seq Parent Type Run Subruns Source Wobble Action Tries JobID
-    State Host CPU_time Walltime Exit DL1% MUONS% DATACHECK% DL2%
+    State CPU_time Exit DL1% MUONS% DL1AB% DATACHECK% DL2%
 
-    All the values in the 'dictSequence' are strings
+    All the values in the 'dict_sequence' are strings
     """
 
     def __init__(self, keyLine, sequence):
+        self.dict_sequence = {}
         self.keyLine = keyLine
         self.sequence = sequence
         self.understood = False
@@ -312,231 +245,133 @@ class Sequence(object):
 
     def parse_sequence(self):
         log.debug("Parsing sequence")
-        self.dictSequence = dict(zip(self.keyLine.split(), self.sequence.split()))
-        log.debug(self.dictSequence)
-        return
+        self.dict_sequence = dict(zip(self.keyLine.split(), self.sequence.split()))
+        log.debug(self.dict_sequence)
 
     def is_closed(self):
-        return self.dictSequence["Action"] == "Closed"
+        return self.dict_sequence["Action"] == "Closed"
 
     def is_running(self):
-        return self.dictSequence["State"] == "RUNNING"
+        return self.dict_sequence["State"] == "RUNNING"
 
     def is_complete(self):
-        return self.dictSequence["State"] == "COMPLETED"
+        return self.dict_sequence["State"] == "COMPLETED"
 
     def is_on_hold(self):
-        return self.dictSequence["State"] == "PENDING"
+        return self.dict_sequence["State"] == "PENDING"
 
-    def is_100(self):
+    def is_100(self, no_dl2: bool):
         """Check that all analysis products are 100% complete."""
         if (
-            self.dictSequence["Tel"] != "ST"
-                and self.dictSequence["DL1%"] == "100"
-                and self.dictSequence["DL1AB%"] == "100"
-                and self.dictSequence["MUONS%"] == "100"
-                and self.dictSequence["DL2%"] == "100"
+                no_dl2
+                and self.dict_sequence["Tel"] != "ST"
+                and self.dict_sequence["DL1%"] == "100"
+                and self.dict_sequence["DL1AB%"] == "100"
+                and self.dict_sequence["MUONS%"] == "100"
         ):
             return True
 
-    def is_flawless(self):
+        if (
+                self.dict_sequence["Tel"] != "ST"
+                and self.dict_sequence["DL1%"] == "100"
+                and self.dict_sequence["DL1AB%"] == "100"
+                and self.dict_sequence["MUONS%"] == "100"
+                and self.dict_sequence["DL2%"] == "100"
+        ):
+            return True
+
+        return False
+
+    def is_flawless(self, no_dl2: bool):
+        """Check that all jobs statuses are completed."""
         log.debug("Check if flawless")
         if (
-            self.dictSequence["Type"] == "DATA"
-                and self.dictSequence["Exit"] == "0:0"
-                and self.is_100()
-                and self.dictSequence["State"] == "COMPLETED"
-                and int(self.dictSequence["Subruns"]) > 0
+                self.dict_sequence["Type"] == "DATA"
+                and self.dict_sequence["Exit"] == "0:0"
+                and self.is_100(no_dl2=no_dl2)
+                and self.dict_sequence["State"] == "COMPLETED"
         ):
             return True
         if (
-            self.dictSequence["Type"] == "PEDCALIB"
-                and self.dictSequence["Exit"] == "0:0"
-                and self.dictSequence["DL1%"] == "None"
-                and self.dictSequence["DATACHECK%"] == "None"
-                and self.dictSequence["MUONS%"] == "None"
-                and self.dictSequence["DL2%"] == "None"
-                and self.dictSequence["State"] == "COMPLETED"
+                self.dict_sequence["Type"] == "PEDCALIB"
+                and self.dict_sequence["Exit"] == "0:0"
+                and self.dict_sequence["State"] == "COMPLETED"
         ):
             return True
 
         return False
 
     def has_all_subruns(self):
-        import glob
-
-        log.debug("Check for missing subruns in the middle")
-        if self.dictSequence["Type"] == "PEDCALIB":
-            log.debug("Cannot check for missing subruns in the middle for CALIBRATION")
+        """
+        Check that all subruns are complete by checking the
+        total number of subrun wise DL1 files.
+        """
+        if self.dict_sequence["Type"] == "PEDCALIB":
+            log.debug("Cannot check for missing subruns for CALIBRATION sequence")
             return True
-        search_str = f"{analysis_path(self.dictSequence['Tel'])}/" \
-                     f"dl1*{int(self.dictSequence['Run']):05d}*.h5"
-        subrun_nrs = sorted(
-            [int(os.path.basename(f).split(".")[2]) for f in glob.glob(search_str)]
+        search_str = (
+            f"{analysis_path(self.dict_sequence['Tel'])}/"
+            f"dl1*{self.dict_sequence['Run']}*.h5"
         )
-        return bool(subrun_nrs and len(subrun_nrs) == int(self.dictSequence["Subruns"]))
+        subrun_nrs = sorted(
+            [int(os.path.basename(file).split(".")[2]) for file in glob.glob(search_str)]
+        )
+        return bool(subrun_nrs and len(subrun_nrs) == int(self.dict_sequence["Subruns"]))
 
-    def close(self):
+    def close(
+            self,
+            date: str,
+            config: Path,
+            no_dl2: bool,
+            simulate: bool = False,
+            test: bool = False
+    ):
+        """Close the sequence by calling the 'closer' script for a given sequence."""
         log.info("Closing sequence...")
-        if args.simulate:
-            closerArgs = [
-                "closer",
-                "-s",
-                "-v",
-                "-y",
-                "-d",
-                f"{year:04}_{month:02}_{day:02}",
-                f"--seq={self.dictSequence['Run']}",
-                self.dictSequence["Tel"],
-            ]
-        else:
-            closerArgs = [
-                "closer",
-                "-v",
-                "-y",
-                "-d",
-                f"{year:04}_{month:02}_{day:02}",
-                f"--seq={self.dictSequence['Run']}",
-                self.dictSequence["Tel"],
-            ]
 
-        if args.test:
+        closer_cmd = [
+            "closer",
+            "-c",
+            str(config),
+            "-y",
+            "-d",
+            date,
+            f"--seq={self.dict_sequence['Run']}",
+            self.dict_sequence["Tel"],
+        ]
+
+        if simulate:
+            closer_cmd.insert(1, "-s")
+
+        if no_dl2:
+            closer_cmd.insert(1, "--no-dl2")
+
+        if test:
             self.closed = True
             return True
 
-        log.debug(f"Executing {' '.join(closerArgs)}")
+        log.debug(f"Executing {' '.join(closer_cmd)}")
         closer = subprocess.Popen(
-            closerArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+            closer_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
-        stdout, stderr = closer.communicate()
+        stdout, _ = closer.communicate()
         if closer.returncode != 0:
             log.warning(
-                f"'closer' returned error code {closer.returncode}! See output: {stdout}"
+                f"closer returned error code {closer.returncode}! See output: {stdout}"
             )
             return False
+
         self.closed = True
+
         return True
 
 
-# add the sequences to the incidencesDict
-class Incidence(object):
-    def __init__(self, telescope):
-        self.header = None
-        self.incidencesStereo = None
-        self.telescope = telescope
-        # known incidences (keys in both dicts have to be unique!):
-        self.incidencesMono = {
-            "short_run": "Short runs (few number of subruns)",
-            "default_time_calib": "Used a default time calibration file",
-        }
-        self.incidencesDict = {}
-        for k in self.incidencesMono:
-            self.incidencesDict[k] = []
-        # runs with these errors get discarded
-        self.errors_to_discard = []
-        self.write_header()
-
-    def write_header(self):
-        self.header = (
-            f"NIGHT={year:04}-{month:02}-{day:02}\nTELESCOPE={self.telescope}\nCOMMENTS="
-        )
-        return
-
-    def write_error(self, text, runs):
-        return f"{text}: {', '.join(run for run in runs)}."
-
-    def has_incidences(self):
-        return any(self.incidencesDict[i] for i in self.incidencesDict)
-
-    def check_previous_incidences(self, tel):
-        input_file = incidencesFileTmp(tel)
-        log.debug(f"Checking for previous incidences in {input_file}")
-        found_incidences = False
-        if self.read_previous_incidences(input_file):
-            found_incidences = True
-        if tel == "ST":
-            for t in ("LST1", "LST2"):
-                if self.check_previous_incidences(t):
-                    found_incidences = True
-        return found_incidences
-
-    def read_previous_incidences(self, input_file):
-        log.debug(f"Trying to read {input_file}")
-        try:
-            with open(input_file, "r") as f:
-                for line in [line for line in f.read().split("\n") if line]:
-                    self.add_incidence(line.split(":")[0], line.split(":")[1])
-            return True
-        except IOError:
-            log.warning(f"Could not open {input_file}")
-            return False
-
-    def add_incidence(self, error, runstr):
-        log.debug(f"Adding {runstr} to incidence {error}")
-        if error not in self.incidencesDict:
-            log.warning(f"Unknown incidence {error} !")
-            return False
-        if runstr in self.incidencesDict[error]:
-            log.debug(f"Incidence {error} already contains run {runstr}")
-            return False
-        self.incidencesDict[error].append(runstr)
-        return True
-
-    def save_incidences(self):
-        log.debug(f"Saving incidences to {incidencesFileTmp(self.telescope)}")
-        if args.simulate:
-            log.debug(self.incidencesDict)
-            return True
-        with open(incidencesFileTmp(self.telescope), "w") as f:
-            for error in self.incidencesDict:
-                for run in self.incidencesDict[error]:
-                    log.debug(f"{error}:{run}")
-                    f.write(f"{error}:{run}\n")
-        return True
-
-    def is_run_discarded(self, run):
-        for error in self.errors_to_discard:
-            for r in self.incidencesDict[error]:
-                if run in r:
-                    return True
-        return False
-
-    def write_incidences(self):
-        log.info(f"Writing down incidences for {self.telescope}:")
-        incidences = "".join(self.write_error(
-                    self.incidencesMono[k], self.incidencesDict[k]
-                ) for k in self.incidencesMono if self.incidencesDict[k])
-        log.info(self.header + incidences)
-        self.create_incidenceFile(self.header + incidences)
-        return
-
-    def create_incidenceFile(self, text):
-        log.debug(f"Creating {incidencesFile(self.telescope)} file")
-        if not args.simulate:
-            with open(incidencesFile(self.telescope), "w+") as f:
-                f.write(text)
-        return
-
-
-def is_night_time():
-    if 8 <= hour <= 18:
-        return False
-    log.error("It is dark outside...")
-    return True
-
-
-def understand_sequence(tel, seq):
+def understand_sequence(seq, no_dl2: bool):
+    """Check if sequence is completed and ready to be closed."""
     if seq.is_closed():
         seq.understood = True
         log.info("Is closed")
         seq.closed = True
-        seq.readyToClose = True
-        return True
-
-    if tel.incidence.is_run_discarded(seq.dictSequence["Run"]):
-        seq.understood = True
-        log.info("Was discarded")
-        seq.discarded = True
         seq.readyToClose = True
         return True
 
@@ -549,17 +384,18 @@ def understand_sequence(tel, seq):
         log.warning("At least one subrun is missing!")
         return False
 
-    if seq.is_flawless():
+    if seq.is_flawless(no_dl2=no_dl2):
         seq.understood = True
         log.info("Is flawless")
         seq.readyToClose = True
         return True
+
     return False
 
 
-if __name__ == "__main__":
-
-    args = argument_parser().parse_args()
+def main():
+    """Check for job completion and close sequence if necessary."""
+    args = autocloser_cli_parser().parse_args()
 
     # for the console output
     log.setLevel(logging.INFO)
@@ -580,11 +416,8 @@ if __name__ == "__main__":
     if args.test:
         log.debug("Test mode.")
 
-    if args.ignorecronlock:
+    if args.ignore_cronlock:
         log.debug("Ignoring cron.lock")
-
-    if args.onlyIncidences:
-        log.debug("Writing only incidences")
 
     if args.force:
         log.debug("Force the closing")
@@ -592,83 +425,77 @@ if __name__ == "__main__":
     if args.runwise:
         log.debug("Closing run-wise")
 
-    if args.onlyIncidences and args.force:
-        log.error(
-            "The command line arguments 'onlyIncidences' and 'force' are incompatible"
-        )
-        sys.exit(1)
+    if args.no_dl2:
+        log.debug("Assumed no DL2 production")
 
     if args.date:
-        year = args.date.year
-        month = args.date.month
-        day = args.date.day
+        options.date = args.date
         hour = 12
     else:
-        year = datetime.datetime.now().year
-        month = datetime.datetime.now().month
-        day = datetime.datetime.now().day
+        options.date = datetime.datetime.now()
         hour = datetime.datetime.now().hour
 
-    nightdir = f"{year:04d}{month:02d}{day:02d}"
+    options.tel_id = args.tel_id
+    options.prod_id = get_prod_id()
+    date = date_to_iso(options.date)
 
-    message = (
-        f"\n========== Starting {os.path.basename(__file__)}"
-        f" at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        f" for night {year:04}_{month:02}_{day:02} for {' '.join(args.tel)} ===========\n"
+    log.info(
+        f"========== Starting {Path(__file__).stem} at "
+        f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        f" for date {date} ==========="
     )
-    log.info(message)
 
-    if is_night_time():
+    if is_night_time(hour):
         sys.exit(1)
 
-    prod_id = get_prod_id()
+    elif is_day_closed():
+        log.info(f"Date {date} already closed for {options.tel_id}")
+        sys.exit(0)
 
-    # create telescope, sequence, problem and incidence objects
+    # create telescope and sequence objects
     log.info("Simulating sequencer...")
 
-    telescopes = dict((tel, Telescope(tel)) for tel in args.tel)
+    telescope = Telescope(args.tel_id, date, args.config)
 
-    # loop over telescopes and trying to interpret sequencer
-    # a goodTel is a telescope that has sequences :)
-    for tel in (goodTel for goodTel in args.tel if telescopes[goodTel].sequences):
-        log.info(f"Processing {tel}...")
+    log.info(f"Processing {args.tel_id}...")
 
-        if not telescopes[tel].incidence.check_previous_incidences(tel):
-            log.debug("No previous incidences found")
+    # Loop over the sequences
+    for sequence in telescope:
+        log.info(f"Processing sequence {sequence.dict_sequence['Run']}...")
 
-        # loop over sequences
-        for seq in telescopes[tel]:
-            log.info(f"Processing sequence {seq.dictSequence['Run']}...")
-
-            if not understand_sequence(telescopes[tel], seq):
-                log.warning(f"Could not interpret sequence {seq.dictSequence['Run']}")
-                continue
-
-            if args.runwise and seq.readyToClose and not seq.closed:
-                seq.close()
-
-        if not telescopes[tel].incidence.save_incidences():
-            log.warning("Could not save incidences to tmp file")
-
-        if args.onlyIncidences:
-            telescopes[tel].incidence.write_incidences()
+        if not understand_sequence(sequence, no_dl2=args.no_dl2):
+            log.warning(f"Could not interpret sequence {sequence.dict_sequence['Run']}")
             continue
 
-        # skip these checks if closing is forced
-        if not args.force:
+        if args.runwise and sequence.readyToClose and not sequence.closed:
+            sequence.close(
+                date=date,
+                config=args.config,
+                no_dl2=args.no_dl2,
+                simulate=args.simulate,
+                test=args.test,
+            )
 
-            if not telescopes[tel].is_transferred():
-                log.warning(f"More raw data expected for {tel}!")
-                continue
-            if not all([seq.readyToClose for seq in telescopes[tel]]):
-                log.warning(f"{tel} is NOT ready to close!")
-                continue
+    # skip these checks if closing is forced
+    if not args.force and not all(seq.readyToClose for seq in telescope):
+        sys.exit(f"{args.tel_id} is NOT ready to close. Exiting.")
 
-        log.info(f"Closing {tel}...")
-        if not args.woIncidences:
-            telescopes[tel].incidence.write_incidences()
-        if not telescopes[tel].close():
-            log.warning(f"Could not close the day for {tel}!")
-            # TODO send email, executing the closer failed!
+    log.info(f"Closing {args.tel_id}...")
+
+    if not telescope.close(
+            date=date,
+            config=args.config,
+            no_dl2=args.no_dl2,
+            simulate=args.simulate,
+            test=args.test
+    ):
+        log.warning(f"Could not close the day for {args.tel_id}!")
+        # Send email, if later than 18:00 UTC and telescope is not ready to close
+        if hour > 18:
+            send_warning_mail(date=date)
 
     log.info("Exit")
+
+
+if __name__ == "__main__":
+    main()

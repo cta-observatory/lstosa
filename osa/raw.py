@@ -1,10 +1,11 @@
 import logging
+from datetime import datetime
 from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.logging import myLogger
-from osa.utils.utils import lstdate_to_dir
+from osa.utils.utils import date_to_dir
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -15,9 +16,9 @@ __all__ = [
 ]
 
 
-def get_check_raw_dir() -> Path:
+def get_check_raw_dir(date: datetime) -> Path:
     """Get the raw directory and check if it contains raw files."""
-    raw_dir = get_raw_dir()
+    raw_dir = get_raw_dir(date)
     log.debug(f"Raw directory: {raw_dir}")
 
     if not raw_dir.exists():
@@ -31,17 +32,18 @@ def get_check_raw_dir() -> Path:
     return raw_dir
 
 
-def get_raw_dir() -> Path:
-    night_dir = lstdate_to_dir(options.date)
+def get_raw_dir(date: datetime) -> Path:
+    """Get the raw R0 directory."""
+    night_dir = date_to_dir(date)
     r0_dir = Path(cfg.get(options.tel_id, "R0_DIR")) / night_dir
-    return r0_dir if options.tel_id in ["LST1", "LST2"] else None
+    return r0_dir if options.tel_id == "LST1" else None
 
 
-def is_raw_data_available() -> bool:
+def is_raw_data_available(date: datetime) -> bool:
     """Get the raw directory and check its existence."""
     answer = False
-    if options.tel_id != "ST":
-        raw_dir = get_check_raw_dir()
+    if options.tel_id == "LST1":
+        raw_dir = get_check_raw_dir(date)
         if raw_dir.exists():
             answer = True
     else:

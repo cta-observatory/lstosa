@@ -13,7 +13,7 @@ from osa.paths import (
 )
 from osa.utils.cliopts import copy_datacheck_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import DATACHECK_FILE_PATTERNS, lstdate_to_dir
+from osa.utils.utils import DATACHECK_FILE_PATTERNS, date_to_dir
 from osa.webserver.utils import copy_to_webserver
 
 log = myLogger(logging.getLogger())
@@ -61,7 +61,7 @@ def main():
     )
 
     copy_datacheck_parsing()
-    nightdir = lstdate_to_dir(options.date)
+    nightdir = date_to_dir(options.date)
 
     all_files_are_copied = False
 

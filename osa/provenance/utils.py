@@ -9,7 +9,7 @@ from pathlib import Path
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.logging import myLogger
-from osa.utils.utils import get_lstchain_version, lstdate_to_dir
+from osa.utils.utils import get_lstchain_version, date_to_dir
 
 __all__ = ["parse_variables", "get_log_config"]
 
@@ -20,14 +20,14 @@ def parse_variables(class_instance):
     """Parse variables needed in model"""
 
     # calibration_pipeline.py
-    # -c cfg/sequencer.cfg
+    # -c sequencer.cfg
     # -d 2020_02_18
     # --drs4-pedestal-run 01804
     # --pedcal-run 01805
     # LST1
 
     # datasequence.py
-    # -c cfg/sequencer.cfg
+    # -c sequencer.cfg
     # -d 2020_02_18
     # --prod-id v0.4.3_v00
     # --pedcal-file .../20200218/pro/calibration_filters_52.Run02006.0000.h5
@@ -38,7 +38,7 @@ def parse_variables(class_instance):
     # 02006.0000
     # LST1
 
-    flat_date = lstdate_to_dir(options.date)
+    flat_date = date_to_dir(options.date)
     configfile_dl1b = cfg.get("lstchain", "dl1b_config")
     configfile_dl2 = cfg.get("lstchain", "dl2_config")
     raw_dir = cfg.get("LST1", "R0_DIR")
