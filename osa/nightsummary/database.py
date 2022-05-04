@@ -92,7 +92,8 @@ def query(obs_id: int, property_name: str):
                     entries['value'].append(value['val'])
 
                     source_name = entries["value"][0]
+
                     if source_name != "":
                         return source_name
-                    else:
-                        return None
+
+                    return None
