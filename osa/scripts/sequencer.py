@@ -344,7 +344,7 @@ def report_sequences(sequence_list):
 #             'NIGHT': sequence.night,
 #             'ID_NIGHTLY': sequence.seq,
 #             'TYPE': sequence.type,
-#             'RUN': sequence.run,
+#             'RUN': sequence.id,
 #             'SUBRUNS': sequence.subruns,
 #             'SOURCEWOBBLE': sequence.sourcewobble,
 #             'ACTION': sequence.action,

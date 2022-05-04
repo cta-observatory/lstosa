@@ -205,13 +205,13 @@ def produce_dl3_files(
 
         if sequence.type == "DATA":
 
-            dl2_file = dl2_dir / f"dl2_LST-1.Run{sequence.run:05d}.h5"
+            dl2_file = dl2_dir / f"dl2_LST-1.Run{sequence.id:05d}.h5"
             dl3_subdir = cuts_dir / f"{sequence.source_name}"
 
             cmd2 = batch_cmd_create_dl3(
                 dl2_file=dl2_file,
                 dl3_dir=dl3_subdir,
-                run=sequence.run,
+                run=sequence.id,
                 source_name=sequence.source_name,
                 source_ra=sequence.source_ra,
                 source_dec=sequence.source_dec,
@@ -221,7 +221,7 @@ def produce_dl3_files(
             )
 
             if not simulate:
-                log.info(f"Producing DL3 file for run {sequence.run:05d}")
+                log.info(f"Producing DL3 file for run {sequence.id:05d}")
                 job_id = sp.run(
                     cmd2,
                     encoding="utf-8",

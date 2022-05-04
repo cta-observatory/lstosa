@@ -160,7 +160,7 @@ def register_non_existing_file(file_path, concept, seq_list):
     """
     for sequence in seq_list:
         if sequence.type == "DATA":
-            run_str_found = re.search(sequence.id, str(file_path))
+            run_str_found = re.search(str(sequence.id), str(file_path))
 
             if run_str_found is not None:
                 log.debug(f"Registering file {run_str_found}")
@@ -169,8 +169,8 @@ def register_non_existing_file(file_path, concept, seq_list):
                     log.debug("File does not exists")
 
         elif sequence.type in ["PEDCALIB", "DRS4"]:
-            calib_run_str_found = re.search(sequence.run, str(file_path))
-            drs4_run_str_found = re.search(sequence.previousrun, str(file_path))
+            calib_run_str_found = re.search(str(sequence.id), str(file_path))
+            drs4_run_str_found = re.search(str(sequence.previousrun), str(file_path))
 
             if calib_run_str_found is not None:
                 log.debug(f"Registering file {calib_run_str_found}")
