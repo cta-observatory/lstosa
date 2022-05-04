@@ -20,7 +20,7 @@ from osa.nightsummary import database
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import sequence_calibration_files
 from osa.utils.logging import myLogger
-from osa.utils.utils import date_to_iso, date_to_dir
+from osa.utils.utils import date_to_dir
 
 log = myLogger(logging.getLogger(__name__))
 
