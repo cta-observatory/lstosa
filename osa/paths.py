@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from astropy.table import Table
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -60,20 +61,14 @@ def analysis_path(tel) -> Path:
     return directory
 
 
-def get_run_date(run_id: int) -> str:
+def get_run_date(run_id: int, merged_run_summaries_file: Path) -> str:
     """
     Return the date (YYYYMMDD) when the given run was taken. The search for this date
-    is done by looking at the parent directory containing the run.
+    is done by looking at the date corresponding to each run in the merged run summaries file.
     """
-    r0_dir = Path(cfg.get("LST1", "R0_DIR"))
-    r0_files = sorted(r0_dir.rglob(f"20??????/LST-1.1.Run{run_id:05d}.0000.fits.fz"))
-    if len(r0_files) > 1:
-        raise IOError(f"Run {run_id} found duplicated in {r0_dir}")
-    elif not r0_files:
-        raise IOError(f"No run {run_id} found in {r0_dir}")
-    else:
-        # Date in YYYYMMDD format corresponding to the run
-        return r0_files[0].parent.name
+    summary_table = Table.read(merged_run_summaries_file)
+    date_string = summary_table[summary_table['run_id']==run_id]['date'][0]
+    return date_string.replace("-", "")
 
 
 def get_time_calibration_file(run_id: int) -> Path:
@@ -134,24 +129,24 @@ def get_systematic_correction_file(date: str) -> Path:
     ).resolve()
 
 
-def get_drs4_pedestal_file(run_id: int) -> Path:
+def get_drs4_pedestal_file(run_id: int, merged_run_summaries_file: Path) -> Path:
     """
     Return the drs4 pedestal file corresponding to a given run id
     regardless of the date when the run was taken.
     """
     drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
-    date = get_run_date(run_id)
+    date = get_run_date(run_id, merged_run_summaries_file)
     file = drs4_pedestal_dir / date / f"pro/drs4_pedestal.Run{run_id:05d}.0000.h5"
     return file.resolve()
 
 
-def get_calibration_file(run_id: int) -> Path:
+def get_calibration_file(run_id: int, merged_run_summaries_file: Path) -> Path:
     """
     Return the drs4 pedestal file corresponding to a given run id
     regardless of the date when the run was taken.
     """
     calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
-    date = get_run_date(run_id)
+    date = get_run_date(run_id, merged_run_summaries_file)
     file = calib_dir / date / f"pro/calibration_filters_52.Run{run_id:05d}.0000.h5"
     return file.resolve()
 
@@ -165,13 +160,13 @@ def pedestal_ids_file_exists(run_id: int) -> bool:
 
 def drs4_pedestal_exists(run_id: int) -> bool:
     """Return true if drs4 pedestal file was already produced."""
-    file = get_drs4_pedestal_file(run_id)
+    file = get_drs4_pedestal_file(run_id, merged_run_summaries_file)
     return file.exists()
 
 
 def calibration_file_exists(run_id: int) -> bool:
     """Return true if calibration file was already produced."""
-    file = get_calibration_file(run_id)
+    file = get_calibration_file(run_id, merged_run_summaries_file)
     return file.exists()
 
 
@@ -198,7 +193,7 @@ def get_pedestal_ids_file(run_id: int, date: str) -> Path:
     return file.resolve()
 
 
-def sequence_calibration_files(sequence_list):
+def sequence_calibration_files(sequence_list, merged_run_summaries_file: Path):
     """Build names of the calibration files for each sequence in the list."""
     flat_date = utils.date_to_dir(options.date)
 
@@ -212,8 +207,8 @@ def sequence_calibration_files(sequence_list):
             pedcal_run_id = sequence.parent_list[0].run
 
         # Assign the calibration files to the sequence object
-        sequence.pedestal = get_drs4_pedestal_file(drs4_pedestal_run_id)
-        sequence.calibration = get_calibration_file(pedcal_run_id)
+        sequence.pedestal = get_drs4_pedestal_file(drs4_pedestal_run_id, merged_run_summaries_file)
+        sequence.calibration = get_calibration_file(pedcal_run_id, merged_run_summaries_file)
         sequence.time_calibration = get_time_calibration_file(pedcal_run_id)
         sequence.systematic_correction = get_systematic_correction_file(flat_date)
 

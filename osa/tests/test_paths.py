@@ -112,8 +112,9 @@ def test_destination_dir():
 
 
 def test_get_run_date(r0_data):
+    merged_run_summaries_file = "test_osa/test_files0/merged_run_summaries.ecsv"
     from osa.paths import get_run_date
-    assert get_run_date(1807) == "20200117"
+    assert get_run_date(1807, merged_run_summaries_file) == "20200117"
 
     with pytest.raises(IOError):
-        get_run_date(1200)
+        get_run_date(1200, merged_run_summaries_file)
