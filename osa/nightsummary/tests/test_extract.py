@@ -11,6 +11,7 @@ def test_source_list(
         drs4_time_calibration_files,
         systematic_correction_files,
         pedestal_ids_file,
+        merged_run_summary,
 ):
     """Test that the list of name of sources is correct."""
     from osa.nightsummary.extract import get_source_list

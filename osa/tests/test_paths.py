@@ -8,7 +8,7 @@ from osa.configs.config import cfg
 from osa.utils.utils import date_to_dir
 
 
-def test_get_calibration_file(r0_data):
+def test_get_calibration_file(r0_data, merged_run_summary):
     from osa.paths import get_calibration_file
     for file in r0_data:
         assert file.exists()
@@ -16,7 +16,7 @@ def test_get_calibration_file(r0_data):
     file.exists()
 
 
-def test_get_drs4_pedestal_file(r0_data):
+def test_get_drs4_pedestal_file(r0_data, merged_run_summary):
     from osa.paths import get_drs4_pedestal_file
     for file in r0_data:
         assert file.exists()
@@ -111,10 +111,12 @@ def test_destination_dir():
         assert directory == expected_directory
 
 
-def test_get_run_date(r0_data):
-    merged_run_summaries_file = "test_osa/test_files0/merged_run_summaries.ecsv"
+def test_get_run_date(r0_data, merged_run_summary):
     from osa.paths import get_run_date
-    assert get_run_date(1807, merged_run_summaries_file) == "20200117"
 
-    with pytest.raises(IOError):
-        get_run_date(1200, merged_run_summaries_file)
+    assert merged_run_summary.exists()
+
+    assert get_run_date(1808) == "20200117"
+
+    with pytest.raises(IndexError):
+        get_run_date(1200)

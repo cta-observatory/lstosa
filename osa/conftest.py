@@ -238,6 +238,53 @@ def run_summary_file(run_summary_dir):
 
 
 @pytest.fixture(scope="session")
+def merged_run_summary(base_test_dir):
+    """Mock merged run summary file for testing."""
+    summary_content = dedent("""\
+    # %ECSV 1.0
+    # ---
+    # datatype:
+    # - {name: date, datatype: string}
+    # - {name: run_id, datatype: int64}
+    # - {name: run_type, datatype: string}
+    # - {name: n_subruns, datatype: int64}
+    # - {name: run_start, datatype: string}
+    # - {name: ra, unit: deg, datatype: float64}
+    # - {name: dec, unit: deg, datatype: float64}
+    # - {name: alt, unit: rad, datatype: float64}
+    # - {name: az, unit: rad, datatype: float64}
+    # meta: !!omap
+    # - __serialized_columns__:
+    #     run_start:
+    #       __class__: astropy.time.core.Time
+    #       format: isot
+    #       in_subfmt: '*'
+    #       out_subfmt: '*'
+    #       precision: 3
+    #       scale: utc
+    #       value: !astropy.table.SerializedColumn {name: run_start}
+    # schema: astropy-2.0
+    date run_id run_type n_subruns run_start ra dec alt az
+    2019-11-23 1611 DRS4 5 2019-11-23T22:14:09.000 22.0 3.1 0.96 2.3
+    2019-11-23 1614 PEDCALIB 10 2019-11-23T23:33:59.000 4.6 2.1 1.1 4.5
+    2019-11-23 1615 DATA 61 2019-11-23T23:41:13.000 8.1 45.1 1.5 4.6
+    2019-11-23 1616 DATA 62 2019-11-24T00:11:52.000 3.2 4.2 0.9 1.6
+    2020-01-17 1804 DRS4 35 2020-01-18T00:44:06.000 2.1 42.9 11.3 4.7
+    2020-01-17 1805 PEDCALIB 62 2020-01-18T00:11:52.000 13.9 21.9 17.9 1.6
+    2020-01-17 1806 PEDCALIB 35 2020-01-18T00:44:06.000 8.6 29.1 45.5 6.9
+    2020-01-17 1807 DATA 35 2020-01-18T00:44:06.000 6.6 2.8 70.4 10.1
+    2020-01-17 1808 DATA 35 2020-01-18T00:44:06.000 8.6 9.2 60.8 3.2""")
+
+    merged_summary_dir = base_test_dir / "OSA/Catalog"
+    merged_summary_dir.mkdir(parents=True, exist_ok=True)
+
+    file = merged_summary_dir / 'merged_RunSummary.ecsv'
+    file.touch()
+    file.write_text(summary_content)
+    return file
+
+
+@pytest.fixture(scope="session")
 def run_summary(run_summary_file):
     """Creates a sequence list from a run summary file."""
     assert run_summary_file.exists()
@@ -262,6 +309,7 @@ def sequence_list(
         systematic_correction_files,
         r0_data,
         pedestal_ids_file,
+        merged_run_summary
 ):
     """Creates a sequence list from a run summary file."""
     options.directory = running_analysis_dir
@@ -278,6 +326,7 @@ def sequence_list(
         assert file.exists()
 
     assert pedestal_ids_file.exists()
+    assert merged_run_summary.exists()
 
     subrun_list = extractsubruns(run_summary)
     run_list = extractruns(subrun_list)
