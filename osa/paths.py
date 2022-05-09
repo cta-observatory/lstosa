@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from astropy.table import Table
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -63,17 +64,13 @@ def analysis_path(tel) -> Path:
 def get_run_date(run_id: int) -> str:
     """
     Return the date (YYYYMMDD) when the given run was taken. The search for this date
-    is done by looking at the parent directory containing the run.
+    is done by looking at the date corresponding to each run in the merged run summaries
+    file.
     """
-    r0_dir = Path(cfg.get("LST1", "R0_DIR"))
-    r0_files = sorted(r0_dir.rglob(f"20??????/LST-1.1.Run{run_id:05d}.0000.fits.fz"))
-    if len(r0_files) > 1:
-        raise IOError(f"Run {run_id} found duplicated in {r0_dir}")
-    elif not r0_files:
-        raise IOError(f"No run {run_id} found in {r0_dir}")
-    else:
-        # Date in YYYYMMDD format corresponding to the run
-        return r0_files[0].parent.name
+    merged_run_summaries_file = cfg.get("LST1", "MERGED_SUMMARY")
+    summary_table = Table.read(merged_run_summaries_file)
+    date_string = summary_table[summary_table['run_id'] == run_id]['date'][0]
+    return date_string.replace("-", "")
 
 
 def get_time_calibration_file(run_id: int) -> Path:
