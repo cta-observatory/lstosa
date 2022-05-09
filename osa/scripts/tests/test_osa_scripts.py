@@ -173,6 +173,7 @@ def test_closer(
         run_summary_file,
         drs4_time_calibration_files,
         systematic_correction_files,
+        merged_run_summary
 ):
     # First assure that the end of night flag is not set and remove it otherwise
     night_finished_flag = Path(
@@ -191,6 +192,7 @@ def test_closer(
     assert run_summary_file.exists()
     for obs_file in test_observed_data:
         assert obs_file.exists()
+    assert merged_run_summary.exists()
 
     run_program(
         "closer", "-y", "-v", "-t", "-d", "2020-01-17", "LST1"
