@@ -74,7 +74,7 @@ def get_run_date(run_id: int) -> str:
         date_string = summary_table[summary_table["run_id"] == run_id]["date"][0]
     except IndexError:
         log.warning(f"Run {str(run_id)} is not in the summary table. Assuming the date of the run is {options.date}.")
-        date_string = options.date
+        date_string = str(options.date)
 
     return date_string.replace("-", "")
 
