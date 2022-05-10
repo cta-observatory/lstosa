@@ -69,11 +69,14 @@ def get_run_date(run_id: int) -> str:
     """
     merged_run_summaries_file = cfg.get("LST1", "MERGED_SUMMARY")
     summary_table = Table.read(merged_run_summaries_file)
-    
-    try:   
+
+    try:
         date_string = summary_table[summary_table["run_id"] == run_id]["date"][0]
     except IndexError:
-        log.warning(f"Run {run_id} is not in the summary table. Assuming the date of the run is {options.date}.")
+        log.warning(
+            f"Run {run_id} is not in the summary table. "
+            f"Assuming the date of the run is {options.date}."
+        )
         date_string = utils.date_to_dir(options.date)
 
     return date_string.replace("-", "")
