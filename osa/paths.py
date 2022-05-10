@@ -71,9 +71,9 @@ def get_run_date(run_id: int) -> str:
     summary_table = Table.read(merged_run_summaries_file)
     
     try:   
-	date_string = summary_table[summary_table["run_id"] == run_id]["date"][0]
+        date_string = summary_table[summary_table["run_id"] == run_id]["date"][0]
     except:
-	log.warning(f"Run {str(run_id)} is not in the summary table. Assuming the date of the run is {options.date}.")
+        log.warning(f"Run {str(run_id)} is not in the summary table. Assuming the date of the run is {options.date}.")
         date_string = options.date
 
     return date_string.replace("-", "")
