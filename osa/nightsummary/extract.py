@@ -298,7 +298,7 @@ def extractsequences(run_list_sorted):
                 # and shifters decide to give another try
                 head.pop()
                 log.debug(
-                    "P->C->P, deleting and replacing [{currentrun}, {currenttype}, None]"
+                    f"P->C->P, deleting and replacing [{currentrun}, {currenttype}, None]"
                 )
                 head[0] = [currentrun, currenttype, None]
 
