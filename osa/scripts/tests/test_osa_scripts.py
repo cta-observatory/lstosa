@@ -60,7 +60,8 @@ def test_simulate_processing(
         drs4_time_calibration_files,
         systematic_correction_files,
         run_summary_file,
-        r0_data
+        r0_data,
+        merged_run_summary
 ):
 
     for file in drs4_time_calibration_files:

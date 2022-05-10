@@ -479,7 +479,7 @@ def main():
         sys.exit(1)
 
     # build base_filename
-    base_filename = f"{options.run}_prov"
+    base_filename = f"{options.run:05d}_prov"
     session_log_filename = f"{base_filename}.log"
 
     # parse LOG_FILENAME content for a specific run / process
