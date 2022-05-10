@@ -3,6 +3,10 @@
 On-site analysis pipeline for the LST-1
 =======================================
 
+.. currentmodule:: lstosa
+
+**version**:  |version|
+
 .. image:: logo_lstosa.png
    :align: center
    :width: 70%
@@ -14,7 +18,7 @@ making use of the `cta-lstchain`_ analysis library.
 * Docs: https://lstosa.readthedocs.io/
 * License: BSD-3
 * Python 3.7, 3.8
-* Authors: Daniel Morcuende, Lab Saha, José Enrique Ruiz, José Luis Contreras, Andrés Baquero.
+* Authors: Daniel Morcuende, Lab Saha, José Enrique Ruiz, José Luis Contreras, Andrés Baquero, María Lainez
 
 .. _`cta-lstchain`: https://github.com/cta-observatory/cta-lstchain
 
