@@ -1,8 +1,6 @@
 from datetime import datetime
 from pathlib import Path
 
-import pytest
-
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.utils import date_to_dir
