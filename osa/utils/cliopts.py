@@ -404,8 +404,8 @@ def simproc_argparser():
     parser.add_argument(
         "-c",
         "--config",
-        default="configs/sequencer.cfg",
-        help="use specific config file [default configs/sequencer.cfg]",
+        default=DEFAULT_CFG,
+        help="use specific config file",
     )
     parser.add_argument(
         "-p", action="store_true", dest="provenance", help="produce provenance files"

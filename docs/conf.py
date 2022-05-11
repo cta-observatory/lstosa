@@ -7,16 +7,12 @@
 # -- Path setup --------------------------------------------------------------
 
 import datetime
+
+import osa
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-import os
-import sys
-
-from osa import __version__
-
-sys.path.insert(0, os.path.abspath(".."))
-sys.argv.extend(["-c", "configs/sequencer.cfg"])
 
 suppress_warnings = ["ref.citation"]  # ignore citation not referenced warnings
 
@@ -26,9 +22,9 @@ project = "lstosa"
 author = "lstosa developers"
 copyright = f"{author}.  Last updated {datetime.datetime.now().strftime('%d %b %Y %H:%M')}"
 
+version = osa.__version__
 # The full version, including alpha/beta/rc tags
-
-release = __version__
+release = osa.__version__
 
 # -- General configuration ---------------------------------------------------
 

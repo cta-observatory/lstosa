@@ -1,12 +1,11 @@
 from datetime import datetime
 from pathlib import Path
 
-import pytest
-
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.utils import date_to_dir
 
+options.date = datetime.fromisoformat("2020-01-17")
 
 def test_get_calibration_file(r0_data, merged_run_summary):
     from osa.paths import get_calibration_file
@@ -80,7 +79,6 @@ def test_get_datacheck_file(datacheck_dl1_files):
 def test_destination_dir():
     from osa.paths import destination_dir
 
-    options.date = datetime.fromisoformat("2020-01-17")
     datedir = date_to_dir(options.date)
     options.dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
     options.dl2_prod_id = cfg.get("LST1", "DL2_PROD_ID")
@@ -111,12 +109,11 @@ def test_destination_dir():
         assert directory == expected_directory
 
 
-def test_get_run_date(r0_data, merged_run_summary):
+def test_get_run_date(merged_run_summary):
     from osa.paths import get_run_date
 
     assert merged_run_summary.exists()
 
     assert get_run_date(1808) == "20200117"
 
-    with pytest.raises(IndexError):
-        get_run_date(1200)
+    assert get_run_date(1200) == "20200117"

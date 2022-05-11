@@ -31,6 +31,7 @@ def read_config():
     for idx, arg in enumerate(sys.argv):
         if arg in ["-c", "--config"]:
             options.configfile = sys.argv[idx + 1]
+            break
         else:
             options.configfile = DEFAULT_CFG
 
