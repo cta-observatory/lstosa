@@ -1,14 +1,10 @@
 """Utility functions for OSA pipeline provenance."""
 
-import logging
 import os
-import re
-import sys
 from pathlib import Path
 
 from osa.configs import options
-from osa.configs.config import cfg, DEFAULT_CFG
-from osa.utils.logging import myLogger
+from osa.configs.config import cfg
 from osa.utils.utils import get_lstchain_version, date_to_dir
 
 __all__ = ["parse_variables", "get_log_config"]
