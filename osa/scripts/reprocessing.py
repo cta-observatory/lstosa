@@ -101,7 +101,7 @@ def main(
     check_job_status_and_wait()
 
     for date in list_of_dates:
-        # Avoid running jobs while it is still night
+        # Avoid running jobs while it is still night time
         wait_for_daytime()
 
         run_script(script, date, config, no_dl2, simulate)
