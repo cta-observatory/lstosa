@@ -7,7 +7,7 @@ from pathlib import Path
 
 import click
 
-from osa.paths import DEFAULT_CFG
+from osa.configs.config import DEFAULT_CFG
 from osa.utils.logging import myLogger
 
 log = myLogger(logging.getLogger(__name__))
@@ -53,6 +53,16 @@ def get_list_of_dates(dates_file):
     return list_of_dates
 
 
+def wait_for_daytime():
+    """
+    Check every hour if it is still nighttime
+    to not running jobs while it is still night.
+    """
+    while time.localtime().tm_hour <= 6 or time.localtime().tm_hour >= 18:
+        log.info("Waiting for sunrise to not interfere with the data-taking. Sleeping.")
+        time.sleep(3600)
+
+
 @click.command()
 @click.option(
     "--no-dl2",
@@ -91,6 +101,9 @@ def main(
     check_job_status_and_wait()
 
     for date in list_of_dates:
+        # Avoid running jobs while it is still night
+        wait_for_daytime()
+
         run_script(script, date, config, no_dl2, simulate)
         log.info("Waiting 1 minute to launch the process for the next date...\n")
         time.sleep(60)
