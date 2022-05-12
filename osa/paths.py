@@ -3,6 +3,10 @@
 import logging
 from pathlib import Path
 from astropy.table import Table
+from lstchain.onsite import (
+    find_systematics_correction_file, 
+    find_time_calibration_file
+)
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -13,10 +17,8 @@ from osa.configs.config import DEFAULT_CFG
 log = myLogger(logging.getLogger(__name__))
 
 __all__ = [
-    "get_time_calibration_file",
     "get_calibration_file",
     "get_drs4_pedestal_file",
-    "get_systematic_correction_file",
     "pedestal_ids_file_exists",
     "get_run_date",
     "drs4_pedestal_exists",
@@ -80,64 +82,6 @@ def get_run_date(run_id: int) -> str:
         date_string = utils.date_to_dir(options.date)
 
     return date_string.replace("-", "")
-
-
-def get_time_calibration_file(run_id: int) -> Path:
-    """
-    Return the time calibration file corresponding to a calibration run taken before
-    the run id given. If run_id is smaller than the first run id from the time
-    calibration files, return the first time calibration file available, which
-    corresponds to 1625.
-    """
-    time_calibration_dir = Path(cfg.get("LST1", "TIMECALIB_DIR"))
-    file_list = sorted(time_calibration_dir.rglob("pro/time_calibration.Run*.h5"))
-
-    if not file_list:
-        raise IOError("No time calibration file found")
-
-    for file in file_list:
-        run_in_list = int(file.name.split(".")[1].strip("Run"))
-        if run_id < 1625:
-            time_calibration_file = file_list[0]
-        elif run_in_list <= run_id:
-            time_calibration_file = file
-        else:
-            break
-
-    return time_calibration_file.resolve()
-
-
-def get_systematic_correction_file(date: str) -> Path:
-    """
-    Return the systematic correction file for a given date.
-
-    Parameters
-    ----------
-    date : str
-        Date in the format YYYYMMDD.
-
-    Notes
-    -----
-    The search for the proper systematic correction file is based on
-    lstchain/scripts/onsite/onsite_create_calibration_file.py
-    """
-    sys_dir = Path(cfg.get("LST1", "SYSTEMATIC_DIR"))
-
-    # Search for the first sys correction file before the run, if nothing before,
-    # use the first found
-    dir_list = sorted(sys_dir.rglob('*/pro/ffactor_systematics*'))
-    if not dir_list:
-        raise IOError(
-            f"No systematic correction file found for production pro in {sys_dir}\n"
-        )
-    sys_date_list = sorted([file.parts[-3] for file in dir_list], reverse=True)
-    selected_date = next(
-        (day for day in sys_date_list if day <= date), sys_date_list[-1]
-    )
-
-    return Path(
-        f"{sys_dir}/{selected_date}/pro/ffactor_systematics_{selected_date}.h5"
-    ).resolve()
 
 
 def get_drs4_pedestal_file(run_id: int) -> Path:
@@ -207,6 +151,7 @@ def get_pedestal_ids_file(run_id: int, date: str) -> Path:
 def sequence_calibration_files(sequence_list):
     """Build names of the calibration files for each sequence in the list."""
     flat_date = utils.date_to_dir(options.date)
+    base_dir = Path(cfg.get("LST1", "BASE"))
 
     for sequence in sequence_list:
 
@@ -220,8 +165,8 @@ def sequence_calibration_files(sequence_list):
         # Assign the calibration files to the sequence object
         sequence.pedestal = get_drs4_pedestal_file(drs4_pedestal_run_id)
         sequence.calibration = get_calibration_file(pedcal_run_id)
-        sequence.time_calibration = get_time_calibration_file(pedcal_run_id)
-        sequence.systematic_correction = get_systematic_correction_file(flat_date)
+        sequence.time_calibration = find_time_calibration_file("pro", pedcal_run_id, base_dir=base_dir)
+        sequence.systematic_correction = find_systematics_correction_file("pro", flat_date, base_dir=base_dir)
 
 
 def get_datacheck_files(pattern: str, directory: Path) -> list:
