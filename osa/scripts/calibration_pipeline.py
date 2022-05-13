@@ -53,12 +53,12 @@ def drs4_pedestal_command(drs4_pedestal_run_id: int) -> list:
     ]
 
 
-def calibration_file_command(pedestal_run_id: int, pedcal_run_id: int) -> list:
+def calibration_file_command(drs4_pedestal_run_id: int, pedcal_run_id: int) -> list:
     """Build the create_calibration_file command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     return [
         "onsite_create_calibration_file",
-        f"--pedestal_run={pedestal_run_id}",
+        f"--pedestal_run={drs4_pedestal_run_id}",
         f"--run_number={pedcal_run_id}",
         f"--base_dir={base_dir}",
         "--filters=52",
@@ -165,7 +165,7 @@ def calibrate_charge(
         return 0
 
     cmd = calibration_file_command(
-        pedestal_run_id=drs4_pedestal_run_id,
+        drs4_pedestal_run_id=drs4_pedestal_run_id,
         pedcal_run_id=pedcal_run_id
     )
 
