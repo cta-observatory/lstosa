@@ -296,7 +296,7 @@ def test_drs4_pedestal_cmd(base_test_dir):
 
 def test_calibration_file_cmd(base_test_dir):
     from osa.scripts.calibration_pipeline import calibration_file_command
-    cmd = calibration_file_command(pedestal_run_id="01804", pedcal_run_id="01805")
+    cmd = calibration_file_command(drs4_pedestal_run_id="01804", pedcal_run_id="01805")
     expected_command = [
         "onsite_create_calibration_file",
         "--pedestal_run=01804",
