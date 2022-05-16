@@ -6,27 +6,23 @@
   [![quality](https://app.codacy.com/project/badge/Grade/a8743a706e7c45fc989d5ebc4d61d54f)](https://www.codacy.com/gh/cta-observatory/lstosa/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=cta-observatory/lstosa&amp;utm_campaign=Badge_Grade)
   [![pypi](https://img.shields.io/pypi/v/lstosa)](https://pypi.org/project/lstosa/)
 
-Prototype onsite processing pipeline for the Large Size Telescope prototype (LST-1) of [CTA](https://www.cta-observatory.org/) (Cherenkov Telescope Array) based on [cta-lstchain](https://github.com/cta-observatory/cta-lstchain) running on the LST-1 IT onsite center at ORM (La Palma, Spain). It automatically carries out the next-day analysis of observed data using cron jobs, parallelizing the processing using the job scheduler SLURM. It provides data quality monitoring and tracking of analysis products' provenance. Moreover, it also massively reprocesses the entire LST-1 dataset with each cta-lstchain major release.
-
-  -   Code: <https://github.com/cta-observatory/lstosa>
-
-  -   Docs: <https://lstosa.readthedocs.io/>
-
-  -   License: [BSD-3-Clause](https://github.com/cta-observatory/lstosa/blob/main/LICENSE)
+Prototype onsite processing pipeline for the Large Size Telescope prototype (LST-1) of [CTA](https://www.cta-observatory.org/) (Cherenkov Telescope Array) based on [cta-lstchain](https://github.com/cta-observatory/cta-lstchain) running on the LST-1 IT onsite center at ORM (La Palma, Spain). It automatically carries out the next-day analysis of observed data using cron jobs, parallelizing the processing using the job scheduler SLURM. It provides data quality monitoring and tracking of analysis products' provenance.
+Moreover, it also massively reprocesses the entire LST-1 dataset with each cta-lstchain major release:
+ - Code: <https://github.com/cta-observatory/lstosa>
+ - Docs: <https://lstosa.readthedocs.io/>
+ - License: [BSD-3-Clause](https://github.com/cta-observatory/lstosa/blob/main/LICENSE)
 
 ## Install
 We recommend using an isolated conda environment.
+ - Install miniconda first.
+ - Clone the repository, create and activate the conda environment using the `environment.yml` file:
 
-  -   Install miniconda first.
-
-  -   Clone the repository, create and activate the conda environment using the `environment.yml` file:
-
-```bash
-git clone https://github.com/cta-observatory/lstosa.git
-cd lstosa
-conda env create -n osa -f environment.yml
-conda activate osa
-```
+    ```bash
+    git clone https://github.com/cta-observatory/lstosa.git
+    cd lstosa
+    conda env create -n osa -f environment.yml
+    conda activate osa
+    ```
 
 Then install `lstosa` as a **user** with: `pip install lstosa`, or as a **developer** with: `pip install -e .`.
 
@@ -36,7 +32,7 @@ In case you want to install the lstchain development version instead of a fixed 
 pip install git+https://github.com/cta-observatory/cta-lstchain
 ```
 
-- To update the environment (provided dependencies get updated), use:
+To update the environment (provided dependencies get updated), use:
 
 ```bash
 conda env update -n osa -f environment.yml
