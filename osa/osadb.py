@@ -53,8 +53,8 @@ def start_processing(date: str) -> None:
 
             if cursor.fetchone() is None:
                 cursor.execute(
-                    f"INSERT INTO processing (telescope, date, start, prod_id, is_finished) "
-                    f"VALUES (?, ?, ?, ?, ?)",
+                    "INSERT INTO processing (telescope, date, start, prod_id, is_finished) "
+                    "VALUES (?, ?, ?, ?, ?)",
                     (options.tel_id, date, t_start, options.prod_id, finished, )
                 )
 
