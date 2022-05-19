@@ -1,5 +1,5 @@
-import pytest
 from freezegun import freeze_time
+
 from osa.configs import options
 
 
