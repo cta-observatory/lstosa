@@ -49,7 +49,7 @@ def start_processing(date: str) -> None:
 
     with open_database(database) as cursor:
         if cursor is not None:
-            cursor.execute(f"SELECT * FROM processing WHERE date = '{date}'")
+            cursor.execute("SELECT * FROM processing WHERE date = ?", (date, ))
 
             if cursor.fetchone() is None:
                 cursor.execute(
