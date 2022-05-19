@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Tuple, Iterable, List
 
+from osa import osadb
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import are_all_jobs_correctly_finished, save_job_information
@@ -174,6 +175,8 @@ def post_process(seq_tuple):
         merge_files(seq_list, data_level="DL2")
 
     if options.seqtoclose is None:
+        osadb.end_processing(date_to_iso(options.date))
+        # Creating closing flag files will be deprecated in future versions
         return set_closed_with_file()
 
     return False
