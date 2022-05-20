@@ -367,14 +367,14 @@ def test_sequencer_webmaker(
         )
         assert output.returncode != 0
         assert output.stderr.splitlines()[-1] == "Date 2020-01-17 is already closed for LST1"
+        night_finished.unlink()
 
-    else:
-        output = sp.run(["sequencer_webmaker", "--test", "-d", "2020-01-17"])
-        assert output.returncode == 0
-        directory = base_test_dir / "OSA" / "SequencerWeb"
-        directory.mkdir(parents=True, exist_ok=True)
-        expected_file = directory / "osa_status_20200117.html"
-        assert expected_file.exists()
+    output = sp.run(["sequencer_webmaker", "--test", "-d", "2020-01-17"])
+    assert output.returncode == 0
+    directory = base_test_dir / "OSA" / "SequencerWeb"
+    directory.mkdir(parents=True, exist_ok=True)
+    expected_file = directory / "osa_status_20200117.html"
+    assert expected_file.exists()
 
     output = sp.run(["sequencer_webmaker", "--test"])
     assert output.returncode != 0
