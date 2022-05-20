@@ -357,19 +357,28 @@ def test_sequencer_webmaker(
         systematic_correction_files,
         base_test_dir
 ):
-    # Remove the night is finished flag file so webmaker can run
-    night_finished = base_test_dir / "OSA/Closer/20200117/NightFinished.txt"
+    # Check if night finished flag is set
+    night_finished = base_test_dir / "OSA/Closer/20200117/v0.1.0/NightFinished.txt"
+
     if night_finished.exists():
-        output = sp.run(["sequencer_webmaker", "--test", "-d", "2020-01-17"])
+        output = sp.run(
+            ["sequencer_webmaker", "--test", "-d", "2020-01-17"],
+            text=True, stdout=sp.PIPE, stderr=sp.PIPE
+        )
         assert output.returncode != 0
+        assert output.stderr.splitlines()[-1] == "Date 2020-01-17 is already closed for LST1"
         night_finished.unlink()
 
-        output = sp.run(["sequencer_webmaker", "--test", "-d", "2020-01-17"])
-        assert output.returncode == 0
-        directory = base_test_dir / "OSA" / "SequencerWeb"
-        directory.mkdir(parents=True, exist_ok=True)
-        expected_file = directory / "osa_status_20200117.html"
-        assert expected_file.exists()
+    output = sp.run(["sequencer_webmaker", "--test", "-d", "2020-01-17"])
+    assert output.returncode == 0
+    directory = base_test_dir / "OSA" / "SequencerWeb"
+    directory.mkdir(parents=True, exist_ok=True)
+    expected_file = directory / "osa_status_20200117.html"
+    assert expected_file.exists()
 
     output = sp.run(["sequencer_webmaker", "--test"])
+    assert output.returncode != 0
+
+    # Running without test option will make the script fail
+    output = sp.run(["sequencer_webmaker", "-d", "2020-01-17"])
     assert output.returncode != 0
