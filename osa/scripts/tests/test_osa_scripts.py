@@ -21,7 +21,8 @@ ALL_SCRIPTS = [
     "simulate_processing",
     "dl3_stage",
     "theta2_significance",
-    "source_coordinates"
+    "source_coordinates",
+    "sequencer_webmaker"
 ]
 
 options.date = datetime.datetime.fromisoformat("2020-01-17")
@@ -347,3 +348,28 @@ def test_no_runs_found():
     )
     assert output.returncode == 0
     assert "No runs found for this date. Nothing to do. Exiting." in output.stderr.splitlines()[-1]
+
+
+def test_sequencer_webmaker(
+        run_summary,
+        merged_run_summary,
+        drs4_time_calibration_files,
+        systematic_correction_files,
+        base_test_dir
+):
+    # Remove the night is finished flag file so webmaker can run
+    night_finished = base_test_dir / "OSA/Closer/20200117/NightFinished.txt"
+    if night_finished.exists():
+        output = sp.run(["sequencer_webmaker", "--test", "-d", "2020-01-17"])
+        assert output.returncode != 0
+        night_finished.unlink()
+
+        output = sp.run(["sequencer_webmaker", "--test", "-d", "2020-01-17"])
+        assert output.returncode == 0
+        directory = base_test_dir / "OSA" / "SequencerWeb"
+        directory.mkdir(parents=True, exist_ok=True)
+        expected_file = directory / "osa_status_20200117.html"
+        assert expected_file.exists()
+
+    output = sp.run(["sequencer_webmaker", "--test"])
+    assert output.returncode != 0
