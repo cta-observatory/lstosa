@@ -378,3 +378,7 @@ def test_sequencer_webmaker(
 
     output = sp.run(["sequencer_webmaker", "--test"])
     assert output.returncode != 0
+
+    # Running without test option will make the script fail
+    output = sp.run(["sequencer_webmaker", "-d", "2020-01-17"])
+    assert output.returncode != 0
