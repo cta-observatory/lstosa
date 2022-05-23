@@ -1,6 +1,31 @@
 {
     "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
     "@type": "SoftwareSourceCode",
+    "license": "https://spdx.org/licenses/BSD-3-Clause",
+    "codeRepository": "https://github.com/cta-observatory/lstosa",
+    "contIntegration": "https://github.com/cta-observatory/lstosa/actions",
+    "dateCreated": "2020-01-29",
+    "datePublished": "2022-05-20",
+    "downloadUrl": "https://github.com/cta-observatory/lstosa/releases/tag/v0.9.4",
+    "issueTracker": "https://github.com/cta-observatory/lstosa/issues",
+    "name": "lstosa",
+    "version": "0.9.4",
+    "identifier": "10.5281/zenodo.6567234",
+    "description": "Workflow management framework for the onsite analysis of LST-1 data.",
+    "applicationCategory": "CTA, LST",
+    "developmentStatus": "active",
+    "isPartOf": "https://www.cta-observatory.org/",
+    "keywords": [
+        "data analysis pipeline",
+        "analysis workflow management",
+        "Large Size Telescope",
+        "LST",
+        "Cherenkov Telescope Array",
+        "CTA"
+    ],
+    "programmingLanguage": [
+        "Python 3"
+    ],
     "author": [
         {
             "@id": "https://orcid.org/0000-0001-9400-0922",
@@ -13,6 +38,7 @@
             "givenName": "Daniel"
         },
         {
+            "@id": "https://orcid.org/0000-0002-3171-5039",
             "@type": "Person",
             "affiliation": {
                 "@type": "Organization",
@@ -71,5 +97,16 @@
             "familyName": "N\u00f6the",
             "givenName": "Maximilian"
         }
-    ]
+    ],
+    "maintainer": {
+        "@type": "Person",
+        "@id": "https://orcid.org/0000-0001-9400-0922",
+        "givenName": "Morcuende",
+        "familyName": "Daniel",
+        "email": "dmorcuen@ucm.es",
+        "affiliation": {
+            "@type": "Organization",
+            "name": "IPARCOS Institute and EMFTEL Department, Universidad Complutense de Madrid, E-28040 Madrid, Spain"
+        }
+    }
 }
