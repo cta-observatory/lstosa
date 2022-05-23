@@ -1,0 +1,112 @@
+{
+    "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+    "@type": "SoftwareSourceCode",
+    "license": "https://spdx.org/licenses/BSD-3-Clause",
+    "codeRepository": "https://github.com/cta-observatory/lstosa",
+    "contIntegration": "https://github.com/cta-observatory/lstosa/actions",
+    "dateCreated": "2020-01-29",
+    "datePublished": "2022-05-20",
+    "downloadUrl": "https://github.com/cta-observatory/lstosa/releases/tag/v0.9.4",
+    "issueTracker": "https://github.com/cta-observatory/lstosa/issues",
+    "name": "lstosa",
+    "version": "0.9.4",
+    "identifier": "10.5281/zenodo.6567234",
+    "description": "Workflow management framework for the onsite analysis of LST-1 data.",
+    "applicationCategory": "CTA, LST",
+    "developmentStatus": "active",
+    "isPartOf": "https://www.cta-observatory.org/",
+    "keywords": [
+        "data analysis pipeline",
+        "analysis workflow management",
+        "Large Size Telescope",
+        "LST",
+        "Cherenkov Telescope Array",
+        "CTA"
+    ],
+    "programmingLanguage": [
+        "Python 3"
+    ],
+    "author": [
+        {
+            "@id": "https://orcid.org/0000-0001-9400-0922",
+            "@type": "Person",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "IPARCOS Institute and EMFTEL Department, Universidad Complutense de Madrid, E-28040 Madrid, Spain"
+            },
+            "familyName": "Morcuende",
+            "givenName": "Daniel"
+        },
+        {
+            "@id": "https://orcid.org/0000-0002-3171-5039",
+            "@type": "Person",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "Center for Astrophysics | Harvard & Smithsonian, CfA, 60 Garden St., 02138 Cambridge MA, US"
+            },
+            "familyName": "Saha",
+            "givenName": "Lab"
+        },
+        {
+            "@id": "https://orcid.org/0000-0003-3274-4445",
+            "@type": "Person",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "Instituto de Astrof\u00edsica de Andaluc\u00eda - CSIC, Gta. de la Astronom\u00eda, 18008 Granada, Spain"
+            },
+            "familyName": "Ruiz",
+            "givenName": "Jos\u00e9 Enrique"
+        },
+        {
+            "@id": "https://orcid.org/0000-0001-7282-2394",
+            "@type": "Person",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "IPARCOS Institute and EMFTEL Department, Universidad Complutense de Madrid, E-28040 Madrid, Spain"
+            },
+            "familyName": "Contreras",
+            "givenName": "Jos\u00e9 Luis"
+        },
+                {
+            "@id": "https://orcid.org/0000-0002-1757-5826",
+            "@type": "Person",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "IPARCOS Institute and EMFTEL Department, Universidad Complutense de Madrid, E-28040 Madrid, Spain"
+            },
+            "familyName": "Baquero",
+            "givenName": "Andr\u00e9s"
+        },
+                {
+            "@id": "https://orcid.org/0000-0003-3848-922X",
+            "@type": "Person",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "IPARCOS Institute and EMFTEL Department, Universidad Complutense de Madrid, E-28040 Madrid, Spain"
+            },
+            "familyName": "L\u00e1inez",
+            "givenName": "Mar\u00eda"
+        },
+        {
+            "@id": "https://orcid.org/0000-0001-7993-8189",
+            "@type": "Person",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "TU Dortmund University, Otto-Hahn-Str. 4a 44227 Dortmund, Germany"
+            },
+            "familyName": "N\u00f6the",
+            "givenName": "Maximilian"
+        }
+    ],
+    "maintainer": {
+        "@type": "Person",
+        "@id": "https://orcid.org/0000-0001-9400-0922",
+        "givenName": "Morcuende",
+        "familyName": "Daniel",
+        "email": "dmorcuen@ucm.es",
+        "affiliation": {
+            "@type": "Organization",
+            "name": "IPARCOS Institute and EMFTEL Department, Universidad Complutense de Madrid, E-28040 Madrid, Spain"
+        }
+    }
+}

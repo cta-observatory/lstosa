@@ -5,6 +5,8 @@
   [![coverage](https://codecov.io/gh/cta-observatory/lstosa/branch/main/graph/badge.svg?token=Zjk1U1ytaG)](https://codecov.io/gh/cta-observatory/lstosa)
   [![quality](https://app.codacy.com/project/badge/Grade/a8743a706e7c45fc989d5ebc4d61d54f)](https://www.codacy.com/gh/cta-observatory/lstosa/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=cta-observatory/lstosa&amp;utm_campaign=Badge_Grade)
   [![pypi](https://img.shields.io/pypi/v/lstosa)](https://pypi.org/project/lstosa/)
+  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6567234.svg)](https://doi.org/10.5281/zenodo.6567234)
+
 
 Prototype onsite processing pipeline for the Large Size Telescope prototype (LST-1) of [CTA](https://www.cta-observatory.org/) (Cherenkov Telescope Array) based on [cta-lstchain](https://github.com/cta-observatory/cta-lstchain) running on the LST-1 IT onsite center at ORM (La Palma, Spain). It automatically carries out the next-day analysis of observed data using cron jobs, parallelizing the processing using the job scheduler SLURM. It provides data quality monitoring and tracking of analysis products' provenance.
 Moreover, it also massively reprocesses the entire LST-1 dataset with each cta-lstchain major release:
