@@ -2,6 +2,7 @@
 import fileinput
 import logging
 import re
+import shutil
 import subprocess as sp
 from pathlib import Path
 from textwrap import dedent
@@ -52,21 +53,21 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
     run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
     summary_table = Table.read(run_summary_file)
     # Apply gain selection only to DATA runs
-    summary_table = summary_table[summary_table['run_type'] == 'DATA']
+    data_runs = summary_table[summary_table["run_type"] == "DATA"]
 
     output_dir = output_basedir / date
     log_dir = output_basedir / "log"
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
+    r0_dir = Path(f"/fefs/aswg/data/real/R0/{date}")
 
-    for run in summary_table:
+    for run in data_runs:
         run_id = run["run_id"]
         ref_time = run["dragon_reference_time"]
         ref_counter = run["dragon_reference_counter"]
         module = run["dragon_reference_module_index"]
         ref_source = run["dragon_reference_source"].upper()
 
-        r0_dir = Path(f"/fefs/aswg/data/real/R0/{date}")
         input_files = r0_dir.glob(f"LST-1.1.Run{run_id:05d}.????.fits.fz")
 
         for file in input_files:
@@ -85,7 +86,15 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
                     ref_source
                 ))
             sp.run(["sbatch", job_file], check=True)
+    
+    calib_runs = summary_table[summary_table["run_type" != "DATA"]
 
+    for run in calib_runs:
+        run_id = run["run_id"]
+        r0_files = r0_dir.glob(f"LST-1.1.Run{run_id:05d}.????.fits.fz")
+        
+        for file in r0_files:
+            shutil.copy2(file, output_dir, follow_symlinks=True)
 
 def check_failed_jobs(output_basedir: Path = None):
     """Search for failed jobs in the log directory."""
