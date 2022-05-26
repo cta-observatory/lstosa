@@ -87,7 +87,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
                 ))
             sp.run(["sbatch", job_file], check=True)
     
-    calib_runs = summary_table[summary_table["run_type" != "DATA"]
+    calib_runs = summary_table[summary_table["run_type" != "DATA"]]
 
     for run in calib_runs:
         run_id = run["run_id"]
