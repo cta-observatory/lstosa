@@ -68,9 +68,9 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
         module = run["dragon_reference_module_index"]
         ref_source = run["dragon_reference_source"].upper()
 
-        input_files = r0_dir.glob(f"LST-1.1.Run{run_id:05d}.????.fits.fz")
-
         if ref_source=="UCTS" or ref_source=="TIB":
+
+            input_files = r0_dir.glob(f"LST-1.1.Run{run_id:05d}.????.fits.fz")
 
             for file in input_files:
                 run_info = run_info_from_filename(file)
@@ -90,6 +90,8 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
                 sp.run(["sbatch", job_file], check=True)
         
         else:
+    
+            input_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
 
             for file in input_files:
                 shutil.copy2(file, output_dir, follow_symlinks=True)
@@ -98,7 +100,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
 
     for run in calib_runs:
         run_id = run["run_id"]
-        r0_files = r0_dir.glob(f"LST-1.1.Run{run_id:05d}.????.fits.fz")
+        r0_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
         
         for file in r0_files:
             shutil.copy2(file, output_dir, follow_symlinks=True)
