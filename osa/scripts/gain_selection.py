@@ -70,23 +70,30 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
 
         input_files = r0_dir.glob(f"LST-1.1.Run{run_id:05d}.????.fits.fz")
 
-        for file in input_files:
-            run_info = run_info_from_filename(file)
-            job_file = log_dir / f"gain_selection_{run_info.run:05d}.{run_info.subrun:04d}.sh"
-            with open(job_file, "w") as f:
-                f.write(get_sbatch_script(
-                    run_id,
-                    run_info.subrun,
-                    file,
-                    output_dir,
-                    log_dir,
-                    ref_time,
-                    ref_counter,
-                    module,
-                    ref_source
-                ))
-            sp.run(["sbatch", job_file], check=True)
-    
+        if ref_source=="UCTS" or ref_source=="TIB":
+
+            for file in input_files:
+                run_info = run_info_from_filename(file)
+                job_file = log_dir / f"gain_selection_{run_info.run:05d}.{run_info.subrun:04d}.sh"
+                with open(job_file, "w") as f:
+                    f.write(get_sbatch_script(
+                        run_id,
+                        run_info.subrun,
+                        file,
+                        output_dir,
+                        log_dir,
+                        ref_time,
+                        ref_counter,
+                        module,
+                        ref_source
+                    ))
+                sp.run(["sbatch", job_file], check=True)
+        
+        else:
+
+            for file in input_files:
+                shutil.copy2(file, output_dir, follow_symlinks=True)
+
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
 
     for run in calib_runs:
