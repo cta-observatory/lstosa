@@ -144,7 +144,7 @@ def test_simulated_sequencer(
         f"""\
         =================================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Date: 2020-01-17 ===================================
         Tel   Seq  Parent  Type      Run   Subruns  Source        Action  Tries  JobID  State  CPU_time  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%  
-        LST1    0  None    PEDCALIB  1805  5        None          None    None   None   None   None      None  None  None    None    None        None  
+        LST1    0  None    PEDCALIB  1829  5        None          None    None   None   None   None      None  None  None    None    None        None  
         LST1    1       0  DATA      1807  11       Crab          None    None   None   None   None      None     0       0       0           0     0  
         LST1    2       0  DATA      1808  9        MadeUpSource  None    None   None   None   None      None     0       0       0           0     0  
         """)
