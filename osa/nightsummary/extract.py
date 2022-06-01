@@ -337,6 +337,16 @@ def extractsequences(run_list_sorted):
                     "P->C->P, deleting and replacing [{currentrun}, {currenttype}, None]"
                 )
                 head[0] = [currentrun, currenttype, None]
+            elif currenttype == "PEDCALIB":
+                previouspedrun = head[1][0]
+                log.debug(
+                    "C->C, replacing [{currentrun}, {currenttype}, None]"
+                )
+                head[1] = [currentrun, currenttype, None]
+                require[currentrun] = require[previouspedrun]
+                for run in sequences_to_analyze: 
+                    # use this PEDCALIB run for all the DATA sequences
+                    require[run] = currentrun           
 
     if not sequences_to_analyze:
         log.warning("No data sequences found for this date. Nothing to do. Exiting.")
