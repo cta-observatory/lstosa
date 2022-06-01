@@ -11,7 +11,7 @@ def test_get_calibration_file(r0_data, merged_run_summary):
     from osa.paths import get_calibration_file
     for file in r0_data:
         assert file.exists()
-    file = get_calibration_file(1805)
+    file = get_calibration_file(1806)
     file.exists()
 
 

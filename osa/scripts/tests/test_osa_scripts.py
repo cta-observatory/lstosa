@@ -144,7 +144,7 @@ def test_simulated_sequencer(
         f"""\
         =================================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Date: 2020-01-17 ===================================
         Tel   Seq  Parent  Type      Run   Subruns  Source        Action  Tries  JobID  State  CPU_time  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%  
-        LST1    0  None    PEDCALIB  1829  5        None          None    None   None   None   None      None  None  None    None    None        None  
+        LST1    0  None    PEDCALIB  1806  5        None          None    None   None   None   None      None  None  None    None    None        None  
         LST1    1       0  DATA      1807  11       Crab          None    None   None   None   None      None     0       0       0           0     0  
         LST1    2       0  DATA      1808  9        MadeUpSource  None    None   None   None   None      None     0       0       0           0     0  
         """)
@@ -198,7 +198,7 @@ def test_closer(
     run_program(
         "closer", "-y", "-v", "-t", "-d", "2020-01-17", "LST1"
     )
-    closed_seq_file = running_analysis_dir / "sequence_LST1_01805.closed"
+    closed_seq_file = running_analysis_dir / "sequence_LST1_01806.closed"
 
     # Check that files have been moved to their final destinations
     assert os.path.exists(
@@ -259,8 +259,8 @@ def test_datasequence(running_analysis_dir):
 
 def test_calibration_pipeline(running_analysis_dir):
     prod_id = "v0.1.0"
-    drs4_run_number = "01805"
-    pedcal_run_number = "01806"
+    drs4_run_number = "01804"
+    pedcal_run_number = "01805"
     options.directory = running_analysis_dir
 
     output = run_program(
@@ -297,11 +297,11 @@ def test_drs4_pedestal_cmd(base_test_dir):
 
 def test_calibration_file_cmd(base_test_dir):
     from osa.scripts.calibration_pipeline import calibration_file_command
-    cmd = calibration_file_command(drs4_pedestal_run_id="01804", pedcal_run_id="01805")
+    cmd = calibration_file_command(drs4_pedestal_run_id="01804", pedcal_run_id="01806")
     expected_command = [
         "onsite_create_calibration_file",
         "--pedestal_run=01804",
-        "--run_number=01805",
+        "--run_number=01806",
         f"--base_dir={base_test_dir}",
         "--filters=52"
     ]

@@ -47,7 +47,7 @@ def test_preparejobs(running_analysis_dir, sequence_list):
     options.simulate = False
     options.directory = running_analysis_dir
     prepare_jobs(sequence_list)
-    expected_calib_script = os.path.join(running_analysis_dir, "sequence_LST1_01805.py")
+    expected_calib_script = os.path.join(running_analysis_dir, "sequence_LST1_01806.py")
     expected_data_script = os.path.join(running_analysis_dir, "sequence_LST1_01807.py")
     assert os.path.isfile(os.path.abspath(expected_calib_script))
     assert os.path.isfile(os.path.abspath(expected_data_script))
@@ -68,11 +68,11 @@ def test_scheduler_env_variables(sequence_list, running_analysis_dir):
     first_sequence = sequence_list[0]
     env_variables = scheduler_env_variables(first_sequence)
     assert env_variables == [
-        '#SBATCH --job-name=LST1_01805',
+        '#SBATCH --job-name=LST1_01806',
         '#SBATCH --time=1:15:00',
         f'#SBATCH --chdir={running_analysis_dir}',
-        '#SBATCH --output=log/Run01805.%4a_jobid_%A.out',
-        '#SBATCH --error=log/Run01805.%4a_jobid_%A.err',
+        '#SBATCH --output=log/Run01806.%4a_jobid_%A.out',
+        '#SBATCH --error=log/Run01806.%4a_jobid_%A.err',
         f'#SBATCH --partition={cfg.get("SLURM", "PARTITION_PEDCALIB")}',
         '#SBATCH --mem-per-cpu=3GB'
     ]
@@ -100,11 +100,11 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     output_string1 = dedent(f"""\
     #!/bin/env python
 
-    #SBATCH --job-name=LST1_01805
+    #SBATCH --job-name=LST1_01806
     #SBATCH --time=1:15:00
     #SBATCH --chdir={running_analysis_dir}
-    #SBATCH --output=log/Run01805.%4a_jobid_%A.out
-    #SBATCH --error=log/Run01805.%4a_jobid_%A.err
+    #SBATCH --output=log/Run01806.%4a_jobid_%A.out
+    #SBATCH --error=log/Run01806.%4a_jobid_%A.err
     #SBATCH --partition={cfg.get('SLURM', 'PARTITION_PEDCALIB')}
     #SBATCH --mem-per-cpu=3GB""")
     assert header == output_string1
@@ -352,7 +352,7 @@ def test_create_job_scheduler_calibration(sequence_list):
             '{Path.cwd()}/osa/configs/sequencer.cfg',
             '--date=2020-01-17',
             '--drs4-pedestal-run=01804',
-            '--pedcal-run=01805',
+            '--pedcal-run=01806',
             'LST1'
         ])
 

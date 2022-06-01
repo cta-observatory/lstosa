@@ -334,13 +334,13 @@ def extractsequences(run_list_sorted):
                 # and shifters decide to give another try
                 head.pop()
                 log.debug(
-                    "P->C->P, deleting and replacing [{currentrun}, {currenttype}, None]"
+                    f"P->C->P, deleting and replacing [{currentrun}, {currenttype}, None]"
                 )
                 head[0] = [currentrun, currenttype, None]
             elif currenttype == "PEDCALIB":
                 previouspedrun = head[1][0]
                 log.debug(
-                    "C->C, replacing [{currentrun}, {currenttype}, None]"
+                    f"C->C, replacing [{currentrun}, {currenttype}, None]"
                 )
                 head[1] = [currentrun, currenttype, None]
                 require[currentrun] = require[previouspedrun]

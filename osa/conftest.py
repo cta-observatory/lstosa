@@ -163,7 +163,7 @@ def dl2_final_dir(base_test_dir):
 @pytest.fixture(scope="session")
 def calibration_file(calibration_dir):
     """Mock calibration files for testing."""
-    calib_file = calibration_dir / "calibration_filters_52.Run01805.0000.h5"
+    calib_file = calibration_dir / "calibration_filters_52.Run01806.0000.h5"
     calib_file.touch()
     return calib_file
 
@@ -357,7 +357,7 @@ def sequence_file_list(
 
     run_program("sequencer", "-d", "2020-01-17", "--no-submit", "-t", "LST1")
     return [
-        running_analysis_dir / "sequence_LST1_01805.py",
+        running_analysis_dir / "sequence_LST1_01806.py",
         running_analysis_dir / "sequence_LST1_01807.py",
         running_analysis_dir / "sequence_LST1_01808.py",
     ]
@@ -406,7 +406,7 @@ def daily_datacheck_dl1_files(longterm_dir):
 def calibration_check_plot(calibration_dir):
     calibration_dir_log = calibration_dir / "log"
     calibration_dir_log.mkdir(parents=True, exist_ok=True)
-    file = calibration_dir_log / "calibration_filters_52.Run01805.0000.pdf"
+    file = calibration_dir_log / "calibration_filters_52.Run01806.0000.pdf"
     file.touch()
     return file
 
