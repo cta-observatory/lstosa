@@ -63,14 +63,25 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
 
     for run in data_runs:
         run_id = run["run_id"]
+        n_subruns = run["n_subruns"]
         ref_time = run["dragon_reference_time"]
         ref_counter = run["dragon_reference_counter"]
         module = run["dragon_reference_module_index"]
         ref_source = run["dragon_reference_source"].upper()
 
+        input_files = []
+
         if ref_source=="UCTS" or ref_source=="TIB":
 
-            input_files = r0_dir.glob(f"LST-1.1.Run{run_id:05d}.????.fits.fz")
+            for subrun in range(n_subruns):
+                new_files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
+
+                if len(new_files) != 4:
+                    for file in new_files:
+                        shutil.copy2(file, output_dir, follow_symlinks=True)
+ 
+                else:
+                    [input_files.append(new_files[i]) for i in range(len(new_files))]
 
             for file in input_files:
                 run_info = run_info_from_filename(file)
