@@ -120,17 +120,17 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
     """Search for failed jobs in the log directory."""
     failed_jobs = []
     log_dir = output_basedir / "log" /date
-    filenames = log_dir.glob('gain_selection*.log')
+    filenames = log_dir.glob("gain_selection*.log")
 
     for line in fileinput.input(filenames):
-        if re.search('FAILED', line):
-            job_id = fileinput.filename()[-12:-4]
+        if re.search("FAILED", line) or re.search("Stream [1-4] not found", line):
+            job_id = str(fileinput.filename())[-12:-4]
             failed_jobs.append(job_id)
 
     if not failed_jobs:
-        log.info('All jobs finished successfully.')
+        log.info("All jobs finished successfully.")
     else:
-        log.warning(f'The following jobs failed: {failed_jobs}')
+        log.warning(f"The following jobs failed: {failed_jobs}")
 
 
 @click.command()
