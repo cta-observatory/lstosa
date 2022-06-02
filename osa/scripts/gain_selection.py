@@ -56,7 +56,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
 
     output_dir = output_basedir / date
-    log_dir = output_basedir / "log"
+    log_dir = output_basedir / "log" /date
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
     r0_dir = Path(f"/fefs/aswg/data/real/R0/{date}")
@@ -105,10 +105,10 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
         for file in r0_files:
             shutil.copy2(file, output_dir, follow_symlinks=True)
 
-def check_failed_jobs(output_basedir: Path = None):
+def check_failed_jobs(date: str, output_basedir: Path = None):
     """Search for failed jobs in the log directory."""
     failed_jobs = []
-    log_dir = output_basedir / "log"
+    log_dir = output_basedir / "log" /date
     filenames = log_dir.glob('gain_selection*.log')
 
     for line in fileinput.input(filenames):
@@ -134,11 +134,12 @@ def main(dates_file: Path = None, output_basedir: Path = None, check: bool = Fal
     """
     log.setLevel(logging.INFO)
 
-    if check:
-        check_failed_jobs(output_basedir)
-    else:
-        list_of_dates = get_list_of_dates(dates_file)
+    list_of_dates = get_list_of_dates(dates_file)
 
+    if check:
+        for date in list_of_dates:
+            check_failed_jobs(date, output_basedir)
+    else:
         for date in list_of_dates:
             apply_gain_selection(date, output_basedir)
 
