@@ -127,12 +127,16 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
     for line in fileinput.input(filenames):
         if re.search("FAILED", line) or re.search("Stream [1-4] not found", line):
             job_id = str(fileinput.filename())[-12:-4]
+            run_id = str(fileinput.filename())[-23:-18]
+            subrun_id = str(fileinput.filename())[-17:-13]
             failed_jobs.append(job_id)
+
+            log.warning(f"Job {job_id} (corresponding to run {run_id}, subrun {subrun_id}) failed.")
 
     if not failed_jobs:
         log.info("All jobs finished successfully.")
     else:
-        log.warning(f"The following jobs failed: {failed_jobs}")
+        log.warning(f"Some jobs did not finish successfully.")
 
 
 @click.command()
