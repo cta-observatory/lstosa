@@ -136,7 +136,7 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
     if not failed_jobs:
         log.info("All jobs finished successfully.")
     else:
-        log.warning(f"Some jobs did not finish successfully.")
+        log.warning("Some jobs did not finish successfully.")
 
 
 @click.command()
