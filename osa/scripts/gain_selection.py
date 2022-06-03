@@ -82,7 +82,8 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
                         shutil.copy2(file, output_dir, follow_symlinks=True)
  
                 else:
-                    [input_files.append(new_files[i]) for i in range(len(new_files))]
+                    new_files.sort()
+                    input_files.append(new_files[0])
 
             for file in input_files:
                 run_info = run_info_from_filename(file)
