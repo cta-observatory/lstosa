@@ -225,6 +225,7 @@ def run_summary_file(run_summary_dir):
     # - {lstchain_version: 0.7.0}
     # schema: astropy-2.0
     run_id,n_subruns,run_type,ucts_timestamp,run_start,dragon_reference_time,dragon_reference_module_id,dragon_reference_module_index,dragon_reference_counter,dragon_reference_source
+    1803,6,DRS4,1579289727863850890,1579289712000000000,1579289727863850890,90,0,5863850400,ucts
     1804,6,DRS4,1579289727863850890,1579289712000000000,1579289727863850890,90,0,5863850400,ucts
     1805,5,PEDCALIB,1579291426030146503,1579291413000000000,1579291426030146503,90,0,2030146000,ucts
     1806,5,PEDCALIB,1579291932080485703,1579291917000000000,1579291932080485703,90,0,5080485200,ucts
