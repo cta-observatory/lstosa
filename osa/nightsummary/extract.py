@@ -279,64 +279,42 @@ def extractsequences(run_list_sorted):
                 # it shouldn't happen, same run number, just skip to next run
                 continue
             if currenttype == "DRS4":
-                if previoustype == "DATA":
-                    # replace the first head element, keeping its previous run
-                    # or requirement run, depending on mode
-                    whichreq = previousreq
-                elif previoustype == "DRS4":
-                    # one pedestal after another, keep replacing
-                    whichreq = None
+                # replace the first head element
                 log.debug(f"replacing [{currentrun}, {currenttype}, {whichreq}]")
                 head[0] = [currentrun, currenttype, whichreq]
-            elif currenttype == "PEDCALIB" and previoustype == "DRS4":
+            elif currenttype == "PEDCALIB":
                 # add it too
                 log.debug(f"appending [{currentrun}, {currenttype}, None]")
                 head.append([currentrun, currenttype, None])
                 require[currentrun] = previousrun
+                if sequences_to_analyze:
+                    for run in sequences_to_analyze:
+                        require[run] = currentrun
             elif currenttype == "DATA":
-                if previoustype == "DRS4":
-                    # it is the pedestal->data mistake from shifters;
-                    # replace and store if they are not the first of observations
-                    # required run requirement inherited from pedestal run
-                    if previousreq is not None:
-                        log.debug(
-                            f"P->C, replacing "
-                            f"[{currentrun}, {currenttype}, {previousreq}]"
-                        )
-                        head[0] = [currentrun, currenttype, previousreq]
-                        sequences_to_analyze.append(currentrun)
-                        require[currentrun] = previousreq
-                elif previoustype == "DATA":
-                    whichreq = previousreq
-                    log.debug(
-                        f"D->D, " f"replacing [{currentrun}, {currenttype}, {whichreq}]"
-                    )
-                    head[0] = [currentrun, currenttype, whichreq]
-                    sequences_to_analyze.append(currentrun)
-                    require[currentrun] = whichreq
+                # append and store
+                log.debug(
+                    f"appending [{currentrun}, {currenttype}, None]"
+                )
+                sequences_to_analyze.append(currentrun)
+                require[currentrun] = None
 
         elif len(head) == 2:
-            previoustype = head[1][1]
-            if currenttype == "DATA" and previoustype == "PEDCALIB":
-                # it is the pedestal->calibration->data case,
-                # append, store, resize and replace
-                previousrun = head[1][0]
-                head.pop()
+            if currenttype == "DATA":
+                # append and store
+                whichreq = head[1][0]
                 log.debug(
-                    f"P->C->D, appending [{currentrun}, {currenttype}, {previousrun}]"
+                    f"P->C->D, appending [{currentrun}, {currenttype}, {whichreq}]"
                 )
-                head[0] = [currentrun, currenttype, previousrun]
                 sequences_to_analyze.append(currentrun)
-                # this is different from currentrun since it marks parent sequence run
-                require[currentrun] = previousrun
-            elif currenttype == "DRS4" and previoustype == "PEDCALIB":
-                # there was a problem with the previous calibration
-                # and shifters decide to give another try
-                head.pop()
+                require[currentrun] = whichreq
+            elif currenttype == "DRS4":
+                # replace the first head element and use this DRS4 run
                 log.debug(
-                    f"P->C->P, deleting and replacing [{currentrun}, {currenttype}, None]"
+                    f"P->P, replacing [{currentrun}, {currenttype}, None]"
                 )
                 head[0] = [currentrun, currenttype, None]
+                currentpedrun = head[1][0]
+                require[currentpedrun] = currentrun
             elif currenttype == "PEDCALIB":
                 previouspedrun = head[1][0]
                 log.debug(
