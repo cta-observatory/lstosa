@@ -9,6 +9,7 @@ import logging
 import os
 from decimal import Decimal
 
+from osa import osadb
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import (
@@ -75,6 +76,7 @@ def single_process(telescope):
     -------
     sequence_list : list
     """
+    osadb.start_processing(date_to_iso(options.date))
 
     # Define global variables and create night directory
     sequence_list = []
@@ -85,8 +87,6 @@ def single_process(telescope):
     if not options.simulate:
         os.makedirs(options.log_directory, exist_ok=True)
 
-    is_report_needed = True
-
     if is_day_closed():
         log.info(
             f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}"
@@ -96,11 +96,7 @@ def single_process(telescope):
     # Build the sequences
     sequence_list = build_sequences(options.date)
 
-    # Workflow and submission
-    # if not options.simulate:
-    #     write_workflow(sequence_list)
-
-    # Adds the scripts
+    # Create job pilot scripts
     prepare_jobs(sequence_list)
 
     # Update sequences objects with information from SLURM
@@ -109,15 +105,14 @@ def single_process(telescope):
     get_veto_list(sequence_list)
     get_closed_list(sequence_list)
     update_sequence_status(sequence_list)
-    # updatesequencedb(sequence_list)
+
     if not options.no_submit:
         submit_jobs(sequence_list)
 
-    # report
-    if is_report_needed:
-        # insert_if_new_activity_db(sequence_list)
-        # updatesequencedb(sequence_list)
-        report_sequences(sequence_list)
+    # TODO: insert_new_activity_db(sequence_list)
+
+    # Display the sequencer table with processing status
+    report_sequences(sequence_list)
 
     return sequence_list
 
@@ -274,117 +269,6 @@ def report_sequences(sequence_list):
         matrix.append(row_list)
     padding = int(cfg.get("OUTPUT", "PADDING"))
     output_matrix(matrix, padding)
-
-
-# def insert_if_new_activity_db(sequence_list):
-#     tag = gettag()
-#     from osa.configs import config
-#     from datetime import datetime
-#     from mysql import insert_db, select_db
-#
-#     server = cfg.get('MYSQL', 'SERVER')
-#     user = cfg.get('MYSQL', 'USER')
-#     database = cfg.get('MYSQL', 'DATABASE')
-#     table = cfg.get('MYSQL', 'SUMMARYTABLE')
-#
-#     if len(sequence_list) != 0:
-#         """ Declare the beginning of OSA activity """
-#         start = datetime.now()
-#         selections = ['ID']
-#         conditions = {
-#             'NIGHT': options.date,
-#             'TELESCOPE': options.tel_id,
-#             'ACTIVITY': 'LSTOSA'
-#         }
-#         matrix = select_db(server, user, database, table, selections, conditions)
-#         id = None
-#         if matrix:
-#             id = matrix[0][0]
-#         if id and int(id) > 0:
-#             """ Activity already started """
-#         else:
-#             """ Insert it into the database """
-#             assignments = conditions
-#             assignments['IS_FINISHED'] = 0
-#             assignments['START'] = start
-#             assignments['END'] = None
-#             conditions = {}
-#             insert_db(server, user, database, table, assignments, conditions)
-#
-#
-# def updatesequencedb(seqlist):
-#     tag = gettag()
-#     from osa.configs import config
-#     from mysql import update_db, insert_db, select_db
-#
-#     server = cfg.get('MYSQL', 'SERVER')
-#     user = cfg.get('MYSQL', 'USER')
-#     database = cfg.get('MYSQL', 'DATABASE')
-#     table = cfg.get('MYSQL', 'SEQUENCETABLE')
-#     for sequence in seqlist:
-#         """ Fine tuning """
-#         hostname = None
-#         id_processor = None
-#         if sequence.jobhost is not None:
-#             hostname, id_processor = sequence.jobhost.split('/')
-#         """ Select ID if exists """
-#         selections = ['ID']
-#         conditions = {
-#             'TELESCOPE': sequence.telescope,
-#             'NIGHT': sequence.night,
-#             'ID_NIGHTLY': sequence.seq
-#         }
-#         matrix = select_db(server, user, database, table, selections, conditions)
-#         id = None
-#         if matrix:
-#             id = matrix[0][0]
-#         log.debug(f"To this sequence corresponds an entry in the {table} with ID {id}")
-#         assignments = {
-#             'TELESCOPE': sequence.telescope,
-#             'NIGHT': sequence.night,
-#             'ID_NIGHTLY': sequence.seq,
-#             'TYPE': sequence.type,
-#             'RUN': sequence.run,
-#             'SUBRUNS': sequence.subruns,
-#             'SOURCEWOBBLE': sequence.sourcewobble,
-#             'ACTION': sequence.action,
-#             'TRIES': sequence.tries,
-#             'JOBID': sequence.jobid,
-#             'STATE': sequence.state,
-#             'HOSTNAME': hostname,
-#             'ID_PROCESSOR': id_processor,
-#             'CPU_TIME': sequence.cputime,
-#             'WALL_TIME': sequence.walltime,
-#             'EXIT_STATUS': sequence.exit,
-#         }
-#
-#         if sequence.type == 'CALI':
-#             assignmentsequence.update({'PROGRESS_SCALIB': sequence.scalibstatus})
-#         elif sequence.type == 'DATA':
-#             # FIXME: translate to LST related stuff
-#             assignmentsequence.update({
-#                 'PROGRESS_SORCERER': sequence.sorcererstatus,
-#                 'PROGRESS_SSIGNAL': sequence.ssignalstatus,
-#                 'PROGRESS_MERPP': sequence.merppstatus,
-#                 'PROGRESS_STAR': sequence.starstatus,
-#                 'PROGRESS_STARHISTOGRAM': sequence.starhistogramstatus,
-#             })
-#         elif sequence.type == 'STEREO':
-#             assignmentsequence.update({
-#                 'PROGRESS_SUPERSTAR': sequence.superstarstatus,
-#                 'PROGRESS_SUPERSTARHISTOGRAM': sequence.superstarhistogramstatus,
-#                 'PROGRESS_MELIBEA': sequence.melibeastatus,
-#                 'PROGRESS_MELIBEAHISTOGRAM': sequence.melibeahistogramstatus,
-#             })
-#
-#         if sequence.parent is not None:
-#             assignments['ID_NIGHTLY_PARENTS'] = f'{sequence.parent},'
-#         if not id:
-#             conditions = {}
-#             insert_db(server, user, database, table, assignments, conditions)
-#         else:
-#             conditions = {'ID': id}
-#             update_db(server, user, database, table, assignments, conditions)
 
 
 def output_matrix(matrix: list, padding_space: int):
