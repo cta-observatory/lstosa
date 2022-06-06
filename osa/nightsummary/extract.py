@@ -272,14 +272,12 @@ def extractsequences(run_list_sorted):
 
         elif len(head) == 1:
             previousrun = head[0][0]
-            previoustype = head[0][1]
-            previousreq = head[0][2]
-            whichreq = None
             if currentrun == previousrun:
                 # it shouldn't happen, same run number, just skip to next run
                 continue
             if currenttype == "DRS4":
                 # replace the first head element
+                whichreq = None
                 log.debug(f"replacing [{currentrun}, {currenttype}, {whichreq}]")
                 head[0] = [currentrun, currenttype, whichreq]
             elif currenttype == "PEDCALIB":
