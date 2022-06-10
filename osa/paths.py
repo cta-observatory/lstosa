@@ -2,14 +2,14 @@
 
 import logging
 from pathlib import Path
+from typing import List
+
 from astropy.table import Table
-from lstchain.onsite import (
-    find_systematics_correction_file, 
-    find_time_calibration_file
-)
+from lstchain.onsite import find_systematics_correction_file, find_time_calibration_file
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.configs.datamodel import Sequence
 from osa.utils.logging import myLogger
 from osa.utils import utils
 from osa.configs.config import DEFAULT_CFG
@@ -33,7 +33,7 @@ __all__ = [
     "DATACHECK_WEB_BASEDIR",
     "DEFAULT_CFG",
     "create_source_directories",
-    "analysis_path"
+    "analysis_path",
 ]
 
 
@@ -148,25 +148,21 @@ def get_pedestal_ids_file(run_id: int, date: str) -> Path:
     return file.resolve()
 
 
-def sequence_calibration_files(sequence_list):
+def sequence_calibration_files(sequence_list: List[Sequence]) -> None:
     """Build names of the calibration files for each sequence in the list."""
     flat_date = utils.date_to_dir(options.date)
     base_dir = Path(cfg.get("LST1", "BASE"))
 
     for sequence in sequence_list:
-
-        if not sequence.parent_list:
-            drs4_pedestal_run_id = sequence.previousrun
-            pedcal_run_id = sequence.run
-        else:
-            drs4_pedestal_run_id = sequence.parent_list[0].previousrun
-            pedcal_run_id = sequence.parent_list[0].run
-
         # Assign the calibration files to the sequence object
-        sequence.pedestal = get_drs4_pedestal_file(drs4_pedestal_run_id)
-        sequence.calibration = get_calibration_file(pedcal_run_id)
-        sequence.time_calibration = find_time_calibration_file("pro", pedcal_run_id, base_dir=base_dir)
-        sequence.systematic_correction = find_systematics_correction_file("pro", flat_date, base_dir=base_dir)
+        sequence.drs4_file = get_drs4_pedestal_file(sequence.drs4_run)
+        sequence.calibration_file = get_calibration_file(sequence.pedcal_run)
+        sequence.time_calibration_file = find_time_calibration_file(
+            "pro", sequence.pedcal_run, base_dir=base_dir
+        )
+        sequence.systematic_correction_file = find_systematics_correction_file(
+            "pro", flat_date, base_dir=base_dir
+        )
 
 
 def get_datacheck_files(pattern: str, directory: Path) -> list:
@@ -208,9 +204,7 @@ def destination_dir(concept: str, create_dir: bool = True) -> Path:
     nightdir = utils.date_to_dir(options.date)
 
     if concept == "MUON":
-        directory = (
-            Path(cfg.get(options.tel_id, concept + "_DIR")) / nightdir / options.prod_id
-        )
+        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) / nightdir / options.prod_id
     elif concept in {"DL1AB", "DATACHECK"}:
         directory = (
             Path(cfg.get(options.tel_id, concept + "_DIR"))
@@ -227,16 +221,10 @@ def destination_dir(concept: str, create_dir: bool = True) -> Path:
         )
     elif concept in {"PEDESTAL", "CALIB", "TIMECALIB"}:
         directory = (
-            Path(cfg.get(options.tel_id, concept + "_DIR"))
-            / nightdir
-            / options.calib_prod_id
+            Path(cfg.get(options.tel_id, concept + "_DIR")) / nightdir / options.calib_prod_id
         )
     elif concept == "HIGH_LEVEL":
-        directory = (
-            Path(cfg.get(options.tel_id, concept + "_DIR"))
-            / nightdir
-            / options.prod_id
-        )
+        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) / nightdir / options.prod_id
     else:
         log.warning(f"Concept {concept} not known")
         directory = None

@@ -73,12 +73,8 @@ def do_setup():
     CONFIG_FLAGS["TearSubDL2"] = (
         False if path_dl2_sub.exists() or options.provenance else path_dl2_sub
     )
-    CONFIG_FLAGS["TearDL1"] = (
-        False if path_dl1.exists() or options.provenance else path_dl1
-    )
-    CONFIG_FLAGS["TearDL2"] = (
-        False if path_dl2.exists() or options.provenance else path_dl2
-    )
+    CONFIG_FLAGS["TearDL1"] = False if path_dl1.exists() or options.provenance else path_dl1
+    CONFIG_FLAGS["TearDL2"] = False if path_dl2.exists() or options.provenance else path_dl2
 
     if options.provenance and not options.force:
         if path_sub_analysis.exists():
@@ -166,12 +162,12 @@ def simulate_processing():
                         for subrun_idx in range(sub_list.subrun)
                     ]
                     processed = poolproc.map(simulate_subrun_processing, args_proc)
-        drs4_pedestal_run_id = str(sequence.pedestal).split(".")[1].replace("Run", "")
-        pedcal_run_id = str(sequence.calibration).split(".")[1].replace("Run", "")
-
         # produce prov if overwrite prov arg
         if processed and options.provenance:
             command = "provprocess"
+            drs4_pedestal_run_id = str(sequence.drs4_run)
+            pedcal_run_id = str(sequence.pedcal_run)
+
             args_pp = [
                 command,
                 "-c",
