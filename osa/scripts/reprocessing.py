@@ -20,7 +20,7 @@ def number_of_pending_jobs():
     return output.count(b"\n")
 
 
-def run_script(script: str, date, config: Path, no_dl2: bool, simulate: bool):
+def run_script(script: str, date, config: Path, no_dl2: bool, no_calib: bool, simulate: bool):
     """Run the sequencer for a given date."""
     osa_config = Path(config).resolve()
 
@@ -28,6 +28,9 @@ def run_script(script: str, date, config: Path, no_dl2: bool, simulate: bool):
 
     if no_dl2:
         cmd.append("--no-dl2")
+
+    if no_calib:
+        cmd.append("--no-calib")
 
     if simulate:
         cmd.append("--simulate")
@@ -70,6 +73,11 @@ def wait_for_daytime():
     help="Do not run the DL2 step."
 )
 @click.option(
+    "--no-calib",
+    is_flag=True,
+    help="Do not run the calibration step."
+)
+@click.option(
     "-s", "--simulate",
     is_flag=True,
     help="Activate simulation mode."
@@ -87,6 +95,7 @@ def main(
         dates_file: Path = None,
         config: Path = DEFAULT_CFG,
         no_dl2: bool = False,
+        no_calib: bool = False,
         simulate: bool = False
 ):
     """
@@ -104,7 +113,7 @@ def main(
         # Avoid running jobs while it is still night time
         wait_for_daytime()
 
-        run_script(script, date, config, no_dl2, simulate)
+        run_script(script, date, config, no_dl2, no_calib, simulate)
         log.info("Waiting 1 minute to launch the process for the next date...\n")
         time.sleep(60)
 

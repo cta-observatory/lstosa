@@ -40,6 +40,8 @@ To update the environment (provided dependencies get updated), use:
 conda env update -n osa -f environment.yml
 ```
 
+> **Note** to developers: to enforce a unique code convention, please install pre-commit (pre-commit install) after cloning the repository and creating the conda environment. This will black the committed files automatically.
+
 ## Workflow management
 `lstosa` workflow is handled daily by the `sequencer` script, which identifies which observations are to be processed, generates the analysis workflow, and submits the jobs. A first calibration job produces the daily calibration coefficients. Subsequently, data reconstruction jobs are scheduled on a subrun-wise basis (1 job corresponds to around 10 seconds of observed data, and its processing up to DL2 takes about 30-40 mins).
 
@@ -109,7 +111,7 @@ graph LR
     C1[DRS4 baseline correction]
     C2[Calibration charge coeffitiens]
     C1 --> C2
-    end    
+    end
 
     subgraph lstMCpipe
     M1[gamma DL2 MC]
@@ -143,4 +145,4 @@ graph LR
     end
 ```
 
-*Note:* Standard production of DL3 data and higher-level results is still under development.
+> **Warning**: standard production of DL3 data and higher-level results is still under development.

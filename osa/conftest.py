@@ -451,3 +451,20 @@ def run_catalog(run_catalog_dir):
     catalog_file.touch()
     catalog_file.write_text(source_information)
     return catalog_file
+
+
+@pytest.fixture(scope="session")
+def database(base_test_dir):
+    import sqlite3
+
+    osa_dir = base_test_dir / "OSA"
+    osa_dir.mkdir(parents=True, exist_ok=True)
+    db_file = osa_dir / "osa.db"
+    with sqlite3.connect(db_file) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            '''CREATE TABLE IF NOT EXISTS processing
+            (telescope, date, prod_id, start, end, is_finished)'''
+        )
+        cursor.connection.commit()
+        yield cursor

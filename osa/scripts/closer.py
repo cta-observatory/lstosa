@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Tuple, Iterable, List
 
+from osa import osadb
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import are_all_jobs_correctly_finished, save_job_information
@@ -165,11 +166,15 @@ def post_process(seq_tuple):
     # Merge DL1b files run-wise
     merge_files(seq_list, data_level="DL1AB")
 
+    merge_muon_files(seq_list)
+
     # Merge DL2 files run-wise
     if not options.no_dl2:
         merge_files(seq_list, data_level="DL2")
 
     if options.seqtoclose is None:
+        osadb.end_processing(date_to_iso(options.date))
+        # Creating closing flag files will be deprecated in future versions
         return set_closed_with_file()
 
     return False
@@ -374,6 +379,8 @@ def get_pattern(data_level) -> Tuple[str, str]:
     """Return the subrun wise file pattern for the data level."""
     if data_level == "DL1AB":
         return "dl1_LST-1.Run?????.????.h5", "dl1"
+    if data_level == "MUON":
+        return "muons_LST-1.Run?????.????.fits", "muon"
     if data_level == "DL2":
         return "dl2_LST-1.Run?????.????.h5", "dl2"
 
@@ -412,6 +419,37 @@ def merge_files(sequence_list, data_level="DL2"):
                 subprocess.run(cmd, check=True)
             else:
                 log.debug("Simulate launching scripts")
+
+
+def merge_muon_files(sequence_list):
+    """Merge muon files run-wise."""
+    log.info("Looping over the sequences and merging the MUON files")
+
+    data_dir = destination_dir("MUON", create_dir=False)
+    pattern, prefix = get_pattern("MUON")
+
+    for sequence in sequence_list:
+        merged_file = Path(data_dir) / f"muons_LST-1.Run{sequence.run:05d}.fits"
+
+        cmd = [
+            "sbatch",
+            "-D",
+            options.directory,
+            "-o",
+            f"log/merge_{prefix}_{sequence.run:05d}_%j.log",
+            "lstchain_merge_muon_files",
+            f"--input-dir={data_dir}",
+            f"--output-file={merged_file}",
+            f"--run-number={sequence.run}",
+            f"--pattern={pattern}",
+        ]
+
+        log.debug(f"Executing {stringify(cmd)}")
+
+        if not options.simulate and not options.test and shutil.which('sbatch') is not None:
+            subprocess.run(cmd, check=True)
+        else:
+            log.debug("Simulate launching scripts")
 
 
 def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:

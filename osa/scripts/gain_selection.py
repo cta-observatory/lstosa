@@ -3,6 +3,7 @@ import fileinput
 import logging
 import re
 import shutil
+import glob
 import subprocess as sp
 from pathlib import Path
 from textwrap import dedent
@@ -56,21 +57,33 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
 
     output_dir = output_basedir / date
-    log_dir = output_basedir / "log"
+    log_dir = output_basedir / "log" /date
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
     r0_dir = Path(f"/fefs/aswg/data/real/R0/{date}")
 
     for run in data_runs:
         run_id = run["run_id"]
+        n_subruns = run["n_subruns"]
         ref_time = run["dragon_reference_time"]
         ref_counter = run["dragon_reference_counter"]
         module = run["dragon_reference_module_index"]
         ref_source = run["dragon_reference_source"].upper()
 
+        input_files = []
+
         if ref_source=="UCTS" or ref_source=="TIB":
 
-            input_files = r0_dir.glob(f"LST-1.1.Run{run_id:05d}.????.fits.fz")
+            for subrun in range(n_subruns):
+                new_files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
+
+                if len(new_files) != 4:
+                    for file in new_files:
+                        shutil.copy2(file, output_dir, follow_symlinks=True)
+ 
+                else:
+                    new_files.sort()
+                    input_files.append(new_files[0])
 
             for file in input_files:
                 run_info = run_info_from_filename(file)
@@ -105,21 +118,25 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
         for file in r0_files:
             shutil.copy2(file, output_dir, follow_symlinks=True)
 
-def check_failed_jobs(output_basedir: Path = None):
+def check_failed_jobs(date: str, output_basedir: Path = None):
     """Search for failed jobs in the log directory."""
     failed_jobs = []
-    log_dir = output_basedir / "log"
-    filenames = log_dir.glob('gain_selection*.log')
+    log_dir = output_basedir / "log" /date
+    filenames = log_dir.glob("gain_selection*.log")
 
     for line in fileinput.input(filenames):
-        if re.search('FAILED', line):
-            job_id = fileinput.filename()[-12:-4]
+        if re.search("FAILED", line) or re.search("Stream [1-4] not found", line):
+            job_id = str(fileinput.filename())[-12:-4]
+            run_id = str(fileinput.filename())[-23:-18]
+            subrun_id = str(fileinput.filename())[-17:-13]
             failed_jobs.append(job_id)
 
+            log.warning(f"Job {job_id} (corresponding to run {run_id}, subrun {subrun_id}) failed.")
+
     if not failed_jobs:
-        log.info('All jobs finished successfully.')
+        log.info("All jobs finished successfully.")
     else:
-        log.warning(f'The following jobs failed: {failed_jobs}')
+        log.warning("Some jobs did not finish successfully.")
 
 
 @click.command()
@@ -134,11 +151,12 @@ def main(dates_file: Path = None, output_basedir: Path = None, check: bool = Fal
     """
     log.setLevel(logging.INFO)
 
-    if check:
-        check_failed_jobs(output_basedir)
-    else:
-        list_of_dates = get_list_of_dates(dates_file)
+    list_of_dates = get_list_of_dates(dates_file)
 
+    if check:
+        for date in list_of_dates:
+            check_failed_jobs(date, output_basedir)
+    else:
         for date in list_of_dates:
             apply_gain_selection(date, output_basedir)
 
