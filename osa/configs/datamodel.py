@@ -61,9 +61,9 @@ class Sequence(RunObj):
     def __init__(self):
         super(Sequence, self).__init__()
         self.seq = None
-        self.parent_list = []
+        self.pedcal_run = None
+        self.drs4_run = None
         self.parent = None
-        self.parentjobid = None
         self.previousrun = None
         self.script = None
         self.veto = None
@@ -90,17 +90,22 @@ class SequenceCalibration(Sequence):
         super(SequenceCalibration, self).__init__()
         super(SequenceCalibration, self).associate(r)
         self.calibstatus = None
+        self.seq = 1
+        self.parent = None
+        self.drs4_run = None
 
 
 class SequenceData(Sequence):
     def __init__(self, r):
         super(SequenceData, self).__init__()
         super(SequenceData, self).associate(r)
-        self.calibration = None
-        self.pedestal = None
+        self.parent = 1
+        self.time_calibration_run = None
         self.drive = None
-        self.time_calibration = None
-        self.systematic_correction = None
+        self.drs4_file = None
+        self.calibration_file = None
+        self.time_calibration_file = None
+        self.systematic_correction_file = None
         self.dl1status = None
         self.dl1abstatus = None
         self.muonstatus = None
