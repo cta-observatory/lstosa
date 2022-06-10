@@ -19,16 +19,12 @@ from osa.paths import (
     pedestal_ids_file_exists,
     get_drive_file,
     get_summary_file,
-    get_pedestal_ids_file
+    get_pedestal_ids_file,
 )
 from osa.report import history
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
-from osa.utils.utils import (
-    date_to_dir,
-    time_to_seconds,
-    stringify, date_to_iso
-)
+from osa.utils.utils import date_to_dir, time_to_seconds, stringify, date_to_iso
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -52,7 +48,7 @@ __all__ = [
     "run_squeue",
     "calibration_sequence_job_template",
     "data_sequence_job_template",
-    "save_job_information"
+    "save_job_information",
 ]
 
 TAB = "\t".expandtabs(4)
@@ -210,9 +206,7 @@ def historylevel(history_file: Path, data_type: str):
                 program = words[1]
                 prod_id = words[2]
                 exit_status = int(words[-1])
-                log.debug(
-                    f"{program}, finished with error {exit_status} and prod ID {prod_id}"
-                )
+                log.debug(f"{program}, finished with error {exit_status} and prod ID {prod_id}")
             except (IndexError, ValueError) as err:
                 log.exception(f"Malformed history file {history_file}, {err}")
             else:
@@ -226,15 +220,11 @@ def historylevel(history_file: Path, data_type: str):
                     level = 3 if exit_status == 0 else 4
                 elif program == cfg.get("lstchain", "dl1ab"):
                     if (exit_status == 0) and (prod_id == options.dl1_prod_id):
-                        log.debug(
-                            f"DL1ab prod ID: {options.dl1_prod_id} already produced"
-                        )
+                        log.debug(f"DL1ab prod ID: {options.dl1_prod_id} already produced")
                         level = 2
                     else:
                         level = 3
-                        log.debug(
-                            f"DL1ab prod ID: {options.dl1_prod_id} not produced yet"
-                        )
+                        log.debug(f"DL1ab prod ID: {options.dl1_prod_id} not produced yet")
                         break
                 elif program == cfg.get("lstchain", "check_dl1"):
                     level = 1 if exit_status == 0 else 2
@@ -292,9 +282,7 @@ def save_job_information():
     jobs_df_filtered = jobs_df.copy()
     jobs_df_filtered = jobs_df_filtered.dropna()
     # Remove the G from MaxRSS value and convert to float
-    jobs_df_filtered["MaxRSS"] = (
-        jobs_df_filtered["MaxRSS"].str.strip("G").astype(float)
-    )
+    jobs_df_filtered["MaxRSS"] = jobs_df_filtered["MaxRSS"].str.strip("G").astype(float)
 
     jobs_df_filtered.to_csv(file_path, index=False, sep=",")
 
@@ -320,9 +308,7 @@ def plot_job_statistics(sacct_output: pd.DataFrame, directory: Path):
     sacct_output_filter = sacct_output.copy()
     sacct_output_filter = sacct_output_filter.dropna()
     # Remove the G from MaxRSS value and convert to float
-    sacct_output_filter["MaxRSS"] = (
-        sacct_output_filter["MaxRSS"].str.strip("G").astype(float)
-    )
+    sacct_output_filter["MaxRSS"] = sacct_output_filter["MaxRSS"].str.strip("G").astype(float)
 
     plt.figure()
     plt.hist2d(sacct_output_filter.MaxRSS, sacct_output_filter.CPUTimeRAW / 3600, bins=50)
@@ -357,12 +343,8 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
     if sequence.type == "DATA":
         sbatch_parameters.append(f"--array=0-{subruns}")
 
-    sbatch_parameters.append(
-        f"--partition={cfg.get('SLURM', f'PARTITION_{sequence.type}')}"
-    )
-    sbatch_parameters.append(
-        f"--mem-per-cpu={cfg.get('SLURM', f'MEMSIZE_{sequence.type}')}"
-    )
+    sbatch_parameters.append(f"--partition={cfg.get('SLURM', f'PARTITION_{sequence.type}')}")
+    sbatch_parameters.append(f"--mem-per-cpu={cfg.get('SLURM', f'MEMSIZE_{sequence.type}')}")
 
     return ["#SBATCH " + line for line in sbatch_parameters]
 
@@ -449,10 +431,10 @@ def data_sequence_job_template(sequence):
 
     commandargs.append(f"--date={date_to_iso(options.date)}")
     commandargs.append(f"--prod-id={options.prod_id}")
-    commandargs.append(f"--drs4-pedestal-file={sequence.pedestal}")
-    commandargs.append(f"--time-calib-file={sequence.time_calibration}")
-    commandargs.append(f"--pedcal-file={sequence.calibration}")
-    commandargs.append(f"--systematic-correction-file={sequence.systematic_correction}")
+    commandargs.append(f"--drs4-pedestal-file={sequence.drs4_file}")
+    commandargs.append(f"--time-calib-file={sequence.time_calibration_file}")
+    commandargs.append(f"--pedcal-file={sequence.calibration_file}")
+    commandargs.append(f"--systematic-correction-file={sequence.systematic_correction_file}")
     commandargs.append(f"--drive-file={get_drive_file(flat_date)}")
     commandargs.append(f"--run-summary={get_summary_file(flat_date)}")
 
@@ -521,7 +503,7 @@ def calibration_sequence_job_template(sequence):
         commandargs.append(f"{Path(options.configfile).resolve()}")
 
     commandargs.append(f"--date={date_to_iso(options.date)}")
-    commandargs.append(f"--drs4-pedestal-run={sequence.previousrun:05d}")
+    commandargs.append(f"--drs4-pedestal-run={sequence.drs4_run:05d}")
     commandargs.append(f"--pedcal-run={sequence.run:05d}")
 
     content = job_header + "\n" + PYTHON_IMPORTS
@@ -597,7 +579,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
         # from previous time sequencer was launched.
 
         # Add the job dependencies after calibration sequence
-        if sequence.parent_list and sequence.type == "DATA":
+        if sequence.type == "DATA":
             if not options.simulate and not options.no_calib and not options.test:
                 log.debug("Adding dependencies to job submission")
                 depend_string = f"--dependency=afterok:{parent_jobid}"
@@ -609,8 +591,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
                 log.debug("SIMULATE Launching scripts")
             elif options.test:
                 log.debug(
-                    "TEST launching datasequence scripts for "
-                    "first subrun without scheduler"
+                    "TEST launching datasequence scripts for " "first subrun without scheduler"
                 )
                 commandargs = ["python", sequence.script]
                 sp.check_output(commandargs, shell=False)
@@ -705,8 +686,8 @@ def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
 
     # Keep only the jobs corresponding to OSA sequences
     sacct_output = sacct_output[
-        (sacct_output['JobName'].str.contains("batch")) |
-        (sacct_output["JobName"].str.contains("LST1"))
+        (sacct_output['JobName'].str.contains("batch"))
+        | (sacct_output["JobName"].str.contains("LST1"))
     ]
 
     try:
@@ -727,9 +708,7 @@ def filter_jobs(job_info: pd.DataFrame, sequence_list: Iterable):
 
 
 def set_queue_values(
-        sacct_info: pd.DataFrame,
-        squeue_info: pd.DataFrame,
-        sequence_list: Iterable
+    sacct_info: pd.DataFrame, squeue_info: pd.DataFrame, sequence_list: Iterable
 ) -> None:
     """
     Extract job info from sacct output and
@@ -799,13 +778,13 @@ def update_sequence_state(sequence, filtered_job_info: pd.DataFrame) -> None:
 
 
 def run_program_with_history_logging(
-        command_args: List[str],
-        history_file: Path,
-        run: str,
-        prod_id: str,
-        command: str,
-        input_file: Optional[str] = None,
-        config_file: Optional[str] = None,
+    command_args: List[str],
+    history_file: Path,
+    run: str,
+    prod_id: str,
+    command: str,
+    input_file: Optional[str] = None,
+    config_file: Optional[str] = None,
 ):
     """
     Run the program and log the output in the history file
@@ -837,7 +816,7 @@ def run_program_with_history_logging(
         return_code=rc,
         history_file=history_file,
         input_file=input_file,
-        config_file=config_file
+        config_file=config_file,
     )
 
     if rc != 0:
