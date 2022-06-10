@@ -21,7 +21,7 @@ import pytest
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.nightsummary.extract import extractruns, extractsubruns, extractsequences
+from osa.nightsummary.extract import extractruns, extractsubruns, extract_sequences
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.scripts.tests.test_osa_scripts import run_program
 from osa.utils.utils import date_to_dir
@@ -163,7 +163,7 @@ def dl2_final_dir(base_test_dir):
 @pytest.fixture(scope="session")
 def calibration_file(calibration_dir):
     """Mock calibration files for testing."""
-    calib_file = calibration_dir / "calibration_filters_52.Run01806.0000.h5"
+    calib_file = calibration_dir / "calibration_filters_52.Run01809.0000.h5"
     calib_file.touch()
     return calib_file
 
@@ -205,7 +205,8 @@ def dl2_merged(dl2_final_dir):
 @pytest.fixture(scope="session")
 def run_summary_file(run_summary_dir):
 
-    summary_content = dedent("""\
+    summary_content = dedent(
+        """\
     # %ECSV 0.9
     # ---
     # datatype:
@@ -230,7 +231,9 @@ def run_summary_file(run_summary_dir):
     1805,5,PEDCALIB,1579291426030146503,1579291413000000000,1579291426030146503,90,0,2030146000,ucts
     1806,5,PEDCALIB,1579291932080485703,1579291917000000000,1579291932080485703,90,0,5080485200,ucts
     1807,11,DATA,1579292477145904430,1579292461000000000,1579292477145904430,90,0,6145904000,ucts
-    1808,9,DATA,1579292985532016507,1579292975000000000,1579292985532016507,90,0,2532016000,ucts""")
+    1808,9,DATA,1579292985532016507,1579292975000000000,1579292985532016507,90,0,2532016000,ucts
+    1809,5,PEDCALIB,1579291932080485703,1579291917000000000,1579291932080485703,90,0,5080485200,ucts"""
+    )
 
     summary_file = run_summary_dir / 'RunSummary_20200117.ecsv'
     summary_file.touch()
@@ -241,7 +244,8 @@ def run_summary_file(run_summary_dir):
 @pytest.fixture(scope="session")
 def merged_run_summary(base_test_dir):
     """Mock merged run summary file for testing."""
-    summary_content = dedent("""\
+    summary_content = dedent(
+        """\
     # %ECSV 1.0
     # ---
     # datatype:
@@ -274,7 +278,9 @@ def merged_run_summary(base_test_dir):
     2020-01-17 1805 PEDCALIB 62 2020-01-18T00:11:52.000 13.9 21.9 17.9 1.6
     2020-01-17 1806 PEDCALIB 35 2020-01-18T00:44:06.000 8.6 29.1 45.5 6.9
     2020-01-17 1807 DATA 35 2020-01-18T00:44:06.000 6.6 2.8 70.4 10.1
-    2020-01-17 1808 DATA 35 2020-01-18T00:44:06.000 8.6 9.2 60.8 3.2""")
+    2020-01-17 1808 DATA 35 2020-01-18T00:44:06.000 8.6 9.2 60.8 3.2
+    2020-01-17 1809 PEDCALIB 4 2020-01-18T00:44:06.000 6.9 4.2 16.8 11.2"""
+    )
 
     merged_summary_dir = base_test_dir / "OSA/Catalog"
     merged_summary_dir.mkdir(parents=True, exist_ok=True)
@@ -304,13 +310,13 @@ def pedestal_ids_file(base_test_dir):
 
 @pytest.fixture(scope="session")
 def sequence_list(
-        running_analysis_dir,
-        run_summary,
-        drs4_time_calibration_files,
-        systematic_correction_files,
-        r0_data,
-        pedestal_ids_file,
-        merged_run_summary
+    running_analysis_dir,
+    run_summary,
+    drs4_time_calibration_files,
+    systematic_correction_files,
+    r0_data,
+    pedestal_ids_file,
+    merged_run_summary,
 ):
     """Creates a sequence list from a run summary file."""
     options.directory = running_analysis_dir
@@ -332,17 +338,17 @@ def sequence_list(
     subrun_list = extractsubruns(run_summary)
     run_list = extractruns(subrun_list)
     options.test = False
-    return extractsequences(run_list)
+    return extract_sequences(options.date, run_list)
 
 
 @pytest.fixture(scope="session")
 def sequence_file_list(
-        running_analysis_dir,
-        run_summary_file,
-        run_catalog,
-        drs4_time_calibration_files,
-        systematic_correction_files,
-        r0_data
+    running_analysis_dir,
+    run_summary_file,
+    run_catalog,
+    drs4_time_calibration_files,
+    systematic_correction_files,
+    r0_data,
 ):
     for r0_file in r0_data:
         assert r0_file.exists()
@@ -357,8 +363,9 @@ def sequence_file_list(
     assert run_catalog.exists()
 
     run_program("sequencer", "-d", "2020-01-17", "--no-submit", "-t", "LST1")
+    # First sequence in the list corresponds to the calibration run 1809
     return [
-        running_analysis_dir / "sequence_LST1_01806.py",
+        running_analysis_dir / "sequence_LST1_01809.py",
         running_analysis_dir / "sequence_LST1_01807.py",
         running_analysis_dir / "sequence_LST1_01808.py",
     ]
@@ -367,6 +374,7 @@ def sequence_file_list(
 @pytest.fixture(scope="session")
 def txt_file_test(running_analysis_dir):
     from osa.utils.iofile import write_to_file
+
     options.simulate = False
     file = running_analysis_dir / "test.txt"
     write_to_file(file, 'This is a test')
@@ -407,7 +415,7 @@ def daily_datacheck_dl1_files(longterm_dir):
 def calibration_check_plot(calibration_dir):
     calibration_dir_log = calibration_dir / "log"
     calibration_dir_log.mkdir(parents=True, exist_ok=True)
-    file = calibration_dir_log / "calibration_filters_52.Run01806.0000.pdf"
+    file = calibration_dir_log / "calibration_filters_52.Run01809.0000.pdf"
     file.touch()
     return file
 
@@ -423,7 +431,8 @@ def drs4_check_plot(drs4_baseline_dir):
 
 @pytest.fixture(scope="session")
 def run_catalog(run_catalog_dir):
-    source_information = dedent("""\
+    source_information = dedent(
+        """\
     # %ECSV 1.0
     # ---
     # datatype:
@@ -435,7 +444,8 @@ def run_catalog(run_catalog_dir):
     # schema: astropy-2.0
     run_id,source_name,source_ra,source_dec
     1807,Crab,83.543,22.08
-    1808,MadeUpSource,115.441,43.98""")
+    1808,MadeUpSource,115.441,43.98"""
+    )
 
     catalog_file = run_catalog_dir / 'RunCatalog_20200117.ecsv'
     catalog_file.touch()
