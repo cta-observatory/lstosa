@@ -5,6 +5,7 @@ import logging
 import shutil
 import subprocess as sp
 import time
+import os
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent
@@ -798,6 +799,34 @@ def update_sequence_state(sequence, filtered_job_info: pd.DataFrame) -> None:
         sequence.state = "RUNNING"
 
 
+def run_cmd(
+        command_args: List[str],
+        history_file: Path,
+        run: str,
+        prod_id: str,
+        command: str,
+        input_file: Optional[str] = None,
+        config_file: Optional[str] = None,
+):
+
+    log.info(f"Executing {stringify(command_args)}")
+
+    output = sp.run(command_args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding='utf-8')
+    rc = output.returncode
+
+    history(
+        run=run,
+        prod_id=prod_id,
+        stage=command,
+        return_code=rc,
+        history_file=history_file,
+        input_file=input_file,
+        config_file=config_file
+    )
+
+    return rc
+    
+
 def run_program_with_history_logging(
         command_args: List[str],
         history_file: Path,
@@ -825,22 +854,54 @@ def run_program_with_history_logging(
     rc: int
         Return code of the program
     """
-    log.info(f"Executing {stringify(command_args)}")
-
-    output = sp.run(command_args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding='utf-8')
-    rc = output.returncode
-
-    history(
-        run=run,
-        prod_id=prod_id,
-        stage=command,
-        return_code=rc,
-        history_file=history_file,
-        input_file=input_file,
-        config_file=config_file
+    rc = run_cmd(
+        command_args,
+        history_file,
+        run,
+        prod_id,
+        command,
+        input_file,
+        config_file,
     )
 
-    if rc != 0:
-        raise ValueError(f"{command_args[0]} failed with output: \n {output.stdout}")
+    ntries = 1
+    max_tries = 3
+
+    while rc != 0 and ntries<=max_tries:
+        if command == "lstchain_dl1ab":
+            dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
+            output_file = dl1ab_subdirectory / f"dl1_LST-1.Run{run}.h5"
+
+            os.remove(output_file)
+            rc = run_cmd(
+                command_args,
+                history_file,
+                run,
+                prod_id,
+                command,
+                input_file,
+                config_file,
+            )
+
+        elif command == "lstchain_check_dl1":
+            dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
+            output_file = dl1ab_subdirectory / f"datacheck_dl1_LST-1.Run{run}.*"
+
+            os.remove(output_file)
+            rc = run_cmd(
+                command_args,
+                history_file,
+                run,
+                prod_id,
+                command,
+                input_file,
+                config_file,
+            )
+
+        ntries += 1
+
+    else: 
+        if rc != 0 and n_tries == max_tries:
+            raise ValueError(f"{command_args[0]} failed with output: \n {output.stdout}")
 
     return rc
