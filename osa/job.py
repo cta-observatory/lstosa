@@ -825,7 +825,7 @@ def run_cmd(
     )
 
     return rc
-    
+
 
 def run_program_with_history_logging(
         command_args: List[str],
@@ -901,7 +901,7 @@ def run_program_with_history_logging(
         ntries += 1
 
     else: 
-        if rc != 0 and n_tries == max_tries:
+        if rc != 0 and ntries == max_tries:
             raise ValueError(f"{command_args[0]} failed with output: \n {output.stdout}")
 
     return rc
