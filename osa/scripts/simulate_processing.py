@@ -165,13 +165,13 @@ def simulate_processing():
         # produce prov if overwrite prov arg
         if processed and options.provenance:
             command = "provprocess"
-            drs4_pedestal_run_id = str(sequence.drs4_run)
-            pedcal_run_id = str(sequence.pedcal_run)
+            drs4_pedestal_run_id = f"{sequence.drs4_run:05d}"
+            pedcal_run_id = f"{sequence.pedcal_run:05d}"
 
             args_pp = [
                 command,
                 "-c",
-                options.configfile,
+                f"{options.configfile}",
                 drs4_pedestal_run_id,
                 pedcal_run_id,
                 sequence.run_str,
