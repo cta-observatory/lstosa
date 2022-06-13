@@ -67,36 +67,27 @@ def wait_for_daytime():
 
 
 @click.command()
+@click.option("--no-dl2", is_flag=True, help="Do not run the DL2 step.")
+@click.option("--no-calib", is_flag=True, help="Do not run the calibration step.")
+@click.option("-s", "--simulate", is_flag=True, help="Activate simulation mode.")
 @click.option(
-    "--no-dl2",
-    is_flag=True,
-    help="Do not run the DL2 step."
-)
-@click.option(
-    "--no-calib",
-    is_flag=True,
-    help="Do not run the calibration step."
-)
-@click.option(
-    "-s", "--simulate",
-    is_flag=True,
-    help="Activate simulation mode."
-)
-@click.option(
-    '-c', '--config',
+    '-c',
+    '--config',
     type=click.Path(exists=True),
     default=DEFAULT_CFG,
     help='Path to the OSA config file.',
 )
-@click.argument('script', type=click.Choice(['sequencer', 'closer', 'copy_datacheck']))
+@click.argument(
+    'script', type=click.Choice(['sequencer', 'closer', 'copy_datacheck', 'autocloser'])
+)
 @click.argument('dates-file', type=click.Path(exists=True))
 def main(
-        script: str = None,
-        dates_file: Path = None,
-        config: Path = DEFAULT_CFG,
-        no_dl2: bool = False,
-        no_calib: bool = False,
-        simulate: bool = False
+    script: str = None,
+    dates_file: Path = None,
+    config: Path = DEFAULT_CFG,
+    no_dl2: bool = False,
+    no_calib: bool = False,
+    simulate: bool = False,
 ):
     """
     Loop over the dates listed in the input file and launch the script for each of them.
