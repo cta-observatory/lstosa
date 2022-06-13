@@ -824,7 +824,7 @@ def run_cmd(
         config_file=config_file
     )
 
-    return rc
+    return rc, output
 
 
 def run_program_with_history_logging(
@@ -854,7 +854,7 @@ def run_program_with_history_logging(
     rc: int
         Return code of the program
     """
-    rc = run_cmd(
+    rc, output = run_cmd(
         command_args,
         history_file,
         run,
@@ -873,7 +873,7 @@ def run_program_with_history_logging(
             output_file = dl1ab_subdirectory / f"dl1_LST-1.Run{run}.h5"
 
             os.remove(output_file)
-            rc = run_cmd(
+            rc, output = run_cmd(
                 command_args,
                 history_file,
                 run,
@@ -888,7 +888,7 @@ def run_program_with_history_logging(
             output_file = dl1ab_subdirectory / f"datacheck_dl1_LST-1.Run{run}.*"
 
             os.remove(output_file)
-            rc = run_cmd(
+            rc, output = run_cmd(
                 command_args,
                 history_file,
                 run,
