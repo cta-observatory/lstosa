@@ -141,29 +141,6 @@ def extract_runs(summary_table):
     return run_list
 
 
-# def extractruns(subrun_list):
-#     """
-#
-#     Parameters
-#     ----------
-#     subrun_list
-#         List of subruns
-#
-#     Returns
-#     -------
-#     run_list
-#
-#     """
-#     run_list = []
-#     for subrun in subrun_list:
-#         if subrun.runobj not in run_list:
-#             subrun.runobj.subruns = subrun.subrun
-#             run_list.append(subrun.runobj)
-#
-#     log.debug("Run list extracted")
-#     return run_list
-
-
 def extract_sequences(date: datetime, run_obj_list: List[RunObj]) -> List[Sequence]:
     """
     Create calibration and data sequences from run objects.
@@ -237,7 +214,6 @@ def extract_sequences(date: datetime, run_obj_list: List[RunObj]) -> List[Sequen
 def build_sequences(date: datetime) -> List:
     """Build the list of sequences to process from a given date."""
     summary_table = run_summary_table(date)
-    # subrun_list = extractsubruns(summary_table)
     run_list = extract_runs(summary_table)
     # modifies run_list by adding the seq and parent info into runs
     return extract_sequences(date, run_list)
