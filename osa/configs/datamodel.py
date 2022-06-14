@@ -1,3 +1,5 @@
+"""Definition of classes containing run and sequence information"""
+
 from dataclasses import dataclass
 
 
