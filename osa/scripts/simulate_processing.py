@@ -151,17 +151,16 @@ def simulate_processing():
     # simulate data calibration and reduction
     for sequence in sequence_list:
         processed = False
-        for sub_list in sequence.subrun_list:
-            if sub_list.runobj.type == "PEDCALIB":
-                args_cal = parse_template(calibration_sequence_job_template(sequence), 0)
-                simulate_calibration(args_cal)
-            elif sub_list.runobj.type == "DATA":
-                with mp.Pool() as poolproc:
-                    args_proc = [
-                        parse_template(data_sequence_job_template(sequence), subrun_idx)
-                        for subrun_idx in range(sub_list.subrun)
-                    ]
-                    processed = poolproc.map(simulate_subrun_processing, args_proc)
+        if sequence.type == "PEDCALIB":
+            args_cal = parse_template(calibration_sequence_job_template(sequence), 0)
+            simulate_calibration(args_cal)
+        elif sequence.type == "DATA":
+            with mp.Pool() as poolproc:
+                args_proc = [
+                    parse_template(data_sequence_job_template(sequence), subrun_idx)
+                    for subrun_idx in range(sequence.subruns)
+                ]
+                processed = poolproc.map(simulate_subrun_processing, args_proc)
         # produce prov if overwrite prov arg
         if processed and options.provenance:
             command = "provprocess"
