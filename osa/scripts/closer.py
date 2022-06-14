@@ -16,7 +16,7 @@ from osa import osadb
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import are_all_jobs_correctly_finished, save_job_information
-from osa.nightsummary.extract import extractruns, extract_sequences, extractsubruns
+from osa.nightsummary.extract import extract_runs, extract_sequences
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import destination_dir
 from osa.raw import is_raw_data_available
@@ -269,8 +269,7 @@ def is_finished_check(run_summary):
     sequence_success = False
     if run_summary is not None:
         # building the sequences (the same way as the sequencer)
-        subrun_list = extractsubruns(run_summary)
-        run_list = extractruns(subrun_list)
+        run_list = extract_runs(run_summary)
         sequence_list = extract_sequences(options.date, run_list)
 
         if are_all_jobs_correctly_finished(sequence_list):

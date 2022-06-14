@@ -1,5 +1,7 @@
 """Extract subrun, run, sequence list and build corresponding objects."""
 
+
+import itertools
 import logging
 import sys
 from collections import defaultdict
@@ -7,9 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List
 
-from astropy import units as u
 from astropy.table import Table
-from astropy.time import Time
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -17,7 +17,6 @@ from osa.configs.datamodel import (
     RunObj,
     SequenceCalibration,
     SequenceData,
-    SubrunObj,
 )
 from osa.configs.datamodel import Sequence
 from osa.job import sequence_filenames
@@ -30,8 +29,7 @@ from osa.utils.utils import date_to_iso, date_to_dir
 log = myLogger(logging.getLogger(__name__))
 
 __all__ = [
-    "extractsubruns",
-    "extractruns",
+    "extract_runs",
     "extract_sequences",
     "build_sequences",
     "get_source_list",
@@ -56,7 +54,7 @@ def get_last_pedcalib(date) -> int:
     return summary[summary["run_type"] == "PEDCALIB"]["run_id"].max()
 
 
-def extractsubruns(summary_table):
+def extract_runs(summary_table):
     """
     Extract sub-wun wise information from RunSummary files.
 
@@ -71,37 +69,20 @@ def extractsubruns(summary_table):
     -------
     subrun_list
     """
-    subrun_list = []
+    run_list = []
 
     # Get information run-wise going through each row
     for run_id in summary_table["run_id"]:
-        sr = SubrunObj()
         run_info = summary_table.loc[run_id]
-        sr.subrun = run_info["n_subruns"]
-        sr.timestamp = Time(run_info["run_start"] * u.ns, format="unix").isot
-        sr.ucts_timestamp = run_info["ucts_timestamp"]
-        sr.dragon_reference_time = run_info["dragon_reference_time"]
-        sr.dragon_reference_module_id = run_info["dragon_reference_module_id"]
-        sr.dragon_reference_module_index = run_info["dragon_reference_module_index"]
-        sr.dragon_reference_counter = run_info["dragon_reference_counter"]
-        sr.dragon_reference_source = run_info["dragon_reference_source"]
-
-        try:
-            # Build run object
-            sr.runobj = RunObj()
-            sr.runobj.run_str = f"{run_info['run_id']:05d}"
-            sr.runobj.run = int(run_info["run_id"])
-            sr.runobj.type = run_info["run_type"]
-            sr.runobj.telescope = options.tel_id
-            sr.runobj.night = date_to_iso(options.date)
-        except KeyError as err:
-            log.warning(f"Key error, {err}")
-        except IndexError as err:
-            log.warning(f"Index error, {err}")
-        else:
-            sr.runobj.subrun_list.append(sr)
-            sr.runobj.subruns = len(sr.runobj.subrun_list)
-            subrun_list.append(sr)
+        # Build run object
+        run = RunObj(
+            run=run_id,
+            run_str=f"{run_id:05d}",
+            type=run_info["run_type"],
+            night=date_to_iso(options.date),
+            subruns=run_info["n_subruns"],
+        )
+        run_list.append(run)
 
     # Before trying to access the information in the database, check if it is available
     # in the RunCatalog file (previously generated with the information in the database).
@@ -118,39 +99,32 @@ def extractsubruns(summary_table):
 
         # Get information run-wise going through each row of the RunCatalog file
         # and assign it to the corresponding run object.
-        for run_id in source_catalog["run_id"]:
-            for sr in subrun_list:
-                if sr.runobj.run == run_id:
-                    sr.runobj.source_name = source_catalog.loc[run_id]["source_name"]
-                    sr.runobj.source_ra = source_catalog.loc[run_id]["source_ra"]
-                    sr.runobj.source_dec = source_catalog.loc[run_id]["source_dec"]
+        for run_id, run in itertools.product(source_catalog["run_id"], run_list):
+            if run.run == run_id:
+                run.source_name = source_catalog.loc[run_id]["source_name"]
+                run.source_ra = source_catalog.loc[run_id]["source_ra"]
+                run.source_dec = source_catalog.loc[run_id]["source_dec"]
 
-    # Add metadata from TCU database if available
-    # and store it in a ECSV file to be re-used
     elif database.db_available():
         run_table = Table(
             names=["run_id", "source_name", "source_ra", "source_dec"],
             dtype=["int32", str, "float64", "float64"],
         )
-        for sr in subrun_list:
-            sr.runobj.source_name = database.query(
-                obs_id=sr.runobj.run, property_name="DriveControl_SourceName"
+        for run in run_list:
+            run.source_name = database.query(
+                obs_id=run.run, property_name="DriveControl_SourceName"
             )
-            sr.runobj.source_ra = database.query(
-                obs_id=sr.runobj.run, property_name="DriveControl_RA_Target"
-            )
-            sr.runobj.source_dec = database.query(
-                obs_id=sr.runobj.run, property_name="DriveControl_Dec_Target"
-            )
+            run.source_ra = database.query(obs_id=run.run, property_name="DriveControl_RA_Target")
+            run.source_dec = database.query(obs_id=run.run, property_name="DriveControl_Dec_Target")
             # Store this source information (run_id, source_name, source_ra, source_dec)
             # into an astropy Table and save to disk. In this way, the information can be
             # dumped anytime later more easily than accessing the TCU database itself.
-            if sr.runobj.source_name is not None:
+            if run.source_name is not None:
                 line = [
-                    sr.runobj.run,
-                    sr.runobj.source_name,
-                    sr.runobj.source_ra,
-                    sr.runobj.source_dec,
+                    run.run,
+                    run.source_name,
+                    run.source_ra,
+                    run.source_dec,
                 ]
                 log.debug(f"Adding line with source info to RunCatalog: {line}")
                 run_table.add_row(line)
@@ -160,34 +134,34 @@ def extractsubruns(summary_table):
 
     log.debug("Subrun list extracted")
 
-    if not subrun_list:
+    if not run_list:
         log.warning("No runs found for this date. Nothing to do. Exiting.")
         sys.exit(0)
 
-    return subrun_list
-
-
-def extractruns(subrun_list):
-    """
-
-    Parameters
-    ----------
-    subrun_list
-        List of subruns
-
-    Returns
-    -------
-    run_list
-
-    """
-    run_list = []
-    for subrun in subrun_list:
-        if subrun.runobj not in run_list:
-            subrun.runobj.subruns = subrun.subrun
-            run_list.append(subrun.runobj)
-
-    log.debug("Run list extracted")
     return run_list
+
+
+# def extractruns(subrun_list):
+#     """
+#
+#     Parameters
+#     ----------
+#     subrun_list
+#         List of subruns
+#
+#     Returns
+#     -------
+#     run_list
+#
+#     """
+#     run_list = []
+#     for subrun in subrun_list:
+#         if subrun.runobj not in run_list:
+#             subrun.runobj.subruns = subrun.subrun
+#             run_list.append(subrun.runobj)
+#
+#     log.debug("Run list extracted")
+#     return run_list
 
 
 def extract_sequences(date: datetime, run_obj_list: List[RunObj]) -> List[Sequence]:
@@ -263,8 +237,8 @@ def extract_sequences(date: datetime, run_obj_list: List[RunObj]) -> List[Sequen
 def build_sequences(date: datetime) -> List:
     """Build the list of sequences to process from a given date."""
     summary_table = run_summary_table(date)
-    subrun_list = extractsubruns(summary_table)
-    run_list = extractruns(subrun_list)
+    # subrun_list = extractsubruns(summary_table)
+    run_list = extract_runs(summary_table)
     # modifies run_list by adding the seq and parent info into runs
     return extract_sequences(date, run_list)
 

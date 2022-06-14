@@ -21,7 +21,7 @@ import pytest
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.nightsummary.extract import extractruns, extractsubruns, extract_sequences
+from osa.nightsummary.extract import extract_runs, extract_sequences
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.scripts.tests.test_osa_scripts import run_program
 from osa.utils.utils import date_to_dir
@@ -335,8 +335,7 @@ def sequence_list(
     assert pedestal_ids_file.exists()
     assert merged_run_summary.exists()
 
-    subrun_list = extractsubruns(run_summary)
-    run_list = extractruns(subrun_list)
+    run_list = extract_runs(run_summary)
     options.test = False
     return extract_sequences(options.date, run_list)
 

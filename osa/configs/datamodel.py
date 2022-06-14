@@ -1,60 +1,17 @@
-class Period(object):
-    def __init__(self):
-        self.period = None
+from dataclasses import dataclass
 
 
-class Night(Period):
-    def __init__(self):
-        super(Night, self).__init__()
-        self.night = None
-
-
-class Telescope(Night):
-    def __init__(self):
-        super(Telescope, self).__init__()
-        self.telescope = None
-
-
-class Source(Telescope):
-    def __init__(self):
-        super(Source, self).__init__()
-        self.source_name = None
-        self.source_ra = None
-        self.source_dec = None
-
-
-class Wobble(Source):
-    def __init__(self):
-        super(Wobble, self).__init__()
-        self.sourcewobble = None
-        self.wobble = None
-
-
-class RunObj(Wobble):
-    def __init__(self):
-        super(RunObj, self).__init__()
-        self.run_str = None
-        self.run = None
-        self.type = None
-        self.subrun_list = []
-        self.subruns = None
-
-
-class SubrunObj(RunObj):
-    def __init__(self):
-        super(SubrunObj, self).__init__()
-        self.runobj = None
-        self.subrun = None
-        self.kind = None
-        self.timestamp = None
-        self.time = None
-        self.date = None
-        self.ucts_timestamp = None
-        self.dragon_reference_time = None
-        self.dragon_reference_module_id = None
-        self.dragon_reference_module_index = None
-        self.dragon_reference_counter = None
-        self.dragon_reference_source = None
+@dataclass
+class RunObj:
+    run_str: str = None
+    run: int = None
+    type: str = None
+    subruns: int = None
+    source_name: str = None
+    source_ra: float = None
+    source_dec: float = None
+    telescope: str = "LST1"
+    night: str = None
 
 
 class Sequence(RunObj):

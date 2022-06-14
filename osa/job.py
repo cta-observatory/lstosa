@@ -335,8 +335,8 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
         f"--error=log/Run{sequence.run:05d}.%4a_jobid_%A.err",
     ]
 
-    # Get the number of subruns. The number of subruns starts counting from 0.
-    subruns = int(sequence.subrun_list[-1].subrun) - 1
+    # Get the number of subruns counting from 0.
+    subruns = sequence.subruns - 1
 
     # Depending on the type of sequence, we need to set
     # different sbatch environment variables
