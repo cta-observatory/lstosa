@@ -16,12 +16,7 @@ from osa import osadb
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import are_all_jobs_correctly_finished, save_job_information
-from osa.nightsummary.extract import (
-    extractruns,
-    extractsequences,
-    extractsubruns,
-    sort_run_list
-)
+from osa.nightsummary.extract import extractruns, extract_sequences, extractsubruns
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import destination_dir
 from osa.raw import is_raw_data_available
@@ -35,7 +30,8 @@ from osa.utils.utils import (
     stringify,
     date_to_dir,
     create_lock,
-    gettag, date_to_iso,
+    gettag,
+    date_to_iso,
 )
 
 __all__ = [
@@ -50,7 +46,7 @@ __all__ = [
     "merge_files",
     "daily_datacheck",
     "daily_longterm_cmd",
-    "observation_finished"
+    "observation_finished",
 ]
 
 log = myLogger(logging.getLogger())
@@ -228,9 +224,7 @@ def post_process_files(seq_list: list):
             pattern_found = pattern_re.search(file)
             if pattern_found:
                 log.debug(f"Pattern {concept} found, {pattern_found} in {file}")
-                registered_file = register_found_pattern(
-                    file_path, seq_list, concept, dst_path
-                )
+                registered_file = register_found_pattern(file_path, seq_list, concept, dst_path)
                 output_files_set.remove(registered_file)
 
 
@@ -277,8 +271,7 @@ def is_finished_check(run_summary):
         # building the sequences (the same way as the sequencer)
         subrun_list = extractsubruns(run_summary)
         run_list = extractruns(subrun_list)
-        sorted_run_list = sort_run_list(run_list)
-        sequence_list = extractsequences(sorted_run_list)
+        sequence_list = extract_sequences(options.date, run_list)
 
         if are_all_jobs_correctly_finished(sequence_list):
             sequence_success = True
@@ -359,8 +352,8 @@ def extract_provenance(seq_list):
 
     for sequence in seq_list:
         if sequence.type == "DATA":
-            drs4_pedestal_run_id = str(sequence.pedestal).split(".")[1].replace("Run", "")
-            pedcal_run_id = str(sequence.calibration).split(".")[1].replace("Run", "")
+            drs4_pedestal_run_id = str(sequence.drs4_run)
+            pedcal_run_id = str(sequence.pedcal_run)
             cmd = [
                 "sbatch",
                 "-D",
@@ -376,11 +369,7 @@ def extract_provenance(seq_list):
                 nightdir,
                 options.prod_id,
             ]
-            if (
-                    not options.simulate
-                    and not options.test
-                    and shutil.which('sbatch') is not None
-            ):
+            if not options.simulate and not options.test and shutil.which('sbatch') is not None:
                 subprocess.run(cmd, check=True)
             else:
                 log.debug("Simulate launching scripts")
@@ -426,11 +415,7 @@ def merge_files(sequence_list, data_level="DL2"):
 
             log.debug(f"Executing {stringify(cmd)}")
 
-            if (
-                    not options.simulate
-                    and not options.test
-                    and shutil.which('sbatch') is not None
-            ):
+            if not options.simulate and not options.test and shutil.which('sbatch') is not None:
                 subprocess.run(cmd, check=True)
             else:
                 log.debug("Simulate launching scripts")
@@ -444,7 +429,7 @@ def merge_muon_files(sequence_list):
     pattern, prefix = get_pattern("MUON")
 
     for sequence in sequence_list:
-        merged_file = Path(data_dir)/ f"muons_LST-1.Run{sequence.run:05d}.fits"
+        merged_file = Path(data_dir) / f"muons_LST-1.Run{sequence.run:05d}.fits"
 
         cmd = [
             "sbatch",
@@ -461,11 +446,7 @@ def merge_muon_files(sequence_list):
 
         log.debug(f"Executing {stringify(cmd)}")
 
-        if (
-                not options.simulate
-                and not options.test
-                and shutil.which('sbatch') is not None
-        ):
+        if not options.simulate and not options.test and shutil.which('sbatch') is not None:
             subprocess.run(cmd, check=True)
         else:
             log.debug("Simulate launching scripts")
@@ -490,7 +471,7 @@ def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
         f"--input-dir={dl1_dir}",
         f"--output-file={longterm_output_file}",
         f"--muons-dir={muons_dir}",
-        "--batch"
+        "--batch",
     ]
 
 

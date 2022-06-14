@@ -8,12 +8,8 @@ from osa.configs import options
 from osa.configs.config import cfg
 
 extra_files = Path(os.getenv("OSA_TEST_DATA", "extra"))
-datasequence_history_file = (
-        extra_files / "history_files/sequence_LST1_04185.0010.history"
-)
-calibration_history_file = (
-        extra_files / "history_files/sequence_LST1_04183.history"
-)
+datasequence_history_file = extra_files / "history_files/sequence_LST1_04185.0010.history"
+calibration_history_file = extra_files / "history_files/sequence_LST1_04183.history"
 options.date = "2020-01-17"
 options.tel_id = "LST1"
 options.prod_id = "v0.1.0"
@@ -47,7 +43,7 @@ def test_preparejobs(running_analysis_dir, sequence_list):
     options.simulate = False
     options.directory = running_analysis_dir
     prepare_jobs(sequence_list)
-    expected_calib_script = os.path.join(running_analysis_dir, "sequence_LST1_01805.py")
+    expected_calib_script = os.path.join(running_analysis_dir, "sequence_LST1_01809.py")
     expected_data_script = os.path.join(running_analysis_dir, "sequence_LST1_01807.py")
     assert os.path.isfile(os.path.abspath(expected_calib_script))
     assert os.path.isfile(os.path.abspath(expected_data_script))
@@ -58,23 +54,23 @@ def test_sequence_filenames(running_analysis_dir, sequence_list):
 
     for sequence in sequence_list:
         sequence_filenames(sequence)
-        assert sequence.script == running_analysis_dir / \
-               f"sequence_LST1_{sequence.run:05d}.py"
+        assert sequence.script == running_analysis_dir / f"sequence_LST1_{sequence.run:05d}.py"
 
 
 def test_scheduler_env_variables(sequence_list, running_analysis_dir):
     from osa.job import scheduler_env_variables
+
     # Extract the first sequence
     first_sequence = sequence_list[0]
     env_variables = scheduler_env_variables(first_sequence)
     assert env_variables == [
-        '#SBATCH --job-name=LST1_01805',
+        '#SBATCH --job-name=LST1_01809',
         '#SBATCH --time=1:15:00',
         f'#SBATCH --chdir={running_analysis_dir}',
-        '#SBATCH --output=log/Run01805.%4a_jobid_%A.out',
-        '#SBATCH --error=log/Run01805.%4a_jobid_%A.err',
+        '#SBATCH --output=log/Run01809.%4a_jobid_%A.out',
+        '#SBATCH --error=log/Run01809.%4a_jobid_%A.err',
         f'#SBATCH --partition={cfg.get("SLURM", "PARTITION_PEDCALIB")}',
-        '#SBATCH --mem-per-cpu=3GB'
+        '#SBATCH --mem-per-cpu=3GB',
     ]
     # Extract the second sequence
     second_sequence = sequence_list[1]
@@ -87,34 +83,38 @@ def test_scheduler_env_variables(sequence_list, running_analysis_dir):
         '#SBATCH --error=log/Run01807.%4a_jobid_%A.err',
         '#SBATCH --array=0-10',
         f'#SBATCH --partition={cfg.get("SLURM", "PARTITION_DATA")}',
-        '#SBATCH --mem-per-cpu=16GB'
+        '#SBATCH --mem-per-cpu=16GB',
     ]
 
 
 def test_job_header_template(sequence_list, running_analysis_dir):
     """Extract and check the header for the first two sequences."""
     from osa.job import job_header_template
+
     # Extract the first sequence
     first_sequence = sequence_list[0]
     header = job_header_template(first_sequence)
-    output_string1 = dedent(f"""\
+    output_string1 = dedent(
+        f"""\
     #!/bin/env python
 
-    #SBATCH --job-name=LST1_01805
+    #SBATCH --job-name=LST1_01809
     #SBATCH --time=1:15:00
     #SBATCH --chdir={running_analysis_dir}
-    #SBATCH --output=log/Run01805.%4a_jobid_%A.out
-    #SBATCH --error=log/Run01805.%4a_jobid_%A.err
+    #SBATCH --output=log/Run01809.%4a_jobid_%A.out
+    #SBATCH --error=log/Run01809.%4a_jobid_%A.err
     #SBATCH --partition={cfg.get('SLURM', 'PARTITION_PEDCALIB')}
-    #SBATCH --mem-per-cpu=3GB""")
+    #SBATCH --mem-per-cpu=3GB"""
+    )
     assert header == output_string1
 
     # Extract the second sequence
     second_sequence = sequence_list[1]
     header = job_header_template(second_sequence)
-    output_string2 = dedent(f"""\
+    output_string2 = dedent(
+        f"""\
     #!/bin/env python
-    
+
     #SBATCH --job-name=LST1_01807
     #SBATCH --time=1:15:00
     #SBATCH --chdir={running_analysis_dir}
@@ -122,17 +122,18 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     #SBATCH --error=log/Run01807.%4a_jobid_%A.err
     #SBATCH --array=0-10
     #SBATCH --partition={cfg.get('SLURM', 'PARTITION_DATA')}
-    #SBATCH --mem-per-cpu=16GB""")
+    #SBATCH --mem-per-cpu=16GB"""
+    )
     assert header == output_string2
 
 
 def test_create_job_template_scheduler(
-        sequence_list,
-        drs4_time_calibration_files,
-        drs4_baseline_file,
-        calibration_file,
-        run_summary_file,
-        pedestal_ids_file,
+    sequence_list,
+    drs4_time_calibration_files,
+    drs4_baseline_file,
+    calibration_file,
+    run_summary_file,
+    pedestal_ids_file,
 ):
     from osa.job import data_sequence_job_template
 
@@ -141,7 +142,8 @@ def test_create_job_template_scheduler(
     options.test = False
     options.simulate = False
     content1 = data_sequence_job_template(sequence_list[1])
-    expected_content1 = dedent(f"""\
+    expected_content1 = dedent(
+        f"""\
     #!/bin/env python
 
     #SBATCH --job-name=LST1_01807
@@ -181,10 +183,12 @@ def test_create_job_template_scheduler(
             'LST1'
         ])
 
-    sys.exit(proc.returncode)""")
+    sys.exit(proc.returncode)"""
+    )
 
     content2 = data_sequence_job_template(sequence_list[2])
-    expected_content2 = dedent(f"""\
+    expected_content2 = dedent(
+        f"""\
         #!/bin/env python
 
         #SBATCH --job-name=LST1_01808
@@ -225,7 +229,8 @@ def test_create_job_template_scheduler(
                 'LST1'
             ])
 
-        sys.exit(proc.returncode)""")
+        sys.exit(proc.returncode)"""
+    )
 
     options.simulate = True
     assert content1 == expected_content1
@@ -233,14 +238,14 @@ def test_create_job_template_scheduler(
 
 
 def test_create_job_template_local(
-        sequence_list,
-        drs4_time_calibration_files,
-        drs4_baseline_file,
-        calibration_file,
-        systematic_correction_files,
-        run_summary_file,
-        pedestal_ids_file,
-        r0_data
+    sequence_list,
+    drs4_time_calibration_files,
+    drs4_baseline_file,
+    calibration_file,
+    systematic_correction_files,
+    run_summary_file,
+    pedestal_ids_file,
+    r0_data,
 ):
     """Check the job file in local mode (assuming no scheduler)."""
     from osa.job import data_sequence_job_template
@@ -260,7 +265,8 @@ def test_create_job_template_local(
     options.simulate = False
 
     content1 = data_sequence_job_template(sequence_list[1])
-    expected_content1 = dedent(f"""\
+    expected_content1 = dedent(
+        f"""\
     #!/bin/env python
 
     import os
@@ -288,10 +294,12 @@ def test_create_job_template_local(
             'LST1'
         ])
 
-    sys.exit(proc.returncode)""")
+    sys.exit(proc.returncode)"""
+    )
 
     content2 = data_sequence_job_template(sequence_list[2])
-    expected_content2 = dedent(f"""\
+    expected_content2 = dedent(
+        f"""\
         #!/bin/env python
 
         import os
@@ -320,7 +328,8 @@ def test_create_job_template_local(
                 'LST1'
             ])
 
-        sys.exit(proc.returncode)""")
+        sys.exit(proc.returncode)"""
+    )
 
     options.simulate = True
 
@@ -331,10 +340,12 @@ def test_create_job_template_local(
 def test_create_job_scheduler_calibration(sequence_list):
     """Check the pilot job file for the calibration pipeline."""
     from osa.job import calibration_sequence_job_template
+
     options.test = True
     options.simulate = False
     content = calibration_sequence_job_template(sequence_list[0])
-    expected_content = dedent(f"""\
+    expected_content = dedent(
+        f"""\
     #!/bin/env python
 
     import os
@@ -352,11 +363,12 @@ def test_create_job_scheduler_calibration(sequence_list):
             '{Path.cwd()}/osa/configs/sequencer.cfg',
             '--date=2020-01-17',
             '--drs4-pedestal-run=01804',
-            '--pedcal-run=01805',
+            '--pedcal-run=01809',
             'LST1'
         ])
 
-    sys.exit(proc.returncode)""")
+    sys.exit(proc.returncode)"""
+    )
     options.simulate = True
     assert content == expected_content
 
@@ -365,22 +377,20 @@ def test_set_cache_dirs():
     from osa.job import set_cache_dirs
 
     cache = set_cache_dirs()
-    cache_dirs = dedent(f"""\
+    cache_dirs = dedent(
+        f"""\
     os.environ['CTAPIPE_CACHE'] = '{cfg.get('CACHE', 'CTAPIPE_CACHE')}'
     os.environ['CTAPIPE_SVC_PATH'] = '{cfg.get('CACHE', 'CTAPIPE_SVC_PATH')}'
-    os.environ['MPLCONFIGDIR'] = '{cfg.get('CACHE', 'MPLCONFIGDIR')}'""")
+    os.environ['MPLCONFIGDIR'] = '{cfg.get('CACHE', 'MPLCONFIGDIR')}'"""
+    )
     assert cache_dirs == cache
 
 
 def test_calibration_history_level():
     from osa.job import check_history_level
-    levels = {
-        "onsite_create_drs4_pedestal_file": 1,
-        "onsite_create_calibration_file": 0
-    }
-    level, exit_status = check_history_level(
-        calibration_history_file, levels
-    )
+
+    levels = {"onsite_create_drs4_pedestal_file": 1, "onsite_create_calibration_file": 0}
+    level, exit_status = check_history_level(calibration_history_file, levels)
     assert level == 0
     assert exit_status == 0
 
@@ -400,31 +410,32 @@ def mock_squeue_output():
 @pytest.fixture
 def sacct_output(mock_sacct_output):
     from osa.job import get_sacct_output
+
     return get_sacct_output(mock_sacct_output)
 
 
 @pytest.fixture
 def squeue_output(mock_squeue_output):
     from osa.job import get_squeue_output
+
     return get_squeue_output(mock_squeue_output)
 
 
-def test_set_queue_values(
-        sacct_output,
-        squeue_output,
-        sequence_list
-):
+def test_set_queue_values(sacct_output, squeue_output, sequence_list):
     from osa.job import set_queue_values
+
     set_queue_values(
         sacct_info=sacct_output,
         squeue_info=squeue_output,
         sequence_list=sequence_list,
     )
+    # Running calibration sequence
     assert sequence_list[0].state == "RUNNING"
     assert sequence_list[0].exit is None
     assert sequence_list[0].jobid == 12951086
     assert sequence_list[0].cputime == "00:36:00"
     assert sequence_list[0].tries == 4
+    # Pending DATA sequences
     assert sequence_list[1].state == "PENDING"
     assert sequence_list[1].tries == 2
     assert sequence_list[1].exit is None
@@ -435,6 +446,7 @@ def test_set_queue_values(
 
 def test_plot_job_statistics(sacct_output, running_analysis_dir):
     from osa.job import plot_job_statistics
+
     log_dir = running_analysis_dir / "log"
     log_dir.mkdir(parents=True, exist_ok=True)
     assert log_dir.exists()

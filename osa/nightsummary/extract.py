@@ -5,6 +5,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
+from typing import List
 
 from astropy import units as u
 from astropy.table import Table
@@ -18,6 +19,7 @@ from osa.configs.datamodel import (
     SequenceData,
     SubrunObj,
 )
+from osa.configs.datamodel import Sequence
 from osa.job import sequence_filenames
 from osa.nightsummary import database
 from osa.nightsummary.nightsummary import run_summary_table
@@ -30,12 +32,28 @@ log = myLogger(logging.getLogger(__name__))
 __all__ = [
     "extractsubruns",
     "extractruns",
-    "extractsequences",
-    "generate_workflow",
-    "sort_run_list",
+    "extract_sequences",
     "build_sequences",
-    "get_source_list"
+    "get_source_list",
 ]
+
+
+def get_data_runs(date: datetime):
+    """Return the list of DATA runs to analyze based on the run summary table."""
+    summary = run_summary_table(date)
+    return summary[summary["run_type"] == "DATA"]["run_id"].tolist()
+
+
+def get_last_drs4(date: datetime) -> int:
+    """Return run_id of the last DRS4 run for the given date to be used for data processing."""
+    summary = run_summary_table(date)
+    return summary[summary["run_type"] == "DRS4"]["run_id"].max()
+
+
+def get_last_pedcalib(date) -> int:
+    """Return run_id of the last PEDCALIB run for the given date to be used for data processing."""
+    summary = run_summary_table(date)
+    return summary[summary["run_type"] == "PEDCALIB"]["run_id"].max()
 
 
 def extractsubruns(summary_table):
@@ -116,16 +134,13 @@ def extractsubruns(summary_table):
         )
         for sr in subrun_list:
             sr.runobj.source_name = database.query(
-                obs_id=sr.runobj.run,
-                property_name="DriveControl_SourceName"
+                obs_id=sr.runobj.run, property_name="DriveControl_SourceName"
             )
             sr.runobj.source_ra = database.query(
-                obs_id=sr.runobj.run,
-                property_name="DriveControl_RA_Target"
+                obs_id=sr.runobj.run, property_name="DriveControl_RA_Target"
             )
             sr.runobj.source_dec = database.query(
-                obs_id=sr.runobj.run,
-                property_name="DriveControl_Dec_Target"
+                obs_id=sr.runobj.run, property_name="DriveControl_Dec_Target"
             )
             # Store this source information (run_id, source_name, source_ra, source_dec)
             # into an astropy Table and save to disk. In this way, the information can be
@@ -135,17 +150,13 @@ def extractsubruns(summary_table):
                     sr.runobj.run,
                     sr.runobj.source_name,
                     sr.runobj.source_ra,
-                    sr.runobj.source_dec
+                    sr.runobj.source_dec,
                 ]
                 log.debug(f"Adding line with source info to RunCatalog: {line}")
                 run_table.add_row(line)
 
         # Save table to disk
-        run_table.write(
-            source_catalog_file,
-            overwrite=True,
-            delimiter=","
-        )
+        run_table.write(source_catalog_file, overwrite=True, delimiter=",")
 
     log.debug("Subrun list extracted")
 
@@ -179,266 +190,83 @@ def extractruns(subrun_list):
     return run_list
 
 
-def sort_run_list(run_list):
+def extract_sequences(date: datetime, run_obj_list: List[RunObj]) -> List[Sequence]:
     """
-    Search for sequences composed out of
-    a) Pedestal->Calibration->Data turns into independent runs
-    b) Data[->Pedestal]->Data turns into dependent runs
-    c) Otherwise orphan runs which are dismissed
+    Create calibration and data sequences from run objects.
 
     Parameters
     ----------
-    run_list
+    date : datetime
+        Date of the runs to analyze
+    run_obj_list : List[RunObj]
+        List of run objects
 
     Returns
     -------
-    run_list: Iterable
+    sequence_list : List[Sequence]
     """
 
-    # Create a list of sources. For each, we should have at least a DRS4, PEDCALIB and
-    # some DATA. If not, then we use the previous DRS4 and PEDCALIB. Try to sort this
-    # list so that the PED and CAL are in the beginning
-    sources = []
-    run_list_sorted = []
-    pending = []
-    hasped = False
-    hascal = False
+    # Last DRS4 and PEDCALIB runs required to process the sky-data runs
+    required_drs4_run = get_last_drs4(date)
+    required_pedcal_run = get_last_pedcalib(date)
 
-    for run in run_list:
-        currentsrc = run.source_name
-        currentrun = run.run
-        currenttype = run.type
-
-        if currentsrc not in sources:
-            log.debug(f"New source {currentsrc} found")
-            sources.append(currentsrc)
-
-        if currenttype == "DRS4":
-            log.debug(f"Detected a new DRS4 run {currentrun}")
-            hasped = True
-            run_list_sorted.append(run)
-        elif currenttype == "PEDCALIB":
-            log.debug(f"Detected a new PEDCALIB run {currentrun}")
-            hascal = True
-            run_list_sorted.append(run)
-
-        if currenttype == "DATA":
-            if not hasped or not hascal:
-                log.debug(
-                    f"Detected a new DATA run {currentrun} for "
-                    f"{currentsrc}, but no DRS4/PEDCAL runs yet"
-                )
-                pending.append(run)
-            else:
-                # normal case, we have the PED, the SUB, then append the DATA
-                log.debug(f"Detected a new DATA run {currentrun} for {currentsrc}")
-                run_list_sorted.append(run)
-
-    if pending:
-        # we reached the end, we can add the pending runs
-        log.debug("Adding the pending runs")
-        for pr in pending:
-            run_list_sorted.append(pr)
-
-    return run_list_sorted
-
-
-def extractsequences(run_list_sorted):
-    """
-    Create the sequence list from the sorted run list
-
-    Parameters
-    ----------
-    run_list_sorted
-
-    Returns
-    -------
-    sequence_list: Iterable
-    """
-
-    head = []  # this is a set with maximum 3 tuples consisting of [run, type, require]
-    sequences_to_analyze = []  # set with runs which constitute every valid data sequence
-    require = {}
-
-    for i in run_list_sorted:
-        currentrun = i.run
-        currenttype = i.type
-
-        if not head:
-            if currenttype == "DRS4":
-                # normal case
-                log.debug(f"appending [{currentrun}, {currenttype}, None]")
-                head.append([currentrun, currenttype, None])
-
-        elif len(head) == 1:
-            previousrun = head[0][0]
-            previoustype = head[0][1]
-            previousreq = head[0][2]
-            whichreq = None
-            if currentrun == previousrun:
-                # it shouldn't happen, same run number, just skip to next run
-                continue
-            if currenttype == "DRS4":
-                if previoustype == "DATA":
-                    # replace the first head element, keeping its previous run
-                    # or requirement run, depending on mode
-                    whichreq = previousreq
-                elif previoustype == "DRS4":
-                    # one pedestal after another, keep replacing
-                    whichreq = None
-                log.debug(f"replacing [{currentrun}, {currenttype}, {whichreq}]")
-                head[0] = [currentrun, currenttype, whichreq]
-            elif currenttype == "PEDCALIB" and previoustype == "DRS4":
-                # add it too
-                log.debug(f"appending [{currentrun}, {currenttype}, None]")
-                head.append([currentrun, currenttype, None])
-                require[currentrun] = previousrun
-            elif currenttype == "DATA":
-                if previoustype == "DRS4":
-                    # it is the pedestal->data mistake from shifters;
-                    # replace and store if they are not the first of observations
-                    # required run requirement inherited from pedestal run
-                    if previousreq is not None:
-                        log.debug(
-                            f"P->C, replacing "
-                            f"[{currentrun}, {currenttype}, {previousreq}]"
-                        )
-                        head[0] = [currentrun, currenttype, previousreq]
-                        sequences_to_analyze.append(currentrun)
-                        require[currentrun] = previousreq
-                elif previoustype == "DATA":
-                    whichreq = previousreq
-                    log.debug(
-                        f"D->D, " f"replacing [{currentrun}, {currenttype}, {whichreq}]"
-                    )
-                    head[0] = [currentrun, currenttype, whichreq]
-                    sequences_to_analyze.append(currentrun)
-                    require[currentrun] = whichreq
-
-        elif len(head) == 2:
-            previoustype = head[1][1]
-            if currenttype == "DATA" and previoustype == "PEDCALIB":
-                # it is the pedestal->calibration->data case,
-                # append, store, resize and replace
-                previousrun = head[1][0]
-                head.pop()
-                log.debug(
-                    f"P->C->D, appending [{currentrun}, {currenttype}, {previousrun}]"
-                )
-                head[0] = [currentrun, currenttype, previousrun]
-                sequences_to_analyze.append(currentrun)
-                # this is different from currentrun since it marks parent sequence run
-                require[currentrun] = previousrun
-            elif currenttype == "DRS4" and previoustype == "PEDCALIB":
-                # there was a problem with the previous calibration
-                # and shifters decide to give another try
-                head.pop()
-                log.debug(
-                    "P->C->P, deleting and replacing [{currentrun}, {currenttype}, None]"
-                )
-                head[0] = [currentrun, currenttype, None]
-
-    if not sequences_to_analyze:
+    # Get DATA runs to be processed
+    data_runs_to_process = get_data_runs(date)
+    if not data_runs_to_process:
         log.warning("No data sequences found for this date. Nothing to do. Exiting.")
         sys.exit(0)
 
-    sequence_list = generate_workflow(run_list_sorted, sequences_to_analyze, require)
+    log.debug(f"There are {len(data_runs_to_process)} data sequences: {data_runs_to_process}")
+
+    # Loop over the list of run objects and create the corresponding sequences
+    # First, the calibration sequence based on the last DRS4 and PEDCALIB runs.
+    # Then, the data sequences which require the calibration files produced
+    # by the calibration sequence.
+    sequence_list = []
+
+    for run in run_obj_list:
+        if run.run == required_pedcal_run:
+            sequence = SequenceCalibration(run)
+            sequence.jobname = f"{run.telescope}_{run.run:05d}"
+            sequence_list.insert(0, sequence)
+            sequence.drs4_run = required_drs4_run
+            sequence.pedcal_run = run.run
+            sequence_filenames(sequence)
+            log.debug(
+                f"Calibration sequence {sequence.seq} composed of "
+                f"DRS4 run {required_drs4_run} and Ped-Cal run {required_pedcal_run}"
+            )
+
+        elif run.run in data_runs_to_process:
+            sequence = SequenceData(run)
+            # data sequences counted after the calibration sequence
+            sequence.seq = data_runs_to_process.index(run.run) + 2
+            sequence.jobname = f"{run.telescope}_{run.run:05d}"
+            sequence.drs4_run = required_drs4_run
+            sequence.pedcal_run = required_pedcal_run
+            sequence_filenames(sequence)
+            log.debug(
+                f"Data sequence {sequence.seq} from run {run.run} whose parent is "
+                f"{sequence.parent} (DRS4 {required_drs4_run} & Ped-Cal {required_pedcal_run})"
+            )
+            sequence_list.append(sequence)
+
+    # Add the calibration file names
+    sequence_calibration_files(sequence_list)
+    log.debug("Workflow completed")
 
     log.debug("Sequence list extracted")
 
     return sequence_list
 
 
-def generate_workflow(run_list, sequences_to_analyze, require):
-    """
-    Store correct data sequences to give sequence
-    numbers and parent dependencies
-
-    Parameters
-    ----------
-    run_list
-    sequences_to_analyze
-    require
-
-    Returns
-    -------
-    sequence_list
-    """
-    sequence_list = []
-
-    log.debug(f"There are {len(sequences_to_analyze)} data sequences")
-
-    parent = None
-    for run in run_list:
-        # the next seq value to assign (if this happens)
-        n_seq = len(sequence_list)
-        log.debug(f"Trying to assign run {run.run}, type {run.type} to sequence {n_seq}")
-        if run.type == "DATA":
-            try:
-                sequences_to_analyze.index(run.run)
-            except ValueError:
-                # there is nothing really wrong with that,
-                # just a DATA run without sequence
-                log.warning(f"There is no sequence for data run {run.run}")
-            else:
-                previousrun = require[run.run]
-                for sequence in sequence_list:
-                    if sequence.run == previousrun:
-                        parent = sequence.seq
-                        break
-                log.debug(
-                    f"Sequence {n_seq} assigned to run {run.run} whose "
-                    f"parent is {parent} with run {previousrun}"
-                )
-                sequence = SequenceData(run)
-                sequence.seq = n_seq
-                sequence.parent = parent
-                for parent_sequence in sequence_list:
-                    if parent_sequence.seq == parent:
-                        sequence.parent_list.append(parent_sequence)
-                        break
-
-                sequence.previousrun = previousrun
-                sequence.jobname = f"{run.telescope}_{run.run:05d}"
-                sequence_filenames(sequence)
-                if sequence not in sequence_list:
-                    sequence_list.append(sequence)
-        elif run.type == "PEDCALIB":
-            # calibration sequence are appended to the sequence
-            # list if they are parent from data sequences
-            for k in iter(require):
-                if run.run == require[k]:
-                    previousrun = require[run.run]
-
-                    # we found that this calibration is required
-                    sequence = SequenceCalibration(run)
-                    sequence.seq = n_seq
-                    sequence.parent = None
-                    sequence.previousrun = previousrun
-                    sequence.jobname = f"{run.telescope}_{str(run.run).zfill(5)}"
-                    sequence_filenames(sequence)
-                    log.debug(
-                        f"Sequence {sequence.seq} assigned to run {run.run} whose "
-                        f"parent is {sequence.parent} with run {sequence.previousrun}"
-                    )
-                    if sequence not in sequence_list:
-                        sequence_list.append(sequence)
-                    break
-
-    # insert the calibration file names
-    sequence_calibration_files(sequence_list)
-    log.debug("Workflow completed")
-    return sequence_list
-
-
-def build_sequences(date: datetime):
+def build_sequences(date: datetime) -> List:
     """Build the list of sequences to process from a given date."""
     summary_table = run_summary_table(date)
     subrun_list = extractsubruns(summary_table)
     run_list = extractruns(subrun_list)
     # modifies run_list by adding the seq and parent info into runs
-    sorted_run_list = sort_run_list(run_list)
-    return extractsequences(sorted_run_list)
+    return extract_sequences(date, run_list)
 
 
 def get_source_list(date: datetime) -> dict:
@@ -459,7 +287,8 @@ def get_source_list(date: datetime) -> dict:
 
     # Create a dictionary of sources and their corresponding sequences
     source_dict = {
-        sequence.run: sequence.source_name for sequence in sequence_list
+        sequence.run: sequence.source_name
+        for sequence in sequence_list
         if sequence.source_name is not None
     }
 

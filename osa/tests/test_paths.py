@@ -7,16 +7,19 @@ from osa.utils.utils import date_to_dir
 
 options.date = datetime.fromisoformat("2020-01-17")
 
+
 def test_get_calibration_file(r0_data, merged_run_summary):
     from osa.paths import get_calibration_file
+
     for file in r0_data:
         assert file.exists()
-    file = get_calibration_file(1805)
+    file = get_calibration_file(1809)
     file.exists()
 
 
 def test_get_drs4_pedestal_file(r0_data, merged_run_summary):
     from osa.paths import get_drs4_pedestal_file
+
     for file in r0_data:
         assert file.exists()
     file = get_drs4_pedestal_file(1804)
@@ -25,19 +28,21 @@ def test_get_drs4_pedestal_file(r0_data, merged_run_summary):
 
 def test_pedestal_ids_file_exists(pedestal_ids_file):
     from osa.paths import pedestal_ids_file_exists
+
     pedestal_ids_file.exists()
     assert pedestal_ids_file_exists(1808) is True
 
 
 def test_get_datacheck_file(datacheck_dl1_files):
     from osa.paths import get_datacheck_files
+
     for file in datacheck_dl1_files:
         assert file.exists()
     dl1_path = Path("test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84")
     files = get_datacheck_files(pattern="datacheck*.pdf", directory=dl1_path)
     expected_files = [
         dl1_path / "datacheck_dl1_LST-1.Run01808.pdf",
-        dl1_path / "datacheck_dl1_LST-1.Run01807.pdf"
+        dl1_path / "datacheck_dl1_LST-1.Run01807.pdf",
     ]
     assert set(files) == set(expected_files)
 
