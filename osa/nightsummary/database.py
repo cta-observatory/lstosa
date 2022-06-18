@@ -49,6 +49,10 @@ def query(obs_id: int, property_name: str):
     ConnectionFailure
     """
 
+    # Avoid problems with numpy int64 encoding in MongoDB
+    if not isinstance(obs_id, int):
+        obs_id = int(obs_id)
+
     caco_client = MongoClient("tcs01")
     tcu_client = MongoClient("tcs05")
 
@@ -69,11 +73,7 @@ def query(obs_id: int, property_name: str):
             {'property_name': property_name},
         )
 
-        entries = {
-            'name': property_name,
-            'time': [],
-            'value': []
-        }
+        entries = {'name': property_name, 'time': [], 'value': []}
 
         for descriptor in descriptors:
             query_property = {'pid': descriptor['_id']}
