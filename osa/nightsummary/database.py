@@ -79,10 +79,10 @@ def query(obs_id: int, property_name: str):
             query_property = {'pid': descriptor['_id']}
 
             if start is not None:
-                query_property.update({"begin": {"$gte": start}})
+                query_property["begin"] = {"$gte": start}
 
             if end is not None:
-                query_property.update({"end": {"$lte": end}})
+                query_property["end"] = {"$lte": end}
 
             chunks = chunk_collection.find(query_property)
 
@@ -92,7 +92,4 @@ def query(obs_id: int, property_name: str):
                     entries['value'].append(value['val'])
 
                     source_name = entries["value"][0]
-                    if source_name != "":
-                        return source_name
-                    else:
-                        return None
+                    return source_name if source_name != "" else None
