@@ -79,7 +79,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
                 if len(new_files) != 4:
                     for file in new_files:
                         output_file = output_dir / file.name
-                        file.hardlink_to(output_file)
+                        file.link_to(output_file)
  
                 else:
                     new_files.sort()
@@ -108,7 +108,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
 
             for file in input_files:
                 output_file = output_dir / file.name
-                file.hardlink_to(output_file)
+                file.link_to(output_file)
 
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
 
@@ -118,7 +118,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
         
         for file in r0_files:
             output_file = output_dir / file.name
-            file.hardlink_to(output_file)
+            file.link_to(output_file)
 
 def check_failed_jobs(date: str, output_basedir: Path = None):
     """Search for failed jobs in the log directory."""
