@@ -2,7 +2,6 @@
 import fileinput
 import logging
 import re
-import shutil
 import glob
 import subprocess as sp
 from pathlib import Path
@@ -79,7 +78,8 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
 
                 if len(new_files) != 4:
                     for file in new_files:
-                        shutil.copy2(file, output_dir, follow_symlinks=True)
+                        output_file = output_dir / file.name
+                        file.link_to(output_file)
  
                 else:
                     new_files.sort()
@@ -107,7 +107,8 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
             input_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
 
             for file in input_files:
-                shutil.copy2(file, output_dir, follow_symlinks=True)
+                output_file = output_dir / file.name
+                file.link_to(output_file)
 
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
 
@@ -116,7 +117,8 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
         r0_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
         
         for file in r0_files:
-            shutil.copy2(file, output_dir, follow_symlinks=True)
+            output_file = output_dir / file.name
+            file.link_to(output_file)
 
 def check_failed_jobs(date: str, output_basedir: Path = None):
     """Search for failed jobs in the log directory."""
