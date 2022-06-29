@@ -20,7 +20,7 @@ def number_of_pending_jobs():
     return output.count(b"\n")
 
 
-def run_script(script: str, date, config: Path, no_dl2: bool, no_calib: bool, simulate: bool):
+def run_script(script: str, date, config: Path, no_dl2: bool, no_calib: bool, simulate: bool, force: bool):
     """Run the sequencer for a given date."""
     osa_config = Path(config).resolve()
 
@@ -34,6 +34,9 @@ def run_script(script: str, date, config: Path, no_dl2: bool, no_calib: bool, si
 
     if simulate:
         cmd.append("--simulate")
+
+    if force:
+        cmd.append("--force")
 
     # Append the telescope to the command in the last place
     cmd.append("LST1")
@@ -70,6 +73,7 @@ def wait_for_daytime():
 @click.option("--no-dl2", is_flag=True, help="Do not run the DL2 step.")
 @click.option("--no-calib", is_flag=True, help="Do not run the calibration step.")
 @click.option("-s", "--simulate", is_flag=True, help="Activate simulation mode.")
+@click.option("-f", "--force", is_flag=True, help="Force the autocloser to close the day.")
 @click.option(
     '-c',
     '--config',
@@ -88,6 +92,7 @@ def main(
     no_dl2: bool = False,
     no_calib: bool = False,
     simulate: bool = False,
+    force: bool = False,
 ):
     """
     Loop over the dates listed in the input file and launch the script for each of them.
@@ -104,7 +109,7 @@ def main(
         # Avoid running jobs while it is still night time
         wait_for_daytime()
 
-        run_script(script, date, config, no_dl2, no_calib, simulate)
+        run_script(script, date, config, no_dl2, no_calib, simulate, force)
         log.info("Waiting 1 minute to launch the process for the next date...\n")
         time.sleep(60)
 

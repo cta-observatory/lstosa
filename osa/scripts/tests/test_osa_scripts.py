@@ -22,7 +22,7 @@ ALL_SCRIPTS = [
     "dl3_stage",
     "theta2_significance",
     "source_coordinates",
-    "sequencer_webmaker"
+    "sequencer_webmaker",
 ]
 
 options.date = datetime.datetime.fromisoformat("2020-01-17")
@@ -58,10 +58,11 @@ def test_all_help(script):
 
 
 def test_simulate_processing(
-        drs4_time_calibration_files,
-        systematic_correction_files,
-        run_summary_file,
-        r0_data
+    drs4_time_calibration_files,
+    systematic_correction_files,
+    run_summary_file,
+    r0_data,
+    merged_run_summary,
 ):
 
     for file in drs4_time_calibration_files:
@@ -116,11 +117,12 @@ def test_simulate_processing(
 
 
 def test_simulated_sequencer(
-        drs4_time_calibration_files,
-        systematic_correction_files,
-        run_summary_file,
-        run_catalog,
-        r0_data
+    drs4_time_calibration_files,
+    systematic_correction_files,
+    run_summary_file,
+    run_catalog,
+    r0_data,
+    merged_run_summary,
 ):
     assert run_summary_file.exists()
     assert run_catalog.exists()
@@ -134,20 +136,19 @@ def test_simulated_sequencer(
     for file in systematic_correction_files:
         assert file.exists()
 
-    rc = run_program(
-        "sequencer", "-d", "2020-01-17", "-s", "-t", "LST1"
-    )
+    rc = run_program("sequencer", "-d", "2020-01-17", "-s", "-t", "LST1")
 
     assert rc.returncode == 0
-    now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+    now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M")
     assert rc.stdout == dedent(
         f"""\
         =================================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Date: 2020-01-17 ===================================
         Tel   Seq  Parent  Type      Run   Subruns  Source        Action  Tries  JobID  State  CPU_time  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%  
-        LST1    0  None    PEDCALIB  1805  5        None          None    None   None   None   None      None  None  None    None    None        None  
-        LST1    1       0  DATA      1807  11       Crab          None    None   None   None   None      None     0       0       0           0     0  
-        LST1    2       0  DATA      1808  9        MadeUpSource  None    None   None   None   None      None     0       0       0           0     0  
-        """)
+        LST1    1  None    PEDCALIB  1809  5        None          None    None   None   None   None      None  None  None    None    None        None  
+        LST1    2       1  DATA      1807  11       Crab          None    None   None   None   None      None     0       0       0           0     0  
+        LST1    3       1  DATA      1808  9        MadeUpSource  None    None   None   None   None      None     0       0       0           0     0  
+        """
+    )
 
 
 def test_sequencer(sequence_file_list):
@@ -168,13 +169,13 @@ def test_autocloser(running_analysis_dir):
 
 
 def test_closer(
-        r0_data,
-        running_analysis_dir,
-        test_observed_data,
-        run_summary_file,
-        drs4_time_calibration_files,
-        systematic_correction_files,
-        merged_run_summary
+    r0_data,
+    running_analysis_dir,
+    test_observed_data,
+    run_summary_file,
+    drs4_time_calibration_files,
+    systematic_correction_files,
+    merged_run_summary,
 ):
     # First assure that the end of night flag is not set and remove it otherwise
     night_finished_flag = Path(
@@ -195,10 +196,8 @@ def test_closer(
         assert obs_file.exists()
     assert merged_run_summary.exists()
 
-    run_program(
-        "closer", "-y", "-v", "-t", "-d", "2020-01-17", "LST1"
-    )
-    closed_seq_file = running_analysis_dir / "sequence_LST1_01805.closed"
+    run_program("closer", "-y", "-v", "-t", "-d", "2020-01-17", "LST1")
+    closed_seq_file = running_analysis_dir / "sequence_LST1_01809.closed"
 
     # Check that files have been moved to their final destinations
     assert os.path.exists(
@@ -212,17 +211,14 @@ def test_closer(
         "datacheck_dl1_LST-1.Run01808.0011.h5"
     )
     assert os.path.exists(
-        "./test_osa/test_files0/DL2/20200117/v0.1.0/model2/"
-        "dl2_LST-1.Run01808.0011.h5"
+        "./test_osa/test_files0/DL2/20200117/v0.1.0/model2/" "dl2_LST-1.Run01808.0011.h5"
     )
     # Assert that the link to dl1 and muons files have been created
     assert os.path.islink(
-        "./test_osa/test_files0/running_analysis/20200117/"
-        "v0.1.0/muons_LST-1.Run01808.0011.fits"
+        "./test_osa/test_files0/running_analysis/20200117/" "v0.1.0/muons_LST-1.Run01808.0011.fits"
     )
     assert os.path.islink(
-        "./test_osa/test_files0/running_analysis/20200117/"
-        "v0.1.0/dl1_LST-1.Run01808.0011.h5"
+        "./test_osa/test_files0/running_analysis/20200117/" "v0.1.0/dl1_LST-1.Run01808.0011.h5"
     )
 
     assert night_finished_flag.exists()
@@ -259,8 +255,8 @@ def test_datasequence(running_analysis_dir):
 
 def test_calibration_pipeline(running_analysis_dir):
     prod_id = "v0.1.0"
-    drs4_run_number = "01805"
-    pedcal_run_number = "01806"
+    drs4_run_number = "01804"
+    pedcal_run_number = "01805"
     options.directory = running_analysis_dir
 
     output = run_program(
@@ -285,6 +281,7 @@ def test_is_sequencer_successful(run_summary, running_analysis_dir):
 
 def test_drs4_pedestal_cmd(base_test_dir):
     from osa.scripts.calibration_pipeline import drs4_pedestal_command
+
     cmd = drs4_pedestal_command(drs4_pedestal_run_id="01804")
     expected_command = [
         "onsite_create_drs4_pedestal_file",
@@ -297,19 +294,21 @@ def test_drs4_pedestal_cmd(base_test_dir):
 
 def test_calibration_file_cmd(base_test_dir):
     from osa.scripts.calibration_pipeline import calibration_file_command
-    cmd = calibration_file_command(drs4_pedestal_run_id="01804", pedcal_run_id="01805")
+
+    cmd = calibration_file_command(drs4_pedestal_run_id="01804", pedcal_run_id="01809")
     expected_command = [
         "onsite_create_calibration_file",
         "--pedestal_run=01804",
-        "--run_number=01805",
+        "--run_number=01809",
         f"--base_dir={base_test_dir}",
-        "--filters=52"
+        "--filters=52",
     ]
     assert cmd == expected_command
 
 
 def test_daily_longterm_cmd():
     from osa.scripts.closer import daily_longterm_cmd
+
     job_ids = ["12345", "54321"]
     cmd = daily_longterm_cmd(parent_job_ids=job_ids)
 
@@ -324,7 +323,7 @@ def test_daily_longterm_cmd():
         "--input-dir=test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84",
         "--output-file=test_osa/test_files0/OSA/DL1DataCheck_LongTerm/v0.1.0/20200117/DL1_datacheck_20200117.h5",
         "--muons-dir=test_osa/test_files0/DL1/20200117/v0.1.0",
-        "--batch"
+        "--batch",
     ]
 
     assert cmd == expected_cmd
@@ -333,6 +332,7 @@ def test_daily_longterm_cmd():
 def test_observation_finished():
     """Check if observation is finished for `options.date=2020-01-17`."""
     from osa.scripts.closer import observation_finished
+
     date1 = datetime.datetime(2020, 1, 21, 12, 0, 0)
     assert observation_finished(date=date1) is True
     date2 = datetime.datetime(2020, 1, 17, 5, 0, 0)
@@ -341,21 +341,18 @@ def test_observation_finished():
 
 def test_no_runs_found():
     output = sp.run(
-        ["sequencer", "-s", "-d", "2015-01-01", "LST1"],
-        text=True,
-        stdout=sp.PIPE,
-        stderr=sp.PIPE
+        ["sequencer", "-s", "-d", "2015-01-01", "LST1"], text=True, stdout=sp.PIPE, stderr=sp.PIPE
     )
     assert output.returncode == 0
     assert "No runs found for this date. Nothing to do. Exiting." in output.stderr.splitlines()[-1]
 
 
 def test_sequencer_webmaker(
-        run_summary,
-        merged_run_summary,
-        drs4_time_calibration_files,
-        systematic_correction_files,
-        base_test_dir
+    run_summary,
+    merged_run_summary,
+    drs4_time_calibration_files,
+    systematic_correction_files,
+    base_test_dir,
 ):
     # Check if night finished flag is set
     night_finished = base_test_dir / "OSA/Closer/20200117/v0.1.0/NightFinished.txt"
@@ -363,7 +360,9 @@ def test_sequencer_webmaker(
     if night_finished.exists():
         output = sp.run(
             ["sequencer_webmaker", "--test", "-d", "2020-01-17"],
-            text=True, stdout=sp.PIPE, stderr=sp.PIPE
+            text=True,
+            stdout=sp.PIPE,
+            stderr=sp.PIPE,
         )
         assert output.returncode != 0
         assert output.stderr.splitlines()[-1] == "Date 2020-01-17 is already closed for LST1"

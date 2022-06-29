@@ -73,12 +73,8 @@ def do_setup():
     CONFIG_FLAGS["TearSubDL2"] = (
         False if path_dl2_sub.exists() or options.provenance else path_dl2_sub
     )
-    CONFIG_FLAGS["TearDL1"] = (
-        False if path_dl1.exists() or options.provenance else path_dl1
-    )
-    CONFIG_FLAGS["TearDL2"] = (
-        False if path_dl2.exists() or options.provenance else path_dl2
-    )
+    CONFIG_FLAGS["TearDL1"] = False if path_dl1.exists() or options.provenance else path_dl1
+    CONFIG_FLAGS["TearDL2"] = False if path_dl2.exists() or options.provenance else path_dl2
 
     if options.provenance and not options.force:
         if path_sub_analysis.exists():
@@ -155,27 +151,26 @@ def simulate_processing():
     # simulate data calibration and reduction
     for sequence in sequence_list:
         processed = False
-        for sub_list in sequence.subrun_list:
-            if sub_list.runobj.type == "PEDCALIB":
-                args_cal = parse_template(calibration_sequence_job_template(sequence), 0)
-                simulate_calibration(args_cal)
-            elif sub_list.runobj.type == "DATA":
-                with mp.Pool() as poolproc:
-                    args_proc = [
-                        parse_template(data_sequence_job_template(sequence), subrun_idx)
-                        for subrun_idx in range(sub_list.subrun)
-                    ]
-                    processed = poolproc.map(simulate_subrun_processing, args_proc)
-        drs4_pedestal_run_id = str(sequence.pedestal).split(".")[1].replace("Run", "")
-        pedcal_run_id = str(sequence.calibration).split(".")[1].replace("Run", "")
-
+        if sequence.type == "PEDCALIB":
+            args_cal = parse_template(calibration_sequence_job_template(sequence), 0)
+            simulate_calibration(args_cal)
+        elif sequence.type == "DATA":
+            with mp.Pool() as poolproc:
+                args_proc = [
+                    parse_template(data_sequence_job_template(sequence), subrun_idx)
+                    for subrun_idx in range(sequence.subruns)
+                ]
+                processed = poolproc.map(simulate_subrun_processing, args_proc)
         # produce prov if overwrite prov arg
         if processed and options.provenance:
             command = "provprocess"
+            drs4_pedestal_run_id = f"{sequence.drs4_run:05d}"
+            pedcal_run_id = f"{sequence.pedcal_run:05d}"
+
             args_pp = [
                 command,
                 "-c",
-                options.configfile,
+                f"{options.configfile}",
                 drs4_pedestal_run_id,
                 pedcal_run_id,
                 sequence.run_str,
