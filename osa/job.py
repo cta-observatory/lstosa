@@ -2,17 +2,18 @@
 
 import datetime
 import logging
+import os
 import shutil
 import subprocess as sp
 import time
-import os
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent
-from typing import List, Iterable, Optional
+from typing import List, Iterable, Optional, Union
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from tenacity import retry, stop_after_attempt
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -20,16 +21,12 @@ from osa.paths import (
     pedestal_ids_file_exists,
     get_drive_file,
     get_summary_file,
-    get_pedestal_ids_file
+    get_pedestal_ids_file,
 )
 from osa.report import history
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
-from osa.utils.utils import (
-    date_to_dir,
-    time_to_seconds,
-    stringify, date_to_iso
-)
+from osa.utils.utils import date_to_dir, time_to_seconds, stringify, date_to_iso
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -53,7 +50,8 @@ __all__ = [
     "run_squeue",
     "calibration_sequence_job_template",
     "data_sequence_job_template",
-    "save_job_information"
+    "save_job_information",
+    "AnalysisStage",
 ]
 
 TAB = "\t".expandtabs(4)
@@ -211,9 +209,7 @@ def historylevel(history_file: Path, data_type: str):
                 program = words[1]
                 prod_id = words[2]
                 exit_status = int(words[-1])
-                log.debug(
-                    f"{program}, finished with error {exit_status} and prod ID {prod_id}"
-                )
+                log.debug(f"{program}, finished with error {exit_status} and prod ID {prod_id}")
             except (IndexError, ValueError) as err:
                 log.exception(f"Malformed history file {history_file}, {err}")
             else:
@@ -227,15 +223,11 @@ def historylevel(history_file: Path, data_type: str):
                     level = 3 if exit_status == 0 else 4
                 elif program == cfg.get("lstchain", "dl1ab"):
                     if (exit_status == 0) and (prod_id == options.dl1_prod_id):
-                        log.debug(
-                            f"DL1ab prod ID: {options.dl1_prod_id} already produced"
-                        )
+                        log.debug(f"DL1ab prod ID: {options.dl1_prod_id} already produced")
                         level = 2
                     else:
                         level = 3
-                        log.debug(
-                            f"DL1ab prod ID: {options.dl1_prod_id} not produced yet"
-                        )
+                        log.debug(f"DL1ab prod ID: {options.dl1_prod_id} not produced yet")
                         break
                 elif program == cfg.get("lstchain", "check_dl1"):
                     level = 1 if exit_status == 0 else 2
@@ -293,9 +285,7 @@ def save_job_information():
     jobs_df_filtered = jobs_df.copy()
     jobs_df_filtered = jobs_df_filtered.dropna()
     # Remove the G from MaxRSS value and convert to float
-    jobs_df_filtered["MaxRSS"] = (
-        jobs_df_filtered["MaxRSS"].str.strip("G").astype(float)
-    )
+    jobs_df_filtered["MaxRSS"] = jobs_df_filtered["MaxRSS"].str.strip("G").astype(float)
 
     jobs_df_filtered.to_csv(file_path, index=False, sep=",")
 
@@ -321,9 +311,7 @@ def plot_job_statistics(sacct_output: pd.DataFrame, directory: Path):
     sacct_output_filter = sacct_output.copy()
     sacct_output_filter = sacct_output_filter.dropna()
     # Remove the G from MaxRSS value and convert to float
-    sacct_output_filter["MaxRSS"] = (
-        sacct_output_filter["MaxRSS"].str.strip("G").astype(float)
-    )
+    sacct_output_filter["MaxRSS"] = sacct_output_filter["MaxRSS"].str.strip("G").astype(float)
 
     plt.figure()
     plt.hist2d(sacct_output_filter.MaxRSS, sacct_output_filter.CPUTimeRAW / 3600, bins=50)
@@ -358,12 +346,8 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
     if sequence.type == "DATA":
         sbatch_parameters.append(f"--array=0-{subruns}")
 
-    sbatch_parameters.append(
-        f"--partition={cfg.get('SLURM', f'PARTITION_{sequence.type}')}"
-    )
-    sbatch_parameters.append(
-        f"--mem-per-cpu={cfg.get('SLURM', f'MEMSIZE_{sequence.type}')}"
-    )
+    sbatch_parameters.append(f"--partition={cfg.get('SLURM', f'PARTITION_{sequence.type}')}")
+    sbatch_parameters.append(f"--mem-per-cpu={cfg.get('SLURM', f'MEMSIZE_{sequence.type}')}")
 
     return ["#SBATCH " + line for line in sbatch_parameters]
 
@@ -610,8 +594,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
                 log.debug("SIMULATE Launching scripts")
             elif options.test:
                 log.debug(
-                    "TEST launching datasequence scripts for "
-                    "first subrun without scheduler"
+                    "TEST launching datasequence scripts for " "first subrun without scheduler"
                 )
                 commandargs = ["python", sequence.script]
                 sp.check_output(commandargs, shell=False)
@@ -706,8 +689,8 @@ def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
 
     # Keep only the jobs corresponding to OSA sequences
     sacct_output = sacct_output[
-        (sacct_output['JobName'].str.contains("batch")) |
-        (sacct_output["JobName"].str.contains("LST1"))
+        (sacct_output['JobName'].str.contains("batch"))
+        | (sacct_output["JobName"].str.contains("LST1"))
     ]
 
     try:
@@ -728,9 +711,7 @@ def filter_jobs(job_info: pd.DataFrame, sequence_list: Iterable):
 
 
 def set_queue_values(
-        sacct_info: pd.DataFrame,
-        squeue_info: pd.DataFrame,
-        sequence_list: Iterable
+    sacct_info: pd.DataFrame, squeue_info: pd.DataFrame, sequence_list: Iterable
 ) -> None:
     """
     Extract job info from sacct output and
@@ -800,13 +781,13 @@ def update_sequence_state(sequence, filtered_job_info: pd.DataFrame) -> None:
 
 
 def run_cmd(
-        command_args: List[str],
-        history_file: Path,
-        run: str,
-        prod_id: str,
-        command: str,
-        input_file: Optional[str] = None,
-        config_file: Optional[str] = None,
+    command_args: List[str],
+    history_file: Path,
+    run: str,
+    prod_id: str,
+    command: str,
+    input_file: Optional[str] = None,
+    config_file: Optional[str] = None,
 ):
 
     log.info(f"Executing {stringify(command_args)}")
@@ -821,20 +802,20 @@ def run_cmd(
         return_code=rc,
         history_file=history_file,
         input_file=input_file,
-        config_file=config_file
+        config_file=config_file,
     )
 
     return rc, output
 
 
 def run_program_with_history_logging(
-        command_args: List[str],
-        history_file: Path,
-        run: str,
-        prod_id: str,
-        command: str,
-        input_file: Optional[str] = None,
-        config_file: Optional[str] = None,
+    command_args: List[str],
+    history_file: Path,
+    run: str,
+    prod_id: str,
+    command: str,
+    input_file: Optional[str] = None,
+    config_file: Optional[str] = None,
 ):
     """
     Run the program and log the output in the history file
@@ -867,7 +848,7 @@ def run_program_with_history_logging(
     ntries = 1
     max_tries = 3
 
-    while rc != 0 and ntries<=max_tries:
+    while rc != 0 and ntries <= max_tries:
         if command == "lstchain_dl1ab":
             dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
             output_file = dl1ab_subdirectory / f"dl1_LST-1.Run{run}.h5"
@@ -900,8 +881,86 @@ def run_program_with_history_logging(
 
         ntries += 1
 
-    else: 
-        if rc != 0 and ntries == max_tries:
-            raise ValueError(f"{command_args[0]} failed with output: \n {output.stdout}")
+    if rc != 0 and ntries == max_tries:
+        raise ValueError(f"{command_args[0]} failed with output: \n {output.stdout}")
 
     return rc
+
+
+class AnalysisStage:
+    """Run a given analysis stage keeping track of checkpoints in a history file.
+
+    Parameters
+    ----------
+    run: str
+        Run number
+    command_args: List[str]
+        Complete command line arguments to be executed in the shell as a list
+    config_file: str, optional
+        Path to the config file used for the stage
+    """
+
+    def __init__(
+        self,
+        run: str,
+        command_args: List[str],
+        config_file: Union[str, None] = None,
+    ):
+        self.run = run
+        self.command_args = command_args
+        self.config_file = config_file
+        self.command = self.command_args[0]
+        self.rc = None
+
+    @retry(stop=stop_after_attempt(3))
+    def execute(self):
+        """Run the program and retry if it fails."""
+        log.info(f"Executing {stringify(self.command_args)}")
+        output = sp.run(self.command_args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding='utf-8')
+        self.rc = output.returncode
+        self._write_checkpoint()
+
+        # If fails, remove products from the directory for subsequent trials
+        if self.rc != 0:
+            self._clean_up()
+            raise ValueError(f"{self.command} failed with output: \n {output.stdout}")
+
+    def show_command(self):
+        """Show the command to be executed."""
+        return stringify(self.command_args)
+
+    def _clean_up(self):
+        """
+        Clean up the output files created at a given analysis stage that exited with a
+        non-zero return code, provided the output file exists. In this way, they can be
+        reproduced in subsequent trials.
+        """
+
+        if self.command == "lstchain_data_r0_to_dl1":
+            dl1a_directory = Path(options.directory) / options.prod_id
+            dl1_output_file = dl1a_directory / f"dl1_LST-1.Run{self.run}.h5"
+            muon_output_file = dl1a_directory / f"muons_LST-1.Run{self.run}.fits"
+            dl1_output_file.unlink(missing_ok=True)
+            muon_output_file.unlink(missing_ok=True)
+
+        elif self.command == "lstchain_dl1ab":
+            dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
+            output_file = dl1ab_subdirectory / f"dl1_LST-1.Run{self.run}.h5"
+            output_file.unlink(missing_ok=True)
+
+        elif self.command == "lstchain_check_dl1":
+            dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
+            output_file = dl1ab_subdirectory / f"datacheck_dl1_LST-1.Run{self.run}.h5"
+            output_file.unlink(missing_ok=True)
+
+    def _write_checkpoint(self):
+        """Write the checkpoint in the history file."""
+        history_file = Path(options.directory) / f"sequence_{options.tel_id}_{self.run}.history"
+        history(
+            run=self.run,
+            prod_id=options.prod_id,
+            stage=self.command,
+            return_code=self.rc,
+            history_file=history_file,
+            config_file=self.config_file,
+        )
