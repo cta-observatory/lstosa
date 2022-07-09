@@ -338,8 +338,8 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
         f"--error=log/Run{sequence.run:05d}.%4a_jobid_%A.err",
     ]
 
-    # Get the number of subruns. The number of subruns starts counting from 0.
-    subruns = int(sequence.subrun_list[-1].subrun) - 1
+    # Get the number of subruns counting from 0.
+    subruns = sequence.subruns - 1
 
     # Depending on the type of sequence, we need to set
     # different sbatch environment variables
@@ -434,10 +434,10 @@ def data_sequence_job_template(sequence):
 
     commandargs.append(f"--date={date_to_iso(options.date)}")
     commandargs.append(f"--prod-id={options.prod_id}")
-    commandargs.append(f"--drs4-pedestal-file={sequence.pedestal}")
-    commandargs.append(f"--time-calib-file={sequence.time_calibration}")
-    commandargs.append(f"--pedcal-file={sequence.calibration}")
-    commandargs.append(f"--systematic-correction-file={sequence.systematic_correction}")
+    commandargs.append(f"--drs4-pedestal-file={sequence.drs4_file}")
+    commandargs.append(f"--time-calib-file={sequence.time_calibration_file}")
+    commandargs.append(f"--pedcal-file={sequence.calibration_file}")
+    commandargs.append(f"--systematic-correction-file={sequence.systematic_correction_file}")
     commandargs.append(f"--drive-file={get_drive_file(flat_date)}")
     commandargs.append(f"--run-summary={get_summary_file(flat_date)}")
 
@@ -506,7 +506,7 @@ def calibration_sequence_job_template(sequence):
         commandargs.append(f"{Path(options.configfile).resolve()}")
 
     commandargs.append(f"--date={date_to_iso(options.date)}")
-    commandargs.append(f"--drs4-pedestal-run={sequence.previousrun:05d}")
+    commandargs.append(f"--drs4-pedestal-run={sequence.drs4_run:05d}")
     commandargs.append(f"--pedcal-run={sequence.run:05d}")
 
     content = job_header + "\n" + PYTHON_IMPORTS
@@ -582,7 +582,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
         # from previous time sequencer was launched.
 
         # Add the job dependencies after calibration sequence
-        if sequence.parent_list and sequence.type == "DATA":
+        if sequence.type == "DATA":
             if not options.simulate and not options.no_calib and not options.test:
                 log.debug("Adding dependencies to job submission")
                 depend_string = f"--dependency=afterok:{parent_jobid}"

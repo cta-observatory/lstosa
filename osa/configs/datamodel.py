@@ -1,69 +1,28 @@
-class Period(object):
-    def __init__(self):
-        self.period = None
+"""Definition of classes containing run and sequence information"""
+
+from dataclasses import dataclass
 
 
-class Night(Period):
-    def __init__(self):
-        super(Night, self).__init__()
-        self.night = None
-
-
-class Telescope(Night):
-    def __init__(self):
-        super(Telescope, self).__init__()
-        self.telescope = None
-
-
-class Source(Telescope):
-    def __init__(self):
-        super(Source, self).__init__()
-        self.source_name = None
-        self.source_ra = None
-        self.source_dec = None
-
-
-class Wobble(Source):
-    def __init__(self):
-        super(Wobble, self).__init__()
-        self.sourcewobble = None
-        self.wobble = None
-
-
-class RunObj(Wobble):
-    def __init__(self):
-        super(RunObj, self).__init__()
-        self.run_str = None
-        self.run = None
-        self.type = None
-        self.subrun_list = []
-        self.subruns = None
-
-
-class SubrunObj(RunObj):
-    def __init__(self):
-        super(SubrunObj, self).__init__()
-        self.runobj = None
-        self.subrun = None
-        self.kind = None
-        self.timestamp = None
-        self.time = None
-        self.date = None
-        self.ucts_timestamp = None
-        self.dragon_reference_time = None
-        self.dragon_reference_module_id = None
-        self.dragon_reference_module_index = None
-        self.dragon_reference_counter = None
-        self.dragon_reference_source = None
+@dataclass
+class RunObj:
+    run_str: str = None
+    run: int = None
+    type: str = None
+    subruns: int = None
+    source_name: str = None
+    source_ra: float = None
+    source_dec: float = None
+    telescope: str = "LST1"
+    night: str = None
 
 
 class Sequence(RunObj):
     def __init__(self):
         super(Sequence, self).__init__()
         self.seq = None
-        self.parent_list = []
+        self.pedcal_run = None
+        self.drs4_run = None
         self.parent = None
-        self.parentjobid = None
         self.previousrun = None
         self.script = None
         self.veto = None
@@ -90,17 +49,22 @@ class SequenceCalibration(Sequence):
         super(SequenceCalibration, self).__init__()
         super(SequenceCalibration, self).associate(r)
         self.calibstatus = None
+        self.seq = 1
+        self.parent = None
+        self.drs4_run = None
 
 
 class SequenceData(Sequence):
     def __init__(self, r):
         super(SequenceData, self).__init__()
         super(SequenceData, self).associate(r)
-        self.calibration = None
-        self.pedestal = None
+        self.parent = 1
+        self.time_calibration_run = None
         self.drive = None
-        self.time_calibration = None
-        self.systematic_correction = None
+        self.drs4_file = None
+        self.calibration_file = None
+        self.time_calibration_file = None
+        self.systematic_correction_file = None
         self.dl1status = None
         self.dl1abstatus = None
         self.muonstatus = None
