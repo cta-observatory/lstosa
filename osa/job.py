@@ -52,6 +52,8 @@ __all__ = [
     "data_sequence_job_template",
     "save_job_information",
     "AnalysisStage",
+    "DRS4PedestalStage",
+    "ChargeCalibrationStage",
 ]
 
 TAB = "\t".expandtabs(4)
@@ -963,4 +965,64 @@ class AnalysisStage:
             return_code=self.rc,
             history_file=history_file,
             config_file=self.config_file,
+        )
+
+
+class DRS4PedestalStage(AnalysisStage):
+    """
+    Class inheriting from AnalysisStage for the first part of the calibration procedure,
+    i.e. the pedestal subtraction.
+
+    Notes
+    -----
+    The history file is the same for both calibration stages and carries the name of
+    the pedcal run.
+    """
+
+    def __init__(
+        self,
+        run: str,
+        run_pedcal: str,
+        command_args: List[str],
+        config_file: Union[str, None] = None,
+    ):
+        super().__init__(run, command_args, config_file)
+        self.prod_id = options.calib_prod_id
+        self.run_pedcal = run_pedcal
+
+    def _write_checkpoint(self):
+        """Write the checkpoint in the history file."""
+        history_file = (
+            Path(options.directory) / f"sequence_{options.tel_id}_{self.run_pedcal}.history"
+        )
+        history(
+            run=self.run,
+            prod_id=self.prod_id,
+            stage=self.command,
+            return_code=self.rc,
+            history_file=history_file,
+        )
+
+
+class ChargeCalibrationStage(AnalysisStage):
+    """Class inheriting from AnalysisStage for the second part of the calibration procedure."""
+
+    def __init__(
+        self,
+        run: str,
+        command_args: List[str],
+        config_file: Union[str, None] = None,
+    ):
+        super().__init__(run, command_args, config_file)
+        self.prod_id = options.calib_prod_id
+
+    def _write_checkpoint(self):
+        """Write the checkpoint in the history file."""
+        history_file = Path(options.directory) / f"sequence_{options.tel_id}_{self.run}.history"
+        history(
+            run=self.run,
+            prod_id=self.prod_id,
+            stage=self.command,
+            return_code=self.rc,
+            history_file=history_file,
         )
