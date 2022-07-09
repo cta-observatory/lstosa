@@ -14,7 +14,7 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import historylevel, run_program_with_history_logging
+from osa.job import historylevel, ChargeCalibrationStage, DRS4PedestalStage
 from osa.paths import drs4_pedestal_exists, calibration_file_exists
 from osa.provenance.capture import trace
 from osa.utils.cliopts import calibration_pipeline_cliparsing
@@ -36,10 +36,7 @@ def is_calibration_produced(drs4_pedestal_run_id: int, pedcal_run_id: int) -> bo
     Check if both daily calibration (DRS4 baseline and
     charge calibration) files are already produced.
     """
-    return (
-        drs4_pedestal_exists(drs4_pedestal_run_id)
-        and calibration_file_exists(pedcal_run_id)
-    )
+    return drs4_pedestal_exists(drs4_pedestal_run_id) and calibration_file_exists(pedcal_run_id)
 
 
 def drs4_pedestal_command(drs4_pedestal_run_id: int) -> list:
@@ -81,18 +78,18 @@ def calibration_sequence(drs4_pedestal_run_id: int, pedcal_run_id: int) -> int:
         Return code
     """
     analysis_dir = Path(options.directory)
-    history_file = analysis_dir / f"sequence_LST1_{pedcal_run_id}.history"
+    history_file = analysis_dir / f"sequence_LST1_{pedcal_run_id:05d}.history"
 
     level, rc = (2, 0) if options.simulate else historylevel(history_file, "PEDCALIB")
 
     log.info(f"Going to level {level}")
 
     if level == 2:
-        rc = drs4_pedestal(drs4_pedestal_run_id, pedcal_run_id, history_file)
+        rc = drs4_pedestal(drs4_pedestal_run_id, pedcal_run_id)
         level -= 1
         log.info(f"Going to level {level}")
     if level == 1:
-        rc = calibrate_charge(drs4_pedestal_run_id, pedcal_run_id, history_file)
+        rc = calibrate_charge(drs4_pedestal_run_id, pedcal_run_id)
         level -= 1
         log.info(f"Going to level {level}")
     if level == 0:
@@ -103,9 +100,8 @@ def calibration_sequence(drs4_pedestal_run_id: int, pedcal_run_id: int) -> int:
 
 @trace
 def drs4_pedestal(
-        drs4_pedestal_run_id: int,
-        pedcal_run_id: int,
-        history_file: Path
+    drs4_pedestal_run_id: int,
+    pedcal_run_id: int,
 ) -> int:
     """
     Create a DRS4 pedestal file for baseline correction.
@@ -116,8 +112,6 @@ def drs4_pedestal(
         DRS4 pedestal run number
     pedcal_run_id : int
         PEDCALIB run number
-    history_file : `pathlib.Path`
-        Path to the history file
 
     Returns
     -------
@@ -129,20 +123,17 @@ def drs4_pedestal(
 
     cmd = drs4_pedestal_command(drs4_pedestal_run_id)
 
-    return run_program_with_history_logging(
-        command_args=cmd,
-        history_file=history_file,
-        run=f"{drs4_pedestal_run_id:05d}",
-        prod_id=options.calib_prod_id,
-        command=cmd[0],
+    analysis_step = DRS4PedestalStage(
+        run=f"{drs4_pedestal_run_id:05d}", run_pedcal=f"{pedcal_run_id:05d}", command_args=cmd
     )
+    analysis_step.execute()
+    return analysis_step.rc
 
 
 @trace
 def calibrate_charge(
-        drs4_pedestal_run_id: int,
-        pedcal_run_id: int,
-        history_file: Path
+    drs4_pedestal_run_id: int,
+    pedcal_run_id: int,
 ) -> int:
     """
     Create the calibration file to transform from ADC counts to photo-electrons
@@ -153,8 +144,6 @@ def calibrate_charge(
         String with run number of the pedestal run
     pedcal_run_id : int
         String with run number of the pedcal run
-    history_file : `pathlib.Path`
-        Path to the history file
 
     Returns
     -------
@@ -165,17 +154,11 @@ def calibrate_charge(
         return 0
 
     cmd = calibration_file_command(
-        drs4_pedestal_run_id=drs4_pedestal_run_id,
-        pedcal_run_id=pedcal_run_id
+        drs4_pedestal_run_id=drs4_pedestal_run_id, pedcal_run_id=pedcal_run_id
     )
-
-    return run_program_with_history_logging(
-        command_args=cmd,
-        history_file=history_file,
-        run=f"{pedcal_run_id:05d}",
-        prod_id=options.calib_prod_id,
-        command=cmd[0],
-    )
+    analysis_step = ChargeCalibrationStage(run=f"{pedcal_run_id:05d}", command_args=cmd)
+    analysis_step.execute()
+    return analysis_step.rc
 
 
 def main():
@@ -190,10 +173,7 @@ def main():
     else:
         log.setLevel(logging.INFO)
 
-    if is_calibration_produced(
-        drs4_pedestal_run_id=drs4_pedestal_run,
-        pedcal_run_id=pedcal_run
-    ):
+    if is_calibration_produced(drs4_pedestal_run_id=drs4_pedestal_run, pedcal_run_id=pedcal_run):
         log.info(
             f"Calibration files already produced from "
             f"runs {drs4_pedestal_run:05d} and {pedcal_run:05d}"
