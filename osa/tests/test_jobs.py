@@ -3,6 +3,7 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
+import tenacity
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -455,26 +456,34 @@ def test_plot_job_statistics(sacct_output, running_analysis_dir):
     assert plot_file.exists()
 
 
-def test_run_program_with_history_logging(running_analysis_dir):
-    from osa.job import run_program_with_history_logging
+def test_analysis_stage(running_analysis_dir):
+    from osa.job import AnalysisStage
 
     options.simulate = False
+    options.directory = running_analysis_dir
+    r0_file = "input_r0.fits"
+    pedestal_file = "drs4_file.h5"
+    calibration_file = "calib_file.h5"
+    drive_file = "drive_log.txt"
 
-    cmd = ["echo", "Testing"]
-    history_file = running_analysis_dir / "test.history"
-    run = "01140"
-    prod_id = "v0.2.0"
-    command = "echo"
-    config_file = "config_test.json"
-
-    rc = run_program_with_history_logging(
-        command_args=cmd,
-        history_file=history_file,
-        run=run,
-        prod_id=prod_id,
-        command=command,
-        config_file=config_file,
-    )
-    options.simulate = True
-    assert rc == 0
-    assert history_file.exists()
+    cmd = [
+        "lstchain_data_r0_to_dl1",
+        f"--input-file={r0_file}",
+        f"--pedestal-file={pedestal_file}",
+        f"--calibration-file={calibration_file}",
+        f"--drive-file={drive_file}",
+    ]
+    stage = AnalysisStage(run="01000.0001", command_args=cmd)
+    assert stage.rc is None
+    assert stage.show_command() == " ".join(cmd)
+    with pytest.raises(tenacity.RetryError):
+        stage.execute()
+    assert stage.rc == 2
+    # Check that the stage is marked as failed in the history file
+    with open(stage.history_file, "r") as f:
+        lines = f.readlines()
+        assert len(lines) >= 3
+    # Check that the last element in the last line is the rc 2
+    assert lines[-1].split(" ")[0] == stage.run
+    assert lines[-1].split(" ")[1] == cmd[0]
+    assert lines[-1].split(" ")[-1] == "2\n"
