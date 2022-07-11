@@ -804,8 +804,11 @@ class AnalysisStage:
         self.config_file = config_file
         self.command = self.command_args[0]
         self.rc = None
+        self.history_file = (
+            Path(options.directory) / f"sequence_{options.tel_id}_{self.run}.history"
+        )
 
-    @retry(stop=stop_after_attempt(cfg.get("lstchain", "max_tries")))
+    @retry(stop=stop_after_attempt(int(cfg.get("lstchain", "max_tries"))))
     def execute(self):
         """Run the program and retry if it fails."""
         log.info(f"Executing {stringify(self.command_args)}")
@@ -848,9 +851,6 @@ class AnalysisStage:
 
     def _write_checkpoint(self):
         """Write the checkpoint in the history file."""
-        self.history_file = (
-            Path(options.directory) / f"sequence_{options.tel_id}_{self.run}.history"
-        )
         history(
             run=self.run,
             prod_id=options.prod_id,
@@ -882,18 +882,18 @@ class DRS4PedestalStage(AnalysisStage):
         super().__init__(run, command_args, config_file)
         self.prod_id = options.calib_prod_id
         self.run_pedcal = run_pedcal
+        self.history_file = (
+            Path(options.directory) / f"sequence_{options.tel_id}_{self.run_pedcal}.history"
+        )
 
     def _write_checkpoint(self):
         """Write the checkpoint in the history file."""
-        history_file = (
-            Path(options.directory) / f"sequence_{options.tel_id}_{self.run_pedcal}.history"
-        )
         history(
             run=self.run,
             prod_id=self.prod_id,
             stage=self.command,
             return_code=self.rc,
-            history_file=history_file,
+            history_file=self.history_file,
         )
 
 
@@ -908,14 +908,16 @@ class ChargeCalibrationStage(AnalysisStage):
     ):
         super().__init__(run, command_args, config_file)
         self.prod_id = options.calib_prod_id
+        self.history_file = (
+            Path(options.directory) / f"sequence_{options.tel_id}_{self.run}.history"
+        )
 
     def _write_checkpoint(self):
         """Write the checkpoint in the history file."""
-        history_file = Path(options.directory) / f"sequence_{options.tel_id}_{self.run}.history"
         history(
             run=self.run,
             prod_id=self.prod_id,
             stage=self.command,
             return_code=self.rc,
-            history_file=history_file,
+            history_file=self.history_file,
         )
