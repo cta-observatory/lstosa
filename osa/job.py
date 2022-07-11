@@ -2,14 +2,13 @@
 
 import datetime
 import logging
-import os
 import shutil
 import subprocess as sp
 import time
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent
-from typing import List, Iterable, Optional, Union
+from typing import List, Iterable, Union
 
 import matplotlib.pyplot as plt
 import pandas as pd
