@@ -848,7 +848,7 @@ def run_program_with_history_logging(
     )
 
     ntries = 1
-    max_tries = 3
+    max_tries = cfg.get("lstchain", "max_tries")
 
     while rc != 0 and ntries <= max_tries:
         if command == "lstchain_dl1ab":
