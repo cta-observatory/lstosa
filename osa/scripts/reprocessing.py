@@ -20,7 +20,9 @@ def number_of_pending_jobs():
     return output.count(b"\n")
 
 
-def run_script(script: str, date, config: Path, no_dl2: bool, no_calib: bool, simulate: bool, force: bool):
+def run_script(
+    script: str, date, config: Path, no_dl2: bool, no_calib: bool, simulate: bool, force: bool
+):
     """Run the sequencer for a given date."""
     osa_config = Path(config).resolve()
 
@@ -75,16 +77,16 @@ def wait_for_daytime():
 @click.option("-s", "--simulate", is_flag=True, help="Activate simulation mode.")
 @click.option("-f", "--force", is_flag=True, help="Force the autocloser to close the day.")
 @click.option(
-    '-c',
-    '--config',
+    "-c",
+    "--config",
     type=click.Path(exists=True),
     default=DEFAULT_CFG,
-    help='Path to the OSA config file.',
+    help="Path to the OSA config file.",
 )
 @click.argument(
-    'script', type=click.Choice(['sequencer', 'closer', 'copy_datacheck', 'autocloser'])
+    "script", type=click.Choice(["sequencer", "closer", "copy_datacheck", "autocloser"])
 )
-@click.argument('dates-file', type=click.Path(exists=True))
+@click.argument("dates-file", type=click.Path(exists=True))
 def main(
     script: str = None,
     dates_file: Path = None,

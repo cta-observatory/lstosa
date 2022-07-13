@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from fnmatch import fnmatchcase
 from glob import glob
 from os.path import basename, getsize, join
@@ -19,7 +19,7 @@ __all__ = ["history", "start", "finished_assignments"]
 
 def start(parent_tag: str):
     """Print out the header of the script (e.g. sequencer, closer)."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     simple_parent_tag = parent_tag.rsplit("(")[0]
     header(
         f"Starting {simple_parent_tag} at {now.strftime('%Y-%m-%d %H:%M')} "
@@ -86,20 +86,19 @@ def finished_assignments(sequence_list):
     ana_set = set(ana_files)
 
     for concept in concept_set:
-        pattern = f"{cfg.get('PATTERN', concept + 'PREFIX')}*"
+        pattern = f"{cfg.get('PATTERN', f'{concept}PREFIX')}*"
         log.debug(f"Trying with {concept} and searching {pattern}")
         file_no[concept] = 0
         delete_set = set()
         for a in ana_set:
             ana_file = basename(a)
-            pattern_found = fnmatchcase(ana_file, pattern)
-            if pattern_found:
+            if pattern_found := fnmatchcase(ana_file, pattern):
                 log.debug(f"Was pattern {pattern} found in {ana_file}?: {pattern_found}")
                 file_no[concept] += 1
                 delete_set.add(a)
         ana_set -= delete_set
 
-    now_string = f"{datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
+    now_string = f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')}"
 
     dictionary = {
         "NIGHT": date_to_iso(options.date),
@@ -112,19 +111,19 @@ def finished_assignments(sequence_list):
     }
 
     for concept in concept_set:
-        dictionary["FILES_" + concept] = file_no[concept]
+        dictionary[f"FILES_{concept}"] = file_no[concept]
 
     return dictionary
 
 
 def history(
-        run: str,
-        prod_id: str,
-        stage: str,
-        return_code: int,
-        history_file: Path,
-        input_file=None,
-        config_file=None,
+    run: str,
+    prod_id: str,
+    stage: str,
+    return_code: int,
+    history_file: Path,
+    input_file=None,
+    config_file=None,
 ) -> None:
     """
     Appends a history line to the history file. A history line
@@ -147,9 +146,8 @@ def history(
     config_file : str, optional
         Input card used for the lstchain executable.
     """
-    date_string = datetime.utcnow().isoformat(sep=" ", timespec="minutes")
+    date_string = datetime.now(timezone.utc).isoformat(sep=" ", timespec="minutes")
     string_to_write = (
-        f"{run} {stage} {prod_id} {date_string} "
-        f"{input_file} {config_file} {return_code}\n"
+        f"{run} {stage} {prod_id} {date_string} " f"{input_file} {config_file} {return_code}\n"
     )
     append_to_file(history_file, string_to_write)

@@ -46,6 +46,7 @@ def test_get_prod_id():
 
 def test_get_calib_prod_id():
     from osa.utils.utils import get_calib_prod_id
+
     prod_id = cfg.get(options.tel_id, "CALIB_PROD_ID")
     assert get_calib_prod_id() == prod_id
 
@@ -58,11 +59,13 @@ def test_date_in_yymmdd():
 
 def test_date_to_dir():
     from osa.utils.utils import date_to_dir
+
     assert date_to_dir(options.date) == "20200117"
 
 
 def test_time_to_seconds():
     from osa.utils.utils import time_to_seconds
+
     seconds_with_day = time_to_seconds("2-02:27:15")
     assert seconds_with_day == 2 * 24 * 3600 + 2 * 3600 + 27 * 60 + 15
     seconds = time_to_seconds("02:27:15")
@@ -77,21 +80,25 @@ def test_time_to_seconds():
 
 def test_stringify():
     from osa.utils.utils import stringify
+
     assert stringify(["command", "foo", "--bar"]) == "command foo --bar"
 
 
 def test_gettag():
     from osa.utils.utils import gettag
+
     assert gettag() == "test_utils.py(test_gettag)"
 
 
 def test_night_finished_flag(base_test_dir):
     from osa.utils.utils import night_finished_flag
+
     assert night_finished_flag() == base_test_dir / "OSA/Closer/20200117/v0.1.0/NightFinished.txt"
 
 
 def test_create_lock(base_test_dir):
     from osa.utils.utils import create_lock
+
     lock_path = base_test_dir / "test_lock.closed"
     is_closed = create_lock(lock_path)
     assert is_closed is False

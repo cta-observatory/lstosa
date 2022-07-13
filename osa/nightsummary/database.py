@@ -7,7 +7,7 @@ from pymongo.errors import ConnectionFailure
 
 from osa.utils.logging import myLogger
 
-__all__ = ['query', 'db_available']
+__all__ = ["query", "db_available"]
 
 
 log = myLogger(logging.getLogger(__name__))
@@ -70,13 +70,13 @@ def query(obs_id: int, property_name: str):
         property_collection = bridges_monitoring["properties"]
         chunk_collection = bridges_monitoring["chunks"]
         descriptors = property_collection.find(
-            {'property_name': property_name},
+            {"property_name": property_name},
         )
 
-        entries = {'name': property_name, 'time': [], 'value': []}
+        entries = {"name": property_name, "time": [], "value": []}
 
         for descriptor in descriptors:
-            query_property = {'pid': descriptor['_id']}
+            query_property = {"pid": descriptor["_id"]}
 
             if start is not None:
                 query_property["begin"] = {"$gte": start}
@@ -87,9 +87,9 @@ def query(obs_id: int, property_name: str):
             chunks = chunk_collection.find(query_property)
 
             for chunk in chunks:
-                for value in chunk['values']:
-                    entries['time'].append(value['t'])
-                    entries['value'].append(value['val'])
+                for value in chunk["values"]:
+                    entries["time"].append(value["t"])
+                    entries["value"].append(value["val"])
 
                     source_name = entries["value"][0]
                     return source_name if source_name != "" else None

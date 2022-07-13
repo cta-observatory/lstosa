@@ -103,18 +103,17 @@ def are_all_jobs_correctly_finished(sequence_list):
             if out == 0:
                 log.debug(f"Job {sequence.seq} ({sequence.type}) correctly finished")
                 continue
-            elif out == 1 and options.no_dl2:
+            if out == 1 and options.no_dl2:
                 log.debug(
                     f"Job {sequence.seq} ({sequence.type}) correctly "
                     f"finished up to DL1ab, but --no-dl2 option selected"
                 )
                 continue
-            else:
-                log.warning(
-                    f"Job {sequence.seq} (run {sequence.run}) not "
-                    f"correctly finished [level {out}]"
-                )
-                flag = False
+
+            log.warning(
+                f"Job {sequence.seq} (run {sequence.run}) not correctly finished [level {out}]"
+            )
+            flag = False
     return flag
 
 
@@ -144,10 +143,10 @@ def check_history_level(history_file: Path, program_levels: dict):
         for line in file:
             program = line.split()[1]
             exit_status = int(line.split()[-1])
-            if program in program_levels and exit_status != 0:
-                level = program_levels[program]
-                return level, exit_status
-            if program in program_levels and exit_status == 0:
+            if program in program_levels:
+                if exit_status != 0:
+                    level = program_levels[program]
+                    return level, exit_status
                 level = program_levels[program]
                 continue
 
@@ -422,19 +421,22 @@ def data_sequence_job_template(sequence):
     if options.simulate:
         commandargs.append("-s")
     if options.configfile:
-        commandargs.append("--config")
-        commandargs.append(f"{Path(options.configfile).resolve()}")
+        commandargs.extend(("--config", f"{Path(options.configfile).resolve()}"))
     if sequence.type == "DATA" and options.no_dl2:
         commandargs.append("--no-dl2")
 
-    commandargs.append(f"--date={date_to_iso(options.date)}")
-    commandargs.append(f"--prod-id={options.prod_id}")
-    commandargs.append(f"--drs4-pedestal-file={sequence.drs4_file}")
-    commandargs.append(f"--time-calib-file={sequence.time_calibration_file}")
-    commandargs.append(f"--pedcal-file={sequence.calibration_file}")
-    commandargs.append(f"--systematic-correction-file={sequence.systematic_correction_file}")
-    commandargs.append(f"--drive-file={get_drive_file(flat_date)}")
-    commandargs.append(f"--run-summary={get_summary_file(flat_date)}")
+    commandargs.extend(
+        (
+            f"--date={date_to_iso(options.date)}",
+            f"--prod-id={options.prod_id}",
+            f"--drs4-pedestal-file={sequence.drs4_file}",
+            f"--time-calib-file={sequence.time_calibration_file}",
+            f"--pedcal-file={sequence.calibration_file}",
+            f"--systematic-correction-file={sequence.systematic_correction_file}",
+            f"--drive-file={get_drive_file(flat_date)}",
+            f"--run-summary={get_summary_file(flat_date)}",
+        )
+    )
 
     content = job_header + "\n" + PYTHON_IMPORTS
 
@@ -497,12 +499,14 @@ def calibration_sequence_job_template(sequence):
     if options.simulate:
         commandargs.append("-s")
     if options.configfile:
-        commandargs.append("--config")
-        commandargs.append(f"{Path(options.configfile).resolve()}")
-
-    commandargs.append(f"--date={date_to_iso(options.date)}")
-    commandargs.append(f"--drs4-pedestal-run={sequence.drs4_run:05d}")
-    commandargs.append(f"--pedcal-run={sequence.run:05d}")
+        commandargs.extend(("--config", f"{Path(options.configfile).resolve()}"))
+    commandargs.extend(
+        (
+            f"--date={date_to_iso(options.date)}",
+            f"--drs4-pedestal-run={sequence.drs4_run:05d}",
+            f"--pedcal-run={sequence.run:05d}",
+        )
+    )
 
     content = job_header + "\n" + PYTHON_IMPORTS
 
@@ -684,7 +688,7 @@ def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
 
     # Keep only the jobs corresponding to OSA sequences
     sacct_output = sacct_output[
-        (sacct_output['JobName'].str.contains("batch"))
+        (sacct_output["JobName"].str.contains("batch"))
         | (sacct_output["JobName"].str.contains("LST1"))
     ]
 

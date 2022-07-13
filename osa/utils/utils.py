@@ -1,5 +1,6 @@
 """Functions to deal with dates and prod IDs."""
 
+
 import inspect
 import logging
 import os
@@ -36,7 +37,7 @@ __all__ = [
     "is_night_time",
     "cron_lock",
     "example_seq",
-    "current_date"
+    "current_date",
 ]
 
 log = myLogger(logging.getLogger(__name__))
@@ -47,10 +48,10 @@ DATACHECK_FILE_PATTERNS = {
     "PEDESTAL": "drs4*.pdf",
     "CALIB": "calibration*.pdf",
     "DL1AB": "datacheck_dl1*.pdf",
-    "LONGTERM": "DL1_datacheck_*.*"
+    "LONGTERM": "DL1_datacheck_*.*",
 }
 
-YESTERDAY = datetime.today() - timedelta(days=1)
+YESTERDAY = datetime.now() - timedelta(days=1)
 
 
 def current_date() -> datetime:
@@ -64,11 +65,7 @@ def current_date() -> datetime:
     date: datetime.datetime
         Current date following LST data-taking convention.
     """
-    return (
-        datetime.now() - timedelta(days=1)
-        if datetime.now().hour < 12
-        else datetime.now()
-    )
+    return datetime.now() - timedelta(days=1) if datetime.now().hour < 12 else datetime.now()
 
 
 def get_lstchain_version():
@@ -80,7 +77,8 @@ def get_lstchain_version():
     lstchain_version: string
     """
     from lstchain import __version__
-    return "v" + __version__
+
+    return f"v{__version__}"
 
 
 def get_prod_id():
@@ -223,27 +221,6 @@ def is_defined(variable):
     return variable is not None
 
 
-def get_night_limit_timestamp():
-    """Night limit timestamp for DB."""
-    from dev.mysql import select_db
-
-    night_limit = None
-    server = cfg.get("MYSQL", "server")
-    user = cfg.get("MYSQL", "user")
-    database = cfg.get("MYSQL", "database")
-    table = cfg.get("MYSQL", "nighttimes")
-    night = date_to_iso(options.date)
-    selections = ["END"]
-    conditions = {"NIGHT": night}
-    matrix = select_db(server, user, database, table, selections, conditions)
-    if len(matrix) > 0:
-        night_limit = matrix[0][0]
-    else:
-        log.warning("No night_limit found")
-    log.debug(f"Night limit is {night_limit}")
-    return night_limit
-
-
 def is_day_closed() -> bool:
     """Get the name and Check for the existence of the Closer flag file."""
     flag_file = night_finished_flag()
@@ -302,9 +279,7 @@ def time_to_seconds(timestring):
         # Day is also specified (D-)HH:MM:SS
         days, hhmmss = timestring.split("-")
         hours, minutes, seconds = hhmmss.split(":")
-        return (
-            int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
-        )
+        return int(days) * 24 * 3600 + int(hours) * 3600 + int(minutes) * 60 + int(seconds)
 
     split_time = timestring.split(":")
     if len(split_time) == 2:

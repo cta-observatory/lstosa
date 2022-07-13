@@ -9,11 +9,7 @@ from osa.utils.utils import date_to_dir
 
 log = myLogger(logging.getLogger(__name__))
 
-__all__ = [
-    "get_check_raw_dir",
-    "get_raw_dir",
-    "is_raw_data_available"
-]
+__all__ = ["get_check_raw_dir", "get_raw_dir", "is_raw_data_available"]
 
 
 def get_check_raw_dir(date: datetime) -> Path:

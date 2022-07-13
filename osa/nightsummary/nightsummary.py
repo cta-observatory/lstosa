@@ -32,7 +32,7 @@ def produce_run_summary_file(date) -> None:
         "lstchain_create_run_summary",
         f"--date={nightdir}",
         f"--r0-path={r0_dir}",
-        f"--output-dir={run_summary_dir}"
+        f"--output-dir={run_summary_dir}",
     ]
 
     try:

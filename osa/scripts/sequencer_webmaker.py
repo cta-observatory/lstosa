@@ -86,9 +86,7 @@ def get_sequencer_output(date: str, config: str, test=False) -> list:
         commandargs.insert(-1, "-t")
 
     try:
-        output = sp.run(
-            commandargs, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8", check=True
-        )
+        output = sp.run(commandargs, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8", check=True)
     except sp.CalledProcessError as error:
         log.error(f"Command {commandargs} failed, {error.returncode}")
         sys.exit(1)

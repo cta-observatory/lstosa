@@ -13,6 +13,7 @@ def test_get_raw_dir():
     night_dir = date_to_dir(options.date)
     r0_dir = Path(cfg.get("LST1", "R0_DIR")) / night_dir
     from osa.raw import get_raw_dir
+
     assert get_raw_dir(options.date) == r0_dir
 
 
@@ -36,5 +37,3 @@ def test_is_raw_data_available(r0_data):
 
     options.date = datetime.fromisoformat("2020-01-17")
     assert is_raw_data_available(options.date) is True
-
-

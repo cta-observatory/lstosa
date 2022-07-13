@@ -8,7 +8,7 @@ import re
 import shutil
 import subprocess
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Tuple, Iterable, List
 
@@ -121,9 +121,6 @@ def ask_for_closing():
 
     while not answer_check:
         try:
-            if options.simulate:
-                question = "Close that day? (y/n): "
-                question += "[SIMULATE ongoing] "
             answer_user = "n"
         except KeyboardInterrupt:
             log.warning("Program exited by user.")
@@ -194,7 +191,7 @@ def post_process_files(seq_list: list):
     output_files_set = set(Path(options.directory).rglob("*Run*"))
 
     DL1AB_RE = re.compile(rf"{options.dl1_prod_id}/dl1.*.(?:h5|hdf5|hdf)")
-    DL2_RE = re.compile(f"{options.dl2_prod_id}" + r"/dl2.*.(?:h5|hdf5|hdf)")
+    DL2_RE = re.compile(f"{options.dl2_prod_id}/dl2.*.(?:h5|hdf5|hdf)")
     MUONS_RE = re.compile(r"muons.*.fits")
     DATACHECK_RE = re.compile(r"datacheck_dl1.*.(?:h5|hdf5|hdf)")
 
@@ -218,11 +215,10 @@ def post_process_files(seq_list: list):
 
             file = str(file_path)
             # If seqtoclose is set, we only want to close that sequence
-            if options.seqtoclose is not None and file.find(options.seqtoclose) == -1:
+            if options.seqtoclose is not None and options.seqtoclose not in file:
                 continue
 
-            pattern_found = pattern_re.search(file)
-            if pattern_found:
+            if pattern_found := pattern_re.search(file):
                 log.debug(f"Pattern {concept} found, {pattern_found} in {file}")
                 registered_file = register_found_pattern(file_path, seq_list, concept, dst_path)
                 output_files_set.remove(registered_file)
@@ -241,7 +237,7 @@ def set_closed_with_file():
     return is_closed
 
 
-def observation_finished(date=datetime.utcnow()) -> bool:
+def observation_finished(date=datetime.now(timezone.utc)) -> bool:
     """
     We consider the observation as finished if it is later
     than 08:00 UTC of the next day set by `options.date`
@@ -368,7 +364,7 @@ def extract_provenance(seq_list):
                 nightdir,
                 options.prod_id,
             ]
-            if not options.simulate and not options.test and shutil.which('sbatch') is not None:
+            if not options.simulate and not options.test and shutil.which("sbatch") is not None:
                 subprocess.run(cmd, check=True)
             else:
                 log.debug("Simulate launching scripts")
@@ -414,7 +410,7 @@ def merge_files(sequence_list, data_level="DL2"):
 
             log.debug(f"Executing {stringify(cmd)}")
 
-            if not options.simulate and not options.test and shutil.which('sbatch') is not None:
+            if not options.simulate and not options.test and shutil.which("sbatch") is not None:
                 subprocess.run(cmd, check=True)
             else:
                 log.debug("Simulate launching scripts")
@@ -445,7 +441,7 @@ def merge_muon_files(sequence_list):
 
         log.debug(f"Executing {stringify(cmd)}")
 
-        if not options.simulate and not options.test and shutil.which('sbatch') is not None:
+        if not options.simulate and not options.test and shutil.which("sbatch") is not None:
             subprocess.run(cmd, check=True)
         else:
             log.debug("Simulate launching scripts")
@@ -479,7 +475,7 @@ def daily_datacheck(cmd: List[str]):
     log.info("Daily dl1 checks using longterm script.")
     log.debug(f"Executing {stringify(cmd)}")
 
-    if not options.simulate and not options.test and shutil.which('sbatch') is not None:
+    if not options.simulate and not options.test and shutil.which("sbatch") is not None:
         subprocess.run(cmd, check=True)
     else:
         log.debug("Simulate launching scripts")

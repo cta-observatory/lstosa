@@ -11,6 +11,7 @@ __all__ = ["myLogger"]
 
 class MyFormatter(logging.Formatter):
     """Customize formatter of info logging level."""
+
     info_fmt = "%(message)s"
 
     def __init__(self):

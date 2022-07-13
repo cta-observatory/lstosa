@@ -14,7 +14,7 @@ __all__ = [
     "set_veto_action",
     "set_closed_action",
     "update_vetoes",
-    "set_closed_sequence"
+    "set_closed_sequence",
 ]
 
 log = myLogger(logging.getLogger(__name__))
@@ -46,9 +46,9 @@ def update_vetoes(sequence_list):
     """Create a .veto file for a given sequence if reached maximum number of trials."""
     for sequence in sequence_list:
         if (
-                not os.path.exists(sequence.veto)
-                and os.path.exists(sequence.history)
-                and failed_history(sequence.history)
+            not os.path.exists(sequence.veto)
+            and os.path.exists(sequence.history)
+            and failed_history(sequence.history)
         ):
             Path(sequence.veto).touch()
             log.debug(f"Created veto file {sequence.veto}")
@@ -69,10 +69,7 @@ def failed_history(history_file: Path) -> bool:
 
     # Check if the last line of the history file is repeated twice
     # and the exit status is non-zero
-    return (
-        history_lines[-1] == history_lines[-2]
-        and history_lines[-1].split()[-1] != "0"
-    )
+    return history_lines[-1] == history_lines[-2] and history_lines[-1].split()[-1] != "0"
 
 
 def set_closed_sequence(sequence):

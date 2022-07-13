@@ -49,13 +49,19 @@ def start_processing(date: str) -> None:
 
     with open_database(database) as cursor:
         if cursor is not None:
-            cursor.execute("SELECT * FROM processing WHERE date = ?", (date, ))
+            cursor.execute("SELECT * FROM processing WHERE date = ?", (date,))
 
             if cursor.fetchone() is None:
                 cursor.execute(
                     "INSERT INTO processing (telescope, date, start, prod_id, is_finished) "
                     "VALUES (?, ?, ?, ?, ?)",
-                    (options.tel_id, date, t_start, options.prod_id, finished, )
+                    (
+                        options.tel_id,
+                        date,
+                        t_start,
+                        options.prod_id,
+                        finished,
+                    ),
                 )
 
 
@@ -74,5 +80,5 @@ def end_processing(date: str) -> None:
         if cursor is not None:
             cursor.execute(
                 "UPDATE processing SET is_finished = ?, end = ? WHERE date = ?",
-                (finished, t_end, date)
+                (finished, t_end, date),
             )

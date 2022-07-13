@@ -12,7 +12,7 @@ from osa.utils.logging import myLogger
 
 log = myLogger(logging.getLogger(__name__))
 
-__all__ = ['read_config', 'cfg', 'DEFAULT_CFG']
+__all__ = ["read_config", "cfg", "DEFAULT_CFG"]
 
 
 DEFAULT_CFG = files("osa").joinpath("configs/sequencer.cfg")

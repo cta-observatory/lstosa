@@ -53,7 +53,7 @@ class AnalysisStage:
     def execute(self):
         """Run the program and retry if it fails."""
         log.info(f"Executing {stringify(self.command_args)}")
-        output = sp.run(self.command_args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding='utf-8')
+        output = sp.run(self.command_args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8")
         self.rc = output.returncode
         self._write_checkpoint()
 
