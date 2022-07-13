@@ -6,7 +6,8 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import historylevel, run_program_with_history_logging
+from osa.job import historylevel
+from osa.workflow.stages import AnalysisStage
 from osa.provenance.capture import trace
 from osa.utils.cliopts import data_sequence_cli_parsing
 from osa.utils.logging import myLogger
@@ -18,14 +19,14 @@ log = myLogger(logging.getLogger())
 
 
 def data_sequence(
-        calibration_file: Path,
-        pedestal_file: Path,
-        time_calibration_file: Path,
-        systematic_correction_file: Path,
-        drive_file: Path,
-        run_summary: Path,
-        pedestal_ids_file: Path,
-        run_str: str
+    calibration_file: Path,
+    pedestal_file: Path,
+    time_calibration_file: Path,
+    systematic_correction_file: Path,
+    drive_file: Path,
+    run_summary: Path,
+    pedestal_ids_file: Path,
+    run_str: str,
 ):
     """
     Performs all the steps to process a whole run.
@@ -46,9 +47,9 @@ def data_sequence(
     rc: int
         Return code of the last executed command.
     """
-    history_file = (
-        Path(options.directory) / f"sequence_{options.tel_id}_{run_str}.history"
-    )
+    history_file = Path(options.directory) / f"sequence_{options.tel_id}_{run_str}.history"
+    # Set the starting level and corresponding return code from last analysis step
+    # registered in the history file.
     level, rc = (4, 0) if options.simulate else historylevel(history_file, "DATA")
     log.info(f"Going to level {level}")
 
@@ -62,13 +63,12 @@ def data_sequence(
             run_summary,
             pedestal_ids_file,
             run_str,
-            history_file,
         )
         level -= 1
         log.info(f"Going to level {level}")
 
     if level == 3:
-        rc = dl1ab(run_str, history_file)
+        rc = dl1ab(run_str)
         if cfg.getboolean("lstchain", "store_image_dl1ab"):
             level -= 1
             log.info(f"Going to level {level}")
@@ -77,7 +77,7 @@ def data_sequence(
             log.info(f"No images stored in dl1ab. Producing DL2. Going to level {level}")
 
     if level == 2:
-        rc = dl1_datacheck(run_str, history_file)
+        rc = dl1_datacheck(run_str)
         if options.no_dl2:
             level = 0
             log.info(f"No DL2 are going to be produced. Going to level {level}")
@@ -90,7 +90,7 @@ def data_sequence(
             level = 0
             log.info(f"No DL2 are going to be produced. Going to level {level}")
         else:
-            rc = dl1_to_dl2(run_str, history_file)
+            rc = dl1_to_dl2(run_str)
             level -= 1
             log.info(f"Going to level {level}")
 
@@ -102,16 +102,15 @@ def data_sequence(
 
 @trace
 def r0_to_dl1(
-        calibration_file: Path,
-        pedestal_file: Path,
-        time_calibration_file: Path,
-        systematic_correction_file: Path,
-        drive_file: Path,
-        run_summary: Path,
-        pedestal_ids_file: Path,
-        run_str: str,
-        history_file: Path,
-):
+    calibration_file: Path,
+    pedestal_file: Path,
+    time_calibration_file: Path,
+    systematic_correction_file: Path,
+    drive_file: Path,
+    run_summary: Path,
+    pedestal_ids_file: Path,
+    run_str: str,
+) -> int:
     """
     Prepare and launch the actual lstchain script that is performing
     the low and high-level calibration to raw camera images.
@@ -130,7 +129,6 @@ def r0_to_dl1(
         Path to file containing the interleaved pedestal event ids
     run_str: str
         XXXXX.XXXX (run_number.subrun_number)
-    history_file: pathlib.Path
 
     Returns
     -------
@@ -162,19 +160,13 @@ def r0_to_dl1(
     if options.simulate:
         return 0
 
-    return run_program_with_history_logging(
-        command_args=cmd,
-        history_file=history_file,
-        run=run_str,
-        prod_id=options.prod_id,
-        command=command,
-        input_file=calibration_file.name,
-        config_file=pedestal_file.name,
-    )
+    analysis_step = AnalysisStage(run=run_str, command_args=cmd, config_file=dl1a_config.name)
+    analysis_step.execute()
+    return analysis_step.rc
 
 
 @trace
-def dl1ab(run_str: str, history_file: Path):
+def dl1ab(run_str: str) -> int:
     """
     Prepare and launch the actual lstchain script that is performing
     the image cleaning considering the interleaved pedestal information
@@ -183,7 +175,6 @@ def dl1ab(run_str: str, history_file: Path):
     Parameters
     ----------
     run_str: str
-    history_file: pathlib.Path
 
     Returns
     -------
@@ -193,7 +184,7 @@ def dl1ab(run_str: str, history_file: Path):
     # Create a new subdirectory for the dl1ab output
     dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
     dl1ab_subdirectory.mkdir(parents=True, exist_ok=True)
-    dl1b_config_file = Path(cfg.get("lstchain", "dl1b_config"))
+    dl1b_config = Path(cfg.get("lstchain", "dl1b_config"))
     # DL1a input file from base running_analysis directory
     input_dl1_datafile = Path(options.directory) / f"dl1_LST-1.Run{run_str}.h5"
     # DL1b output file to be stored in the dl1ab subdirectory
@@ -205,7 +196,7 @@ def dl1ab(run_str: str, history_file: Path):
         command,
         f"--input-file={input_dl1_datafile}",
         f"--output-file={output_dl1_datafile}",
-        f"--config={dl1b_config_file}",
+        f"--config={dl1b_config}",
     ]
     if not cfg.getboolean("lstchain", "store_image_dl1ab"):
         cmd.append("--no-image=True")
@@ -213,26 +204,19 @@ def dl1ab(run_str: str, history_file: Path):
     if options.simulate:
         return 0
 
-    return run_program_with_history_logging(
-        command_args=cmd,
-        history_file=history_file,
-        run=run_str,
-        prod_id=options.dl1_prod_id,
-        command=command,
-        input_file=input_dl1_datafile.name,
-        config_file=dl1b_config_file.name,
-    )
+    analysis_step = AnalysisStage(run=run_str, command_args=cmd, config_file=dl1b_config.name)
+    analysis_step.execute()
+    return analysis_step.rc
 
 
 @trace
-def dl1_datacheck(run_str: str, history_file: Path):
+def dl1_datacheck(run_str: str) -> int:
     """
     Run datacheck script
 
     Parameters
     ----------
     run_str: str
-    history_file: pathlib.Path
 
     Returns
     -------
@@ -240,7 +224,6 @@ def dl1_datacheck(run_str: str, history_file: Path):
     """
     # Create a new subdirectory for the dl1ab output
     dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
-    dl1b_config_file = Path(cfg.get("lstchain", "dl1b_config"))
     input_dl1_datafile = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
     output_directory = Path(options.directory) / options.dl1_prod_id
     output_directory.mkdir(parents=True, exist_ok=True)
@@ -259,19 +242,13 @@ def dl1_datacheck(run_str: str, history_file: Path):
     if options.simulate:
         return 0
 
-    return run_program_with_history_logging(
-        command_args=cmd,
-        history_file=history_file,
-        run=run_str,
-        prod_id=options.dl1_prod_id,
-        command=command,
-        input_file=input_dl1_datafile.name,
-        config_file=dl1b_config_file.name,
-    )
+    analysis_step = AnalysisStage(run=run_str, command_args=cmd)
+    analysis_step.execute()
+    return analysis_step.rc
 
 
 @trace
-def dl1_to_dl2(run_str: str, history_file: Path):
+def dl1_to_dl2(run_str: str) -> int:
     """
     It prepares and execute the dl1 to dl2 lstchain scripts that applies
     the already trained RFs models to DL1 files. It identifies the
@@ -280,7 +257,6 @@ def dl1_to_dl2(run_str: str, history_file: Path):
     Parameters
     ----------
     run_str: str
-    history_file: pathlib.Path
 
     Returns
     -------
@@ -288,7 +264,7 @@ def dl1_to_dl2(run_str: str, history_file: Path):
     """
     dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
     dl2_subdirectory = Path(options.directory) / options.dl2_prod_id
-    dl2_config_file = Path(cfg.get("lstchain", "dl2_config"))
+    dl2_config = Path(cfg.get("lstchain", "dl2_config"))
     rf_models_directory = Path(cfg.get("lstchain", "RF_MODELS"))
     dl1_file = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
 
@@ -298,21 +274,15 @@ def dl1_to_dl2(run_str: str, history_file: Path):
         f"--input-file={dl1_file}",
         f"--output-dir={dl2_subdirectory}",
         f"--path-models={rf_models_directory}",
-        f"--config={dl2_config_file}",
+        f"--config={dl2_config}",
     ]
 
     if options.simulate:
         return 0
 
-    return run_program_with_history_logging(
-        command_args=cmd,
-        history_file=history_file,
-        run=run_str,
-        prod_id=options.dl2_prod_id,
-        command=command,
-        input_file=dl1_file.name,
-        config_file=dl2_config_file.name,
-    )
+    analysis_step = AnalysisStage(run=run_str, command_args=cmd, config_file=dl2_config.name)
+    analysis_step.execute()
+    return analysis_step.rc
 
 
 def main():
@@ -333,7 +303,7 @@ def main():
     else:
         log.setLevel(logging.INFO)
 
-    # run the routine
+    # Run the routine piping all the analysis steps
     rc = data_sequence(
         calibration_file,
         drs4_ped_file,

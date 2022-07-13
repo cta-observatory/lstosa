@@ -8,7 +8,7 @@ import time
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent
-from typing import List, Iterable, Optional
+from typing import Iterable
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -21,7 +21,6 @@ from osa.paths import (
     get_summary_file,
     get_pedestal_ids_file,
 )
-from osa.report import history
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
 from osa.utils.utils import date_to_dir, time_to_seconds, stringify, date_to_iso
@@ -29,7 +28,6 @@ from osa.utils.utils import date_to_dir, time_to_seconds, stringify, date_to_iso
 log = myLogger(logging.getLogger(__name__))
 
 __all__ = [
-    "run_program_with_history_logging",
     "are_all_jobs_correctly_finished",
     "historylevel",
     "prepare_jobs",
@@ -775,51 +773,3 @@ def update_sequence_state(sequence, filtered_job_info: pd.DataFrame) -> None:
         sequence.exit = "0:15"
     elif any("RUNNING" in job for job in filtered_job_info.State):
         sequence.state = "RUNNING"
-
-
-def run_program_with_history_logging(
-    command_args: List[str],
-    history_file: Path,
-    run: str,
-    prod_id: str,
-    command: str,
-    input_file: Optional[str] = None,
-    config_file: Optional[str] = None,
-):
-    """
-    Run the program and log the output in the history file
-
-    Parameters
-    ----------
-    command_args: List[str]
-    history_file: pathlib.Path
-    run: str
-    prod_id: str
-    command: str
-    input_file: str, optional
-    config_file: str, optional
-
-    Returns
-    -------
-    rc: int
-        Return code of the program
-    """
-    log.info(f"Executing {stringify(command_args)}")
-
-    output = sp.run(command_args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding='utf-8')
-    rc = output.returncode
-
-    history(
-        run=run,
-        prod_id=prod_id,
-        stage=command,
-        return_code=rc,
-        history_file=history_file,
-        input_file=input_file,
-        config_file=config_file,
-    )
-
-    if rc != 0:
-        raise ValueError(f"{command_args[0]} failed with output: \n {output.stdout}")
-
-    return rc
