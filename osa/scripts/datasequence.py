@@ -6,7 +6,8 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import historylevel, AnalysisStage
+from osa.job import historylevel
+from osa.workflow.stages import AnalysisStage
 from osa.provenance.capture import trace
 from osa.utils.cliopts import data_sequence_cli_parsing
 from osa.utils.logging import myLogger
