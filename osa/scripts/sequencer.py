@@ -35,7 +35,7 @@ __all__ = [
     "get_status_for_sequence",
     "output_matrix",
     "report_sequences",
-    "update_job_info"
+    "update_job_info",
 ]
 
 log = myLogger(logging.getLogger())
@@ -88,9 +88,7 @@ def single_process(telescope):
         os.makedirs(options.log_directory, exist_ok=True)
 
     if is_day_closed():
-        log.info(
-            f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}"
-        )
+        log.info(f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}")
         return sequence_list
 
     # Build the sequences
@@ -133,7 +131,7 @@ def update_job_info(sequence_list):
     set_queue_values(
         sacct_info=get_sacct_output(sacct_output),
         squeue_info=get_squeue_output(squeue_output),
-        sequence_list=sequence_list
+        sequence_list=sequence_list,
     )
 
 
@@ -153,21 +151,15 @@ def update_sequence_status(seq_list):
                 Decimal(get_status_for_sequence(seq, "CALIB") * 100) / seq.subruns
             )
         elif seq.type == "DATA":
-            seq.dl1status = int(
-                Decimal(get_status_for_sequence(seq, "DL1") * 100) / seq.subruns
-            )
+            seq.dl1status = int(Decimal(get_status_for_sequence(seq, "DL1") * 100) / seq.subruns)
             seq.dl1abstatus = int(
                 Decimal(get_status_for_sequence(seq, "DL1AB") * 100) / seq.subruns
             )
             seq.datacheckstatus = int(
                 Decimal(get_status_for_sequence(seq, "DATACHECK") * 100) / seq.subruns
             )
-            seq.muonstatus = int(
-                Decimal(get_status_for_sequence(seq, "MUON") * 100) / seq.subruns
-            )
-            seq.dl2status = int(
-                Decimal(get_status_for_sequence(seq, "DL2") * 100) / seq.subruns
-            )
+            seq.muonstatus = int(Decimal(get_status_for_sequence(seq, "MUON") * 100) / seq.subruns)
+            seq.dl2status = int(Decimal(get_status_for_sequence(seq, "DL2") * 100) / seq.subruns)
 
 
 def get_status_for_sequence(sequence, data_level) -> int:
@@ -197,8 +189,8 @@ def get_status_for_sequence(sequence, data_level) -> int:
         files = list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5"))
 
     else:
-        prefix = cfg.get("PATTERN", data_level + "PREFIX")
-        suffix = cfg.get("PATTERN", data_level + "SUFFIX")
+        prefix = cfg.get("PATTERN", f"{data_level}PREFIX")
+        suffix = cfg.get("PATTERN", f"{data_level}SUFFIX")
         files = list(options.directory.glob(f"{prefix}*{sequence.run}*{suffix}"))
 
     return len(files)
@@ -213,7 +205,6 @@ def report_sequences(sequence_list):
     sequence_list: list
         List of sequences of a given date
     """
-    matrix = []
     header = [
         "Tel",
         "Seq",
@@ -230,13 +221,8 @@ def report_sequences(sequence_list):
         "Exit",
     ]
     if options.tel_id in ["LST1", "LST2"]:
-        header.append("DL1%")
-        header.append("MUONS%")
-        header.append("DL1AB%")
-        header.append("DATACHECK%")
-        header.append("DL2%")
-
-    matrix.append(header)
+        header.extend(("DL1%", "MUONS%", "DL1AB%", "DATACHECK%", "DL2%"))
+    matrix = [header]
     for sequence in sequence_list:
         row_list = [
             sequence.telescope,
@@ -254,18 +240,18 @@ def report_sequences(sequence_list):
             sequence.exit,
         ]
         if sequence.type in ["DRS4", "PEDCALIB"]:
-            # repeat None for every data level
-            row_list.append(None)
-            row_list.append(None)
-            row_list.append(None)
-            row_list.append(None)
-            row_list.append(None)
+            row_list.extend((None, None, None, None, None))
         elif sequence.type == "DATA":
-            row_list.append(sequence.dl1status)
-            row_list.append(sequence.muonstatus)
-            row_list.append(sequence.dl1abstatus)
-            row_list.append(sequence.datacheckstatus)
-            row_list.append(sequence.dl2status)
+            row_list.extend(
+                (
+                    sequence.dl1status,
+                    sequence.muonstatus,
+                    sequence.dl1abstatus,
+                    sequence.datacheckstatus,
+                    sequence.dl2status,
+                )
+            )
+
         matrix.append(row_list)
     padding = int(cfg.get("OUTPUT", "PADDING"))
     output_matrix(matrix, padding)
@@ -290,15 +276,15 @@ def output_matrix(matrix: list, padding_space: int):
                 max_field_length[j] = len(str(col))
     for row in matrix:
         stringrow = ""
+        rpadding = padding_space * " "
         for j, col in enumerate(row):
             lpadding = (max_field_length[j] - len(str(col))) * " "
-            rpadding = padding_space * " "
-            if isinstance(col, int):
-                # we got an integer, right aligned
-                stringrow += f"{lpadding}{col}{rpadding}"
-            else:
-                # should be a string, left aligned
-                stringrow += f"{col}{lpadding}{rpadding}"
+            stringrow += (
+                f"{lpadding}{col}{rpadding}"
+                if isinstance(col, int)
+                else f"{col}{lpadding}{rpadding}"
+            )
+
         log.info(stringrow)
 
 

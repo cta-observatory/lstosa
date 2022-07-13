@@ -9,7 +9,8 @@ import logging
 from osa.configs import options
 from osa.paths import (
     datacheck_directory,
-    get_datacheck_files, destination_dir,
+    get_datacheck_files,
+    destination_dir,
 )
 from osa.utils.cliopts import copy_datacheck_parsing
 from osa.utils.logging import myLogger
@@ -27,19 +28,19 @@ def are_files_copied(data_type: str, files: list) -> bool:
         log.warning(f"No {data_type} files found.")
         return False
 
-    elif data_type == "PEDESTAL" and n_files != 1:
+    if data_type == "PEDESTAL" and n_files != 1:
         log.warning(f"Expected at least 1 PDF file, {n_files} found.")
         return False
 
-    elif data_type == "CALIB" and n_files != 1:
+    if data_type == "CALIB" and n_files != 1:
         log.warning(f"Expected at least 1 PDF file, {n_files} found.")
         return False
 
-    elif data_type == "DL1AB" and n_files != get_number_of_runs():
+    if data_type == "DL1AB" and n_files != get_number_of_runs():
         log.warning(f"Expected {get_number_of_runs()} PDF files, {n_files} found.")
         return False
 
-    elif data_type == "LONGTERM" and n_files != 3:
+    if data_type == "LONGTERM" and n_files != 3:
         log.warning(f"Expected 3 DL1 check files (HTML, h5 and log), {n_files} found.")
         return False
 

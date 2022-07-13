@@ -14,12 +14,7 @@ __all__ = ["directory_in_webserver", "copy_to_webserver"]
 log = myLogger(logging.getLogger(__name__))
 
 
-def directory_in_webserver(
-        host: str,
-        datacheck_type: str,
-        date: str,
-        prod_id: str
-) -> Path:
+def directory_in_webserver(host: str, datacheck_type: str, date: str, prod_id: str) -> Path:
     """
     Create directories in the datacheck web server.
 
@@ -55,12 +50,7 @@ def directory_in_webserver(
     return destination_dir
 
 
-def copy_to_webserver(
-        files: List[Path],
-        datacheck_type: str,
-        date: str,
-        prod_id: str
-) -> None:
+def copy_to_webserver(files: List[Path], datacheck_type: str, date: str, prod_id: str) -> None:
     """
     Copy files to the webserver in host.
 

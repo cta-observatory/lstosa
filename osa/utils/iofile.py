@@ -32,19 +32,14 @@ def write_to_file(file: pathlib.Path, content: str):
 
         if options.simulate:
             remove(file_temp)
-            log.debug(
-                f"SIMULATE File {file_temp} would replace {file}."
-                f"Deleting {file_temp}"
-            )
+            log.debug(f"SIMULATE File {file_temp} would replace {file}." f"Deleting {file_temp}")
         else:
             try:
                 rename(file_temp, file)
             except (IOError, OSError) as e:
                 log.exception(f"{e.strerror} {e.filename}")
     elif options.simulate:
-        log.debug(
-            f"SIMULATE File {file_temp} would be written as {file}. Deleting {file_temp}"
-        )
+        log.debug(f"SIMULATE File {file_temp} would be written as {file}. Deleting {file_temp}")
     else:
         rename(file_temp, file)
     return True

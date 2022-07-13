@@ -16,7 +16,7 @@ from osa.utils.utils import (
     get_prod_id,
     is_defined,
     set_prod_ids,
-    current_date
+    YESTERDAY,
 )
 
 __all__ = [
@@ -39,7 +39,7 @@ __all__ = [
     "calibration_pipeline_cliparsing",
     "calibration_pipeline_argparser",
     "autocloser_cli_parser",
-    "common_parser"
+    "common_parser",
 ]
 
 log = myLogger(logging.getLogger(__name__))
@@ -145,16 +145,8 @@ def calibration_pipeline_argparser():
         dest="prod_id",
         help="Set the prod ID to define data directories",
     )
-    parser.add_argument(
-        "--drs4-pedestal-run",
-        type=int,
-        help="DRS4 pedestal run number"
-    )
-    parser.add_argument(
-        "--pedcal-run",
-        type=int,
-        help="Calibration run number"
-    )
+    parser.add_argument("--drs4-pedestal-run", type=int, help="DRS4 pedestal run number")
+    parser.add_argument("--pedcal-run", type=int, help="Calibration run number")
 
     parser.add_argument("tel_id", choices=["LST1"])
 
@@ -202,30 +194,16 @@ def data_sequence_argparser():
         default=False,
         help="Do not produce DL2 files (default False)",
     )
-    parser.add_argument(
-        "--pedcal-file",
-        type=Path,
-        help="Path of the calibration file"
-    )
-    parser.add_argument(
-        "--drs4-pedestal-file",
-        type=Path,
-        help="Path of the DRS4 pedestal file"
-    )
-    parser.add_argument(
-        "--time-calib-file",
-        type=Path,
-        help="Path of the time calibration file"
-    )
+    parser.add_argument("--pedcal-file", type=Path, help="Path of the calibration file")
+    parser.add_argument("--drs4-pedestal-file", type=Path, help="Path of the DRS4 pedestal file")
+    parser.add_argument("--time-calib-file", type=Path, help="Path of the time calibration file")
     parser.add_argument(
         "--systematic-correction-file",
         type=Path,
-        help="Path of the systematic correction factor file"
+        help="Path of the systematic correction factor file",
     )
     parser.add_argument(
-        "--drive-file",
-        type=Path,
-        help="Path of drive log file with pointing information"
+        "--drive-file", type=Path, help="Path of drive log file with pointing information"
     )
     parser.add_argument(
         "--run-summary",
@@ -280,7 +258,7 @@ def sequencer_argparser():
     """Argument parser for sequencer script."""
     parser = ArgumentParser(
         description="Build the jobs for each run and process them for a given date",
-        parents=[common_parser]
+        parents=[common_parser],
     )
     parser.add_argument(
         "--no-submit",
@@ -293,7 +271,7 @@ def sequencer_argparser():
         action="store_true",
         default=False,
         help="Skip calibration sequence. Run data sequences assuming "
-             "calibration products already produced (default False)",
+        "calibration products already produced (default False)",
     )
     parser.add_argument(
         "--no-dl2",
@@ -354,18 +332,11 @@ def provprocess_argparser():
         help="use this flag to reset session and remove log file",
     )
     parser.add_argument(
-        "drs4_pedestal_run_id",
-        help="Number of the drs4_pedestal used in the calibration"
+        "drs4_pedestal_run_id", help="Number of the drs4_pedestal used in the calibration"
     )
-    parser.add_argument(
-        "pedcal_run_id", help="Number of the used pedcal used in the calibration"
-    )
-    parser.add_argument(
-        "run", help="Number of the run whose provenance is to be extracted"
-    )
-    parser.add_argument(
-        "date", action="store", type=str, help="Observation starting date YYYYMMDD"
-    )
+    parser.add_argument("pedcal_run_id", help="Number of the used pedcal used in the calibration")
+    parser.add_argument("run", help="Number of the run whose provenance is to be extracted")
+    parser.add_argument("date", action="store", type=str, help="Observation starting date YYYYMMDD")
     parser.add_argument("prod_id", action="store", type=str, help="Production ID")
 
     return parser
@@ -465,8 +436,7 @@ def copy_datacheck_parsing():
 
 def sequencer_webmaker_argparser():
     parser = ArgumentParser(
-        description="Script to make an xhtml from LSTOSA sequencer output",
-        parents=[common_parser]
+        description="Script to make an xhtml from LSTOSA sequencer output", parents=[common_parser]
     )
     options.tel_id = "LST1"
     options.prod_id = get_prod_id()
@@ -476,10 +446,7 @@ def sequencer_webmaker_argparser():
 
 def set_default_date_if_needed():
     """Check if the date is set, if not set it to yesterday."""
-    if is_defined(options.date):
-        return options.date
-
-    return current_date()
+    return options.date if is_defined(options.date) else YESTERDAY
 
 
 def set_common_globals(opts):
@@ -495,17 +462,11 @@ def set_common_globals(opts):
 def autocloser_cli_parser():
     """Define the command line parser for the autocloser."""
     parser = ArgumentParser(
-        description="Automatic job completion check and sequence closer.",
-        parents=[common_parser]
+        description="Automatic job completion check and sequence closer.", parents=[common_parser]
     )
+    parser.add_argument("--ignore-cronlock", action="store_true", help='Ignore "cron.lock"')
     parser.add_argument(
-        "--ignore-cronlock", action="store_true", help='Ignore "cron.lock"'
-    )
-    parser.add_argument(
-        "-f",
-        "--force",
-        action="store_true",
-        help="Force the autocloser to close the day"
+        "-f", "--force", action="store_true", help="Force the autocloser to close the day"
     )
     parser.add_argument(
         "--no-dl2",
@@ -513,11 +474,7 @@ def autocloser_cli_parser():
         default=False,
         help="Disregard the production of DL2 files",
     )
-    parser.add_argument(
-        "-r", "--runwise", action="store_true", help="Close the day run-wise."
-    )
-    parser.add_argument(
-        "-l", "--log", type=Path, default=None, help="Write log to a file."
-    )
+    parser.add_argument("-r", "--runwise", action="store_true", help="Close the day run-wise.")
+    parser.add_argument("-l", "--log", type=Path, default=None, help="Write log to a file.")
     parser.add_argument("tel_id", type=str, choices=["LST1"])
     return parser

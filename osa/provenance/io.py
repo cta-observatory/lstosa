@@ -65,14 +65,10 @@ def provlist2provdoc(provlist):
                 act.add_attributes({"script": provdict.pop("script")})
             # activity start
             if "startTime" in provdict:
-                act.set_time(
-                    startTime=datetime.datetime.fromisoformat(provdict.pop("startTime"))
-                )
+                act.set_time(startTime=datetime.datetime.fromisoformat(provdict.pop("startTime")))
             # activity end
             if "endTime" in provdict:
-                act.set_time(
-                    endTime=datetime.datetime.fromisoformat(provdict.pop("endTime"))
-                )
+                act.set_time(endTime=datetime.datetime.fromisoformat(provdict.pop("endTime")))
             # in session?
             # if "in_session" in provdict:
             #     sess_id = DEFAULT_NS + ":" + str(provdict.pop("in_session"])
