@@ -29,7 +29,6 @@ __all__ = [
     "get_calib_prod_id",
     "get_dl1_prod_id",
     "get_dl2_prod_id",
-    "get_night_limit_timestamp",
     "time_to_seconds",
     "DATACHECK_FILE_PATTERNS",
     "YESTERDAY",
