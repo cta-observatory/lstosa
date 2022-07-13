@@ -3,7 +3,6 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
-import tenacity
 
 from osa.configs import options
 from osa.configs.config import cfg
