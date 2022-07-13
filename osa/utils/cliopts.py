@@ -16,7 +16,7 @@ from osa.utils.utils import (
     get_prod_id,
     is_defined,
     set_prod_ids,
-    current_date,
+    YESTERDAY,
 )
 
 __all__ = [
@@ -446,10 +446,7 @@ def sequencer_webmaker_argparser():
 
 def set_default_date_if_needed():
     """Check if the date is set, if not set it to yesterday."""
-    if is_defined(options.date):
-        return options.date
-
-    return current_date()
+    return options.date if is_defined(options.date) else YESTERDAY
 
 
 def set_common_globals(opts):

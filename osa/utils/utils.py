@@ -36,7 +36,6 @@ __all__ = [
     "is_night_time",
     "cron_lock",
     "example_seq",
-    "current_date",
 ]
 
 log = myLogger(logging.getLogger(__name__))
@@ -51,20 +50,6 @@ DATACHECK_FILE_PATTERNS = {
 }
 
 YESTERDAY = datetime.now() - timedelta(days=1)
-
-
-def current_date() -> datetime:
-    """
-    Get current data following LST data-taking convention in which the date
-    changes at 12:00 pm instead of 00:00 or 12:00 am to cover a natural
-    data-taking night.
-
-    Returns
-    -------
-    date: datetime.datetime
-        Current date following LST data-taking convention.
-    """
-    return datetime.now() - timedelta(days=1) if datetime.now().hour < 12 else datetime.now()
 
 
 def get_lstchain_version():

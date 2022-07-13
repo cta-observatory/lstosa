@@ -4,24 +4,10 @@ import pytest
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.utils import date_to_iso
 
 options.date = datetime.datetime.fromisoformat("2020-01-17")
 options.tel_id = "LST1"
 options.prod_id = "v0.1.0"
-
-
-def test_get_current_date():
-    from osa.utils.utils import current_date
-
-    # Both having the same separator
-    now = datetime.datetime.utcnow()
-    if now.hour < 12:
-        # In our convention, date changes at 12:00 pm
-        yesterday_lst_date = now - datetime.timedelta(hours=12)
-        assert date_to_iso(current_date()) == date_to_iso(yesterday_lst_date)
-    else:
-        assert date_to_iso(current_date()) == date_to_iso(now)
 
 
 def test_analysis_path(running_analysis_dir):
@@ -34,7 +20,7 @@ def test_get_lstchain_version():
     from osa.utils.utils import get_lstchain_version
     from lstchain import __version__
 
-    assert get_lstchain_version() == "v" + __version__
+    assert get_lstchain_version() == f"v{__version__}"
 
 
 def test_get_prod_id():
