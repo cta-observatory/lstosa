@@ -1,3 +1,11 @@
+"""
+Manage the stages of the analysis workflow.
+
+Build lstchain commands, run them, clean up their output of a given step and
+retry in case of failure, and keep track of the history of the stages.
+"""
+
+import logging
 import subprocess as sp
 from pathlib import Path
 from typing import List, Union
@@ -6,9 +14,11 @@ from tenacity import retry, stop_after_attempt
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import log
 from osa.report import history
+from osa.utils.logging import myLogger
 from osa.utils.utils import stringify
+
+log = myLogger(logging.getLogger(__name__))
 
 
 class AnalysisStage:
