@@ -8,7 +8,7 @@ import re
 import shutil
 import subprocess
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Tuple, Iterable, List
 
@@ -237,7 +237,7 @@ def set_closed_with_file():
     return is_closed
 
 
-def observation_finished(date=datetime.now(timezone.utc)) -> bool:
+def observation_finished(date=datetime.utcnow()) -> bool:
     """
     We consider the observation as finished if it is later
     than 08:00 UTC of the next day set by `options.date`

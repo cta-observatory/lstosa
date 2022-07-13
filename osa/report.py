@@ -146,7 +146,7 @@ def history(
     config_file : str, optional
         Input card used for the lstchain executable.
     """
-    date_string = datetime.now(timezone.utc).isoformat(sep=" ", timespec="minutes")
+    date_string = datetime.utcnow().isoformat(sep=" ", timespec="minutes")
     string_to_write = (
         f"{run} {stage} {prod_id} {date_string} " f"{input_file} {config_file} {return_code}\n"
     )
