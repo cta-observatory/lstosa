@@ -104,9 +104,7 @@ def trace(func):
             session_tag = f"{activity}:{class_instance.ObservationRun}"
             session_name = f"{class_instance.ObservationRun}"
         else:
-            session_tag = (
-                f"{activity}:{class_instance.PedestalRun}-{class_instance.CalibrationRun}"
-            )
+            session_tag = f"{activity}:{class_instance.PedestalRun}-{class_instance.CalibrationRun}"
             session_name = f"{class_instance.PedestalRun}-{class_instance.CalibrationRun}"
         # OSA specific
         # variables parsing
@@ -373,15 +371,11 @@ def log_session(class_instance, start):
         # OSA specific
         "software_version": class_instance.SoftwareVersion,
         "config_file": class_instance.ProcessingConfigFile,
-        "config_file_hash": get_file_hash(
-            class_instance.ProcessingConfigFile, buffer="path"
-        ),
+        "config_file_hash": get_file_hash(class_instance.ProcessingConfigFile, buffer="path"),
         "config_file_hash_type": get_hash_method(),
     }
     if class_instance.__name__ in REDUCTION_TASKS:
-        log_record[
-            "observation_run"
-        ] = class_instance.ObservationRun  # a session is run-wise
+        log_record["observation_run"] = class_instance.ObservationRun  # a session is run-wise
     else:
         log_record["pedestal_run"] = class_instance.PedestalRun
         log_record["calibration_run"] = class_instance.CalibrationRun
@@ -420,9 +414,7 @@ def get_derivation_records(class_instance, activity):
                 log_record = {"entity_id": new_id, "progenitor_id": entity_id}
                 records.append(log_record)
                 traced_entities[var] = (new_id, item)
-                logger.warning(
-                    f"Derivation detected in {activity} for {var}. ID: {new_id}"
-                )
+                logger.warning(f"Derivation detected in {activity} for {var}. ID: {new_id}")
     return records
 
 

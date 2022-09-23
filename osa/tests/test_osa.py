@@ -3,11 +3,7 @@ import pytest
 
 @pytest.mark.tryfirst
 def test_basedir_available(
-        base_test_dir,
-        r0_data,
-        drs4_time_calibration_files,
-        calibration_file,
-        drs4_baseline_file
+    base_test_dir, r0_data, drs4_time_calibration_files, calibration_file, drs4_baseline_file
 ):
 
     assert base_test_dir.is_dir()

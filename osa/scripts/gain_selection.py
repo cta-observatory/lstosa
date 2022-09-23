@@ -22,18 +22,11 @@ PATH = "PATH=/fefs/aswg/software/gain_selection/bin:$PATH"
 
 
 def get_sbatch_script(
-        run_id,
-        subrun,
-        input_file,
-        output_dir,
-        log_dir,
-        ref_time,
-        ref_counter,
-        module,
-        ref_source
+    run_id, subrun, input_file, output_dir, log_dir, ref_time, ref_counter, module, ref_source
 ):
     """Build the sbatch job pilot script for running the gain selection."""
-    return dedent(f"""\
+    return dedent(
+        f"""\
     #!/bin/bash
 
     #SBATCH -D {log_dir}
@@ -42,7 +35,8 @@ def get_sbatch_script(
     #SBATCH --export {PATH}
 
     lst_select_gain {input_file} {output_dir} {ref_time} {ref_counter} {module} {ref_source}
-    """)
+    """
+    )
 
 
 def apply_gain_selection(date: str, output_basedir: Path = None):
@@ -58,7 +52,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
 
     output_dir = output_basedir / date
-    log_dir = output_basedir / "log" /date
+    log_dir = output_basedir / "log" / date
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
     r0_dir = Path(f"/fefs/aswg/data/real/R0/{date}")
@@ -70,24 +64,22 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
         module = run["dragon_reference_module_index"]
         ref_source = run["dragon_reference_source"].upper()
 
-        subrun_numbers = []
-        files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.????.fits.fz")       
-        for file in files:
-            subrun_numbers.append(int(file[-12:-8]))
-        n_subruns = max(subrun_numbers)
-
+        files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.????.fits.fz")
+        subrun_numbers = [int(file[-12:-8]) for file in files]
         input_files = []
 
-        if ref_source=="UCTS" or ref_source=="TIB":
+        if ref_source in ["UCTS", "TIB"]:
 
-            for subrun in range(n_subruns+1):
+            n_subruns = max(subrun_numbers)
+
+            for subrun in range(n_subruns + 1):
                 new_files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
 
                 if len(new_files) != 4:
                     for file in new_files:
                         output_file = output_dir / file
                         file.link_to(output_file)
- 
+
                 else:
                     new_files.sort()
                     input_files.append(new_files[0])
@@ -96,21 +88,23 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
                 run_info = run_info_from_filename(file)
                 job_file = log_dir / f"gain_selection_{run_info.run:05d}.{run_info.subrun:04d}.sh"
                 with open(job_file, "w") as f:
-                    f.write(get_sbatch_script(
-                        run_id,
-                        run_info.subrun,
-                        file,
-                        output_dir,
-                        log_dir,
-                        ref_time,
-                        ref_counter,
-                        module,
-                        ref_source
-                    ))
+                    f.write(
+                        get_sbatch_script(
+                            run_id,
+                            run_info.subrun,
+                            file,
+                            output_dir,
+                            log_dir,
+                            ref_time,
+                            ref_counter,
+                            module,
+                            ref_source,
+                        )
+                    )
                 sp.run(["sbatch", job_file], check=True)
-        
+
         else:
-    
+
             input_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
 
             for file in input_files:
@@ -122,7 +116,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
     for run in calib_runs:
         run_id = run["run_id"]
         r0_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
-        
+
         for file in r0_files:
             output_file = output_dir / file.name
             sp.run(["cp", file, output_dir])
@@ -146,6 +140,7 @@ def run_sacct_j(job) -> StringIO:
     ]
     
     return StringIO(sp.check_output(sacct_cmd).decode())
+    
 
 def check_failed_jobs(date: str, output_basedir: Path = None):
     """Search for failed jobs in the log directory."""
@@ -169,9 +164,9 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
 
 
 @click.command()
-@click.option('--check', is_flag=True, default=False, help='Check for failed jobs.')
-@click.argument('dates-file', type=click.Path(exists=True, path_type=Path))
-@click.argument('output-basedir', type=click.Path(path_type=Path))
+@click.option("--check", is_flag=True, default=False, help="Check for failed jobs.")
+@click.argument("dates-file", type=click.Path(exists=True, path_type=Path))
+@click.argument("output-basedir", type=click.Path(path_type=Path))
 def main(dates_file: Path = None, output_basedir: Path = None, check: bool = False):
     """
     Loop over the dates listed in the input file and launch the gain selection

@@ -37,13 +37,14 @@ def test_history(base_test_dir):
         return_code=rc,
         history_file=history_file,
         input_file=input_file,
-        config_file=input_card
+        config_file=input_card,
     )
 
     options.simulate = True
 
-    logged_string = f"01800 r0_to_dl1 v1.0.0 {date_string} " \
-        "r0_to_dl1_01800.fits r0_dl1.config 0\n"
+    logged_string = (
+        f"01800 r0_to_dl1 v1.0.0 {date_string} " "r0_to_dl1_01800.fits r0_dl1.config 0\n"
+    )
 
     assert history_file.exists()
     assert history_file.read_text() == logged_string

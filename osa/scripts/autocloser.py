@@ -22,7 +22,8 @@ from osa.utils.utils import (
     get_prod_id,
     is_night_time,
     cron_lock,
-    example_seq, date_to_iso
+    example_seq,
+    date_to_iso,
 )
 
 __all__ = ["Telescope", "Sequence"]
@@ -34,12 +35,12 @@ class Telescope:
     """Handle the telescope sequences, simulate and check them."""
 
     def __init__(
-            self,
-            telescope,
-            date,
-            config_file: Path,
-            ignore_cronlock: bool = False,
-            test: bool = False,
+        self,
+        telescope,
+        date,
+        config_file: Path,
+        ignore_cronlock: bool = False,
+        test: bool = False,
     ):
         """
         Parameters
@@ -179,12 +180,12 @@ class Telescope:
         return bool(self.sequences)
 
     def close(
-            self,
-            date: str,
-            config: Path,
-            no_dl2: bool,
-            simulate: bool = False,
-            test: bool = False,
+        self,
+        date: str,
+        config: Path,
+        no_dl2: bool,
+        simulate: bool = False,
+        test: bool = False,
     ):
         """Launch the closer command."""
         log.info("Closing...")
@@ -215,9 +216,7 @@ class Telescope:
         )
         stdout, _ = closer.communicate()
         if closer.returncode != 0:
-            log.warning(
-                f"closer returned error code {closer.returncode}! See output: {stdout}"
-            )
+            log.warning(f"closer returned error code {closer.returncode}! See output: {stdout}")
             return False
         self.closed = True
         return True
@@ -263,20 +262,20 @@ class Sequence:
     def is_100(self, no_dl2: bool):
         """Check that all analysis products are 100% complete."""
         if (
-                no_dl2
-                and self.dict_sequence["Tel"] != "ST"
-                and self.dict_sequence["DL1%"] == "100"
-                and self.dict_sequence["DL1AB%"] == "100"
-                and self.dict_sequence["MUONS%"] == "100"
+            no_dl2
+            and self.dict_sequence["Tel"] != "ST"
+            and self.dict_sequence["DL1%"] == "100"
+            and self.dict_sequence["DL1AB%"] == "100"
+            and self.dict_sequence["MUONS%"] == "100"
         ):
             return True
 
         if (
-                self.dict_sequence["Tel"] != "ST"
-                and self.dict_sequence["DL1%"] == "100"
-                and self.dict_sequence["DL1AB%"] == "100"
-                and self.dict_sequence["MUONS%"] == "100"
-                and self.dict_sequence["DL2%"] == "100"
+            self.dict_sequence["Tel"] != "ST"
+            and self.dict_sequence["DL1%"] == "100"
+            and self.dict_sequence["DL1AB%"] == "100"
+            and self.dict_sequence["MUONS%"] == "100"
+            and self.dict_sequence["DL2%"] == "100"
         ):
             return True
 
@@ -286,16 +285,16 @@ class Sequence:
         """Check that all jobs statuses are completed."""
         log.debug("Check if flawless")
         if (
-                self.dict_sequence["Type"] == "DATA"
-                and self.dict_sequence["Exit"] == "0:0"
-                and self.is_100(no_dl2=no_dl2)
-                and self.dict_sequence["State"] == "COMPLETED"
+            self.dict_sequence["Type"] == "DATA"
+            and self.dict_sequence["Exit"] == "0:0"
+            and self.is_100(no_dl2=no_dl2)
+            and self.dict_sequence["State"] == "COMPLETED"
         ):
             return True
         if (
-                self.dict_sequence["Type"] == "PEDCALIB"
-                and self.dict_sequence["Exit"] == "0:0"
-                and self.dict_sequence["State"] == "COMPLETED"
+            self.dict_sequence["Type"] == "PEDCALIB"
+            and self.dict_sequence["Exit"] == "0:0"
+            and self.dict_sequence["State"] == "COMPLETED"
         ):
             return True
 
@@ -310,8 +309,7 @@ class Sequence:
             log.debug("Cannot check for missing subruns for CALIBRATION sequence")
             return True
         search_str = (
-            f"{analysis_path(self.dict_sequence['Tel'])}/"
-            f"dl1*{self.dict_sequence['Run']}*.h5"
+            f"{analysis_path(self.dict_sequence['Tel'])}/" f"dl1*{self.dict_sequence['Run']}*.h5"
         )
         subrun_nrs = sorted(
             [int(os.path.basename(file).split(".")[2]) for file in glob.glob(search_str)]
@@ -319,12 +317,7 @@ class Sequence:
         return bool(subrun_nrs and len(subrun_nrs) == int(self.dict_sequence["Subruns"]))
 
     def close(
-            self,
-            date: str,
-            config: Path,
-            no_dl2: bool,
-            simulate: bool = False,
-            test: bool = False
+        self, date: str, config: Path, no_dl2: bool, simulate: bool = False, test: bool = False
     ):
         """Close the sequence by calling the 'closer' script for a given sequence."""
         log.info("Closing sequence...")
@@ -351,14 +344,10 @@ class Sequence:
             return True
 
         log.debug(f"Executing {' '.join(closer_cmd)}")
-        closer = subprocess.Popen(
-            closer_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-        )
+        closer = subprocess.Popen(closer_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         stdout, _ = closer.communicate()
         if closer.returncode != 0:
-            log.warning(
-                f"closer returned error code {closer.returncode}! See output: {stdout}"
-            )
+            log.warning(f"closer returned error code {closer.returncode}! See output: {stdout}")
             return False
 
         self.closed = True
@@ -483,11 +472,7 @@ def main():
     log.info(f"Closing {args.tel_id}...")
 
     if not telescope.close(
-            date=date,
-            config=args.config,
-            no_dl2=args.no_dl2,
-            simulate=args.simulate,
-            test=args.test
+        date=date, config=args.config, no_dl2=args.no_dl2, simulate=args.simulate, test=args.test
     ):
         log.warning(f"Could not close the day for {args.tel_id}!")
         # Send email, if later than 18:00 UTC and telescope is not ready to close

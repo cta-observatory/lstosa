@@ -20,9 +20,7 @@ from astropy.utils import iers
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.nightsummary.extract import build_sequences, get_source_list
-from osa.paths import (
-    destination_dir, DEFAULT_CFG, create_source_directories, analysis_path
-)
+from osa.paths import destination_dir, DEFAULT_CFG, create_source_directories, analysis_path
 from osa.utils.cliopts import get_prod_id, get_dl2_prod_id
 from osa.utils.logging import myLogger
 from osa.utils.utils import stringify, YESTERDAY
@@ -38,20 +36,13 @@ __all__ = [
     "produce_dl3_files",
     "setup_global_options",
     "cuts_subdirectory",
-    "create_obs_index"
+    "create_obs_index",
 ]
 
 log = myLogger(logging.getLogger(__name__))
 
 
-def batch_cmd_create_irf(
-        cwd,
-        mc_gamma,
-        mc_proton,
-        mc_electron,
-        output_irf_file,
-        dl3_config
-):
+def batch_cmd_create_irf(cwd, mc_gamma, mc_proton, mc_electron, output_irf_file, dl3_config):
     """Create batch command to create IRF file with sbatch."""
     return [
         "sbatch",
@@ -74,15 +65,7 @@ def batch_cmd_create_irf(
 
 
 def batch_cmd_create_dl3(
-        dl2_file,
-        dl3_dir,
-        run,
-        source_name,
-        source_ra,
-        source_dec,
-        irf,
-        dl3_config,
-        job_irf
+    dl2_file, dl3_dir, run, source_name, source_ra, source_dec, irf, dl3_config, job_irf
 ):
     """Create batch command to create DL3 files with sbatch."""
     log_dir = dl3_dir / "log"
@@ -189,13 +172,13 @@ def create_irf(directory: Path, config: Path, simulate: bool = False):
 
 
 def produce_dl3_files(
-        sequence_list,
-        irf_file: Path,
-        dl2_dir: Path,
-        cuts_dir: Path,
-        dl3_config: Path,
-        job_id_irf: int,
-        simulate: bool = False
+    sequence_list,
+    irf_file: Path,
+    dl2_dir: Path,
+    cuts_dir: Path,
+    dl3_config: Path,
+    job_id_irf: int,
+    simulate: bool = False,
 ):
     """Produce the DL3 files for a given list of sequences."""
     list_of_job_id = []
@@ -239,12 +222,7 @@ def produce_dl3_files(
     return list_of_job_id
 
 
-def create_obs_index(
-        source_list: list,
-        cuts_dir: Path,
-        parent_jobs: list,
-        simulate: bool = False
-):
+def create_obs_index(source_list: list, cuts_dir: Path, parent_jobs: list, simulate: bool = False):
     """Creating observation index for each source."""
     log.info("Creating observation index for each source.")
 
@@ -289,29 +267,25 @@ def cuts_subdirectory() -> Path:
 
 
 @click.command()
-@click.argument('telescope', type=click.Choice(['LST1', 'LST2']))
+@click.argument("telescope", type=click.Choice(["LST1", "LST2"]))
+@click.option("-d", "--date-obs", type=click.DateTime(formats=["%Y-%m-%d"]), default=YESTERDAY)
 @click.option(
-    '-d',
-    '--date-obs',
-    type=click.DateTime(formats=["%Y-%m-%d"]),
-    default=YESTERDAY
-)
-@click.option(
-    '-c', '--config',
+    "-c",
+    "--config",
     type=click.Path(dir_okay=False),
     default=DEFAULT_CFG,
-    help='Read option defaults from the specified cfg file',
+    help="Read option defaults from the specified cfg file",
 )
-@click.option('-v', '--verbose', is_flag=True)
-@click.option('--local', is_flag=True)
-@click.option('-s', '--simulate', is_flag=True)
+@click.option("-v", "--verbose", is_flag=True)
+@click.option("--local", is_flag=True)
+@click.option("-s", "--simulate", is_flag=True)
 def main(
-        date_obs: datetime = YESTERDAY,
-        telescope: str = "LST1",
-        verbose: bool = False,
-        simulate: bool = False,
-        local: bool = False,
-        config: Path = DEFAULT_CFG,
+    date_obs: datetime = YESTERDAY,
+    telescope: str = "LST1",
+    verbose: bool = False,
+    simulate: bool = False,
+    local: bool = False,
+    config: Path = DEFAULT_CFG,
 ):
     """Produce the IRF and DL3 files tool in a run basis."""
     log.setLevel(logging.INFO)
@@ -347,10 +321,7 @@ def main(
     create_source_directories(source_list, std_cuts_dir)
 
     # Get IRF file
-    irf_file, dl3_config, job_id_irf = get_irf_file(
-        directory=std_cuts_dir,
-        simulate=simulate
-    )
+    irf_file, dl3_config, job_id_irf = get_irf_file(directory=std_cuts_dir, simulate=simulate)
 
     # Create the DL3 files
     list_of_job_id = produce_dl3_files(
@@ -368,7 +339,7 @@ def main(
         source_list=source_list,
         cuts_dir=std_cuts_dir,
         parent_jobs=list_of_job_id,
-        simulate=simulate
+        simulate=simulate,
     )
 
 
