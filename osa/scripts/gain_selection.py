@@ -1,6 +1,7 @@
 """Script to run the gain selection over a list of dates."""
 import logging
 import re
+import shutil
 import glob
 import subprocess as sp
 from pathlib import Path
