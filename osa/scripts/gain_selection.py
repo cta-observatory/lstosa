@@ -6,6 +6,7 @@ import glob
 import subprocess as sp
 from pathlib import Path
 from textwrap import dedent
+from io import StringIO
 
 import click
 from astropy.table import Table
@@ -13,6 +14,7 @@ from lstchain.paths import run_info_from_filename
 
 from osa.scripts.reprocessing import get_list_of_dates
 from osa.utils.logging import myLogger
+from osa.job import get_sacct_output
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -125,25 +127,45 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
             output_file = output_dir / file.name
             sp.run(["cp", file, output_dir])
 
+def run_sacct_j(job) -> StringIO:
+    """Run sacct to obtain the job information."""
+    if shutil.which("sacct") is None:
+        log.warning("No job info available since sacct command is not available")
+        return StringIO()
+
+    sacct_cmd = [
+        "sacct",
+        "-n",
+        "--parsable2",
+        "--delimiter=,",
+        "--units=G",
+        "-o",
+        ",".join(FORMAT_SLURM),
+        "-j",
+        job,
+    ]
+    
+    return StringIO(sp.check_output(sacct_cmd).decode())
+
 def check_failed_jobs(date: str, output_basedir: Path = None):
     """Search for failed jobs in the log directory."""
     failed_jobs = []
-    log_dir = output_basedir / "log" /date
-    filenames = log_dir.glob("gain_selection*.log")
+    log_dir = output_basedir / "log" / date
+    filenames = glob.glob(f"{log_dir}/gain_selection*.log")
+    jobs = [re.search(r'(?<=_)(.[0-9.]+?)(?=.log)', i).group(0) for i in filenames]
 
-    for line in fileinput.input(filenames):
-        if re.search("FAILED", line) or re.search("Stream [1-4] not found", line):
-            job_id = str(fileinput.filename())[-12:-4]
-            run_id = str(fileinput.filename())[-23:-18]
-            subrun_id = str(fileinput.filename())[-17:-13]
-            failed_jobs.append(job_id)
-
-            log.warning(f"Job {job_id} (corresponding to run {run_id}, subrun {subrun_id}) failed.")
+    for job in jobs: 
+        output = run_sacct_j(job)
+        df = get_sacct_output(output)
+        
+        if not df.iloc[0]["State"] == "COMPLETED":
+            log.warning(f"Job {job} did not finish successfully")
+            failed_jobs.append(job)
 
     if not failed_jobs:
-        log.info("All jobs finished successfully.")
+        log.info("All jobs finished successfully")
     else:
-        log.warning("Some jobs did not finish successfully.")
+        log.warning("Some jobs did not finish successfully")
 
 
 @click.command()
