@@ -1,5 +1,4 @@
 """Script to run the gain selection over a list of dates."""
-import fileinput
 import logging
 import re
 import glob
