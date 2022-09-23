@@ -14,7 +14,7 @@ from lstchain.paths import run_info_from_filename
 
 from osa.scripts.reprocessing import get_list_of_dates
 from osa.utils.logging import myLogger
-from osa.job import get_sacct_output
+from osa.job import get_sacct_output, FORMAT_SLURM
 
 log = myLogger(logging.getLogger(__name__))
 
