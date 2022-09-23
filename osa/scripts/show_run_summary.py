@@ -76,9 +76,7 @@ def start_end_of_run_files_stat(r0_path: Path, run_number: int, num_files: int):
 
     last_subrun = num_files - 1  # first subrun is 0
     pattern_first_subrun = r0_path / f"LST-1.1.Run{run_number:05d}.0000.fits.fz"
-    pattern_last_subrun = (
-        r0_path / f"LST-1.1.Run{run_number:05d}.{last_subrun:04d}.fits.fz"
-    )
+    pattern_last_subrun = r0_path / f"LST-1.1.Run{run_number:05d}.{last_subrun:04d}.fits.fz"
     try:
         # Get start and end times from the creation and last modification timestamps
         # from the first and last file in the run
@@ -93,9 +91,7 @@ def start_end_of_run_files_stat(r0_path: Path, run_number: int, num_files: int):
         )
 
     except Exception as err:
-        log.error(
-            f"Files {pattern_first_subrun} or {pattern_last_subrun} have error: {err}"
-        )
+        log.error(f"Files {pattern_first_subrun} or {pattern_last_subrun} have error: {err}")
 
         return dict(
             time_start=None,
@@ -173,9 +169,7 @@ def main():
     print("\n")
 
     run_summary["number_of_runs"] = 1
-    total_obs = run_summary["number_of_runs", "n_subruns", "elapsed"].groups.aggregate(
-        np.sum
-    )
+    total_obs = run_summary["number_of_runs", "n_subruns", "elapsed"].groups.aggregate(np.sum)
     total_obs["elapsed"].format = "7.1f"
     header = " Total observation time "
     print(f"{header.center(50, '*')}")

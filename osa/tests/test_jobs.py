@@ -64,26 +64,26 @@ def test_scheduler_env_variables(sequence_list, running_analysis_dir):
     first_sequence = sequence_list[0]
     env_variables = scheduler_env_variables(first_sequence)
     assert env_variables == [
-        '#SBATCH --job-name=LST1_01809',
-        '#SBATCH --time=1:15:00',
-        f'#SBATCH --chdir={running_analysis_dir}',
-        '#SBATCH --output=log/Run01809.%4a_jobid_%A.out',
-        '#SBATCH --error=log/Run01809.%4a_jobid_%A.err',
+        "#SBATCH --job-name=LST1_01809",
+        "#SBATCH --time=1:15:00",
+        f"#SBATCH --chdir={running_analysis_dir}",
+        "#SBATCH --output=log/Run01809.%4a_jobid_%A.out",
+        "#SBATCH --error=log/Run01809.%4a_jobid_%A.err",
         f'#SBATCH --partition={cfg.get("SLURM", "PARTITION_PEDCALIB")}',
-        '#SBATCH --mem-per-cpu=3GB',
+        "#SBATCH --mem-per-cpu=3GB",
     ]
     # Extract the second sequence
     second_sequence = sequence_list[1]
     env_variables = scheduler_env_variables(second_sequence)
     assert env_variables == [
-        '#SBATCH --job-name=LST1_01807',
-        '#SBATCH --time=1:15:00',
-        f'#SBATCH --chdir={running_analysis_dir}',
-        '#SBATCH --output=log/Run01807.%4a_jobid_%A.out',
-        '#SBATCH --error=log/Run01807.%4a_jobid_%A.err',
-        '#SBATCH --array=0-10',
+        "#SBATCH --job-name=LST1_01807",
+        "#SBATCH --time=1:15:00",
+        f"#SBATCH --chdir={running_analysis_dir}",
+        "#SBATCH --output=log/Run01807.%4a_jobid_%A.out",
+        "#SBATCH --error=log/Run01807.%4a_jobid_%A.err",
+        "#SBATCH --array=0-10",
         f'#SBATCH --partition={cfg.get("SLURM", "PARTITION_DATA")}',
-        '#SBATCH --mem-per-cpu=16GB',
+        "#SBATCH --mem-per-cpu=16GB",
     ]
 
 
@@ -398,13 +398,13 @@ def test_calibration_history_level():
 @pytest.fixture
 def mock_sacct_output():
     """Mock output of sacct to be able to use it in get_squeue_output function."""
-    return Path("./extra") / 'sacct_output.csv'
+    return Path("./extra") / "sacct_output.csv"
 
 
 @pytest.fixture
 def mock_squeue_output():
     """Mock output of squeue to be able to use it in get_squeue_output function."""
-    return Path("./extra") / 'squeue_output.csv'
+    return Path("./extra") / "squeue_output.csv"
 
 
 @pytest.fixture
@@ -453,28 +453,3 @@ def test_plot_job_statistics(sacct_output, running_analysis_dir):
     plot_job_statistics(sacct_output, log_dir)
     plot_file = log_dir / "job_statistics.pdf"
     assert plot_file.exists()
-
-
-def test_run_program_with_history_logging(running_analysis_dir):
-    from osa.job import run_program_with_history_logging
-
-    options.simulate = False
-
-    cmd = ["echo", "Testing"]
-    history_file = running_analysis_dir / "test.history"
-    run = "01140"
-    prod_id = "v0.2.0"
-    command = "echo"
-    config_file = "config_test.json"
-
-    rc = run_program_with_history_logging(
-        command_args=cmd,
-        history_file=history_file,
-        run=run,
-        prod_id=prod_id,
-        command=command,
-        config_file=config_file,
-    )
-    options.simulate = True
-    assert rc == 0
-    assert history_file.exists()

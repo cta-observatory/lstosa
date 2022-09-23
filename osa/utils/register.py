@@ -15,7 +15,7 @@ __all__ = [
     "register_files",
     "register_run_concept_files",
     "register_found_pattern",
-    "register_non_existing_file"
+    "register_non_existing_file",
 ]
 
 log = myLogger(logging.getLogger(__name__))
@@ -65,10 +65,7 @@ def create_symlinks(input_file, output_file, prefix, suffix):
         dl1_filepath_analysis_dir = analysis_dir / input_file.name
         dl1_filepath_dl1_dir = dl1ab_dir / input_file.name
         # Remove the original DL1 files pre DL1ab stage and keep only symlinks
-        if (
-                dl1_filepath_analysis_dir.is_file()
-                and not dl1_filepath_analysis_dir.is_symlink()
-        ):
+        if dl1_filepath_analysis_dir.is_file() and not dl1_filepath_analysis_dir.is_symlink():
             dl1_filepath_analysis_dir.unlink()
 
         if not dl1_filepath_analysis_dir.is_symlink():
@@ -102,25 +99,18 @@ def register_run_concept_files(run_string, concept):
         initial_dir = initial_dir / options.dl1_prod_id
 
     output_dir = destination_dir(concept, create_dir=False)
-    data_level = cfg.get("PATTERN", concept + "TYPE")
-    prefix = cfg.get("PATTERN", concept + "PREFIX")
-    suffix = cfg.get("PATTERN", concept + "SUFFIX")
+    data_level = cfg.get("PATTERN", f"{concept}TYPE")
+    prefix = cfg.get("PATTERN", f"{concept}PREFIX")
+    suffix = cfg.get("PATTERN", f"{concept}SUFFIX")
 
     log.debug(f"Registering {data_level} file for {prefix}*{run_string}*{suffix}")
-    if concept in [
-        "DL1AB", "DATACHECK", "PEDESTAL", "CALIB", "TIMECALIB", "MUON", "DL2"
-    ]:
+    if concept in ["DL1AB", "DATACHECK", "PEDESTAL", "CALIB", "TIMECALIB", "MUON", "DL2"]:
         register_files(run_string, initial_dir, prefix, suffix, output_dir)
     else:
         log.warning(f"Concept {concept} not known")
 
 
-def register_found_pattern(
-        file_path: Path,
-        seq_list: list,
-        concept: str,
-        destination_path: Path
-):
+def register_found_pattern(file_path: Path, seq_list: list, concept: str, destination_path: Path):
     """
 
     Parameters

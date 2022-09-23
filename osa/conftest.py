@@ -235,7 +235,7 @@ def run_summary_file(run_summary_dir):
     1809,5,PEDCALIB,1579291932080485703,1579291917000000000,1579291932080485703,90,0,5080485200,ucts"""
     )
 
-    summary_file = run_summary_dir / 'RunSummary_20200117.ecsv'
+    summary_file = run_summary_dir / "RunSummary_20200117.ecsv"
     summary_file.touch()
     summary_file.write_text(summary_content)
     return summary_file
@@ -285,7 +285,7 @@ def merged_run_summary(base_test_dir):
     merged_summary_dir = base_test_dir / "OSA/Catalog"
     merged_summary_dir.mkdir(parents=True, exist_ok=True)
 
-    file = merged_summary_dir / 'merged_RunSummary.ecsv'
+    file = merged_summary_dir / "merged_RunSummary.ecsv"
     file.touch()
     file.write_text(summary_content)
     return file
@@ -376,7 +376,7 @@ def txt_file_test(running_analysis_dir):
 
     options.simulate = False
     file = running_analysis_dir / "test.txt"
-    write_to_file(file, 'This is a test')
+    write_to_file(file, "This is a test")
     options.simulate = True
     return file
 
@@ -446,7 +446,7 @@ def run_catalog(run_catalog_dir):
     1808,MadeUpSource,115.441,43.98"""
     )
 
-    catalog_file = run_catalog_dir / 'RunCatalog_20200117.ecsv'
+    catalog_file = run_catalog_dir / "RunCatalog_20200117.ecsv"
     catalog_file.touch()
     catalog_file.write_text(source_information)
     return catalog_file
@@ -462,8 +462,8 @@ def database(base_test_dir):
     with sqlite3.connect(db_file) as connection:
         cursor = connection.cursor()
         cursor.execute(
-            '''CREATE TABLE IF NOT EXISTS processing
-            (telescope, date, prod_id, start, end, is_finished)'''
+            """CREATE TABLE IF NOT EXISTS processing
+            (telescope, date, prod_id, start, end, is_finished)"""
         )
         cursor.connection.commit()
         yield cursor
