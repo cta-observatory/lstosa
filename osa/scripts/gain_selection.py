@@ -113,7 +113,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
 
             for file in input_files:
                 output_file = output_dir / file.name
-                file.link_to(output_file)
+                sp.run(["cp", file, output_dir])
 
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
 
@@ -123,7 +123,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
         
         for file in r0_files:
             output_file = output_dir / file.name
-            file.link_to(output_file)
+            sp.run(["cp", file, output_dir])
 
 def check_failed_jobs(date: str, output_basedir: Path = None):
     """Search for failed jobs in the log directory."""
