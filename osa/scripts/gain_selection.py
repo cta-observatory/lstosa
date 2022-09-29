@@ -77,8 +77,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
 
                 if len(new_files) != 4:
                     for file in new_files:
-                        output_file = output_dir / file
-                        file.link_to(output_file)
+                        sp.run(["cp", file, output_dir])
 
                 else:
                     new_files.sort()
@@ -108,7 +107,6 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
             input_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
 
             for file in input_files:
-                output_file = output_dir / file.name
                 sp.run(["cp", file, output_dir])
 
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
@@ -118,7 +116,6 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
         r0_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
 
         for file in r0_files:
-            output_file = output_dir / file.name
             sp.run(["cp", file, output_dir])
 
 def run_sacct_j(job) -> StringIO:
