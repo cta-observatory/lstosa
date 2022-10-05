@@ -59,7 +59,6 @@ def calibration_file_command(drs4_pedestal_run_id: int, pedcal_run_id: int) -> l
         f"--pedestal_run={drs4_pedestal_run_id}",
         f"--run_number={pedcal_run_id}",
         f"--base_dir={base_dir}",
-        "--filters=52",
     ]
 
 

@@ -102,8 +102,8 @@ def get_calibration_file(run_id: int) -> Path:
     """
     calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
     date = get_run_date(run_id)
-    file = calib_dir / date / f"pro/calibration_filters_52.Run{run_id:05d}.0000.h5"
-    return file.resolve()
+    file = calib_dir.glob(f"{date}/pro/calibration_filters_*.Run{run_id:05d}.0000.h5")
+    return next(file)
 
 
 def pedestal_ids_file_exists(run_id: int) -> bool:

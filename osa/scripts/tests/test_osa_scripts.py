@@ -301,7 +301,6 @@ def test_calibration_file_cmd(base_test_dir):
         "--pedestal_run=01804",
         "--run_number=01809",
         f"--base_dir={base_test_dir}",
-        "--filters=52",
     ]
     assert cmd == expected_command
 
