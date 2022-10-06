@@ -59,7 +59,6 @@ def calibration_file_command(drs4_pedestal_run_id: int, pedcal_run_id: int) -> l
         f"--pedestal_run={drs4_pedestal_run_id}",
         f"--run_number={pedcal_run_id}",
         f"--base_dir={base_dir}",
-        "--filters=52",
     ]
 
 
@@ -157,9 +156,19 @@ def calibrate_charge(
     cmd = calibration_file_command(
         drs4_pedestal_run_id=drs4_pedestal_run_id, pedcal_run_id=pedcal_run_id
     )
-    analysis_step = ChargeCalibrationStage(run=f"{pedcal_run_id:05d}", command_args=cmd)
-    analysis_step.execute()
-    return analysis_step.rc
+    
+    try:
+        analysis_step = ChargeCalibrationStage(run=f"{pedcal_run_id:05d}", command_args=cmd)
+        analysis_step.execute()
+        return analysis_step.rc
+
+    except:
+        log.info(f"Failed. Return code {analysis_step.rc}")
+        cmd.append("--filters=52")
+        log.info("Trying again by setting filters 52")
+        analysis_step = ChargeCalibrationStage(run=f"{pedcal_run_id:05d}", command_args=cmd)
+        analysis_step.execute()
+        return analysis_step.rc
 
 
 def main():
