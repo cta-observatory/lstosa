@@ -163,9 +163,9 @@ def calibrate_charge(
         return analysis_step.rc
 
     except:
-        print(f"Failed. Return code {analysis_step.rc}")
+        log.info(f"Failed. Return code {analysis_step.rc}")
         cmd.append("--filters=52")
-        print("Trying again by setting filters 52")
+        log.info("Trying again by setting filters 52")
         analysis_step = ChargeCalibrationStage(run=f"{pedcal_run_id:05d}", command_args=cmd)
         analysis_step.execute()
         return analysis_step.rc

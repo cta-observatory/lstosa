@@ -102,11 +102,8 @@ def get_calibration_file(run_id: int) -> Path:
     """
     calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
     date = get_run_date(run_id)
-    file = calib_dir.glob(f"{date}/pro/calibration_filters_*.Run{run_id:05d}.0000.h5")
-    try:
-        return next(file)
-    except StopIteration:
-        return None
+    file = calib_dir / date / f"pro/calibration_filters_52.Run{run_id:05d}.0000.h5"
+    return file.resolve()
 
 
 def pedestal_ids_file_exists(run_id: int) -> bool:
@@ -125,10 +122,7 @@ def drs4_pedestal_exists(run_id: int) -> bool:
 def calibration_file_exists(run_id: int) -> bool:
     """Return true if calibration file was already produced."""
     file = get_calibration_file(run_id)
-    if file is None:
-        return False
-    else:
-        return True
+    return file.exists()
 
 
 def get_drive_file(date: str) -> Path:
