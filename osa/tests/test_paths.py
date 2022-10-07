@@ -85,6 +85,6 @@ def test_get_run_date(merged_run_summary):
 
     assert merged_run_summary.exists()
 
-    assert get_run_date(1808) == "20200117"
+    assert get_run_date(1808) == datetime(2020,1,17)
 
-    assert get_run_date(1200) == "20200117"
+    assert get_run_date(1200) == datetime(2020,1,17)
