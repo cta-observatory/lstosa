@@ -23,7 +23,7 @@ from osa.configs.datamodel import Sequence
 from osa.job import sequence_filenames
 from osa.nightsummary import database
 from osa.nightsummary.nightsummary import run_summary_table
-from osa.paths import sequence_calibration_files
+from osa.paths import sequence_calibration_files, get_run_date
 from osa.utils.logging import myLogger
 from osa.utils.utils import date_to_iso, date_to_dir
 
