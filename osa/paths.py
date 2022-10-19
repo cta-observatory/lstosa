@@ -105,6 +105,8 @@ def get_calibration_file(run_id: int) -> Path:
     date = get_run_date(run_id)
     mongodb = cfg.get("database", "CaCo_db")
     filters = search_filter(run_id, mongodb)
+    if filters is None: 
+        filters = 52
     file = calib_dir / date / f"pro/calibration_filters_{filters}.Run{run_id:05d}.0000.h5"
     return file.resolve()
 
