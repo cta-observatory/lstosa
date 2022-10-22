@@ -98,21 +98,40 @@ def get_drs4_pedestal_file(run_id: int) -> Path:
 
 def get_calibration_file(run_id: int) -> Path:
     """
-    Return the drs4 pedestal file corresponding to a given run id
-    regardless of the date when the run was taken.
+    Return the calibration file corresponding to a given run_id.
+
+    Parameters
+    ----------
+    run_id : int
+        Run id of the calibration file to be built.
+
+    Notes
+    -----
+    The file path will be built regardless of the date when the run was taken.
+    We follow the naming convention of the calibration files produced by the lstchain script
+    which depends on the filter wheels position. Therefore, we need to try to fetch the filter
+    position from the CaCo database. If the filter position is not found, we assume the default
+    filter position 5-2. Filter information is not available in the database for runs taken before
+    mid 2021 approx.
     """
+
     calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
     date = get_run_date(run_id)
+
     if options.test:  # Run tests avoiding the access to the database
         filters = 52
+
     else:
         mongodb = cfg.get("database", "CaCo_db")
         try:
-            filters = search_filter(run_id, mongodb)
+            # Cast run_id to int to avoid problems with numpy int64 encoding in MongoDB
+            filters = search_filter(int(run_id), mongodb)
         except IOError:
-            log.exception("Cannot access database or no filter found in it. Assuming 52.")
+            log.warning("No filter information found in database. Assuming positions 52.")
             filters = 52
+
     file = calib_dir / date / f"pro/calibration_filters_{filters}.Run{run_id:05d}.0000.h5"
+
     return file.resolve()
 
 
