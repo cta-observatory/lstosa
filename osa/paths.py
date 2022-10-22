@@ -9,11 +9,11 @@ from lstchain.onsite import find_systematics_correction_file, find_time_calibrat
 from lstchain.scripts.onsite.onsite_create_calibration_file import search_filter
 
 from osa.configs import options
+from osa.configs.config import DEFAULT_CFG
 from osa.configs.config import cfg
 from osa.configs.datamodel import Sequence
-from osa.utils.logging import myLogger
 from osa.utils import utils
-from osa.configs.config import DEFAULT_CFG
+from osa.utils.logging import myLogger
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -103,10 +103,15 @@ def get_calibration_file(run_id: int) -> Path:
     """
     calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
     date = get_run_date(run_id)
-    mongodb = cfg.get("database", "CaCo_db")
-    filters = search_filter(run_id, mongodb)
-    if filters is None: 
+    if options.test:  # Run tests avoiding the access to the database
         filters = 52
+    else:
+        mongodb = cfg.get("database", "CaCo_db")
+        try:
+            filters = search_filter(run_id, mongodb)
+        except IOError:
+            log.exception("Cannot access database or no filter found in it. Assuming 52.")
+            filters = 52
     file = calib_dir / date / f"pro/calibration_filters_{filters}.Run{run_id:05d}.0000.h5"
     return file.resolve()
 
