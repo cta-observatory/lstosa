@@ -4,8 +4,9 @@
 import itertools
 import logging
 import sys
+import numpy as np
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List
 
@@ -22,7 +23,7 @@ from osa.configs.datamodel import Sequence
 from osa.job import sequence_filenames
 from osa.nightsummary import database
 from osa.nightsummary.nightsummary import run_summary_table
-from osa.paths import sequence_calibration_files
+from osa.paths import sequence_calibration_files, get_run_date
 from osa.utils.logging import myLogger
 from osa.utils.utils import date_to_iso, date_to_dir
 
@@ -45,12 +46,18 @@ def get_data_runs(date: datetime):
 def get_last_drs4(date: datetime) -> int:
     """Return run_id of the last DRS4 run for the given date to be used for data processing."""
     summary = run_summary_table(date)
+    while not (np.array(summary["run_type"] == "DRS4")).any():
+        date = date - timedelta(days=1)
+        summary = run_summary_table(date)
     return summary[summary["run_type"] == "DRS4"]["run_id"].max()
 
 
 def get_last_pedcalib(date) -> int:
     """Return run_id of the last PEDCALIB run for the given date to be used for data processing."""
     summary = run_summary_table(date)
+    while not (np.array(summary["run_type"] == "PEDCALIB")).any():
+        date = date - timedelta(days=1)
+        summary = run_summary_table(date)
     return summary[summary["run_type"] == "PEDCALIB"]["run_id"].max()
 
 
@@ -70,6 +77,35 @@ def extract_runs(summary_table):
     subrun_list
     """
     run_list = []
+
+    required_drs4_run = get_last_drs4(options.date)
+    required_pedcal_run = get_last_pedcalib(options.date)
+
+    if required_drs4_run not in summary_table["run_id"]:
+        drs4_date = get_run_date(required_drs4_run)
+        drs4_date_summary = run_summary_table(drs4_date)
+        run_info = drs4_date_summary.loc[required_drs4_run]
+        run = RunObj(
+            run=required_drs4_run,
+            run_str=f"{required_drs4_run:05d}",
+            type=run_info["run_type"],
+            night=date_to_iso(drs4_date),
+            subruns=run_info["n_subruns"],
+        )
+        run_list.append(run)
+        
+    if required_pedcal_run not in summary_table["run_id"]:
+        pedcal_date = get_run_date(required_pedcal_run)
+        pedcal_date_summary = run_summary_table(pedcal_date)
+        run_info = pedcal_date_summary.loc[required_pedcal_run]
+        run = RunObj(
+            run=required_pedcal_run,
+            run_str=f"{required_pedcal_run:05d}",
+            type=run_info["run_type"],
+            night=date_to_iso(pedcal_date),
+            subruns=run_info["n_subruns"],
+        )
+        run_list.append(run)
 
     # Get information run-wise going through each row
     for run_id in summary_table["run_id"]:
