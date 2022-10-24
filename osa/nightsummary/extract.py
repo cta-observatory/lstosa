@@ -46,18 +46,24 @@ def get_data_runs(date: datetime):
 def get_last_drs4(date: datetime) -> int:
     """Return run_id of the last DRS4 run for the given date to be used for data processing."""
     summary = run_summary_table(date)
-    while not (np.array(summary["run_type"] == "DRS4")).any():
+    n_max = 4
+    n = 1
+    while not (np.array(summary["run_type"] == "DRS4")).any() & n <= n_max:
         date = date - timedelta(days=1)
         summary = run_summary_table(date)
+        n += 1
     return summary[summary["run_type"] == "DRS4"]["run_id"].max()
 
 
 def get_last_pedcalib(date) -> int:
     """Return run_id of the last PEDCALIB run for the given date to be used for data processing."""
     summary = run_summary_table(date)
-    while not (np.array(summary["run_type"] == "PEDCALIB")).any():
+    n_max = 4
+    n = 1
+    while not (np.array(summary["run_type"] == "PEDCALIB")).any() & n <= n_max:
         date = date - timedelta(days=1)
         summary = run_summary_table(date)
+        n += 1
     return summary[summary["run_type"] == "PEDCALIB"]["run_id"].max()
 
 
