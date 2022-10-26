@@ -30,9 +30,14 @@ def test_build_sequences(sequence_list):
         assert sequence.run == extracted_seq.run
 
 
-def test_extract_runs():
+def test_no_calib_found(run_summary_file_no_calib, run_summary_file_no_calib2):
+    """Test that for a day with no PEDCALIB run, the PEDCALIB
+     run of another previous day is taken as PEDCALIB run."""
     from osa.nightsummary.extract import extract_runs
-    from osa.nightsummary import run_summary_table
+    from osa.nightsummary.nightsummary import run_summary_table
+
+    assert run_summary_file_no_calib.exists()
+    assert run_summary_file_no_calib2.exists()
 
     date = datetime.fromisoformat("2022-09-23")
     summary_table = run_summary_table(date)
