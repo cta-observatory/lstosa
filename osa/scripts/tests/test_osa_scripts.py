@@ -340,7 +340,7 @@ def test_observation_finished():
 
 def test_no_runs_found():
     output = sp.run(
-        ["sequencer", "-s", "-d", "2020-05-05", "LST1"], text=True, stdout=sp.PIPE, stderr=sp.PIPE
+        ["sequencer", "-s", "-d", "2015-01-01", "LST1"], text=True, stdout=sp.PIPE, stderr=sp.PIPE
     )
     assert output.returncode == 0
     assert "No runs found for this date. Nothing to do. Exiting." in output.stderr.splitlines()[-1]

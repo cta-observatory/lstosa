@@ -117,7 +117,7 @@ def get_calibration_file(run_id: int) -> Path:
     """
 
     calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
-    date = get_run_date(run_id)
+    date = utils.date_to_dir(get_run_date(run_id))
 
     if options.test:  # Run tests avoiding the access to the database
         filters = 52
