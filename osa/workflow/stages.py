@@ -74,19 +74,18 @@ class AnalysisStage:
         """
 
         if self.command == "lstchain_data_r0_to_dl1":
-            dl1a_directory = Path(options.directory) / options.prod_id
-            dl1_output_file = dl1a_directory / f"dl1_LST-1.Run{self.run}.h5"
-            muon_output_file = dl1a_directory / f"muons_LST-1.Run{self.run}.fits"
+            dl1_output_file = options.directory / f"dl1_LST-1.Run{self.run}.h5"
+            muon_output_file = options.directory / f"muons_LST-1.Run{self.run}.fits"
             dl1_output_file.unlink(missing_ok=True)
             muon_output_file.unlink(missing_ok=True)
 
         elif self.command == "lstchain_dl1ab":
-            dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
+            dl1ab_subdirectory = options.directory / options.dl1_prod_id
             output_file = dl1ab_subdirectory / f"dl1_LST-1.Run{self.run}.h5"
             output_file.unlink(missing_ok=True)
 
         elif self.command == "lstchain_check_dl1":
-            dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
+            dl1ab_subdirectory = options.directory / options.dl1_prod_id
             output_file = dl1ab_subdirectory / f"datacheck_dl1_LST-1.Run{self.run}.h5"
             output_file.unlink(missing_ok=True)
 
