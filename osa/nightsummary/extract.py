@@ -82,6 +82,11 @@ def extract_runs(summary_table):
     -------
     subrun_list
     """
+    
+    if len(summary_table) == 0:
+        log.warning("No runs found for this date. Nothing to do. Exiting.")
+        sys.exit(0)
+
     run_list = []
 
     required_drs4_run = get_last_drs4(options.date)
@@ -175,10 +180,6 @@ def extract_runs(summary_table):
         run_table.write(source_catalog_file, overwrite=True, delimiter=",")
 
     log.debug("Subrun list extracted")
-
-    if not run_list:
-        log.warning("No runs found for this date. Nothing to do. Exiting.")
-        sys.exit(0)
 
     return run_list
 
