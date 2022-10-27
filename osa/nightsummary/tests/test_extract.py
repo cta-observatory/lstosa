@@ -38,6 +38,7 @@ def test_no_calib_found(run_summary_file_no_calib, run_summary_file_no_calib2):
 
     assert run_summary_file_no_calib.exists()
     assert run_summary_file_no_calib2.exists()
+    assert merged_run_summary.exists()
 
     date = datetime.fromisoformat("2022-09-23")
     options.date = date
@@ -49,6 +50,6 @@ def test_no_calib_found(run_summary_file_no_calib, run_summary_file_no_calib2):
             pedcalib_run = run
 
     assert pedcalib_run.run == 9258
-    assert pedcalib_run.night == "2022-09-20"
+    assert pedcalib_run.night == "2022-09-22"
 
     options.date = datetime.fromisoformat("2020-01-17")

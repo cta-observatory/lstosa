@@ -313,7 +313,7 @@ def run_summary_file_no_calib2(run_summary_dir):
 
 @pytest.fixture(scope="session")
 def merged_run_summary(base_test_dir):
-    """Mock merged run summary file for testing."""
+"""Mock merged run summary file for testing."""
     summary_content = dedent(
         """\
     # %ECSV 1.0
@@ -349,7 +349,13 @@ def merged_run_summary(base_test_dir):
     2020-01-17 1806 PEDCALIB 35 2020-01-18T00:44:06.000 8.6 29.1 45.5 6.9
     2020-01-17 1807 DATA 35 2020-01-18T00:44:06.000 6.6 2.8 70.4 10.1
     2020-01-17 1808 DATA 35 2020-01-18T00:44:06.000 8.6 9.2 60.8 3.2
-    2020-01-17 1809 PEDCALIB 4 2020-01-18T00:44:06.000 6.9 4.2 16.8 11.2"""
+    2020-01-17 1809 PEDCALIB 4 2020-01-18T00:44:06.000 6.9 4.2 16.8 11.2
+    2022-09-22 9326 DRS4 4 2021-09-22T00:44:06.000 6.9 4.2 16.8 11.2
+    2022-09-22 9327 ERRPEDCALIB 3 2021-09-22T00:44:06.000 6.9 4.2 16.8 11.2
+    2022-09-22 9258 PEDCALIB 5 2021-09-22T00:44:06.000 6.9 4.2 16.8 11.2
+    2022-09-23 9379 DATA 21 2021-09-23T00:44:06.000 6.9 4.2 16.8 11.2
+    2022-09-23 9380 DRS4 44 2021-09-23T00:44:06.000 6.9 4.2 16.8 11.2
+    2022-09-23 9381 DRS4 41 2021-09-23T00:44:06.000 6.9 4.2 16.8 11.2"""
     )
 
     merged_summary_dir = base_test_dir / "OSA/Catalog"
