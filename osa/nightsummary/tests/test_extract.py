@@ -29,7 +29,7 @@ def test_build_sequences(sequence_list):
         assert sequence.run == extracted_seq.run
 
 
-def test_no_calib_found(run_summary_file_no_calib, run_summary_file_no_calib2):
+def test_no_calib_found(merged_run_summary, run_summary_file_no_calib, run_summary_file_no_calib2):
     """Test that for a day with no PEDCALIB run, the PEDCALIB
      run of another previous day is taken."""
     from osa.nightsummary.extract import extract_runs

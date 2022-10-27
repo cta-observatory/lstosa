@@ -313,7 +313,7 @@ def run_summary_file_no_calib2(run_summary_dir):
 
 @pytest.fixture(scope="session")
 def merged_run_summary(base_test_dir):
-"""Mock merged run summary file for testing."""
+    """Mock merged run summary file for testing."""
     summary_content = dedent(
         """\
     # %ECSV 1.0
