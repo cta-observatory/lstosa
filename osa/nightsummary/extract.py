@@ -48,11 +48,17 @@ def get_last_drs4(date: datetime) -> int:
     summary = run_summary_table(date)
     n_max = 4
     n = 1
-    while not (np.array(summary["run_type"] == "DRS4")).any() & n <= n_max:
+    while (np.array(summary["run_type"] == "DRS4")).any()==False & n <= n_max:
         date = date - timedelta(days=1)
         summary = run_summary_table(date)
         n += 1
-    return summary[summary["run_type"] == "DRS4"]["run_id"].max()
+
+    try:
+        return summary[summary["run_type"] == "DRS4"]["run_id"].max()
+
+    except ValueError:
+        log.warning("No DRS4 run found. Nothing to do. Exiting.")
+        sys.exit(0)
 
 
 def get_last_pedcalib(date) -> int:
@@ -60,11 +66,18 @@ def get_last_pedcalib(date) -> int:
     summary = run_summary_table(date)
     n_max = 4
     n = 1
-    while not (np.array(summary["run_type"] == "PEDCALIB")).any() & n <= n_max:
+    while (np.array(summary["run_type"] == "PEDCALIB")).any()==False & n <= n_max:
         date = date - timedelta(days=1)
+        print(date)
         summary = run_summary_table(date)
         n += 1
-    return summary[summary["run_type"] == "PEDCALIB"]["run_id"].max()
+    
+    try:
+        return summary[summary["run_type"] == "PEDCALIB"]["run_id"].max()
+    
+    except ValueError:
+        log.warning("No PEDCALIB run found. Nothing to do. Exiting.")
+        sys.exit(0)
 
 
 def extract_runs(summary_table):
