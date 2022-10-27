@@ -1,6 +1,5 @@
 from datetime import datetime
 
-
 obs_date = datetime.fromisoformat("2020-01-17")
 
 
@@ -52,4 +51,4 @@ def test_no_calib_found(run_summary_file_no_calib, run_summary_file_no_calib2):
     assert pedcalib_run.run == 9258
     assert pedcalib_run.night == "2022-09-20"
 
-options.date = datetime.fromisoformat("2020-01-17")
+    options.date = datetime.fromisoformat("2020-01-17")
