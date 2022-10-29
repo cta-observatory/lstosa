@@ -3,6 +3,7 @@
 import logging
 from pathlib import Path
 from typing import List
+from datetime import datetime
 
 from astropy.table import Table
 from lstchain.onsite import find_systematics_correction_file, find_time_calibration_file
@@ -64,7 +65,7 @@ def analysis_path(tel) -> Path:
     return directory
 
 
-def get_run_date(run_id: int) -> str:
+def get_run_date(run_id: int) -> datetime:
     """
     Return the date (YYYYMMDD) when the given run was taken. The search for this date
     is done by looking at the date corresponding to each run in the merged run summaries
@@ -80,9 +81,9 @@ def get_run_date(run_id: int) -> str:
             f"Run {run_id} is not in the summary table. "
             f"Assuming the date of the run is {options.date}."
         )
-        date_string = utils.date_to_dir(options.date)
+        date_string = utils.date_to_iso(options.date)
 
-    return date_string.replace("-", "")
+    return datetime.strptime(date_string, "%Y-%m-%d")
 
 
 def get_drs4_pedestal_file(run_id: int) -> Path:
@@ -91,7 +92,7 @@ def get_drs4_pedestal_file(run_id: int) -> Path:
     regardless of the date when the run was taken.
     """
     drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
-    date = get_run_date(run_id)
+    date = utils.date_to_dir(get_run_date(run_id))
     file = drs4_pedestal_dir / date / f"pro/drs4_pedestal.Run{run_id:05d}.0000.h5"
     return file.resolve()
 
@@ -116,7 +117,7 @@ def get_calibration_file(run_id: int) -> Path:
     """
 
     calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
-    date = get_run_date(run_id)
+    date = utils.date_to_dir(get_run_date(run_id))
 
     if options.test:  # Run tests avoiding the access to the database
         filters = 52
@@ -131,7 +132,6 @@ def get_calibration_file(run_id: int) -> Path:
             filters = 52
 
     file = calib_dir / date / f"pro/calibration_filters_{filters}.Run{run_id:05d}.0000.h5"
-
     return file.resolve()
 
 

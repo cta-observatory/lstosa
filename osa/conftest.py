@@ -242,6 +242,76 @@ def run_summary_file(run_summary_dir):
 
 
 @pytest.fixture(scope="session")
+def run_summary_file_no_calib(run_summary_dir):
+
+    summary_content = dedent(
+        """\
+    # %ECSV 1.0
+    # ---
+    # datatype:
+    # - {name: run_id, datatype: int64}
+    # - {name: n_subruns, datatype: int64}
+    # - {name: run_type, datatype: string}
+    # - {name: ucts_timestamp, datatype: int64}
+    # - {name: run_start, datatype: int64}
+    # - {name: dragon_reference_time, datatype: int64}
+    # - {name: dragon_reference_module_id, datatype: int16}
+    # - {name: dragon_reference_module_index, datatype: int16}
+    # - {name: dragon_reference_counter, datatype: uint64}
+    # - {name: dragon_reference_source, datatype: string}
+    # delimiter: ','
+    # meta: !!omap
+    # - {date: '2022-09-23'}
+    # - {lstchain_version: 0.9.6}
+    # schema: astropy-2.0
+    run_id,n_subruns,run_type,ucts_timestamp,run_start,dragon_reference_time,dragon_reference_module_id,dragon_reference_module_index,dragon_reference_counter,dragon_reference_source
+    9379,21,DATA,-1,1663951379000000000,1663951379000000000,0,0,6463544800,run_start
+    9380,44,DRS4,1663951929600198168,1663951917000000000,1663951929600198168,0,0,5600197900,ucts
+    9381,41,DRS4,1663952467501824402,1663952457000000000,1663952467501824402,0,0,3501824100,ucts"""
+    )
+
+    summary_file = run_summary_dir / "RunSummary_20220923.ecsv"
+    summary_file.touch()
+    summary_file.write_text(summary_content)
+    return summary_file
+
+
+@pytest.fixture(scope="session")
+def run_summary_file_no_calib2(run_summary_dir):
+
+    summary_content = dedent(
+        """\
+    # %ECSV 1.0
+    # ---
+    # datatype:
+    # - {name: run_id, datatype: int64}
+    # - {name: n_subruns, datatype: int64}
+    # - {name: run_type, datatype: string}
+    # - {name: ucts_timestamp, datatype: int64}
+    # - {name: run_start, datatype: int64}
+    # - {name: dragon_reference_time, datatype: int64}
+    # - {name: dragon_reference_module_id, datatype: int16}
+    # - {name: dragon_reference_module_index, datatype: int16}
+    # - {name: dragon_reference_counter, datatype: uint64}
+    # - {name: dragon_reference_source, datatype: string}
+    # delimiter: ','
+    # meta: !!omap
+    # - {date: '2022-09-22'}
+    # - {lstchain_version: 0.9.6}
+    # schema: astropy-2.0
+    run_id,n_subruns,run_type,ucts_timestamp,run_start,dragon_reference_time,dragon_reference_module_id,dragon_reference_module_index,dragon_reference_counter,dragon_reference_source
+    9326,4,DRS4,1663877740307617642,1663877725000000000,1663877740307617642,0,0,6307617400,ucts
+    9327,3,ERRPEDCALIB,1663878027873304499,1663878015000000000,1663878027873304499,0,0,3873304200,ucts
+    9258,5,PEDCALIB,1663796417227478675,1663796405000000000,1663796417227478675,90,0,5227478400,ucts"""
+    )
+
+    summary_file = run_summary_dir / "RunSummary_20220922.ecsv"
+    summary_file.touch()
+    summary_file.write_text(summary_content)
+    return summary_file
+
+
+@pytest.fixture(scope="session")
 def merged_run_summary(base_test_dir):
     """Mock merged run summary file for testing."""
     summary_content = dedent(
@@ -279,7 +349,13 @@ def merged_run_summary(base_test_dir):
     2020-01-17 1806 PEDCALIB 35 2020-01-18T00:44:06.000 8.6 29.1 45.5 6.9
     2020-01-17 1807 DATA 35 2020-01-18T00:44:06.000 6.6 2.8 70.4 10.1
     2020-01-17 1808 DATA 35 2020-01-18T00:44:06.000 8.6 9.2 60.8 3.2
-    2020-01-17 1809 PEDCALIB 4 2020-01-18T00:44:06.000 6.9 4.2 16.8 11.2"""
+    2020-01-17 1809 PEDCALIB 4 2020-01-18T00:44:06.000 6.9 4.2 16.8 11.2
+    2022-09-22 9326 DRS4 4 2021-09-22T00:44:06.000 6.9 4.2 16.8 11.2
+    2022-09-22 9327 ERRPEDCALIB 3 2021-09-22T00:44:06.000 6.9 4.2 16.8 11.2
+    2022-09-22 9258 PEDCALIB 5 2021-09-22T00:44:06.000 6.9 4.2 16.8 11.2
+    2022-09-23 9379 DATA 21 2021-09-23T00:44:06.000 6.9 4.2 16.8 11.2
+    2022-09-23 9380 DRS4 44 2021-09-23T00:44:06.000 6.9 4.2 16.8 11.2
+    2022-09-23 9381 DRS4 41 2021-09-23T00:44:06.000 6.9 4.2 16.8 11.2"""
     )
 
     merged_summary_dir = base_test_dir / "OSA/Catalog"
