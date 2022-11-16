@@ -16,7 +16,8 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.report import history
 from osa.utils.logging import myLogger
-from osa.utils.utils import stringify
+from osa.utils.utils import stringify, date_to_dir
+from osa.paths import get_run_date
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -91,13 +92,13 @@ class AnalysisStage:
 
         elif self.command == "onsite_create_calibration_file":
             calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
-            date = utils.date_to_dir(get_run_date(self.run))
+            date = date_to_dir(get_run_date(self.run))
             output_file = calib_dir / date / f"pro/calibration_filters_{options.filters}.Run{self.run}.0000.h5"
             output_file.unlink(missing_ok=True)
     
         elif self.command == "onsite_create_drs4_pedestal_file":
             drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
-            date = utils.date_to_dir(get_run_date(self.run))
+            date = date_to_dir(get_run_date(self.run))
             output_file = drs4_pedestal_dir / date / f"pro/drs4_pedestal.Run{self.run}.0000.h5"
             output_file.unlink(missing_ok=True)
 

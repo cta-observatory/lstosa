@@ -120,18 +120,18 @@ def get_calibration_file(run_id: int) -> Path:
     date = utils.date_to_dir(get_run_date(run_id))
 
     if options.test:  # Run tests avoiding the access to the database
-        filters = 52
+        options.filters = 52
 
     else:
         mongodb = cfg.get("database", "CaCo_db")
         try:
             # Cast run_id to int to avoid problems with numpy int64 encoding in MongoDB
-            filters = search_filter(int(run_id), mongodb)
+            options.filters = search_filter(int(run_id), mongodb)
         except IOError:
             log.warning("No filter information found in database. Assuming positions 52.")
-            filters = 52
+            options.filters = 52
 
-    file = calib_dir / date / f"pro/calibration_filters_{filters}.Run{run_id:05d}.0000.h5"
+    file = calib_dir / date / f"pro/calibration_filters_{options.filters}.Run{run_id:05d}.0000.h5"
     return file.resolve()
 
 
