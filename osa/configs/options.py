@@ -29,3 +29,4 @@ no_calib = False
 no_submit = False
 seqtoclose = None
 run = None
+filters = None
