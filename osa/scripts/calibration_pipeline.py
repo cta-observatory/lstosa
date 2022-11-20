@@ -15,11 +15,11 @@ from pathlib import Path
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import historylevel
-from osa.workflow.stages import DRS4PedestalStage, ChargeCalibrationStage
 from osa.paths import drs4_pedestal_exists, calibration_file_exists
 from osa.provenance.capture import trace
 from osa.utils.cliopts import calibration_pipeline_cliparsing
 from osa.utils.logging import myLogger
+from osa.workflow.stages import DRS4PedestalStage, ChargeCalibrationStage
 
 __all__ = [
     "calibration_sequence",
