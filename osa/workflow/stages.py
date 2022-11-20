@@ -16,7 +16,8 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.report import history
 from osa.utils.logging import myLogger
-from osa.utils.utils import stringify
+from osa.utils.utils import stringify, date_to_dir
+from osa.paths import get_run_date
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -78,7 +79,7 @@ class AnalysisStage:
             muon_output_file = options.directory / f"muons_LST-1.Run{self.run}.fits"
             dl1_output_file.unlink(missing_ok=True)
             muon_output_file.unlink(missing_ok=True)
-
+        
         elif self.command == "lstchain_dl1ab":
             dl1ab_subdirectory = options.directory / options.dl1_prod_id
             output_file = dl1ab_subdirectory / f"dl1_LST-1.Run{self.run}.h5"
@@ -88,6 +89,19 @@ class AnalysisStage:
             dl1ab_subdirectory = options.directory / options.dl1_prod_id
             output_file = dl1ab_subdirectory / f"datacheck_dl1_LST-1.Run{self.run}.h5"
             output_file.unlink(missing_ok=True)
+
+        elif self.command == "onsite_create_calibration_file":
+            calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
+            date = date_to_dir(get_run_date(self.run))
+            output_file = calib_dir / date / f"pro/calibration_filters_{options.filters}.Run{self.run}.0000.h5"
+            output_file.unlink(missing_ok=True)
+    
+        elif self.command == "onsite_create_drs4_pedestal_file":
+            drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
+            date = date_to_dir(get_run_date(self.run))
+            output_file = drs4_pedestal_dir / date / f"pro/drs4_pedestal.Run{self.run}.0000.h5"
+            output_file.unlink(missing_ok=True)
+
 
     def _write_checkpoint(self):
         """Write the checkpoint in the history file."""
