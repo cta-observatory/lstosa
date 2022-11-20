@@ -54,12 +54,16 @@ def drs4_pedestal_command(drs4_pedestal_run_id: int) -> list:
 def calibration_file_command(drs4_pedestal_run_id: int, pedcal_run_id: int) -> list:
     """Build the create_calibration_file command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
-    return [
+    cmd = [
         "onsite_create_calibration_file",
         f"--pedestal_run={drs4_pedestal_run_id}",
         f"--run_number={pedcal_run_id}",
         f"--base_dir={base_dir}",
     ]
+    # In case of problems with trigger tagging:
+    if cfg.getboolean("lstchain", "use_ff_heuristic_id"):
+        cmd.append("--flatfield-heuristic")
+    return cmd
 
 
 def calibration_sequence(drs4_pedestal_run_id: int, pedcal_run_id: int) -> int:
@@ -156,7 +160,7 @@ def calibrate_charge(
     cmd = calibration_file_command(
         drs4_pedestal_run_id=drs4_pedestal_run_id, pedcal_run_id=pedcal_run_id
     )
-    
+
     try:
         analysis_step = ChargeCalibrationStage(run=f"{pedcal_run_id:05d}", command_args=cmd)
         analysis_step.execute()
