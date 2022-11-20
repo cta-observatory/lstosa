@@ -15,11 +15,11 @@ from pathlib import Path
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import historylevel
-from osa.workflow.stages import DRS4PedestalStage, ChargeCalibrationStage
 from osa.paths import drs4_pedestal_exists, calibration_file_exists
 from osa.provenance.capture import trace
 from osa.utils.cliopts import calibration_pipeline_cliparsing
 from osa.utils.logging import myLogger
+from osa.workflow.stages import DRS4PedestalStage, ChargeCalibrationStage
 
 __all__ = [
     "calibration_sequence",
@@ -54,12 +54,16 @@ def drs4_pedestal_command(drs4_pedestal_run_id: int) -> list:
 def calibration_file_command(drs4_pedestal_run_id: int, pedcal_run_id: int) -> list:
     """Build the create_calibration_file command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
-    return [
+    cmd = [
         "onsite_create_calibration_file",
         f"--pedestal_run={drs4_pedestal_run_id}",
         f"--run_number={pedcal_run_id}",
         f"--base_dir={base_dir}",
     ]
+    # In case of problems with trigger tagging:
+    if cfg.getboolean("lstchain", "use_ff_heuristic_id"):
+        cmd.append("--flatfield-heuristic")
+    return cmd
 
 
 def calibration_sequence(drs4_pedestal_run_id: int, pedcal_run_id: int) -> int:
@@ -156,13 +160,13 @@ def calibrate_charge(
     cmd = calibration_file_command(
         drs4_pedestal_run_id=drs4_pedestal_run_id, pedcal_run_id=pedcal_run_id
     )
-    
+    analysis_step = ChargeCalibrationStage(run=f"{pedcal_run_id:05d}", command_args=cmd)
+
     try:
-        analysis_step = ChargeCalibrationStage(run=f"{pedcal_run_id:05d}", command_args=cmd)
         analysis_step.execute()
         return analysis_step.rc
 
-    except:
+    except Exception:
         log.info(f"Failed. Return code {analysis_step.rc}")
         cmd.append("--filters=52")
         log.info("Trying again by setting filters 52")
