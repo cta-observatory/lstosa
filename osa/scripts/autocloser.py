@@ -165,7 +165,8 @@ class Telescope:
         data = False
         for line in self.seq_lines:
             if data and line:
-                self.data_lines.append(line)
+                if line.startswith("LST1"):
+                    self.data_lines.append(line)
             elif "Tel   Seq" in line:
                 data = True
                 header = False
