@@ -20,7 +20,6 @@ __all__ = [
     "date_to_iso",
     "is_day_closed",
     "get_prod_id",
-    "date_in_yymmdd",
     "night_finished_flag",
     "is_defined",
     "create_lock",
