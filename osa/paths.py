@@ -156,9 +156,8 @@ def calibration_file_exists(run_id: int) -> bool:
 
 def get_drive_file(date: str) -> Path:
     """Return the drive file corresponding to a given date in YYYYMMDD format."""
-    yy_mm_dd = utils.date_in_yymmdd(date)
     drive_dir = Path(cfg.get("LST1", "DRIVE_DIR"))
-    return (drive_dir / f"drive_log_{yy_mm_dd}.txt").resolve()
+    return (drive_dir / f"DrivePosition_log_{date}.txt").resolve()
 
 
 def get_summary_file(date) -> Path:
