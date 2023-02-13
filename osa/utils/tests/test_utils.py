@@ -37,12 +37,6 @@ def test_get_calib_prod_id():
     assert get_calib_prod_id() == prod_id
 
 
-def test_date_in_yymmdd():
-    from osa.utils.utils import date_in_yymmdd
-
-    assert date_in_yymmdd("20200113") == "20_01_13"
-
-
 def test_date_to_dir():
     from osa.utils.utils import date_to_dir
 

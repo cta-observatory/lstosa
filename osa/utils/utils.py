@@ -211,27 +211,6 @@ def is_day_closed() -> bool:
     return flag_file.exists()
 
 
-def date_in_yymmdd(date_string):
-    """
-    Convert date string YYYYMMDD into YY_MM_DD format to be used for
-    drive log file names.
-
-    Parameters
-    ----------
-    date_string: in format YYYYMMDD
-
-    Returns
-    -------
-    yy_mm_dd: date_string in format YY_MM_DD
-
-    """
-    date = list(date_string)
-    year = "".join(date[2:4])
-    month = "".join(date[4:6])
-    day = "".join(date[6:8])
-    return f"{year}_{month}_{day}"
-
-
 def stringify(args):
     """Join a list of arguments in a string."""
     return " ".join(map(str, args))
