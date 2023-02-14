@@ -3,6 +3,7 @@ import logging
 import re
 import shutil
 import glob
+import pandas as pd
 import subprocess as sp
 from pathlib import Path
 from textwrap import dedent
@@ -10,7 +11,7 @@ from io import StringIO
 
 import click
 from astropy.table import Table
-from lstchain.paths import run_info_from_filename
+from lstchain.paths import run_info_from_filename, parse_r0_filename
 
 from osa.scripts.reprocessing import get_list_of_dates
 from osa.utils.logging import myLogger
@@ -155,9 +156,31 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
             failed_jobs.append(job)
 
     if not failed_jobs:
-        log.info("All jobs finished successfully")
+        log.info(f"{date}: all jobs finished successfully")
     else:
-        log.warning("Some jobs did not finish successfully")
+        log.warning(f"{date}: some jobs did not finish successfully")
+
+
+    r0_files = glob.glob(f"/fefs/aswg/data/real/R0/{date}/LST-1.?.Run?????.????.fits.fz")
+    r0g_files = glob.glob(f"/fefs/aswg/data/real/R0G/{date}/LST-1.?.Run?????.????.fits.fz")
+    all_r0_runs = [parse_r0_filename(i).run for i in r0_files]
+    all_r0g_runs = [parse_r0_filename(i).run for i in r0g_files]
+            
+    for run in all_r0_runs:
+        if run not in runs:
+            if run not in all_r0g_runs:
+                missing_runs.append(run)
+    
+    missing_runs.sort()
+    if missing_runs:
+        log.info(f"Some runs are missing. Copying R0 files of runs {pd.Series(missing_runs).unique()} directly to /fefs/aswg/data/real/R0G/{date}")
+
+        for run in missing_runs:
+            output_dir = Path(f"/fefs/aswg/data/real/R0G/{date}/")
+            files = glob.glob(f"/fefs/aswg/data/real/R0/{date}/LST-1.?.Run{run:05d}.????.fits.fz")
+            for file in files:
+                sp.run(["cp", file, output_dir])
+    
 
 
 @click.command()
