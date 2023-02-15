@@ -161,6 +161,10 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
         log.warning(f"{date}: some jobs did not finish successfully")
 
 
+    run_summary_dir = Path("/fefs/aswg/data/real/monitoring/RunSummary")
+    run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
+    summary_table = Table.read(run_summary_file)
+    runs = summary_table["run_id"]
     missing_runs = []
 
     r0_files = glob.glob(f"/fefs/aswg/data/real/R0/{date}/LST-1.?.Run?????.????.fits.fz")
