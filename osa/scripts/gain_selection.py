@@ -161,6 +161,8 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
         log.warning(f"{date}: some jobs did not finish successfully")
 
 
+    missing_runs = []
+
     r0_files = glob.glob(f"/fefs/aswg/data/real/R0/{date}/LST-1.?.Run?????.????.fits.fz")
     r0g_files = glob.glob(f"/fefs/aswg/data/real/R0G/{date}/LST-1.?.Run?????.????.fits.fz")
     all_r0_runs = [parse_r0_filename(i).run for i in r0_files]
