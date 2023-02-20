@@ -9,7 +9,7 @@ from pathlib import Path
 
 import astropy.units as u
 import numpy as np
-from astropy.table import QTable
+from astropy.table import Table
 from lstchain.scripts.lstchain_create_run_summary import get_list_of_files, get_list_of_runs
 
 from osa.nightsummary.database import get_run_info_from_TCU
@@ -47,27 +47,31 @@ def main():
         run_info = get_run_info_from_TCU(int(run))
         list_info.append(run_info)
 
-    table = QTable(
-        np.array(list_info).T.tolist(),
-        names=("run", "type", "tstart", "tstop", "elapsed"),
-        units=("", "", "", "", u.min),
-        dtype=(int, str, datetime.datetime, datetime.datetime, float),
-    )
-    table["elapsed"].info.format = "3.1f"
-    print("\n")
-    table.pprint_all()
+    if list_info:
+        table = Table(
+            np.array(list_info).T.tolist(),
+            names=("run", "type", "tstart", "tstop", "elapsed"),
+            dtype=(int, str, datetime.datetime, datetime.datetime, float),
+        )
+        table["elapsed"].unit = u.min
+        table["elapsed"].info.format = "3.1f"
+        print("\n")
+        table.pprint_all()
 
-    # Sum elapsed times:
-    obs_by_type = table.group_by("type")
-    obs_by_type["number_of_runs"] = 1
-    total_obs_time = obs_by_type["type", "number_of_runs", "elapsed"].groups.aggregate(np.sum)
-    total_obs_time["elapsed"].info.format = "7.0f"
+        # Sum elapsed times:
+        obs_by_type = table.group_by("type")
+        obs_by_type["number_of_runs"] = 1
+        total_obs_time = obs_by_type["type", "number_of_runs", "elapsed"].groups.aggregate(np.sum)
+        total_obs_time["elapsed"].info.format = "7.0f"
 
-    print("\n")
-    header = " Observation time per run type "
-    print(f"{header.center(50, '*')}")
-    total_obs_time.pprint_all()
-    print("\n")
+        print("\n")
+        header = " Observation time per run type "
+        print(f"{header.center(50, '*')}")
+        total_obs_time.pprint_all()
+        print("\n")
+
+    else:
+        print(f"No data found in {date_path}")
 
 
 if __name__ == "__main__":
