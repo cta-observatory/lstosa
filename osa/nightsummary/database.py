@@ -96,7 +96,7 @@ def query(obs_id: int, property_name: str):
                     return source_name if source_name != "" else None
 
 
-def get_run_info_from_TCU(run_id: int) -> Tuple:
+def get_run_info_from_TCU(run_id: int, tcu_server: str = "tcs05") -> Tuple:
     """
     Get type of run, start, end timestamps (in iso format)
     and elapsed time (in minutes) for a given run ID.
@@ -104,6 +104,8 @@ def get_run_info_from_TCU(run_id: int) -> Tuple:
     Parameters
     ----------
     run_id: int
+    tcu_server: str
+        Host of the TCU database
 
     Returns
     -------
@@ -113,9 +115,14 @@ def get_run_info_from_TCU(run_id: int) -> Tuple:
     tstop
     elapsed
 
-    """
-    client = MongoClient("localhost:27017")
+    Notes
+    -----
+    From cp01 and cp02 TCU MongoClient can be accessed at 'localhost:27017'
+    from lstanalyzer@tcs06 TCU database can be accessed at 'tcs05' server
 
+    """
+
+    client = MongoClient(tcu_server)
     collection = client["lst1_obs_summary"]["camera"]
     summary = collection.find_one({"run_number": run_id})
 
