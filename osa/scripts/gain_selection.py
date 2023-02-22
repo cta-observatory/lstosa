@@ -13,7 +13,7 @@ import click
 from astropy.table import Table
 from lstchain.paths import run_info_from_filename, parse_r0_filename
 
-from osa.scripts.reprocessing import get_list_of_dates
+from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wait, wait_for_daytime
 from osa.utils.logging import myLogger
 from osa.job import get_sacct_output, FORMAT_SLURM
 
@@ -207,8 +207,17 @@ def main(dates_file: Path = None, output_basedir: Path = None, check: bool = Fal
         for date in list_of_dates:
             check_failed_jobs(date, output_basedir)
     else:
+        # Check slurm queue status
+        check_job_status_and_wait()
+
         for date in list_of_dates:
+            # Avoid running jobs while it is still night time
+            wait_for_daytime()
+
             apply_gain_selection(date, output_basedir)
+
+            # Check slurm queue status and sleep for a while to avoid overwhelming the queue
+            check_job_status_and_wait()
 
         log.info("Done! No more dates to process.")
 
