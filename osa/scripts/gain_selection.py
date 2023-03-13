@@ -59,6 +59,12 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
     r0_dir = Path(f"/fefs/aswg/data/real/R0/{date}")
 
     for run in data_runs:
+        # Check slurm queue status and sleep for a while to avoid overwhelming the queue
+        check_job_status_and_wait()
+
+        # Avoid running jobs while it is still night time
+        wait_for_daytime()
+
         run_id = run["run_id"]
         ref_time = run["dragon_reference_time"]
         ref_counter = run["dragon_reference_counter"]
@@ -113,6 +119,9 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
 
     for run in calib_runs:
+        # Avoid copying files while it is still night time
+        wait_for_daytime()
+
         run_id = run["run_id"]
         r0_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
 
@@ -207,18 +216,7 @@ def main(dates_file: Path = None, output_basedir: Path = None, check: bool = Fal
         for date in list_of_dates:
             check_failed_jobs(date, output_basedir)
     else:
-        # Check slurm queue status
-        check_job_status_and_wait()
-
-        for date in list_of_dates:
-            # Avoid running jobs while it is still night time
-            wait_for_daytime()
-
-            apply_gain_selection(date, output_basedir)
-
-            # Check slurm queue status and sleep for a while to avoid overwhelming the queue
-            check_job_status_and_wait()
-
+        apply_gain_selection(date, output_basedir)
         log.info("Done! No more dates to process.")
 
 
