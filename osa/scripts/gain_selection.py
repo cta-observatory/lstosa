@@ -216,7 +216,8 @@ def main(dates_file: Path = None, output_basedir: Path = None, check: bool = Fal
         for date in list_of_dates:
             check_failed_jobs(date, output_basedir)
     else:
-        apply_gain_selection(date, output_basedir)
+        for date in list_of_dates: 
+            apply_gain_selection(date, output_basedir)
         log.info("Done! No more dates to process.")
 
 
