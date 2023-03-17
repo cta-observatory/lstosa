@@ -47,9 +47,9 @@ def run_script(
     sp.run(cmd)
 
 
-def check_job_status_and_wait():
+def check_job_status_and_wait(max_jobs=2500):
     """Check the status of the jobs in the queue and wait for them to finish."""
-    while number_of_pending_jobs() > 2500:
+    while number_of_pending_jobs() > max_jobs:
         log.info("Waiting 2 hours for slurm queue to decrease...")
         time.sleep(7200)
 

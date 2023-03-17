@@ -60,7 +60,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
 
     for run in data_runs:
         # Check slurm queue status and sleep for a while to avoid overwhelming the queue
-        check_job_status_and_wait()
+        check_job_status_and_wait(max_jobs=1500)
 
         # Avoid running jobs while it is still night time
         wait_for_daytime()
