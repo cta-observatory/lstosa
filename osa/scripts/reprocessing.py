@@ -9,6 +9,7 @@ import click
 
 from osa.configs.config import DEFAULT_CFG
 from osa.utils.logging import myLogger
+from osa.utils.utils import wait_for_daytime
 
 log = myLogger(logging.getLogger(__name__))
 
