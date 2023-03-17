@@ -61,16 +61,6 @@ def get_list_of_dates(dates_file):
     return list_of_dates
 
 
-def wait_for_daytime():
-    """
-    Check every hour if it is still nighttime
-    to not running jobs while it is still night.
-    """
-    while time.localtime().tm_hour <= 6 or time.localtime().tm_hour >= 18:
-        log.info("Waiting for sunrise to not interfere with the data-taking. Sleeping.")
-        time.sleep(3600)
-
-
 @click.command()
 @click.option("--no-dl2", is_flag=True, help="Do not run the DL2 step.")
 @click.option("--no-calib", is_flag=True, help="Do not run the calibration step.")
