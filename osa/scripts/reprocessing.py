@@ -9,6 +9,7 @@ import click
 
 from osa.configs.config import DEFAULT_CFG
 from osa.utils.logging import myLogger
+from osa.utils.utils import wait_for_daytime
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -47,9 +48,9 @@ def run_script(
     sp.run(cmd)
 
 
-def check_job_status_and_wait():
+def check_job_status_and_wait(max_jobs=2500):
     """Check the status of the jobs in the queue and wait for them to finish."""
-    while number_of_pending_jobs() > 2500:
+    while number_of_pending_jobs() > max_jobs:
         log.info("Waiting 2 hours for slurm queue to decrease...")
         time.sleep(7200)
 
@@ -59,16 +60,6 @@ def get_list_of_dates(dates_file):
     with open(dates_file, "r") as file:
         list_of_dates = [line.strip() for line in file]
     return list_of_dates
-
-
-def wait_for_daytime():
-    """
-    Check every hour if it is still nighttime
-    to not running jobs while it is still night.
-    """
-    while time.localtime().tm_hour <= 6 or time.localtime().tm_hour >= 18:
-        log.info("Waiting for sunrise to not interfere with the data-taking. Sleeping.")
-        time.sleep(3600)
 
 
 @click.command()

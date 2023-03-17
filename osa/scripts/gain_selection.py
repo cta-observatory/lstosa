@@ -13,7 +13,8 @@ import click
 from astropy.table import Table
 from lstchain.paths import run_info_from_filename, parse_r0_filename
 
-from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wait, wait_for_daytime
+from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wait
+from osa.utils.utils import wait_for_daytime
 from osa.utils.logging import myLogger
 from osa.job import get_sacct_output, FORMAT_SLURM
 
@@ -60,10 +61,10 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
 
     for run in data_runs:
         # Check slurm queue status and sleep for a while to avoid overwhelming the queue
-        check_job_status_and_wait()
+        check_job_status_and_wait(max_jobs=1500)
 
         # Avoid running jobs while it is still night time
-        wait_for_daytime()
+        wait_for_daytime(start=12, end=18)
 
         run_id = run["run_id"]
         ref_time = run["dragon_reference_time"]
@@ -120,7 +121,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
 
     for run in calib_runs:
         # Avoid copying files while it is still night time
-        wait_for_daytime()
+        wait_for_daytime(start=12, end=18)
 
         run_id = run["run_id"]
         r0_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
