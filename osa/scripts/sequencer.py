@@ -78,7 +78,7 @@ def single_process(telescope):
     """
     
     database = cfg.get("database", "path")
-    if database != "":
+    if database:
         osadb.start_processing(date_to_iso(options.date))
 
     # Define global variables and create night directory

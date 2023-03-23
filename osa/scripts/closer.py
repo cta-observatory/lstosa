@@ -171,7 +171,7 @@ def post_process(seq_tuple):
 
     if options.seqtoclose is None:
         database = cfg.get("database", "path")
-        if database != "":
+        if database:
             osadb.end_processing(date_to_iso(options.date))
         # Creating closing flag files will be deprecated in future versions
         return set_closed_with_file()
