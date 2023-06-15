@@ -201,9 +201,10 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
 
 @click.command()
 @click.option("--check", is_flag=True, default=False, help="Check for failed jobs.")
-@click.argument("dates-file", type=click.Path(exists=True, path_type=Path))
-@click.argument("output-basedir", type=click.Path(path_type=Path))
-def main(dates_file: Path = None, output_basedir: Path = None, check: bool = False):
+@click.option("-d", "--date", type=str)
+@click.option("-l", "--dates-file", type=click.Path(exists=True, path_type=Path))
+@click.option("-o", "--output-basedir", type=click.Path(path_type=Path))
+def main(date: str = None, dates_file: Path = None, output_basedir: Path = None, check: bool = False):
     """
     Loop over the dates listed in the input file and launch the gain selection
     script for each of them. The input file should list the dates in the format
@@ -211,15 +212,23 @@ def main(dates_file: Path = None, output_basedir: Path = None, check: bool = Fal
     """
     log.setLevel(logging.INFO)
 
-    list_of_dates = get_list_of_dates(dates_file)
-
-    if check:
-        for date in list_of_dates:
+    if date is not None: 
+        if check:
             check_failed_jobs(date, output_basedir)
-    else:
-        for date in list_of_dates: 
+        else:
             apply_gain_selection(date, output_basedir)
-        log.info("Done! No more dates to process.")
+
+
+    elif dates_file is not None:
+        list_of_dates = get_list_of_dates(dates_file)
+
+        if check:
+            for date in list_of_dates:
+                check_failed_jobs(date, output_basedir)
+        else:
+            for date in list_of_dates: 
+                apply_gain_selection(date, output_basedir)
+            log.info("Done! No more dates to process.")
 
 
 if __name__ == "__main__":
