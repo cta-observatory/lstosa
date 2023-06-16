@@ -160,6 +160,12 @@ def GainSel_flag_file() -> Path:
     return flagfile.resolve()
 
 
+def GainSel_finished() -> bool:
+    """Check if gain selection finished successfully."""
+    flagfile = GainSel_flag_file()
+    return flagfile.exists()
+
+
 def check_failed_jobs(date: str, output_basedir: Path = None):
     """Search for failed jobs in the log directory."""
     failed_jobs = []

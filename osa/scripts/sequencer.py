@@ -7,6 +7,7 @@ prepares a SLURM job array which launches the data sequences for every subrun.
 
 import logging
 import os
+import sys
 from decimal import Decimal
 
 from osa import osadb
@@ -89,6 +90,10 @@ def single_process(telescope):
 
     if not options.simulate:
         os.makedirs(options.log_directory, exist_ok=True)
+
+    if not GainSel_finished():
+        log.info(f"Gain selection did not finish successfully for date {options.date}")
+        sys.exit()
 
     if is_day_closed():
         log.info(f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}")
