@@ -14,9 +14,11 @@ from astropy.table import Table
 from lstchain.paths import run_info_from_filename, parse_r0_filename
 
 from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wait
-from osa.utils.utils import wait_for_daytime
+from osa.utils.utils import wait_for_daytime, date_to_dir
 from osa.utils.logging import myLogger
 from osa.job import get_sacct_output, FORMAT_SLURM
+from osa.configs.config import cfg
+from osa.utils.iofile import write_to_file
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -150,6 +152,14 @@ def run_sacct_j(job) -> StringIO:
     return StringIO(sp.check_output(sacct_cmd).decode())
     
 
+def GainSel_flag_file() -> Path:
+    filename = cfg.get("LSTOSA", "gain_selection_check")
+    date = date_to_dir(options.date)
+    GainSel_dir = Path(cfg.get(options.tel_id, "GAIN_SELECTION_DIR"))
+    flagfile = GainSel_dir / date / filename
+    return flagfile.resolve()
+
+
 def check_failed_jobs(date: str, output_basedir: Path = None):
     """Search for failed jobs in the log directory."""
     failed_jobs = []
@@ -165,38 +175,41 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
             log.warning(f"Job {job} did not finish successfully")
             failed_jobs.append(job)
 
-    if not failed_jobs:
-        log.info(f"{date}: all jobs finished successfully")
-    else:
+    if failed_jobs:
         log.warning(f"{date}: some jobs did not finish successfully")
 
+    else:
+        log.info(f"{date}: all jobs finished successfully")
 
-    run_summary_dir = Path("/fefs/aswg/data/real/monitoring/RunSummary")
-    run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
-    summary_table = Table.read(run_summary_file)
-    runs = summary_table["run_id"]
-    missing_runs = []
+        run_summary_dir = Path("/fefs/aswg/data/real/monitoring/RunSummary")
+        run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
+        summary_table = Table.read(run_summary_file)
+        runs = summary_table["run_id"]
+        missing_runs = []
 
-    r0_files = glob.glob(f"/fefs/aswg/data/real/R0/{date}/LST-1.?.Run?????.????.fits.fz")
-    r0g_files = glob.glob(f"/fefs/aswg/data/real/R0G/{date}/LST-1.?.Run?????.????.fits.fz")
-    all_r0_runs = [parse_r0_filename(i).run for i in r0_files]
-    all_r0g_runs = [parse_r0_filename(i).run for i in r0g_files]
-            
-    for run in all_r0_runs:
-        if run not in runs:
-            if run not in all_r0g_runs:
-                missing_runs.append(run)
-    
-    missing_runs.sort()
-    if missing_runs:
-        log.info(f"Some runs are missing. Copying R0 files of runs {pd.Series(missing_runs).unique()} directly to /fefs/aswg/data/real/R0G/{date}")
+        r0_files = glob.glob(f"/fefs/aswg/data/real/R0/{date}/LST-1.?.Run?????.????.fits.fz")
+        r0g_files = glob.glob(f"/fefs/aswg/data/real/R0G/{date}/LST-1.?.Run?????.????.fits.fz")
+        all_r0_runs = [parse_r0_filename(i).run for i in r0_files]
+        all_r0g_runs = [parse_r0_filename(i).run for i in r0g_files]
+                
+        for run in all_r0_runs:
+            if run not in runs:
+                if run not in all_r0g_runs:
+                    missing_runs.append(run)
+        
+        missing_runs.sort()
+        if missing_runs:
+            log.info(f"Some runs are missing. Copying R0 files of runs {pd.Series(missing_runs).unique()} directly to /fefs/aswg/data/real/R0G/{date}")
 
-        for run in missing_runs:
-            output_dir = Path(f"/fefs/aswg/data/real/R0G/{date}/")
-            files = glob.glob(f"/fefs/aswg/data/real/R0/{date}/LST-1.?.Run{run:05d}.????.fits.fz")
-            for file in files:
-                sp.run(["cp", file, output_dir])
-    
+            for run in missing_runs:
+                output_dir = Path(f"/fefs/aswg/data/real/R0G/{date}/")
+                files = glob.glob(f"/fefs/aswg/data/real/R0/{date}/LST-1.?.Run{run:05d}.????.fits.fz")
+                for file in files:
+                    sp.run(["cp", file, output_dir])
+
+        content = "True"
+        flagfile = GainSel_flag_file()
+        write_to_file(flagfile, content)    
 
 
 @click.command()
