@@ -44,8 +44,9 @@ jobs:
       - name: Setup Mamba
         uses: mamba-org/setup-micromamba@v1
         with:
-          environment-name: "osa-ci"
           environment-file: environment.yml
+          cache-environment: true
+          post-cleanup: 'all'
 
       - name: Install dependencies
         env:
