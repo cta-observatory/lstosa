@@ -3,6 +3,7 @@ import logging
 import re
 import shutil
 import glob
+import pandas as pd
 import subprocess as sp
 from pathlib import Path
 from textwrap import dedent
@@ -10,9 +11,10 @@ from io import StringIO
 
 import click
 from astropy.table import Table
-from lstchain.paths import run_info_from_filename
+from lstchain.paths import run_info_from_filename, parse_r0_filename
 
-from osa.scripts.reprocessing import get_list_of_dates
+from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wait
+from osa.utils.utils import wait_for_daytime
 from osa.utils.logging import myLogger
 from osa.job import get_sacct_output, FORMAT_SLURM
 
@@ -58,6 +60,12 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
     r0_dir = Path(f"/fefs/aswg/data/real/R0/{date}")
 
     for run in data_runs:
+        # Check slurm queue status and sleep for a while to avoid overwhelming the queue
+        check_job_status_and_wait(max_jobs=1500)
+
+        # Avoid running jobs while it is still night time
+        wait_for_daytime(start=12, end=18)
+
         run_id = run["run_id"]
         ref_time = run["dragon_reference_time"]
         ref_counter = run["dragon_reference_counter"]
@@ -112,6 +120,9 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
 
     for run in calib_runs:
+        # Avoid copying files while it is still night time
+        wait_for_daytime(start=12, end=18)
+
         run_id = run["run_id"]
         r0_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
 
@@ -155,9 +166,37 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
             failed_jobs.append(job)
 
     if not failed_jobs:
-        log.info("All jobs finished successfully")
+        log.info(f"{date}: all jobs finished successfully")
     else:
-        log.warning("Some jobs did not finish successfully")
+        log.warning(f"{date}: some jobs did not finish successfully")
+
+
+    run_summary_dir = Path("/fefs/aswg/data/real/monitoring/RunSummary")
+    run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
+    summary_table = Table.read(run_summary_file)
+    runs = summary_table["run_id"]
+    missing_runs = []
+
+    r0_files = glob.glob(f"/fefs/aswg/data/real/R0/{date}/LST-1.?.Run?????.????.fits.fz")
+    r0g_files = glob.glob(f"/fefs/aswg/data/real/R0G/{date}/LST-1.?.Run?????.????.fits.fz")
+    all_r0_runs = [parse_r0_filename(i).run for i in r0_files]
+    all_r0g_runs = [parse_r0_filename(i).run for i in r0g_files]
+            
+    for run in all_r0_runs:
+        if run not in runs:
+            if run not in all_r0g_runs:
+                missing_runs.append(run)
+    
+    missing_runs.sort()
+    if missing_runs:
+        log.info(f"Some runs are missing. Copying R0 files of runs {pd.Series(missing_runs).unique()} directly to /fefs/aswg/data/real/R0G/{date}")
+
+        for run in missing_runs:
+            output_dir = Path(f"/fefs/aswg/data/real/R0G/{date}/")
+            files = glob.glob(f"/fefs/aswg/data/real/R0/{date}/LST-1.?.Run{run:05d}.????.fits.fz")
+            for file in files:
+                sp.run(["cp", file, output_dir])
+    
 
 
 @click.command()
@@ -178,9 +217,8 @@ def main(dates_file: Path = None, output_basedir: Path = None, check: bool = Fal
         for date in list_of_dates:
             check_failed_jobs(date, output_basedir)
     else:
-        for date in list_of_dates:
+        for date in list_of_dates: 
             apply_gain_selection(date, output_basedir)
-
         log.info("Done! No more dates to process.")
 
 

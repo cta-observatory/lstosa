@@ -170,7 +170,9 @@ def post_process(seq_tuple):
         merge_files(seq_list, data_level="DL2")
 
     if options.seqtoclose is None:
-        osadb.end_processing(date_to_iso(options.date))
+        database = cfg.get("database", "path")
+        if database:
+            osadb.end_processing(date_to_iso(options.date))
         # Creating closing flag files will be deprecated in future versions
         return set_closed_with_file()
 

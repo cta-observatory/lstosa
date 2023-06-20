@@ -477,7 +477,7 @@ def main():
     ):
         log.warning(f"Could not close the day for {args.tel_id}!")
         # Send email, if later than 18:00 UTC and telescope is not ready to close
-        if hour > 18:
+        if hour > 14:
             send_warning_mail(date=date)
 
     log.info("Exit")

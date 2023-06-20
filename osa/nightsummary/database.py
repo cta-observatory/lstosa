@@ -1,13 +1,14 @@
 """Query the TCU database source name and astronomical coordinates."""
 import logging
 from datetime import datetime
+from typing import Tuple
 
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
 from osa.utils.logging import myLogger
 
-__all__ = ["query", "db_available"]
+__all__ = ["query", "db_available", "get_run_info_from_TCU"]
 
 
 log = myLogger(logging.getLogger(__name__))
@@ -93,3 +94,44 @@ def query(obs_id: int, property_name: str):
 
                     source_name = entries["value"][0]
                     return source_name if source_name != "" else None
+
+
+def get_run_info_from_TCU(run_id: int, tcu_server: str = "tcs05") -> Tuple:
+    """
+    Get type of run, start, end timestamps (in iso format)
+    and elapsed time (in minutes) for a given run ID.
+
+    Parameters
+    ----------
+    run_id: int
+    tcu_server: str
+        Host of the TCU database
+
+    Returns
+    -------
+    run_id
+    run_type
+    tstart
+    tstop
+    elapsed
+
+    Notes
+    -----
+    From cp01 and cp02 TCU MongoClient can be accessed at 'localhost:27017'
+    from lstanalyzer@tcs06 TCU database can be accessed at 'tcs05' server
+
+    """
+
+    client = MongoClient(tcu_server)
+    collection = client["lst1_obs_summary"]["camera"]
+    summary = collection.find_one({"run_number": run_id})
+
+    if summary is not None:
+        run_type = summary["kind"]
+        tstart = datetime.fromtimestamp(summary["tstart"]).isoformat(sep=" ", timespec="seconds")
+        tstop = datetime.fromtimestamp(summary["tstop"]).isoformat(sep=" ", timespec="seconds")
+        elapsed = (summary["tstop"] - summary["tstart"]) / 60
+
+        return run_id, run_type, tstart, tstop, elapsed
+
+    return run_id, None, None, None, 0.0
