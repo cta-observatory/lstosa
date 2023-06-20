@@ -19,7 +19,6 @@ from osa.utils.logging import myLogger
 from osa.job import get_sacct_output, FORMAT_SLURM
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.iofile import write_to_file
 
 log = myLogger(logging.getLogger(__name__))
 
