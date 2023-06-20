@@ -618,7 +618,7 @@ def run_squeue() -> StringIO:
         log.warning("No job info available since squeue command is not available")
         return StringIO()
 
-    out_fmt = "%i,%j,%T,%M"  # JOBID, NAME, STATE, TIME
+    out_fmt = "%i;%j;%T;%M"  # JOBID, NAME, STATE, TIME
     return StringIO(sp.check_output(["squeue", "--me", "-o", out_fmt]).decode())
 
 
@@ -627,7 +627,7 @@ def get_squeue_output(squeue_output: StringIO) -> pd.DataFrame:
     Obtain the current job information from squeue output
     and return a pandas dataframe.
     """
-    df = pd.read_csv(squeue_output)
+    df = pd.read_csv(squeue_output, delimiter=";")
     df.rename(
         inplace=True,
         columns={

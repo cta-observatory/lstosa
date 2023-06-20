@@ -21,7 +21,6 @@ __all__ = [
     "date_to_iso",
     "is_day_closed",
     "get_prod_id",
-    "date_in_yymmdd",
     "night_finished_flag",
     "is_defined",
     "create_lock",
@@ -211,27 +210,6 @@ def is_day_closed() -> bool:
     """Get the name and Check for the existence of the Closer flag file."""
     flag_file = night_finished_flag()
     return flag_file.exists()
-
-
-def date_in_yymmdd(date_string):
-    """
-    Convert date string YYYYMMDD into YY_MM_DD format to be used for
-    drive log file names.
-
-    Parameters
-    ----------
-    date_string: in format YYYYMMDD
-
-    Returns
-    -------
-    yy_mm_dd: date_string in format YY_MM_DD
-
-    """
-    date = list(date_string)
-    year = "".join(date[2:4])
-    month = "".join(date[4:6])
-    day = "".join(date[6:8])
-    return f"{year}_{month}_{day}"
 
 
 def stringify(args):
