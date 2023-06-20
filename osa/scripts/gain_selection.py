@@ -214,9 +214,8 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
                 for file in files:
                     sp.run(["cp", file, output_dir])
 
-        content = "True"
         flagfile = GainSel_flag_file()
-        write_to_file(flagfile, content)    
+        flagfile.touch()   
 
 
 @click.command()
