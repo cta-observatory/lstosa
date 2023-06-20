@@ -76,7 +76,10 @@ def single_process(telescope):
     -------
     sequence_list : list
     """
-    osadb.start_processing(date_to_iso(options.date))
+    
+    database = cfg.get("database", "path")
+    if database:
+        osadb.start_processing(date_to_iso(options.date))
 
     # Define global variables and create night directory
     sequence_list = []

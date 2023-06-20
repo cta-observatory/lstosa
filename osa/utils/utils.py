@@ -4,6 +4,7 @@
 import inspect
 import logging
 import os
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from socket import gethostname
@@ -35,6 +36,7 @@ __all__ = [
     "is_night_time",
     "cron_lock",
     "example_seq",
+    "wait_for_daytime",
 ]
 
 log = myLogger(logging.getLogger(__name__))
@@ -292,3 +294,13 @@ def example_seq():
 def cron_lock(tel) -> Path:
     """Create a lock file for the cron jobs."""
     return osa.paths.analysis_path(tel) / "cron.lock"
+
+
+def wait_for_daytime(start=8, end=18):
+    """
+    Check every hour if it is still nighttime
+    to not running jobs while it is still night.
+    """
+    while time.localtime().tm_hour <= start or time.localtime().tm_hour >= end:
+        log.info("Waiting for sunrise to not interfere with the data-taking. Sleeping.")
+        time.sleep(3600)
