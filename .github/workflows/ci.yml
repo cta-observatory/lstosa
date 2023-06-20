@@ -42,7 +42,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Mamba
-        uses: mamba-org/provision-with-micromamba@v14
+        uses: mamba-org/setup-micromamba@v1
         with:
           environment-name: "osa-ci"
           environment-file: environment.yml
