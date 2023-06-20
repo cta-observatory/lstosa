@@ -28,7 +28,7 @@ dependencies:
   - pre-commit
   - pytest
   - pytest-cov
-  - coverage=6.2
+  - coverage
   - black
   - isort
   - sphinx=4
