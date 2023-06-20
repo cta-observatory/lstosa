@@ -4,25 +4,25 @@ channels:
   - default
 dependencies:
   # core dependencies
-  - python=3.8
-  - numpy=1.21
+  - python=3.11
+  - numpy
   - pip
-  - astropy~=4.2
-  - ctapipe~=0.12
+  - astropy~=5.0
+  - ctapipe~=0.19.2
   - protozfits=2.0
-  - matplotlib=3.5
+  - matplotlib=3.7
   - pyparsing
   - prov
   - pyyaml
   - pydot
   - pydotplus
   - psutil
-  - gammapy=0.19
+  - gammapy=1.1
   - h5py
-  - joblib
+  - joblib~=1.2.0
   - click
   - pymongo
-  - scikit-learn=1.0
+  - scikit-learn=1.2
   - protobuf=3.20
   # dev dependencies
   - pre-commit
@@ -31,15 +31,15 @@ dependencies:
   - coverage=6.2
   - black
   - isort
-  - sphinx
+  - sphinx=4
   - sphinx_rtd_theme
   - sphinx-automodapi
   - sphinx-argparse
   - sphinx-autoapi
   - pip:
-      - lstchain~=0.9.6
+      - lstchain==0.10.0
       - pytest_runner
       - pytest-ordering
-      - ctapipe_io_lst~=0.18.1
-      - ctaplot~=0.5.5
-      - pyirf~=0.6.0
+      - ctapipe_io_lst~=0.21.0
+      - ctaplot~=0.6.2
+      - pyirf~=0.8.0
