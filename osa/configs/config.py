@@ -5,7 +5,7 @@ import logging
 import sys
 from pathlib import Path
 
-from importlib_resources import files
+from importlib.resources import files
 
 from osa.configs import options
 from osa.utils.logging import myLogger
