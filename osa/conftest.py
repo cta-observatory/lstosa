@@ -48,6 +48,13 @@ def monitoring_dir(base_test_dir):
 
 
 @pytest.fixture(scope="session")
+def osa_dir(base_test_dir):
+    osa_dir = base_test_dir / "OSA"
+    osa_dir.mkdir(parents=True, exist_ok=True)
+    return osa_dir
+
+
+@pytest.fixture(scope="session")
 def run_summary_dir(monitoring_dir):
     summary_dir = monitoring_dir / "RunSummary"
     summary_dir.mkdir(parents=True, exist_ok=True)
@@ -529,11 +536,9 @@ def run_catalog(run_catalog_dir):
 
 
 @pytest.fixture(scope="session")
-def database(base_test_dir):
+def database(osa_dir):
     import sqlite3
 
-    osa_dir = base_test_dir / "OSA"
-    osa_dir.mkdir(parents=True, exist_ok=True)
     db_file = osa_dir / "osa.db"
     with sqlite3.connect(db_file) as connection:
         cursor = connection.cursor()
@@ -543,3 +548,13 @@ def database(base_test_dir):
         )
         cursor.connection.commit()
         yield cursor
+
+
+@pytest.fixture(scope="session")
+def gain_selection_flag_file(osa_dir):
+
+    GainSel_dir = osa_dir / "GainSel"
+    GainSel_dir.mkdir(parents=True, exist_ok=True)
+    file = GainSel_dir / "20200117" / "GainSelFinished.txt"
+    file.touch()
+    return file
