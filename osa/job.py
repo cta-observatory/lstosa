@@ -279,7 +279,7 @@ def save_job_information():
     jobs_df_filtered = jobs_df.copy()
     jobs_df_filtered = jobs_df_filtered.dropna()
     # Remove the G from MaxRSS value and convert to float
-    jobs_df_filtered["MaxRSS"] = jobs_df_filtered["MaxRSS"].str.strip("G").astype(float)
+    # jobs_df_filtered["MaxRSS"] = jobs_df_filtered["MaxRSS"].str.strip("G").astype(float)
 
     jobs_df_filtered.to_csv(file_path, index=False, sep=",")
 
