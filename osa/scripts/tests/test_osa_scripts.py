@@ -230,7 +230,7 @@ def test_datasequence(running_analysis_dir):
     calib_file = "calibration.Run00002.0000.hdf5"
     timecalib_file = "time_calibration.Run00002.0000.hdf5"
     systematic_correction_file = "no_sys_corrected_calibration_scan_fit_20210514.0000.h5"
-    drive_file = "drive_log_20200117.txt"
+    drive_file = "DrivePosition_20200117.txt"
     runsummary_file = "RunSummary_20200117.ecsv"
     prod_id = "v0.1.0"
     run_number = "00003.0000"

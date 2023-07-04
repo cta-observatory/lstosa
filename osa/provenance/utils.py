@@ -33,7 +33,7 @@ def parse_variables(class_instance):
     # --pedcal-file .../20200218/pro/calibration_filters_52.Run02006.0000.h5
     # --drs4-pedestal-file .../20200218/pro/drs4_pedestal.Run02005.0000.h5
     # --time-calib-file .../20191124/pro/time_calibration.Run01625.0000.h5
-    # --drive-file .../lapp/DrivePositioning/drive_log_20_02_18.txt
+    # --drive-file .../DrivePositioning/DrivePosition_20200218.txt
     # --run-summary .../monitoring/RunSummary/RunSummary_20200101.ecsv
     # 02006.0000
     # LST1
@@ -99,7 +99,7 @@ def parse_variables(class_instance):
         # drs4_pedestal_file [1] .../20200218/pro/drs4_pedestal.Run02005.0000.h5
         # time_calib_file    [2] .../20191124/pro/time_calibration.Run01625.0000.h5
         # systematic_corr    [3] .../20200101/pro/no_sys_corrected_calib_20210514.0000.h5
-        # drive_file         [4] .../DrivePositioning/drive_log_20_02_18.txt
+        # drive_file         [4] .../DrivePositioning/DrivePosition_20200218.txt
         # run_summary_file   [5] .../RunSummary/RunSummary_20200101.ecsv
         # pedestal_ids_file  [6] .../path/to/interleaved/pedestal/events.h5
         # run_str            [7] 02006.0000
