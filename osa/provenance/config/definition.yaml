@@ -154,7 +154,7 @@ activities:
               description: "Pointing filename for DL1"
               entityName: PointingFile
               value: PointingFile
-              # filepath: /fefs/home/lapp/DrivePositioning/drive_log_20_02_18.txt
+              # filepath: /fefs/home/lapp/DrivePositioning/DrivePosition_20200218.txt
             - role: "Interleaved pedestal events file"
               description: "Interleaved pedestal events file"
               entityName: InterleavedPedestalEventsFile

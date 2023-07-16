@@ -1,15 +1,13 @@
 """Utility functions for OSA pipeline provenance."""
 
-import logging
+
 import os
-import re
-import sys
+from importlib.resources import files
 from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.utils.logging import myLogger
-from osa.utils.utils import get_lstchain_version, date_to_dir
+from osa.utils.utils import date_to_dir, get_lstchain_version
 
 __all__ = ["parse_variables", "get_log_config"]
 
@@ -33,7 +31,7 @@ def parse_variables(class_instance):
     # --pedcal-file .../20200218/pro/calibration_filters_52.Run02006.0000.h5
     # --drs4-pedestal-file .../20200218/pro/drs4_pedestal.Run02005.0000.h5
     # --time-calib-file .../20191124/pro/time_calibration.Run01625.0000.h5
-    # --drive-file .../lapp/DrivePositioning/drive_log_20_02_18.txt
+    # --drive-file .../DrivePositioning/DrivePosition_20200218.txt
     # --run-summary .../monitoring/RunSummary/RunSummary_20200101.ecsv
     # 02006.0000
     # LST1
@@ -99,7 +97,7 @@ def parse_variables(class_instance):
         # drs4_pedestal_file [1] .../20200218/pro/drs4_pedestal.Run02005.0000.h5
         # time_calib_file    [2] .../20191124/pro/time_calibration.Run01625.0000.h5
         # systematic_corr    [3] .../20200101/pro/no_sys_corrected_calib_20210514.0000.h5
-        # drive_file         [4] .../DrivePositioning/drive_log_20_02_18.txt
+        # drive_file         [4] .../DrivePositioning/DrivePosition_20200218.txt
         # run_summary_file   [5] .../RunSummary/RunSummary_20200101.ecsv
         # pedestal_ids_file  [6] .../path/to/interleaved/pedestal/events.h5
         # run_str            [7] 02006.0000
@@ -190,39 +188,6 @@ def parse_variables(class_instance):
 
 
 def get_log_config():
-    """Get logging configuration from an OSA config file."""
-    # Default config filename value
-    config_file = Path(__file__).resolve().parent / ".." / ".." / options.configfile
-    std_logger_file = Path(__file__).resolve().parent / "config" / "logger.yaml"
-
-    # fetch config filename value from args
-    in_config_arg = False
-    for arg in sys.argv:
-        if in_config_arg:
-            config_file = arg
-            in_config_arg = False
-        if arg in ["-c", "--config"]:
-            in_config_arg = True
-
-    # parse configuration
-    log_config = ""
-    in_prov_section = False
-    str_path_tests = str(Path(__file__).resolve().parent / "tests" / "prov.log")
-    try:
-        with open(config_file, "r") as f:
-            for line in f.readlines():
-                if "pytest" in sys.modules and in_prov_section:
-                    line = re.sub(r"filename:(.*)$", f"filename: {str_path_tests}", line)
-                if in_prov_section:
-                    log_config += line
-                if "[PROVENANCE]" in line:
-                    in_prov_section = True
-    except FileNotFoundError:
-        log = myLogger(logging.getLogger(__name__))
-        log.warning(f"{config_file} not found, using {std_logger_file} instead.")
-
-    # use default logger.yaml if no prov config info found
-    if log_config == "":
-        log_config = std_logger_file.read_text()
-
-    return log_config
+    """Get logging configuration from provenance logger config file."""
+    std_logger_file = files("osa.provenance").joinpath("config/logger.yaml")
+    return std_logger_file.read_text()

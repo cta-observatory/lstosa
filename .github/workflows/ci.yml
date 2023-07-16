@@ -34,7 +34,7 @@ jobs:
 
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash -leo pipefail {0}
 
     steps:
       - uses: actions/checkout@v3
