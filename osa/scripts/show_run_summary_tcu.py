@@ -30,10 +30,22 @@ parser.add_argument(
     default=Path("/fefs/aswg/data/real/R0"),
 )
 
+parser.add_argument(
+    "--tcu-db",
+    type=str,
+    help="Server of the TCU monitoring database",
+    default="lst101-int",
+)
+
 
 def main():
+    """
+    Get run metadata information from TCU monitoring
+    database and print out the run summary
+    """
     args = parser.parse_args()
 
+    tcu_db = args.tcu_db
     date_path = args.r0_path / args.date
     file_list = get_list_of_files(date_path)
     all_runs = get_list_of_runs(file_list)
@@ -44,7 +56,7 @@ def main():
     list_info = []
 
     for run in run_numbers_array:
-        run_info = get_run_info_from_TCU(int(run))
+        run_info = get_run_info_from_TCU(int(run), tcu_server=tcu_db)
         list_info.append(run_info)
 
     if list_info:
