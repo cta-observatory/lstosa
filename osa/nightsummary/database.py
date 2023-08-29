@@ -6,6 +6,7 @@ from typing import Tuple
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
+from osa.configs.config import cfg
 from osa.utils.logging import myLogger
 
 __all__ = ["query", "db_available", "get_run_info_from_TCU"]
@@ -14,10 +15,14 @@ __all__ = ["query", "db_available", "get_run_info_from_TCU"]
 log = myLogger(logging.getLogger(__name__))
 
 
+CACO_DB = cfg.get("database", "caco_db")
+TCU_DB = cfg.get("database", "tcu_db")
+
+
 def db_available():
     """Check the connection to the TCU database."""
-    caco_client = MongoClient("tcs01", serverSelectionTimeoutMS=3000)
-    tcu_client = MongoClient("tcs05", serverSelectionTimeoutMS=3000)
+    caco_client = MongoClient(CACO_DB, serverSelectionTimeoutMS=3000)
+    tcu_client = MongoClient(TCU_DB, serverSelectionTimeoutMS=3000)
     try:
         caco_client.server_info()
         tcu_client.server_info()
@@ -54,8 +59,8 @@ def query(obs_id: int, property_name: str):
     if not isinstance(obs_id, int):
         obs_id = int(obs_id)
 
-    caco_client = MongoClient("tcs01")
-    tcu_client = MongoClient("tcs05")
+    caco_client = MongoClient(CACO_DB)
+    tcu_client = MongoClient(TCU_DB)
 
     with caco_client, tcu_client:
         run_info = caco_client["CACO"]["RUN_INFORMATION"]
@@ -96,7 +101,7 @@ def query(obs_id: int, property_name: str):
                     return source_name if source_name != "" else None
 
 
-def get_run_info_from_TCU(run_id: int, tcu_server: str = "tcs05") -> Tuple:
+def get_run_info_from_TCU(run_id: int, tcu_server: str) -> Tuple:
     """
     Get type of run, start, end timestamps (in iso format)
     and elapsed time (in minutes) for a given run ID.
@@ -109,17 +114,17 @@ def get_run_info_from_TCU(run_id: int, tcu_server: str = "tcs05") -> Tuple:
 
     Returns
     -------
-    run_id
-    run_type
+    run_id : int
+    run_type : str
     tstart
     tstop
-    elapsed
+    elapsed : float
+        Elapsed time in minutes
 
     Notes
     -----
-    From cp01 and cp02 TCU MongoClient can be accessed at 'localhost:27017'
-    from lstanalyzer@tcs06 TCU database can be accessed at 'tcs05' server
-
+    TCU Monitoring database can be accessed at 'lst101-int' server
+    from lstanalyzer@tcs06 and cp's
     """
 
     client = MongoClient(tcu_server)
@@ -130,7 +135,7 @@ def get_run_info_from_TCU(run_id: int, tcu_server: str = "tcs05") -> Tuple:
         run_type = summary["kind"]
         tstart = datetime.fromtimestamp(summary["tstart"]).isoformat(sep=" ", timespec="seconds")
         tstop = datetime.fromtimestamp(summary["tstop"]).isoformat(sep=" ", timespec="seconds")
-        elapsed = (summary["tstop"] - summary["tstart"]) / 60
+        elapsed = (summary["tstop"] - summary["tstart"]) / 60  # minutes
 
         return run_id, run_type, tstart, tstop, elapsed
 
