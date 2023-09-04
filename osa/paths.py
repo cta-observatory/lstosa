@@ -123,7 +123,7 @@ def get_calibration_file(run_id: int) -> Path:
         options.filters = 52
 
     else:
-        mongodb = cfg.get("database", "CaCo_db")
+        mongodb = cfg.get("database", "caco_db")
         try:
             # Cast run_id to int to avoid problems with numpy int64 encoding in MongoDB
             options.filters = search_filter(int(run_id), mongodb)
