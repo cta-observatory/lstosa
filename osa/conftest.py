@@ -70,14 +70,14 @@ def calibration_base_dir(monitoring_dir):
 
 @pytest.fixture(scope="session")
 def calibration_dir(calibration_base_dir):
-    directory = calibration_base_dir / "calibration" / nightdir / "pro"
+    directory = calibration_base_dir / "calibration" / nightdir / "v01"
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 
 
 @pytest.fixture(scope="session")
 def drs4_baseline_dir(calibration_base_dir):
-    directory = calibration_base_dir / "drs4_baseline" / nightdir / "pro"
+    directory = calibration_base_dir / "drs4_baseline" / nightdir / "v01"
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 
