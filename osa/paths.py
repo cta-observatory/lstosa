@@ -93,7 +93,8 @@ def get_drs4_pedestal_file(run_id: int) -> Path:
     """
     drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
     date = utils.date_to_dir(get_run_date(run_id))
-    file = drs4_pedestal_dir / date / f"pro/drs4_pedestal.Run{run_id:05d}.0000.h5"
+    options.calib_prod_id = utils.get_calib_prod_id()
+    file = drs4_pedestal_dir / date / options.calib_prod_id / f"drs4_pedestal.Run{run_id:05d}.0000.h5"
     return file.resolve()
 
 
@@ -118,6 +119,7 @@ def get_calibration_file(run_id: int) -> Path:
 
     calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
     date = utils.date_to_dir(get_run_date(run_id))
+    options.calib_prod_id = utils.get_calib_prod_id()
 
     if options.test:  # Run tests avoiding the access to the database
         options.filters = 52
@@ -131,7 +133,7 @@ def get_calibration_file(run_id: int) -> Path:
             log.warning("No filter information found in database. Assuming positions 52.")
             options.filters = 52
 
-    file = calib_dir / date / f"pro/calibration_filters_{options.filters}.Run{run_id:05d}.0000.h5"
+    file = calib_dir / date / options.calib_prod_id / f"calibration_filters_{options.filters}.Run{run_id:05d}.0000.h5"
     return file.resolve()
 
 
