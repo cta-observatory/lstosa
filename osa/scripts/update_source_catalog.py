@@ -96,11 +96,8 @@ def add_query_table_to_html(html_table):
 def add_run_start_iso(table):
     start_times = []
     for timestamp in table["run_start"]:
-        start_time = Time(timestamp * u.ns, format="unix", scale="utc")
-        start_time_iso = datetime.fromisoformat(
-            start_time.isot).isoformat(sep=" ", timespec="seconds"
-                                       )
-        start_times.append(start_time_iso)
+        start_time = Time(timestamp * u.ns, format="unix_tai")
+        start_times.append(start_time.utc.iso)
     table.replace_column("run_start", start_times)
 
 
