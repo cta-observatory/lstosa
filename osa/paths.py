@@ -231,7 +231,7 @@ def destination_dir(concept: str, create_dir: bool = True) -> Path:
     """
     nightdir = utils.date_to_dir(options.date)
 
-    if concept == "MUON":
+    if concept in {"MUON", "INTERLEAVED"}:
         directory = Path(cfg.get(options.tel_id, concept + "_DIR")) / nightdir / options.prod_id
     elif concept in {"DL1AB", "DATACHECK"}:
         directory = (

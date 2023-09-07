@@ -78,6 +78,9 @@ def create_symlinks(input_file, output_file, prefix, suffix):
     if prefix == "muons_LST-1" and suffix == ".fits":
         input_file.symlink_to(output_file.resolve())
 
+    if prefix == "interleaved_LST-1" and suffix == ".h5":
+        input_file.symlink_to(output_file.resolve())
+
 
 def register_run_concept_files(run_string, concept):
     """
@@ -104,7 +107,7 @@ def register_run_concept_files(run_string, concept):
     suffix = cfg.get("PATTERN", f"{concept}SUFFIX")
 
     log.debug(f"Registering {data_level} file for {prefix}*{run_string}*{suffix}")
-    if concept in ["DL1AB", "DATACHECK", "PEDESTAL", "CALIB", "TIMECALIB", "MUON", "DL2"]:
+    if concept in ["DL1AB", "DATACHECK", "PEDESTAL", "CALIB", "TIMECALIB", "MUON", "DL2", "INTERLEAVED"]:
         register_files(run_string, initial_dir, prefix, suffix, output_dir)
     else:
         log.warning(f"Concept {concept} not known")

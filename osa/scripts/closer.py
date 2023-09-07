@@ -196,6 +196,7 @@ def post_process_files(seq_list: list):
     DL2_RE = re.compile(f"{options.dl2_prod_id}/dl2.*.(?:h5|hdf5|hdf)")
     MUONS_RE = re.compile(r"muons.*.fits")
     DATACHECK_RE = re.compile(r"datacheck_dl1.*.(?:h5|hdf5|hdf)")
+    INTERLEAVED_RE = re.compile(r"interleaved.*.(?:h5|hdf5|hdf)")
 
     pattern_files = dict(
         [
@@ -203,6 +204,7 @@ def post_process_files(seq_list: list):
             ("DL2", DL2_RE),
             ("MUON", MUONS_RE),
             ("DATACHECK", DATACHECK_RE),
+            ("INTERLEAVED", INTERLEAVED_RE),
         ]
     )
 
