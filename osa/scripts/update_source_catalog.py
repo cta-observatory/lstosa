@@ -5,12 +5,14 @@ from pathlib import Path
 from textwrap import dedent
 
 import click
+import re
 import pandas as pd
 from astropy import units as u
 from astropy.table import Table, join, vstack, unique
 from astropy.time import Time
 from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.reco.utils import get_effective_time, add_delta_t_key
+from osa.utils.utils import get_lstchain_version
 
 pd.set_option('display.float_format', '{:.1f}'.format)
 
@@ -101,10 +103,11 @@ def add_run_start_iso(table):
     table.replace_column("run_start", start_times)
 
 
-def add_elapsed(table, datedir):
+def add_elapsed(table, datedir, version):
     elapsed_times = []
     for run in table["run_id"]:
-        file = Path(f"/fefs/aswg/data/real/DL1/{datedir}/v0.10/tailcut84/dl1_LST-1.Run{run:05d}.h5")
+        major_version = re.search('\D\d+\.\d+', version)[0]
+        file = Path(f"/fefs/aswg/data/real/DL1/{datedir}/{major_version}/tailcut84/dl1_LST-1.Run{run:05d}.h5")
         df = pd.read_hdf(file, key=dl1_params_lstcam_key)
         df_delta = add_delta_t_key(df)
         _, elapsed_t = get_effective_time(df_delta)
@@ -124,7 +127,8 @@ def copy_to_webserver(html_file, csv_file):
     'date',
     type=click.DateTime(formats=["%Y-%m-%d"])
 )
-def main(date: datetime = None):
+@click.option("-v", "--version", type=str, default=get_lstchain_version())
+def main(date: datetime = None, version: str = get_lstchain_version()):
     """
     Update source catalog with new run entries from a given date in
     format YYYY-MM-DD. It needs to be run as lstanalyzer user.
@@ -143,7 +147,7 @@ def main(date: datetime = None):
     # Add start of run in iso format and elapsed time for each run
     log.info("Getting run start and elapsed time")
     add_run_start_iso(todays_join)
-    add_elapsed(todays_join, datedir)
+    add_elapsed(todays_join, datedir, version)
     # Change col names
     todays_join.rename_column('run_id', 'Run ID')
     todays_join.rename_column('run_start', 'Run start [UTC]')
