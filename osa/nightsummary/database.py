@@ -27,9 +27,10 @@ def db_available():
         caco_client.server_info()
         tcu_client.server_info()
     except ConnectionFailure:
-        log.info("TCU or CaCo database not available. No source info will be added.")
+        log.warning("TCU or CaCo database not available. No source info will be added.")
         return False
     else:
+        log.debug("TCU and CaCo database are available. Source info will be added.")
         return True
 
 

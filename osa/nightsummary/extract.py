@@ -170,23 +170,31 @@ def extract_runs(summary_table):
             dtype=["int32", str, "float64", "float64"],
         )
         for run in run_list:
-            run.source_name = database.query(
-                obs_id=run.run, property_name="DriveControl_SourceName"
-            )
-            run.source_ra = database.query(obs_id=run.run, property_name="DriveControl_RA_Target")
-            run.source_dec = database.query(obs_id=run.run, property_name="DriveControl_Dec_Target")
-            # Store this source information (run_id, source_name, source_ra, source_dec)
-            # into an astropy Table and save to disk. In this way, the information can be
-            # dumped anytime later more easily than accessing the TCU database itself.
-            if run.source_name is not None:
-                line = [
-                    run.run,
-                    run.source_name,
-                    run.source_ra,
-                    run.source_dec,
-                ]
-                log.debug(f"Adding line with source info to RunCatalog: {line}")
-                run_table.add_row(line)
+            # Make sure we are looking at actual data runs. Avoid test runs.
+            if run.run > 0 and run.type == "DATA":
+                log.debug(f"Looking info in TCU DB for run {run.run}")
+                run.source_name = database.query(
+                    obs_id=run.run, property_name="DriveControl_SourceName"
+                )
+                run.source_ra = database.query(
+                    obs_id=run.run, property_name="DriveControl_RA_Target"
+                    )
+                run.source_dec = database.query(
+                    obs_id=run.run, property_name="DriveControl_Dec_Target"
+                    )
+                # Store this source information (run_id, source_name, source_ra, source_dec)
+                # into an astropy Table and save to disk in RunCatalog files. In this way, the
+                # information can be dumped anytime later more easily than accessing the
+                # TCU database.
+                if run.source_name is not None:
+                    line = [
+                        run.run,
+                        run.source_name,
+                        run.source_ra,
+                        run.source_dec,
+                    ]
+                    log.debug(f"Adding line with source info to RunCatalog: {line}")
+                    run_table.add_row(line)
 
         # Save table to disk
         run_table.write(source_catalog_file, overwrite=True, delimiter=",")
