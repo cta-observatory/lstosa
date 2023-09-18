@@ -234,9 +234,20 @@ def destination_dir(concept: str, create_dir: bool = True) -> Path:
     if concept == "MUON":
         directory = Path(cfg.get(options.tel_id, "DL1_DIR")) / nightdir / options.prod_id / "muons"
     elif concept == "INTERLEAVED":
-        directory = Path(cfg.get(options.tel_id, "DL1_DIR")) / nightdir / options.prod_id / "interleaved"
+        directory = (
+            Path(cfg.get(options.tel_id, "DL1_DIR")) 
+            / nightdir 
+            / options.prod_id  
+            / "interleaved"
+        )
     elif concept == "DATACHECK":
-        directory = Path(cfg.get(options.tel_id, "DL1_DIR")) / nightdir / options.prod_id / "datacheck"
+        directory = (
+            Path(cfg.get(options.tel_id, "DL1_DIR")) 
+            / nightdir 
+            / options.prod_id 
+            / options.dl1_prod_id 
+            / "datacheck"
+        )
     elif concept == "DL1AB":
         directory = (
             Path(cfg.get(options.tel_id, "DL1_DIR"))

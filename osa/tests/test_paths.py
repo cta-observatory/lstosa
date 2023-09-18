@@ -66,9 +66,13 @@ def test_destination_dir():
 
     for concept, dst_dir in data_types.items():
         directory = destination_dir(concept, create_dir=False)
-        if concept in ["DL1AB", "DATACHECK"]:
+        if concept == "DL1AB":
             expected_directory = (
                 base_path / dst_dir / datedir / options.prod_id / options.dl1_prod_id
+            )
+        elif concept == "DATACHECK":
+            expected_directory = (
+                base_path / dts_dir / datedir / options.prod_id / options.dl1_prod_id / datacheck
             )
         elif concept == "DL2":
             expected_directory = (

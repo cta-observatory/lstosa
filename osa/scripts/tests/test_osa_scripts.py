@@ -201,13 +201,13 @@ def test_closer(
 
     # Check that files have been moved to their final destinations
     assert os.path.exists(
-        "./test_osa/test_files0/DL1/20200117/v0.1.0/muons_LST-1.Run01808.0011.fits"
+        "./test_osa/test_files0/DL1/20200117/v0.1.0/muons/muons_LST-1.Run01808.0011.fits"
     )
     assert os.path.exists(
         "./test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84/dl1_LST-1.Run01808.0011.h5"
     )
     assert os.path.exists(
-        "./test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84/"
+        "./test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84/datacheck/"
         "datacheck_dl1_LST-1.Run01808.0011.h5"
     )
     assert os.path.exists(
@@ -321,7 +321,7 @@ def test_daily_longterm_cmd():
         "lstchain_longterm_dl1_check",
         "--input-dir=test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84",
         "--output-file=test_osa/test_files0/OSA/DL1DataCheck_LongTerm/v0.1.0/20200117/DL1_datacheck_20200117.h5",
-        "--muons-dir=test_osa/test_files0/DL1/20200117/v0.1.0",
+        "--muons-dir=test_osa/test_files0/DL1/20200117/v0.1.0/muons",
         "--batch",
     ]
 

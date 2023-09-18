@@ -102,7 +102,7 @@ def register_run_concept_files(run_string, concept):
         initial_dir = initial_dir / options.dl1_prod_id
 
     elif concept == "DATACHECK":
-        initial_dir = initial_dir / "datacheck"
+        initial_dir = initial_dir / options.dl1_prod_id / "datacheck"
 
     elif concept == "MUON":
         initial_dir = initial_dir / "muons"
