@@ -72,7 +72,7 @@ def test_destination_dir():
             )
         elif concept == "DATACHECK":
             expected_directory = (
-                base_path / dts_dir / datedir / options.prod_id / options.dl1_prod_id / datacheck
+                base_path / dst_dir / datedir / options.prod_id / options.dl1_prod_id / "datacheck"
             )
         elif concept == "DL2":
             expected_directory = (
