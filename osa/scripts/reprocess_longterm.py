@@ -31,7 +31,7 @@ def run_longterm(date: str, prod_id: str, new_prod_id: str, log_dir: Path):
         Path to the directory where job logs will be stored.
     """
     dl1_dir = ANALYSIS_PATH / "DL1" / date / prod_id / "tailcut84"
-    muons_dir = ANALYSIS_PATH / "DL1" / date / prod_id
+    muons_dir = ANALYSIS_PATH / "DL1" / date / prod_id / "muons"
     new_longterm_dir = LONGTERM_PATH / new_prod_id / date
     longterm_output_file = new_longterm_dir / f"DL1_datacheck_{date}.h5"
 
