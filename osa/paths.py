@@ -219,7 +219,7 @@ def destination_dir(concept: str, create_dir: bool = True) -> Path:
     Parameters
     ----------
     concept : str
-        Expected: MUON, DL1AB, DATACHECK, DL2, PEDESTAL, CALIB, TIMECALIB
+        Expected: MUON, DL1AB, DATACHECK, INTERLEAVED, DL2, PEDESTAL, CALIB, TIMECALIB
     create_dir : bool
         Set it to True (default) if you want to create the directory.
         Otherwise, it just returns the path
@@ -231,11 +231,15 @@ def destination_dir(concept: str, create_dir: bool = True) -> Path:
     """
     nightdir = utils.date_to_dir(options.date)
 
-    if concept in {"MUON", "INTERLEAVED"}:
-        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) / nightdir / options.prod_id
-    elif concept in {"DL1AB", "DATACHECK"}:
+    if concept == "MUON":
+        directory = Path(cfg.get(options.tel_id, "DL1_DIR")) / nightdir / options.prod_id / "muons"
+    elif concept == "INTERLEAVED":
+        directory = Path(cfg.get(options.tel_id, "DL1_DIR")) / nightdir / options.prod_id / "interleaved"
+    elif concept == "DATACHECK":
+        directory = Path(cfg.get(options.tel_id, "DL1_DIR")) / nightdir / options.prod_id / "datacheck"
+    elif concept == "DL1AB":
         directory = (
-            Path(cfg.get(options.tel_id, concept + "_DIR"))
+            Path(cfg.get(options.tel_id, "DL1_DIR"))
             / nightdir
             / options.prod_id
             / options.dl1_prod_id

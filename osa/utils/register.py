@@ -98,8 +98,17 @@ def register_run_concept_files(run_string, concept):
     if concept == "DL2":
         initial_dir = initial_dir / options.dl2_prod_id
 
-    elif concept in ["DL1AB", "DATACHECK"]:
+    elif concept == "DL1AB":
         initial_dir = initial_dir / options.dl1_prod_id
+
+    elif concept == "DATACHECK":
+        initial_dir = initial_dir / "datacheck"
+
+    elif concept == "MUON":
+        initial_dir = initial_dir / "muons"
+
+    elif concept == "INTERLEAVED":
+        initial_dir = initial_dir / "interleaved"
 
     output_dir = destination_dir(concept, create_dir=False)
     data_level = cfg.get("PATTERN", f"{concept}TYPE")
