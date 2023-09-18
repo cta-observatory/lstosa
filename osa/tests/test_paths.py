@@ -74,6 +74,14 @@ def test_destination_dir():
             expected_directory = (
                 base_path / dst_dir / datedir / options.prod_id / options.dl1_prod_id / "datacheck"
             )
+        elif concept == "MUON":
+            expected_directory = (
+                base_path / dst_dir / datedir / options.prod_id / "muons"
+            )
+        elif concept == "INTERLEAVED":
+            expected_directory = (
+                base_path / dst_dir / datedir / options.prod_id / "interleaved"
+            )
         elif concept == "DL2":
             expected_directory = (
                 base_path / dst_dir / datedir / options.prod_id / options.dl2_prod_id
