@@ -20,6 +20,17 @@ __all__ = [
 
 log = myLogger(logging.getLogger(__name__))
 
+ANALYSIS_PRODUCTS = [
+    "DL1AB",
+    "DATACHECK",
+    "PEDESTAL",
+    "CALIB",
+    "TIMECALIB",
+    "MUON",
+    "DL2",
+    "INTERLEAVED"
+]
+
 
 def register_files(run_str, analysis_dir, prefix, suffix, output_dir) -> None:
     """
@@ -93,7 +104,9 @@ def register_run_concept_files(run_string, concept):
     concept: str
     """
 
-    initial_dir = Path(options.directory)
+    initial_dir = Path(options.directory)  # running_analysis
+
+    # For MUON and INTERLEAVED data products, the initial directory is running_analysis
 
     if concept == "DL2":
         initial_dir = initial_dir / options.dl2_prod_id
@@ -102,13 +115,7 @@ def register_run_concept_files(run_string, concept):
         initial_dir = initial_dir / options.dl1_prod_id
 
     elif concept == "DATACHECK":
-        initial_dir = initial_dir / options.dl1_prod_id / "datacheck"
-
-    elif concept == "MUON":
-        initial_dir = initial_dir / "muons"
-
-    elif concept == "INTERLEAVED":
-        initial_dir = initial_dir / "interleaved"
+        initial_dir = initial_dir / options.dl1_prod_id
 
     output_dir = destination_dir(concept, create_dir=False)
     data_level = cfg.get("PATTERN", f"{concept}TYPE")
@@ -116,7 +123,7 @@ def register_run_concept_files(run_string, concept):
     suffix = cfg.get("PATTERN", f"{concept}SUFFIX")
 
     log.debug(f"Registering {data_level} file for {prefix}*{run_string}*{suffix}")
-    if concept in ["DL1AB", "DATACHECK", "PEDESTAL", "CALIB", "TIMECALIB", "MUON", "DL2", "INTERLEAVED"]:
+    if concept in ANALYSIS_PRODUCTS:
         register_files(run_string, initial_dir, prefix, suffix, output_dir)
     else:
         log.warning(f"Concept {concept} not known")
