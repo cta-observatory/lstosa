@@ -201,7 +201,10 @@ def test_closer(
 
     # Check that files have been moved to their final destinations
     assert os.path.exists(
-        "./test_osa/test_files0/DL1/20200117/v0.1.0/muons/muons_LST-1.Run01808.0011.fits"
+       "./test_osa/test_files0/DL1/20200117/v0.1.0/muons/muons_LST-1.Run01808.0011.fits"
+    )
+    assert os.path.exists(
+       "./test_osa/test_files0/DL1/20200117/v0.1.0/interleaved/interleaved_LST-1.Run01808.0011.h5"
     )
     assert os.path.exists(
         "./test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84/dl1_LST-1.Run01808.0011.h5"
@@ -211,14 +214,14 @@ def test_closer(
         "datacheck_dl1_LST-1.Run01808.0011.h5"
     )
     assert os.path.exists(
-        "./test_osa/test_files0/DL2/20200117/v0.1.0/model2/" "dl2_LST-1.Run01808.0011.h5"
+        "./test_osa/test_files0/DL2/20200117/v0.1.0/model2/dl2_LST-1.Run01808.0011.h5"
     )
     # Assert that the link to dl1 and muons files have been created
     assert os.path.islink(
-        "./test_osa/test_files0/running_analysis/20200117/" "v0.1.0/muons_LST-1.Run01808.0011.fits"
+        "./test_osa/test_files0/running_analysis/20200117/v0.1.0/muons_LST-1.Run01808.0011.fits"
     )
     assert os.path.islink(
-        "./test_osa/test_files0/running_analysis/20200117/" "v0.1.0/dl1_LST-1.Run01808.0011.h5"
+        "./test_osa/test_files0/running_analysis/20200117/v0.1.0/dl1_LST-1.Run01808.0011.h5"
     )
 
     assert night_finished_flag.exists()
