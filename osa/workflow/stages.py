@@ -77,8 +77,10 @@ class AnalysisStage:
         if self.command == "lstchain_data_r0_to_dl1":
             dl1_output_file = options.directory / f"dl1_LST-1.Run{self.run}.h5"
             muon_output_file = options.directory / f"muons_LST-1.Run{self.run}.fits"
+            interleaved_output_file = options.directory / f"interleaved_LST-1.Run{self.run}.h5"
             dl1_output_file.unlink(missing_ok=True)
             muon_output_file.unlink(missing_ok=True)
+            interleaved_output_file.unlink(missing_ok=True)
         
         elif self.command == "lstchain_dl1ab":
             dl1ab_subdirectory = options.directory / options.dl1_prod_id
