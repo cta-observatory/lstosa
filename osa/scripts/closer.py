@@ -298,6 +298,7 @@ def merge_dl1_datacheck(seq_list) -> List[str]:
 
     muons_dir = destination_dir("MUON", create_dir=False)
     dl1_dir = destination_dir("DL1AB", create_dir=False)
+    datacheck_dir = destination_dir("DATACHECK", create_dir=False)
 
     list_job_id = []
 
@@ -314,7 +315,7 @@ def merge_dl1_datacheck(seq_list) -> List[str]:
                 f"log/merge_dl1_datacheck_{sequence.run:05d}_%j.err",
                 "lstchain_check_dl1",
                 "--input-file",
-                f"{dl1_dir}/datacheck_dl1_LST-1.Run{sequence.run:05d}.*.h5",
+                f"{datacheck_dir}/datacheck_dl1_LST-1.Run{sequence.run:05d}.*.h5",
                 f"--output-dir={dl1_dir}",
                 f"--muons-dir={muons_dir}",
             ]
