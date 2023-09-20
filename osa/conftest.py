@@ -181,15 +181,17 @@ def test_observed_data(running_analysis_dir, dl1b_subdir, dl2_subdir):
     """Mock observed data files for testing."""
     dl1_file = running_analysis_dir / "dl1_LST-1.Run01808.0011.h5"
     muons_file = running_analysis_dir / "muons_LST-1.Run01808.0011.fits"
+    interleaved_file = running_analysis_dir / "interleaved_LST-1.Run01808.0011.h5"
     dl1ab_file = dl1b_subdir / "dl1_LST-1.Run01808.0011.h5"
     datacheck_file = dl1b_subdir / "datacheck_dl1_LST-1.Run01808.0011.h5"
     dl2_file = dl2_subdir / "dl2_LST-1.Run01808.0011.h5"
     dl1_file.touch()
     muons_file.touch()
+    interleaved_file.touch()
     dl1ab_file.touch()
     datacheck_file.touch()
     dl2_file.touch()
-    return dl1_file, dl1ab_file, dl2_file, muons_file, datacheck_file
+    return dl1_file, dl1ab_file, dl2_file, muons_file, datacheck_file, interleaved_file
 
 
 @pytest.fixture(scope="session")
