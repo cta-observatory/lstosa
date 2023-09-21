@@ -1,17 +1,20 @@
 """Handle the paths of the analysis products."""
 
 import logging
+import re
+from datetime import datetime
 from pathlib import Path
 from typing import List
-from datetime import datetime
 
+import lstchain
 from astropy.table import Table
-from lstchain.onsite import find_systematics_correction_file, find_time_calibration_file
-from lstchain.scripts.onsite.onsite_create_calibration_file import search_filter
+from lstchain.onsite import (find_systematics_correction_file,
+                             find_time_calibration_file)
+from lstchain.scripts.onsite.onsite_create_calibration_file import \
+    search_filter
 
 from osa.configs import options
-from osa.configs.config import DEFAULT_CFG
-from osa.configs.config import cfg
+from osa.configs.config import DEFAULT_CFG, cfg
 from osa.configs.datamodel import Sequence
 from osa.utils import utils
 from osa.utils.logging import myLogger
@@ -86,11 +89,26 @@ def get_run_date(run_id: int) -> datetime:
     return datetime.strptime(date_string, "%Y-%m-%d")
 
 
+# def get_drs4_pedestal_file(run_id: int) -> Path:
+#    """
+#    Return the drs4 pedestal file corresponding to a given run id
+#    regardless of the date when the run was taken.
+#    """
+#    drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
+#    date = utils.date_to_dir(get_run_date(run_id))
+#    file = drs4_pedestal_dir / date / f"pro/drs4_pedestal.Run{run_id:05d}.0000.h5"
+#    return file.resolve()
+
+
 def get_drs4_pedestal_file(run_id: int) -> Path:
     """
     Return the drs4 pedestal file corresponding to a given run id
     regardless of the date when the run was taken.
     """
+    if drs4_pedestal_exists(run_id):
+        files = search_drs4_files(run_id)
+        return files[-1]  # Get the latest production
+
     drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
     date = utils.date_to_dir(get_run_date(run_id))
     # Calibration file will be produced under prod id indicated by lstchain version in use (vX.Y.Z)
@@ -119,6 +137,10 @@ def get_calibration_file(run_id: int) -> Path:
     mid 2021 approx.
     """
 
+    if calibration_file_exists(run_id):
+        files = search_calibration_files(run_id)
+        return files[-1]  # Get the latest production
+
     calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
     date = utils.date_to_dir(get_run_date(run_id))
     options.calib_prod_id = utils.get_calib_prod_id()
@@ -135,8 +157,12 @@ def get_calibration_file(run_id: int) -> Path:
             log.warning("No filter information found in database. Assuming positions 52.")
             options.filters = 52
 
-    file = calib_dir / date / options.calib_prod_id / f"calibration_filters_{options.filters}.Run{run_id:05d}.0000.h5"
-    return file.resolve()
+    file = (
+        calib_dir
+        / date
+        / f"v{lstchain.__version__}/calibration_filters_{options.filters}.Run{run_id:05d}.0000.h5"
+    )
+    return file
 
 
 def pedestal_ids_file_exists(run_id: int) -> bool:
@@ -158,8 +184,32 @@ def drs4_pedestal_exists(run_id: int) -> bool:
 
 def calibration_file_exists(run_id: int) -> bool:
     """Return true if calibration file was already produced."""
-    file = get_calibration_file(run_id)
-    return file.exists()
+    files = search_calibration_files(run_id)
+
+    if len(files) == 0:
+        return False
+
+    return True
+
+
+def search_drs4_files(run_id) -> list:
+    drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
+    date = utils.date_to_dir(get_run_date(run_id))
+    options.calib_prod_id = utils.get_calib_prod_id()
+    major_version = re.search("\D\d+\.\d+", options.calib_prod_id)[0]
+    return sorted(
+        (drs4_pedestal_dir / date).glob(f"{major_version}*/drs4_pedestal.Run{run_id:05d}.0000.h5")
+    )
+
+
+def search_calibration_files(run_id) -> list:
+    calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
+    date = utils.date_to_dir(get_run_date(run_id))
+    options.calib_prod_id = utils.get_calib_prod_id()
+    major_version = re.search("\D\d+\.\d+", options.calib_prod_id)[0]
+    return sorted(
+        (calib_dir / date).glob(f"{major_version}*/calibration_filters_*.Run{run_id:05d}.0000.h5")
+    )
 
 
 def get_drive_file(date: str) -> Path:
