@@ -20,6 +20,17 @@ __all__ = [
 
 log = myLogger(logging.getLogger(__name__))
 
+ANALYSIS_PRODUCTS = [
+    "DL1AB",
+    "DATACHECK",
+    "PEDESTAL",
+    "CALIB",
+    "TIMECALIB",
+    "MUON",
+    "DL2",
+    "INTERLEAVED"
+]
+
 
 def register_files(run_str, analysis_dir, prefix, suffix, output_dir) -> None:
     """
@@ -78,6 +89,9 @@ def create_symlinks(input_file, output_file, prefix, suffix):
     if prefix == "muons_LST-1" and suffix == ".fits":
         input_file.symlink_to(output_file.resolve())
 
+    if prefix == "interleaved_LST-1" and suffix == ".h5":
+        input_file.symlink_to(output_file.resolve())
+
 
 def register_run_concept_files(run_string, concept):
     """
@@ -90,12 +104,17 @@ def register_run_concept_files(run_string, concept):
     concept: str
     """
 
-    initial_dir = Path(options.directory)
+    initial_dir = Path(options.directory)  # running_analysis
+
+    # For MUON and INTERLEAVED data products, the initial directory is running_analysis
 
     if concept == "DL2":
         initial_dir = initial_dir / options.dl2_prod_id
 
-    elif concept in ["DL1AB", "DATACHECK"]:
+    elif concept == "DL1AB":
+        initial_dir = initial_dir / options.dl1_prod_id
+
+    elif concept == "DATACHECK":
         initial_dir = initial_dir / options.dl1_prod_id
 
     output_dir = destination_dir(concept, create_dir=False)
@@ -104,7 +123,7 @@ def register_run_concept_files(run_string, concept):
     suffix = cfg.get("PATTERN", f"{concept}SUFFIX")
 
     log.debug(f"Registering {data_level} file for {prefix}*{run_string}*{suffix}")
-    if concept in ["DL1AB", "DATACHECK", "PEDESTAL", "CALIB", "TIMECALIB", "MUON", "DL2"]:
+    if concept in ANALYSIS_PRODUCTS:
         register_files(run_string, initial_dir, prefix, suffix, output_dir)
     else:
         log.warning(f"Concept {concept} not known")
