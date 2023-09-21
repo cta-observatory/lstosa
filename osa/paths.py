@@ -132,7 +132,6 @@ def get_calibration_file(run_id: int) -> Path:
 
     calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
     date = utils.date_to_dir(get_run_date(run_id))
-    options.calib_prod_id = utils.get_calib_prod_id()
 
     if options.test:  # Run tests avoiding the access to the database
         options.filters = 52
@@ -184,7 +183,6 @@ def calibration_file_exists(run_id: int) -> bool:
 def search_drs4_files(run_id) -> list:
     drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
     date = utils.date_to_dir(get_run_date(run_id))
-    options.calib_prod_id = utils.get_calib_prod_id()
     major_version = re.search("\D\d+\.\d+", options.calib_prod_id)[0]
     return sorted(
         (drs4_pedestal_dir / date).glob(f"{major_version}*/drs4_pedestal.Run{run_id:05d}.0000.h5")
@@ -194,7 +192,6 @@ def search_drs4_files(run_id) -> list:
 def search_calibration_files(run_id) -> list:
     calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
     date = utils.date_to_dir(get_run_date(run_id))
-    options.calib_prod_id = utils.get_calib_prod_id()
     major_version = re.search("\D\d+\.\d+", options.calib_prod_id)[0]
     return sorted(
         (calib_dir / date).glob(f"{major_version}*/calibration_filters_*.Run{run_id:05d}.0000.h5")
