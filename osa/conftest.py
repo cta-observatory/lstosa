@@ -24,7 +24,7 @@ from osa.configs.config import cfg
 from osa.nightsummary.extract import extract_runs, extract_sequences
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.scripts.tests.test_osa_scripts import run_program
-from osa.utils.utils import date_to_dir
+from osa.utils.utils import date_to_dir, get_calib_prod_id
 from datetime import datetime
 
 date = datetime.fromisoformat("2020-01-17")
@@ -400,6 +400,7 @@ def sequence_list(
     options.directory = running_analysis_dir
     options.simulate = True
     options.test = True
+    options.calib_prod_id = get_calib_prod_id()
 
     for file in drs4_time_calibration_files:
         assert file.exists()
