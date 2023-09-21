@@ -89,17 +89,6 @@ def get_run_date(run_id: int) -> datetime:
     return datetime.strptime(date_string, "%Y-%m-%d")
 
 
-# def get_drs4_pedestal_file(run_id: int) -> Path:
-#    """
-#    Return the drs4 pedestal file corresponding to a given run id
-#    regardless of the date when the run was taken.
-#    """
-#    drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
-#    date = utils.date_to_dir(get_run_date(run_id))
-#    file = drs4_pedestal_dir / date / f"pro/drs4_pedestal.Run{run_id:05d}.0000.h5"
-#    return file.resolve()
-
-
 def get_drs4_pedestal_file(run_id: int) -> Path:
     """
     Return the drs4 pedestal file corresponding to a given run id
