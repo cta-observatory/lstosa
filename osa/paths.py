@@ -93,9 +93,11 @@ def get_drs4_pedestal_file(run_id: int) -> Path:
     """
     drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
     date = utils.date_to_dir(get_run_date(run_id))
-    options.calib_prod_id = utils.get_calib_prod_id()
-    file = drs4_pedestal_dir / date / options.calib_prod_id / f"drs4_pedestal.Run{run_id:05d}.0000.h5"
-    return file.resolve()
+    # Calibration file will be produced under prod id indicated by lstchain version in use (vX.Y.Z)
+    file = (
+        drs4_pedestal_dir / date / f"v{lstchain.__version__}/drs4_pedestal.Run{run_id:05d}.0000.h5"
+    )
+    return file
 
 
 def get_calibration_file(run_id: int) -> Path:
@@ -146,8 +148,12 @@ def pedestal_ids_file_exists(run_id: int) -> bool:
 
 def drs4_pedestal_exists(run_id: int) -> bool:
     """Return true if drs4 pedestal file was already produced."""
-    file = get_drs4_pedestal_file(run_id)
-    return file.exists()
+    files = search_drs4_files(run_id)
+
+    if len(files) == 0:
+        return False
+
+    return True
 
 
 def calibration_file_exists(run_id: int) -> bool:
@@ -234,8 +240,20 @@ def destination_dir(concept: str, create_dir: bool = True) -> Path:
     nightdir = utils.date_to_dir(options.date)
 
     if concept == "MUON":
-        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) / nightdir / options.prod_id
-    elif concept in {"DL1AB", "DATACHECK"}:
+        directory = Path(cfg.get(options.tel_id, "DL1_DIR")) / nightdir / options.prod_id / "muons"
+    elif concept == "INTERLEAVED":
+        directory = (
+            Path(cfg.get(options.tel_id, "DL1_DIR")) / nightdir / options.prod_id / "interleaved"
+        )
+    elif concept == "DATACHECK":
+        directory = (
+            Path(cfg.get(options.tel_id, "DL1_DIR"))
+            / nightdir
+            / options.prod_id
+            / options.dl1_prod_id
+            / "datacheck"
+        )
+    elif concept == "DL1AB":
         directory = (
             Path(cfg.get(options.tel_id, concept + "_DIR"))
             / nightdir
