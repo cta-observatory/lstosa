@@ -196,6 +196,7 @@ def post_process_files(seq_list: list):
     DL2_RE = re.compile(f"{options.dl2_prod_id}/dl2.*.(?:h5|hdf5|hdf)")
     MUONS_RE = re.compile(r"muons.*.fits")
     DATACHECK_RE = re.compile(r"datacheck_dl1.*.(?:h5|hdf5|hdf)")
+    INTERLEAVED_RE = re.compile(r"interleaved.*.(?:h5|hdf5|hdf)")
 
     pattern_files = dict(
         [
@@ -203,6 +204,7 @@ def post_process_files(seq_list: list):
             ("DL2", DL2_RE),
             ("MUON", MUONS_RE),
             ("DATACHECK", DATACHECK_RE),
+            ("INTERLEAVED", INTERLEAVED_RE),
         ]
     )
 
@@ -295,7 +297,7 @@ def merge_dl1_datacheck(seq_list) -> List[str]:
     log.debug("Merging dl1 datacheck files and producing PDFs")
 
     muons_dir = destination_dir("MUON", create_dir=False)
-    dl1_dir = destination_dir("DL1AB", create_dir=False)
+    datacheck_dir = destination_dir("DATACHECK", create_dir=False)
 
     list_job_id = []
 
@@ -312,8 +314,8 @@ def merge_dl1_datacheck(seq_list) -> List[str]:
                 f"log/merge_dl1_datacheck_{sequence.run:05d}_%j.err",
                 "lstchain_check_dl1",
                 "--input-file",
-                f"{dl1_dir}/datacheck_dl1_LST-1.Run{sequence.run:05d}.*.h5",
-                f"--output-dir={dl1_dir}",
+                f"{datacheck_dir}/datacheck_dl1_LST-1.Run{sequence.run:05d}.*.h5",
+                f"--output-dir={datacheck_dir}",
                 f"--muons-dir={muons_dir}",
             ]
             if not options.simulate and not options.test:
@@ -452,7 +454,7 @@ def merge_muon_files(sequence_list):
 def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
     """Build the daily longterm command."""
     nightdir = date_to_dir(options.date)
-    dl1_dir = destination_dir("DL1AB", create_dir=False)
+    datacheck_dir = destination_dir("DATACHECK", create_dir=False)
     muons_dir = destination_dir("MUON", create_dir=False)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
     longterm_output_file = longterm_dir / f"DL1_datacheck_{nightdir}.h5"
@@ -465,7 +467,7 @@ def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
         "log/longterm_daily_%j.log",
         f"--dependency=afterok:{','.join(parent_job_ids)}",
         "lstchain_longterm_dl1_check",
-        f"--input-dir={dl1_dir}",
+        f"--input-dir={datacheck_dir}",
         f"--output-file={longterm_output_file}",
         f"--muons-dir={muons_dir}",
         "--batch",
