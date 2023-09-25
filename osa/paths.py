@@ -22,8 +22,8 @@ from osa.utils.logging import myLogger
 log = myLogger(logging.getLogger(__name__))
 
 __all__ = [
-    "get_calibration_file",
-    "get_drs4_pedestal_file",
+    "get_calibration_filename",
+    "get_drs4_pedestal_filename",
     "pedestal_ids_file_exists",
     "get_run_date",
     "drs4_pedestal_exists",
@@ -43,6 +43,8 @@ __all__ = [
 
 
 DATACHECK_WEB_BASEDIR = Path(cfg.get("WEBSERVER", "DATACHECK"))
+CALIB_BASEDIR = Path(cfg.get("LST1", "CALIB_DIR"))
+DRS4_PEDESTAL_BASEDIR = Path(cfg.get("LST1", "PEDESTAL_DIR"))
 
 
 def analysis_path(tel) -> Path:
@@ -89,25 +91,25 @@ def get_run_date(run_id: int) -> datetime:
     return datetime.strptime(date_string, "%Y-%m-%d")
 
 
-def get_drs4_pedestal_file(run_id: int) -> Path:
+def get_drs4_pedestal_filename(run_id: int, prod_id: str) -> Path:
     """
     Return the drs4 pedestal file corresponding to a given run id
     regardless of the date when the run was taken.
     """
-    if drs4_pedestal_exists(run_id):
-        files = search_drs4_files(run_id)
-        return files[-1]  # Get the latest production
+    if drs4_pedestal_exists(run_id, prod_id):
+        files = search_drs4_files(run_id, prod_id)
+        return files[-1]  # Get the latest production among the major lstchain version
 
-    drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
     date = utils.date_to_dir(get_run_date(run_id))
-    # Calibration file will be produced under prod id indicated by lstchain version in use (vX.Y.Z)
-    file = (
-        drs4_pedestal_dir / date / f"v{lstchain.__version__}/drs4_pedestal.Run{run_id:05d}.0000.h5"
-    )
-    return file
+    return (
+        DRS4_PEDESTAL_BASEDIR
+        / date
+        / f"v{lstchain.__version__}/drs4_pedestal.Run{run_id:05d}.0000.h5"
+    ).resolve()
 
 
-def get_calibration_file(run_id: int) -> Path:
+def get_calibration_filename(run_id: int, prod_id: str) -> Path:
+    # sourcery skip: remove-unnecessary-cast
     """
     Return the calibration file corresponding to a given run_id.
 
@@ -119,18 +121,18 @@ def get_calibration_file(run_id: int) -> Path:
     Notes
     -----
     The file path will be built regardless of the date when the run was taken.
-    We follow the naming convention of the calibration files produced by the lstchain script
-    which depends on the filter wheels position. Therefore, we need to try to fetch the filter
-    position from the CaCo database. If the filter position is not found, we assume the default
-    filter position 5-2. Filter information is not available in the database for runs taken before
+    We follow the naming convention of the calibration files produced by the
+    lstchain script which depends on the filter wheels position. Therefore, we
+    need to try to fetch the filter position from the CaCo database. If the
+    filter position is not found, we assume the default filter position 5-2.
+    Filter information is not available in the database for runs taken before
     mid 2021 approx.
     """
 
-    if calibration_file_exists(run_id):
-        files = search_calibration_files(run_id)
-        return files[-1]  # Get the latest production
+    if calibration_file_exists(run_id, prod_id):
+        files = search_calibration_files(run_id, prod_id)
+        return files[-1]  # Get the latest production among the major lstchain version
 
-    calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
     date = utils.date_to_dir(get_run_date(run_id))
 
     if options.test:  # Run tests avoiding the access to the database
@@ -145,12 +147,11 @@ def get_calibration_file(run_id: int) -> Path:
             log.warning("No filter information found in database. Assuming positions 52.")
             options.filters = 52
 
-    file = (
-        calib_dir
+    return (
+        CALIB_BASEDIR
         / date
         / f"v{lstchain.__version__}/calibration_filters_{options.filters}.Run{run_id:05d}.0000.h5"
-    )
-    return file
+    ).resolve()
 
 
 def pedestal_ids_file_exists(run_id: int) -> bool:
@@ -160,41 +161,50 @@ def pedestal_ids_file_exists(run_id: int) -> bool:
     return bool(file_list)
 
 
-def drs4_pedestal_exists(run_id: int) -> bool:
+def drs4_pedestal_exists(run_id: int, prod_id: str) -> bool:
     """Return true if drs4 pedestal file was already produced."""
-    files = search_drs4_files(run_id)
+    files = search_drs4_files(run_id, prod_id)
 
-    if len(files) == 0:
-        return False
-
-    return True
+    return len(files) != 0
 
 
-def calibration_file_exists(run_id: int) -> bool:
+def calibration_file_exists(run_id: int, prod_id: str) -> bool:
     """Return true if calibration file was already produced."""
-    files = search_calibration_files(run_id)
+    files = search_calibration_files(run_id, prod_id)
 
-    if len(files) == 0:
-        return False
-
-    return True
+    return len(files) != 0
 
 
-def search_drs4_files(run_id) -> list:
-    drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
+def search_drs4_files(run_id: int, prod_id: str) -> list:
+    """
+    Find DRS4 baseline correction files corresponding to a run ID
+    and major lstchain production version
+    """
     date = utils.date_to_dir(get_run_date(run_id))
-    major_version = re.search("\D\d+\.\d+", options.calib_prod_id)[0]
+    version = get_major_version(prod_id)
+    drs4_dir = DRS4_PEDESTAL_BASEDIR / date
     return sorted(
-        (drs4_pedestal_dir / date).glob(f"{major_version}*/drs4_pedestal.Run{run_id:05d}.0000.h5")
+        drs4_dir.glob(f"{version}*/drs4_pedestal.Run{run_id:05d}.0000.h5")
     )
 
 
-def search_calibration_files(run_id) -> list:
-    calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
+def get_major_version(prod_id):
+    """Given a version as vX.Y.Z return vX.Y"""
+    # First check that the given version is in the correct format
+    if prod_id.startswith("v") and len(prod_id.split(".")) >= 2:
+        return re.search(r"\D\d+\.\d+", prod_id)[0]
+
+    raise ValueError("Format of the version is not in the form vW.X.Y.Z")
+
+
+def search_calibration_files(run_id: int, prod_id: str) -> list:
+    """
+    Search charge calibration files corresponding to a run ID and major lstchain production version
+    """
     date = utils.date_to_dir(get_run_date(run_id))
-    major_version = re.search("\D\d+\.\d+", options.calib_prod_id)[0]
+    version = get_major_version(prod_id)
     return sorted(
-        (calib_dir / date).glob(f"{major_version}*/calibration_filters_*.Run{run_id:05d}.0000.h5")
+        (CALIB_BASEDIR / date).glob(f"{version}*/calibration_filters_*.Run{run_id:05d}.0000.h5")
     )
 
 
@@ -224,11 +234,16 @@ def sequence_calibration_files(sequence_list: List[Sequence]) -> None:
     """Build names of the calibration files for each sequence in the list."""
     flat_date = utils.date_to_dir(options.date)
     base_dir = Path(cfg.get("LST1", "BASE"))
+    prod_id = options.prod_id
 
     for sequence in sequence_list:
         # Assign the calibration files to the sequence object
-        sequence.drs4_file = get_drs4_pedestal_file(sequence.drs4_run)
-        sequence.calibration_file = get_calibration_file(sequence.pedcal_run)
+        sequence.drs4_file = get_drs4_pedestal_filename(
+            sequence.drs4_run, prod_id
+        )
+        sequence.calibration_file = get_calibration_filename(
+            sequence.pedcal_run, prod_id
+        )
         sequence.time_calibration_file = find_time_calibration_file(
             "pro", sequence.pedcal_run, base_dir=base_dir
         )
@@ -294,36 +309,25 @@ def destination_dir(concept: str, create_dir: bool = True) -> Path:
             Path(cfg.get(options.tel_id, "DL1_DIR"))
             / nightdir
             / options.prod_id
-            / "interleaved"
-        )
-    elif concept == "DATACHECK":
-        directory = (
-            Path(cfg.get(options.tel_id, "DL1_DIR"))
-            / nightdir
-            / options.prod_id
-            / options.dl1_prod_id
-            / "datacheck"
-        )
-    elif concept == "DL1AB":
-        directory = (
-            Path(cfg.get(options.tel_id, "DL1_DIR"))
-            / nightdir
-            / options.prod_id
             / options.dl1_prod_id
         )
     elif concept in {"DL2", "DL3"}:
         directory = (
-            Path(cfg.get(options.tel_id, concept + "_DIR"))
-            / nightdir
+            (Path(cfg.get(options.tel_id, f"{concept}_DIR")) / nightdir)
             / options.prod_id
-            / options.dl2_prod_id
-        )
+        ) / options.dl2_prod_id
     elif concept in {"PEDESTAL", "CALIB", "TIMECALIB"}:
         directory = (
-            Path(cfg.get(options.tel_id, concept + "_DIR")) / nightdir / options.calib_prod_id
+            Path(cfg.get(options.tel_id, f"{concept}_DIR"))
+            / nightdir
+            / options.prod_id
         )
     elif concept == "HIGH_LEVEL":
-        directory = Path(cfg.get(options.tel_id, concept + "_DIR")) / nightdir / options.prod_id
+        directory = (
+            Path(cfg.get(options.tel_id, f"{concept}_DIR"))
+            / nightdir
+            / options.prod_id
+        )
     else:
         log.warning(f"Concept {concept} not known")
         directory = None
