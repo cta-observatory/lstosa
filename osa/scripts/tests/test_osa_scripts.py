@@ -63,6 +63,7 @@ def test_simulate_processing(
     run_summary_file,
     r0_data,
     merged_run_summary,
+    drive_log
 ):
 
     for file in drs4_time_calibration_files:
@@ -75,6 +76,8 @@ def test_simulate_processing(
         assert r0_file.exists()
 
     assert run_summary_file.exists()
+    assert merged_run_summary.exists()
+    assert drive_log.exists()
 
     remove_provlog()
     rc = run_program("simulate_processing", "-p", "--force")
@@ -257,7 +260,7 @@ def test_datasequence(running_analysis_dir):
 
 
 def test_calibration_pipeline(running_analysis_dir):
-    prod_id = "v0.1.0"
+    options.prod_id = "v0.1.0"
     drs4_run_number = "01804"
     pedcal_run_number = "01805"
     options.directory = running_analysis_dir
@@ -266,7 +269,7 @@ def test_calibration_pipeline(running_analysis_dir):
         "calibration_pipeline",
         "--date=2020-01-17",
         "--simulate",
-        f"--prod-id={prod_id}",
+        f"--prod-id={options.prod_id}",
         f"--drs4-pedestal-run={drs4_run_number}",
         f"--pedcal-run={pedcal_run_number}",
         "LST1",
