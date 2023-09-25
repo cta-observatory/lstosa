@@ -16,7 +16,6 @@ warning = None
 nocheck = None
 no_dl2 = None
 prod_id = None
-calib_prod_id = None
 dl1_prod_id = None
 dl2_prod_id = None
 append = None
