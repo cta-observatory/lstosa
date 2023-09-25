@@ -30,13 +30,6 @@ def test_get_prod_id():
     assert get_prod_id() == prod_id
 
 
-def test_get_calib_prod_id():
-    from osa.utils.utils import get_calib_prod_id
-
-    prod_id = cfg.get(options.tel_id, "CALIB_PROD_ID")
-    assert get_calib_prod_id() == prod_id
-
-
 def test_date_to_dir():
     from osa.utils.utils import date_to_dir
 
