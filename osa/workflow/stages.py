@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import List, Union
 
 from tenacity import retry, stop_after_attempt
+import lstchain
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -75,35 +76,48 @@ class AnalysisStage:
         """
 
         if self.command == "lstchain_data_r0_to_dl1":
-            dl1_output_file = options.directory / f"dl1_LST-1.Run{self.run}.h5"
-            muon_output_file = options.directory / f"muons_LST-1.Run{self.run}.fits"
-            interleaved_output_file = options.directory / f"interleaved_LST-1.Run{self.run}.h5"
-            dl1_output_file.unlink(missing_ok=True)
-            muon_output_file.unlink(missing_ok=True)
-            interleaved_output_file.unlink(missing_ok=True)
-        
+            self._remove_dl1a_output()
         elif self.command == "lstchain_dl1ab":
-            dl1ab_subdirectory = options.directory / options.dl1_prod_id
-            output_file = dl1ab_subdirectory / f"dl1_LST-1.Run{self.run}.h5"
-            output_file.unlink(missing_ok=True)
-
+            self._remove_dl1b_output('dl1_LST-1.Run')
         elif self.command == "lstchain_check_dl1":
-            dl1ab_subdirectory = options.directory / options.dl1_prod_id
-            output_file = dl1ab_subdirectory / f"datacheck_dl1_LST-1.Run{self.run}.h5"
-            output_file.unlink(missing_ok=True)
-
+            self._remove_dl1b_output('datacheck_dl1_LST-1.Run')
         elif self.command == "onsite_create_calibration_file":
-            calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
-            date = date_to_dir(get_run_date(self.run))
-            output_file = calib_dir / date / f"pro/calibration_filters_{options.filters}.Run{self.run}.0000.h5"
-            output_file.unlink(missing_ok=True)
-    
+            self._remove_calibration()
         elif self.command == "onsite_create_drs4_pedestal_file":
-            drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
-            date = date_to_dir(get_run_date(self.run))
-            output_file = drs4_pedestal_dir / date / f"pro/drs4_pedestal.Run{self.run}.0000.h5"
-            output_file.unlink(missing_ok=True)
+            self._remove_drs4_baseline()
 
+    def _remove_drs4_baseline(self):
+        drs4_pedestal_basedir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
+        date = date_to_dir(get_run_date(self.run))
+        drs4_pedestal_dir = drs4_pedestal_basedir / date / lstchain.__version__
+        file = drs4_pedestal_dir / "drs4_pedestal.Run{self.run}.0000.h5"
+        file.unlink(missing_ok=True)
+        # Also remove the link to "pro" directory
+        drs4_pedestal_dir_pro = drs4_pedestal_basedir / date / "pro"
+        drs4_pedestal_dir_pro.unlink(missing_ok=True)
+
+    def _remove_calibration(self):
+        calib_basedir = Path(cfg.get("LST1", "CALIB_DIR"))
+        date = date_to_dir(get_run_date(self.run))
+        calib_dir = file = calib_basedir / date / lstchain.__version__
+        file = calib_dir / f"calibration_filters_{options.filters}.Run{self.run}.0000.h5"
+        file.unlink(missing_ok=True)
+        # Also remove the link to "pro" directory
+        calib_dir_pro = file = calib_basedir / date / "pro"
+        calib_dir_pro.unlink(missing_ok=True)
+
+    def _remove_dl1a_output(self):
+        dl1_output_file = options.directory / f"dl1_LST-1.Run{self.run}.h5"
+        muon_output_file = options.directory / f"muons_LST-1.Run{self.run}.fits"
+        interleaved_output_file = options.directory / f"interleaved_LST-1.Run{self.run}.h5"
+        dl1_output_file.unlink(missing_ok=True)
+        muon_output_file.unlink(missing_ok=True)
+        interleaved_output_file.unlink(missing_ok=True)
+
+    def _remove_dl1b_output(self, file_prefix):
+        dl1ab_subdirectory = options.directory / options.dl1_prod_id
+        output_file = dl1ab_subdirectory / f"{file_prefix}{self.run}.h5"
+        output_file.unlink(missing_ok=True)
 
     def _write_checkpoint(self):
         """Write the checkpoint in the history file."""
@@ -136,7 +150,6 @@ class DRS4PedestalStage(AnalysisStage):
         config_file: Union[str, None] = None,
     ):
         super().__init__(run, command_args, config_file)
-        self.prod_id = options.calib_prod_id
         self.run_pedcal = run_pedcal
         self.history_file = (
             Path(options.directory) / f"sequence_{options.tel_id}_{self.run_pedcal}.history"
@@ -146,7 +159,7 @@ class DRS4PedestalStage(AnalysisStage):
         """Write the checkpoint in the history file."""
         history(
             run=self.run,
-            prod_id=self.prod_id,
+            prod_id=options.prod_id,
             stage=self.command,
             return_code=self.rc,
             history_file=self.history_file,
@@ -163,7 +176,6 @@ class ChargeCalibrationStage(AnalysisStage):
         config_file: Union[str, None] = None,
     ):
         super().__init__(run, command_args, config_file)
-        self.prod_id = options.calib_prod_id
         self.history_file = (
             Path(options.directory) / f"sequence_{options.tel_id}_{self.run}.history"
         )
@@ -172,7 +184,7 @@ class ChargeCalibrationStage(AnalysisStage):
         """Write the checkpoint in the history file."""
         history(
             run=self.run,
-            prod_id=self.prod_id,
+            prod_id=options.prod_id,
             stage=self.command,
             return_code=self.rc,
             history_file=self.history_file,
