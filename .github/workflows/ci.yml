@@ -26,7 +26,7 @@ jobs:
       - name: pyflakes
         run: |
           pip install pyflakes
-          pyflakes osa
+          pyflakes src/
 
   tests:
     needs: pyflakes
