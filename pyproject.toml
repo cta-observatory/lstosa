@@ -1,10 +1,110 @@
+# Based on https://github.com/cta-observatory/project-template-python-pure
+
 [build-system]
-requires = ["setuptools >= 45", "wheel", "setuptools_scm[toml]>=6.2"]
+requires = ["setuptools >= 65", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "lstosa"
+description = "Onsite analysis pipeline for the CTA LST-1"
+readme = "README.md"
+license = {text = "BSD-3-Clause"}
+authors = [
+    {name = "Daniel Morcuende", email = "dmorcuen@ucm.es"},
+    {name = "María Láinez"},
+    {name = "José Enrique Ruiz"},
+    {name = "Lab Saha"},
+    {name = "Andrés Baquero"},
+    {name = "José Luis Contreras"},
+    {name = "Maximilian Linhoff"},
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: BSD License",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+requires-python = ">=3.9"
+dependencies = [
+    "astropy~=5.0",
+    "lstchain~=0.10.0",
+    "matplotlib~=3.7",
+    "numpy",
+    "pandas",
+    "pyyaml",
+    "prov",
+    "pydot",
+    "pydotplus",
+    "psutil",
+    "click",
+    "toml",
+    "pymongo",
+    "gammapy~=1.1",
+    "tenacity",
+]
+
+dynamic = ["version"]
+
+[project.urls]
+repository = "https://github.com/cta-observatory/lstosa"
+documentation = "https://lstosa.readthedocs.io/"
+
+[project.scripts]
+sequencer = "osa.scripts.sequencer:main"
+closer = "osa.scripts.closer:main"
+autocloser = "osa.scripts.autocloser:main"
+copy_datacheck = "osa.scripts.copy_datacheck:main"
+datasequence = "osa.scripts.datasequence:main"
+sequencer_webmaker = "osa.scripts.sequencer_webmaker:main"
+show_run_summary = "osa.scripts.show_run_summary:main"
+show_run_summary_tcu = "osa.scripts.show_run_summary_tcu:main"
+provprocess = "osa.scripts.provprocess:main"
+simulate_processing = "osa.scripts.simulate_processing:main"
+calibration_pipeline = "osa.scripts.calibration_pipeline:main"
+dl3_stage = "osa.workflow.dl3:main"
+theta2_significance = "osa.high_level.significance:main"
+source_coordinates = "osa.nightsummary.set_source_coordinates:main"
+reprocessing = "osa.scripts.reprocessing:main"
+reprocess_longterm = "osa.scripts.reprocess_longterm:main"
+gain_selection = "osa.scripts.gain_selection:main"
+update_source_catalog = "osa.scripts.update_source_catalog:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["osa._dev_version"]
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+  "pytest-cov",
+  "freezegun",
+]
+doc = [
+  "sphinx",
+  "numpydoc",
+  "pydata-sphinx-theme",
+  "sphinx_automodapi",
+  "sphinx_argparse",
+  "sphinx-autoapi",
+]
+dev = [
+  "setuptools_scm",
+]
+
+# we can use self-references to simplify all
+all = [
+  "lstosa[test,doc,dev]",
+]
+
 [tool.setuptools_scm]
-version_scheme = "release-branch-semver"
-write_to = "osa/_version.py"
+write_to = 'src/osa/_version.py'
 
 [tool.black]
 line-length = 100
@@ -23,3 +123,16 @@ exclude = '''
   | dist
 )/
 '''
+
+[tool.setuptools.package-data]
+osa = [
+    "sequencer.cfg",
+    "definition.yaml",
+    "logger.yaml",
+    "osa.css"
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["dev"]
