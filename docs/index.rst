@@ -1,3 +1,6 @@
+:html_theme.sidebar_secondary.remove: true
+:html_theme.sidebar_primary.remove: true
+
 .. _lstosa:
 
 On-site analysis pipeline for the LST-1
@@ -5,20 +8,19 @@ On-site analysis pipeline for the LST-1
 
 .. currentmodule:: lstosa
 
-**version**:  |version|
+**version**: |version| **Date**: |today|
 
-.. image:: logo_lstosa.png
+.. image:: _static/logo_lstosa.png
    :align: center
    :width: 70%
 
-``lstosa`` is the on-site processing pipeline of the CTA Large Size Telescope prototype (LST-1)
+``lstosa`` is the on-site data processing pipeline of the CTA Large-Sized Telescope prototype (LST-1)
 making use of the `cta-lstchain`_ analysis library.
 
-* Code: https://github.com/cta-observatory/lstosa
-* Docs: https://lstosa.readthedocs.io/
+* Source repository: https://github.com/cta-observatory/lstosa
 * License: BSD-3
-* Python 3.8+
-* Authors: Daniel Morcuende, Lab Saha, José Enrique Ruiz, José Luis Contreras, Andrés Baquero, María Lainez
+* Python: |python_requires|
+* Authors: Daniel Morcuende, Lab Saha, José Enrique Ruiz, José Luis Contreras, Andrés Baquero, María Láinez
 
 .. _`cta-lstchain`: https://github.com/cta-observatory/cta-lstchain
 
