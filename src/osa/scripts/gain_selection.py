@@ -189,7 +189,10 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
     
     missing_runs.sort()
     if missing_runs:
-        log.info(f"Some runs are missing. Copying R0 files of runs {pd.Series(missing_runs).unique()} directly to /fefs/aswg/data/real/R0G/{date}")
+        log.info(
+            f"Some runs are missing. Copying R0 files of runs {pd.Series(missing_runs).unique()} "
+            f"directly to /fefs/aswg/data/real/R0G/{date}"
+        )
 
         for run in missing_runs:
             output_dir = Path(f"/fefs/aswg/data/real/R0G/{date}/")
