@@ -69,7 +69,7 @@ jobs:
           # to initialize the coverage start up.
           echo "create sitecustomize.py"
           echo "import coverage; coverage.process_startup()" > $PYTHONPATH/sitecustomize.py
-          pytest --basetemp=test_osa -vv --cov --cov-report=xml
+          pytest --basetemp=test_osa -vv --cov --cov-report=xml src
           cat coverage.xml
 
       - name: Codecov
