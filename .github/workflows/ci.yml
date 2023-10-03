@@ -13,7 +13,7 @@ env:
   PYTEST_ADDOPTS: --color=yes
 
 jobs:
-  pyflakes:
+  static-code-checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,13 +23,21 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: pyflakes
-        run: |
-          pip install pyflakes
-          pyflakes src/
+      - name: Run Ruff
+        uses: chartboost/ruff-action@v1
 
   tests:
-    needs: pyflakes
+    needs: static-code-checks
+    strategy:
+      matrix:
+        include:
+          - python-version: "3.10"
+
+          - python-version: "3.11"
+            extra-args: ['codecov']
+          
+          - python-version: "3.12"
+   
     runs-on: ubuntu-latest
 
     defaults:
@@ -41,24 +49,27 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Mamba
-        uses: mamba-org/setup-micromamba@v1
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
         with:
-          environment-file: environment.yml
-          cache-environment: true
-          post-cleanup: 'all'
+          python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        env:
-          PYTHON_VERSION: 3.11
-
+      - name: Update pip
         run: |
-          python --version
-          echo "Installing additional pip packages"
-          echo "pip install .[test]"
-          pip install .[test]
+          python -m pip install --upgrade pip
 
-      - name: Tests
+      - name: Build the package
+        run: |
+          pip install build
+          python -m build
+
+      - name: Install the package
+        run: pip install .[test]
+
+      - name: Install the package in editable mode
+        run: pip install --editable .[test]
+
+      - name: Tests with pytest
         env:
           COVERAGE_PROCESS_START: .coveragerc
           PYTHONPATH: .
@@ -74,3 +85,4 @@ jobs:
 
       - name: Codecov
         uses: codecov/codecov-action@v3
+        if: contains(matrix.extra-args, 'codecov')
