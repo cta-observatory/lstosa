@@ -23,6 +23,10 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
+BASE_DL1 = Path("/fefs/aswg/data/real/DL1")
+BASE_MONITORING = Path("/fefs/aswg/data/real/monitoring")
+
+
 def add_table_to_html(html_table):
     return dedent(f"""\
     <html>
@@ -107,7 +111,7 @@ def add_elapsed(table, datedir, version):
     elapsed_times = []
     for run in table["run_id"]:
         major_version = re.search('\D\d+\.\d+', version)[0]
-        file = Path(f"/fefs/aswg/data/real/DL1/{datedir}/{major_version}/tailcut84/dl1_LST-1.Run{run:05d}.h5")
+        file = BASE_DL1 / datedir / major_version / f"tailcut84/dl1_LST-1.Run{run:05d}.h5"
         df = pd.read_hdf(file, key=dl1_params_lstcam_key)
         df_delta = add_delta_t_key(df)
         _, elapsed_t = get_effective_time(df_delta)
@@ -138,8 +142,8 @@ def main(date: datetime = None, version: str = get_lstchain_version()):
 
     # Open today's table and append its content to general table
     datedir = date.strftime("%Y%m%d")
-    today_catalog = Table.read(f"/fefs/aswg/data/real/monitoring/RunCatalog/RunCatalog_{datedir}.ecsv")
-    today_runsummary = Table.read(f"/fefs/aswg/data/real/monitoring/RunSummary/RunSummary_{datedir}.ecsv")
+    today_catalog = Table.read(BASE_MONITORING / f"RunCatalog/RunCatalog_{datedir}.ecsv")
+    today_runsummary = Table.read(BASE_MONITORING / f"RunSummary/RunSummary_{datedir}.ecsv")
     today_runsummary = today_runsummary[today_runsummary["run_type"] == "DATA"]
     todays_join = join(today_runsummary, today_catalog)
     todays_join.add_column(date.strftime("%Y-%m-%d"), name="date_dir")
