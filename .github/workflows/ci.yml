@@ -49,14 +49,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - name: Setup Mamba
+        uses: mamba-org/setup-micromamba@v1
         with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Update pip
-        run: |
-          python -m pip install --upgrade pip
+          # the create command looks like this:
+          # `micromamba create -n test-env -c conda-forge python=3.11 lstchain`
+          environment-name: test-env
+          condarc: |
+            channels:
+              - conda-forge
+          create-args: >-
+            python=${{ matrix.python-version }}
+            lstchain
 
       - name: Build the package
         run: |
