@@ -92,7 +92,6 @@ doc = [
   "pydata-sphinx-theme",
   "sphinx_automodapi",
   "sphinx_argparse",
-  "sphinx-autoapi",
 ]
 dev = [
   "setuptools_scm",
