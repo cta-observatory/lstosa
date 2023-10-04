@@ -81,7 +81,7 @@ class AnalysisStage:
             dl1_output_file.unlink(missing_ok=True)
             muon_output_file.unlink(missing_ok=True)
             interleaved_output_file.unlink(missing_ok=True)
-        
+
         elif self.command == "lstchain_dl1ab":
             dl1ab_subdirectory = options.directory / options.dl1_prod_id
             output_file = dl1ab_subdirectory / f"dl1_LST-1.Run{self.run}.h5"
@@ -93,11 +93,12 @@ class AnalysisStage:
             output_file.unlink(missing_ok=True)
 
         elif self.command == "onsite_create_calibration_file":
-            calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
+            calib_base = Path(cfg.get("LST1", "CALIB_DIR"))
             date = date_to_dir(get_run_date(self.run))
-            output_file = calib_dir / date / f"pro/calibration_filters_{options.filters}.Run{self.run}.0000.h5"
+            cal_dir = calib_base / date / "pro"
+            output_file = cal_dir / f"calibration_filters_{options.filters}.Run{self.run}.0000.h5"
             output_file.unlink(missing_ok=True)
-    
+
         elif self.command == "onsite_create_drs4_pedestal_file":
             drs4_pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
             date = date_to_dir(get_run_date(self.run))
