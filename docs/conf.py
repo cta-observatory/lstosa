@@ -27,7 +27,7 @@ copyright = f"{author}.  Last updated {datetime.datetime.now().strftime('%d %b %
 version = osa.__version__
 # The full version, including alpha/beta/rc tags
 release = osa.__version__
-python_requires = metadata('wheel')["Requires-Python"]
+python_requires = metadata('lstosa')["Requires-Python"]
 
 # make some variables available to each page (from ctapipe conf.py)
 rst_epilog = f"""
