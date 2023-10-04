@@ -146,9 +146,9 @@ def run_sacct_j(job) -> StringIO:
         "-j",
         job,
     ]
-    
+
     return StringIO(sp.check_output(sacct_cmd).decode())
-    
+
 
 def check_failed_jobs(date: str, output_basedir: Path = None):
     """Search for failed jobs in the log directory."""
@@ -157,10 +157,10 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
     filenames = glob.glob(f"{log_dir}/gain_selection*.log")
     jobs = [re.search(r'(?<=_)(.[0-9.]+?)(?=.log)', i).group(0) for i in filenames]
 
-    for job in jobs: 
+    for job in jobs:
         output = run_sacct_j(job)
         df = get_sacct_output(output)
-        
+
         if not df.iloc[0]["State"] == "COMPLETED":
             log.warning(f"Job {job} did not finish successfully")
             failed_jobs.append(job)
@@ -181,12 +181,12 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
     r0g_files = glob.glob(f"/fefs/aswg/data/real/R0G/{date}/LST-1.?.Run?????.????.fits.fz")
     all_r0_runs = [parse_r0_filename(i).run for i in r0_files]
     all_r0g_runs = [parse_r0_filename(i).run for i in r0g_files]
-            
+
     for run in all_r0_runs:
         if run not in runs:
             if run not in all_r0g_runs:
                 missing_runs.append(run)
-    
+
     missing_runs.sort()
     if missing_runs:
         log.info(
@@ -199,7 +199,7 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
             files = glob.glob(f"/fefs/aswg/data/real/R0/{date}/LST-1.?.Run{run:05d}.????.fits.fz")
             for file in files:
                 sp.run(["cp", file, output_dir])
-    
+
 
 
 @click.command()
@@ -220,7 +220,7 @@ def main(dates_file: Path = None, output_basedir: Path = None, check: bool = Fal
         for date in list_of_dates:
             check_failed_jobs(date, output_basedir)
     else:
-        for date in list_of_dates: 
+        for date in list_of_dates:
             apply_gain_selection(date, output_basedir)
         log.info("Done! No more dates to process.")
 
