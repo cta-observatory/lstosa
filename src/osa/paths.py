@@ -203,7 +203,7 @@ def datacheck_directory(data_type: str, date: str) -> Path:
     if data_type in {"PEDESTAL", "CALIB"}:
         directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / date / "pro/log"
     elif data_type == "DL1AB":
-        directory = destination_dir("DL1AB", create_dir=False)
+        directory = destination_dir("DATACHECK", create_dir=False)
     elif data_type == "LONGTERM":
         directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / options.prod_id / date
     else:
