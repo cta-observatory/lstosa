@@ -6,23 +6,24 @@ from osa.configs.config import cfg
 from osa.utils.utils import date_to_dir
 
 options.date = datetime.fromisoformat("2020-01-17")
+options.prod_id = "v0.1.1"
 
 
 def test_get_calibration_file(r0_data, merged_run_summary):
-    from osa.paths import get_calibration_file
+    from osa.paths import get_calibration_filename
 
     for file in r0_data:
         assert file.exists()
-    file = get_calibration_file(1809)
+    file = get_calibration_filename(1809, options.prod_id)
     file.exists()
 
 
 def test_get_drs4_pedestal_file(r0_data, merged_run_summary):
-    from osa.paths import get_drs4_pedestal_file
+    from osa.paths import get_drs4_pedestal_filename
 
     for file in r0_data:
         assert file.exists()
-    file = get_drs4_pedestal_file(1804)
+    file = get_drs4_pedestal_filename(1804, options.prod_id)
     file.exists()
 
 
@@ -58,6 +59,7 @@ def test_destination_dir():
     base_path = Path(base_directory)
 
     data_types = {
+        "INTERLEAVED": "DL1",
         "DL1AB": "DL1",
         "DATACHECK": "DL1",
         "MUON": "DL1",
@@ -86,8 +88,6 @@ def test_destination_dir():
             expected_directory = (
                 base_path / dst_dir / datedir / options.prod_id / options.dl2_prod_id
             )
-        else:
-            expected_directory = base_path / dst_dir / datedir / options.prod_id
 
         assert directory == expected_directory
 

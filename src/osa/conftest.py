@@ -26,6 +26,7 @@ from osa.nightsummary.nightsummary import run_summary_table
 from osa.scripts.tests.test_osa_scripts import run_program
 from osa.utils.utils import date_to_dir
 from datetime import datetime
+import lstchain
 
 date = datetime.fromisoformat("2020-01-17")
 nightdir = date_to_dir(date)
@@ -69,15 +70,24 @@ def calibration_base_dir(monitoring_dir):
 
 
 @pytest.fixture(scope="session")
+def drive_log(monitoring_dir):
+    drive_dir = monitoring_dir / "DrivePositioning"
+    drive_file = drive_dir / "DrivePosition_log_20200117.txt"
+    drive_dir.mkdir(parents=True, exist_ok=True)
+    drive_file.touch()
+    return drive_file
+
+
+@pytest.fixture(scope="session")
 def calibration_dir(calibration_base_dir):
-    directory = calibration_base_dir / "calibration" / nightdir / "pro"
+    directory = calibration_base_dir / "calibration" / nightdir / f"v{lstchain.__version__}"
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 
 
 @pytest.fixture(scope="session")
 def drs4_baseline_dir(calibration_base_dir):
-    directory = calibration_base_dir / "drs4_baseline" / nightdir / "pro"
+    directory = calibration_base_dir / "drs4_baseline" / nightdir / f"v{lstchain.__version__}"
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 

@@ -10,7 +10,6 @@ from osa.configs.config import cfg
 from osa.paths import analysis_path, DEFAULT_CFG
 from osa.utils.logging import myLogger
 from osa.utils.utils import (
-    get_calib_prod_id,
     get_dl1_prod_id,
     get_dl2_prod_id,
     get_prod_id,
@@ -35,7 +34,6 @@ __all__ = [
     "get_prod_id",
     "get_dl1_prod_id",
     "get_dl2_prod_id",
-    "get_calib_prod_id",
     "calibration_pipeline_cliparsing",
     "calibration_pipeline_argparser",
     "autocloser_cli_parser",
@@ -171,10 +169,7 @@ def calibration_pipeline_cliparsing():
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
     options.directory = analysis_path(options.tel_id)
-    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
-        options.calib_prod_id = get_calib_prod_id()
-    else:
-        options.calib_prod_id = options.prod_id
+
     return opts.drs4_pedestal_run, opts.pedcal_run
 
 

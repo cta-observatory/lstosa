@@ -26,7 +26,6 @@ __all__ = [
     "create_lock",
     "stringify",
     "gettag",
-    "get_calib_prod_id",
     "get_dl1_prod_id",
     "get_dl2_prod_id",
     "time_to_seconds",
@@ -84,19 +83,6 @@ def get_prod_id():
     log.debug(f"Getting prod ID for the running analysis directory: {options.prod_id}")
 
     return options.prod_id
-
-
-def get_calib_prod_id() -> str:
-    """Build calibration production ID."""
-    if not options.calib_prod_id:
-        if cfg.get("LST1", "CALIB_PROD_ID") is not None:
-            options.calib_prod_id = cfg.get("LST1", "CALIB_PROD_ID")
-        else:
-            options.calib_prod_id = get_lstchain_version()
-
-    log.debug(f"Getting prod ID for calibration products: {options.calib_prod_id}")
-
-    return options.calib_prod_id
 
 
 def get_dl1_prod_id():
@@ -261,11 +247,6 @@ def time_to_seconds(timestring):
 def set_prod_ids():
     """Set the product IDs."""
     options.prod_id = get_prod_id()
-
-    if cfg.get("LST1", "CALIB_PROD_ID") is not None:
-        options.calib_prod_id = get_calib_prod_id()
-    else:
-        options.calib_prod_id = options.prod_id
 
     if cfg.get("LST1", "DL1_PROD_ID") is not None:
         options.dl1_prod_id = get_dl1_prod_id()

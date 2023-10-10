@@ -37,7 +37,8 @@ def is_calibration_produced(drs4_pedestal_run_id: int, pedcal_run_id: int) -> bo
     Check if both daily calibration (DRS4 baseline and
     charge calibration) files are already produced.
     """
-    return drs4_pedestal_exists(drs4_pedestal_run_id) and calibration_file_exists(pedcal_run_id)
+    return drs4_pedestal_exists(drs4_pedestal_run_id, options.prod_id) \
+        and calibration_file_exists(pedcal_run_id, options.prod_id)
 
 
 def drs4_pedestal_command(drs4_pedestal_run_id: int) -> list:
@@ -122,7 +123,7 @@ def drs4_pedestal(
     rc : int
         Return code
     """
-    if options.simulate or drs4_pedestal_exists(drs4_pedestal_run_id):
+    if options.simulate or drs4_pedestal_exists(drs4_pedestal_run_id, options.prod_id):
         return 0
 
     cmd = drs4_pedestal_command(drs4_pedestal_run_id)
@@ -154,7 +155,7 @@ def calibrate_charge(
     rc: int
         Return code
     """
-    if options.simulate or calibration_file_exists(pedcal_run_id):
+    if options.simulate or calibration_file_exists(pedcal_run_id, options.prod_id):
         return 0
 
     cmd = calibration_file_command(
