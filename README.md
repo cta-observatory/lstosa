@@ -3,20 +3,20 @@
   [![ci](https://github.com/cta-observatory/lstosa/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/cta-observatory/lstosa/actions/workflows/ci.yml)
   [![Documentation Status](https://readthedocs.org/projects/lstosa/badge/?version=latest)](https://lstosa.readthedocs.io/en/latest/?badge=latest)
   [![coverage](https://codecov.io/gh/cta-observatory/lstosa/branch/main/graph/badge.svg?token=Zjk1U1ytaG)](https://codecov.io/gh/cta-observatory/lstosa)
-  [![quality](https://app.codacy.com/project/badge/Grade/a8743a706e7c45fc989d5ebc4d61d54f)](https://www.codacy.com/gh/cta-observatory/lstosa/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=cta-observatory/lstosa&amp;utm_campaign=Badge_Grade)
+  [![Codacy Badge](https://app.codacy.com/project/badge/Grade/a8743a706e7c45fc989d5ebc4d61d54f)](https://app.codacy.com/gh/cta-observatory/lstosa/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
   [![pypi](https://img.shields.io/pypi/v/lstosa)](https://pypi.org/project/lstosa/)
   [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6567234.svg)](https://doi.org/10.5281/zenodo.6567234)
 
 
-Prototype onsite processing pipeline for the Large Size Telescope prototype (LST-1) of [CTA](https://www.cta-observatory.org/) (Cherenkov Telescope Array) based on [cta-lstchain](https://github.com/cta-observatory/cta-lstchain) running on the LST-1 IT onsite center at ORM (La Palma, Spain). It automatically carries out the next-day analysis of observed data using cron jobs, parallelizing the processing using the job scheduler SLURM. It provides data quality monitoring and tracking of analysis products' provenance.
-Moreover, it also massively reprocesses the entire LST-1 dataset with each cta-lstchain major release:
+Onsite processing pipeline for the Large-Sized Telescope prototype (LST-1) of [CTAO](https://www.cta-observatory.org/) (Cherenkov Telescope Array Observatory) based on [cta-lstchain](https://github.com/cta-observatory/cta-lstchain) running on the LST-1 IT onsite data center at Observatorio Roque de los Muchachos (La Palma, Spain). It automatically carries out the next-day analysis of observed data using cron jobs, parallelizing the processing using the job scheduler SLURM. It provides data quality monitoring and tracking of analysis products' provenance. Moreover, it also massively reprocesses the entire LST-1 dataset with each cta-lstchain major release.
+
  - Code: <https://github.com/cta-observatory/lstosa>
  - Docs: <https://lstosa.readthedocs.io/>
  - License: [BSD-3-Clause](https://github.com/cta-observatory/lstosa/blob/main/LICENSE)
 
 ## Install
 We recommend using an isolated conda environment.
- - Install miniconda first.
+ - Install mamba/miniconda first.
  - Clone the repository, create and activate the conda environment using the `environment.yml` file:
 
     ```bash
@@ -26,7 +26,7 @@ We recommend using an isolated conda environment.
     conda activate osa
     ```
 
-Then install `lstosa` as a **user** with: `pip install lstosa`, or as a **developer** with: `pip install -e .`.
+Then install `lstosa` as a **user** with: `pip install lstosa`, or as a **developer** with: `pip install -e .`. To install test, docs dependencies use `pip install -e .[test]`, `pip install -e .[doc]` or simply `pip install -e .[all]`
 
 In case you want to install the lstchain development version instead of a fixed tag, you can run inside the `osa` environment:
 
