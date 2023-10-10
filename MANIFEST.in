@@ -1,0 +1,2 @@
+prune src/osa/_dev_version
+prune .github

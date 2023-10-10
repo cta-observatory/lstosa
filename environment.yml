@@ -22,22 +22,23 @@ dependencies:
   - pymongo
   - scikit-learn=1.2
   - protobuf=3.20
+  - ctapipe_io_lst=0.22
+  - ctaplot~=0.6.4
+  - pyirf=0.8
+  - lstchain~=0.10.0
+  - tenacity
   # dev dependencies
-  - pre-commit
   - pytest
   - pytest-cov
   - coverage
+  - freezegun
+  # formatting dependencies
+  - pre-commit
   - black
-  - isort
-  - sphinx=4
-  - sphinx_rtd_theme
+  - ruff
+  # docs dependencies
+  - sphinx
   - sphinx-automodapi
+  - numpydoc
+  - pydata-sphinx-theme
   - sphinx-argparse
-  - sphinx-autoapi
-  - ctapipe_io_lst=0.21.1
-  - pip:
-      - lstchain~=0.10.0
-      - pytest_runner
-      - pytest-ordering
-      - ctaplot~=0.6.2
-      - pyirf~=0.8.0

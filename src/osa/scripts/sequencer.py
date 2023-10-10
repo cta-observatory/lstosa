@@ -76,7 +76,7 @@ def single_process(telescope):
     -------
     sequence_list : list
     """
-    
+
     database = cfg.get("database", "path")
     if database:
         osadb.start_processing(date_to_iso(options.date))

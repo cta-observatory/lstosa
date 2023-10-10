@@ -150,7 +150,7 @@ def test_simulated_sequencer(
         LST1    1  None    PEDCALIB  1809  5        None          None    None   None   None   None      None  None  None    None    None        None  
         LST1    2       1  DATA      1807  11       Crab          None    None   None   None   None      None     0       0       0           0     0  
         LST1    3       1  DATA      1808  9        MadeUpSource  None    None   None   None   None      None     0       0       0           0     0  
-        """
+        """  # noqa: E501
     )
 
 

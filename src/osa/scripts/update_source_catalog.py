@@ -23,6 +23,10 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
+BASE_DL1 = Path("/fefs/aswg/data/real/DL1")
+BASE_MONITORING = Path("/fefs/aswg/data/real/monitoring")
+
+
 def add_table_to_html(html_table):
     return dedent(f"""\
     <html>
@@ -49,23 +53,23 @@ def add_query_table_to_html(html_table):
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
         <script type="text/javascript" language="javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
         <script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-    
+
     <script type="text/javascript" class="init">
-        
+
     $(document).ready(function() {{
         $('#example').DataTable();
     }} );
 
     </script>
-    
+
     </head>
-    
+
      <body>
       <script>
     var astropy_sort_num = function(a, b) {{
         var a_num = parseFloat(a);
         var b_num = parseFloat(b);
-    
+
         if (isNaN(a_num) && isNaN(b_num))
             return ((a < b) ? -1 : ((a > b) ? 1 : 0));
         else if (!isNaN(a_num) && !isNaN(b_num))
@@ -73,12 +77,12 @@ def add_query_table_to_html(html_table):
         else
             return isNaN(a_num) ? -1 : 1;
     }}
-    
+
     jQuery.extend( jQuery.fn.dataTableExt.oSort, {{
         "optionalnum-asc": astropy_sort_num,
         "optionalnum-desc": function (a,b) {{ return -astropy_sort_num(a, b); }}
     }});
-    
+
     $(document).ready(function() {{
         $('#table139855676982704').dataTable({{
             order: [],
@@ -106,8 +110,8 @@ def add_run_start_iso(table):
 def add_elapsed(table, datedir, version):
     elapsed_times = []
     for run in table["run_id"]:
-        major_version = re.search('\D\d+\.\d+', version)[0]
-        file = Path(f"/fefs/aswg/data/real/DL1/{datedir}/{major_version}/tailcut84/dl1_LST-1.Run{run:05d}.h5")
+        major_version = re.search(r'\D\d+\.\d+', version)[0]
+        file = BASE_DL1 / datedir / major_version / f"tailcut84/dl1_LST-1.Run{run:05d}.h5"
         df = pd.read_hdf(file, key=dl1_params_lstcam_key)
         df_delta = add_delta_t_key(df)
         _, elapsed_t = get_effective_time(df_delta)
@@ -138,8 +142,8 @@ def main(date: datetime = None, version: str = get_lstchain_version()):
 
     # Open today's table and append its content to general table
     datedir = date.strftime("%Y%m%d")
-    today_catalog = Table.read(f"/fefs/aswg/data/real/monitoring/RunCatalog/RunCatalog_{datedir}.ecsv")
-    today_runsummary = Table.read(f"/fefs/aswg/data/real/monitoring/RunSummary/RunSummary_{datedir}.ecsv")
+    today_catalog = Table.read(BASE_MONITORING / f"RunCatalog/RunCatalog_{datedir}.ecsv")
+    today_runsummary = Table.read(BASE_MONITORING / f"RunSummary/RunSummary_{datedir}.ecsv")
     today_runsummary = today_runsummary[today_runsummary["run_type"] == "DATA"]
     todays_join = join(today_runsummary, today_catalog)
     todays_join.add_column(date.strftime("%Y-%m-%d"), name="date_dir")
