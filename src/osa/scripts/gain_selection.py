@@ -41,7 +41,7 @@ def get_sbatch_script(
     )
 
 
-def apply_gain_selection(date: str, output_basedir: Path = None):
+def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path = None):
     """
     Submit the jobs to apply the gain selection to the data for a given date
     on a subrun-by-subrun basis.
@@ -64,7 +64,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
         check_job_status_and_wait(max_jobs=1500)
 
         # Avoid running jobs while it is still night time
-        wait_for_daytime(start=12, end=18)
+        wait_for_daytime(start, end)
 
         run_id = run["run_id"]
         ref_time = run["dragon_reference_time"]
@@ -121,7 +121,7 @@ def apply_gain_selection(date: str, output_basedir: Path = None):
 
     for run in calib_runs:
         # Avoid copying files while it is still night time
-        wait_for_daytime(start=12, end=18)
+        wait_for_daytime(start, end)
 
         run_id = run["run_id"]
         r0_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
@@ -206,7 +206,15 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
 @click.option("--check", is_flag=True, default=False, help="Check for failed jobs.")
 @click.argument("dates-file", type=click.Path(exists=True, path_type=Path))
 @click.argument("output-basedir", type=click.Path(path_type=Path))
-def main(dates_file: Path = None, output_basedir: Path = None, check: bool = False):
+@click.option("-s", "--start-time", type=int, default=10)
+@click.option("-e", "--end-time", type=int, default=18)
+def main(
+    dates_file: Path = None, 
+    output_basedir: Path = None, 
+    check: bool = False, 
+    start_time: int = 10, 
+    end_time: int = 18
+):
     """
     Loop over the dates listed in the input file and launch the gain selection
     script for each of them. The input file should list the dates in the format
@@ -221,7 +229,7 @@ def main(dates_file: Path = None, output_basedir: Path = None, check: bool = Fal
             check_failed_jobs(date, output_basedir)
     else:
         for date in list_of_dates:
-            apply_gain_selection(date, output_basedir)
+            apply_gain_selection(date, start_time, end_time, output_basedir)
         log.info("Done! No more dates to process.")
 
 
