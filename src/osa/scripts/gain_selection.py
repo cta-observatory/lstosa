@@ -41,7 +41,7 @@ def get_sbatch_script(
     )
 
 
-def apply_gain_selection(date: str, output_basedir: Path = None, start: int, end: int):
+def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path = None):
     """
     Submit the jobs to apply the gain selection to the data for a given date
     on a subrun-by-subrun basis.
