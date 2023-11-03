@@ -206,8 +206,8 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
 @click.option("--check", is_flag=True, default=False, help="Check for failed jobs.")
 @click.argument("dates-file", type=click.Path(exists=True, path_type=Path))
 @click.argument("output-basedir", type=click.Path(path_type=Path))
-@click.option("-s", "--start-time", type=int, default=10)
-@click.option("-e", "--end-time", type=int, default=18)
+@click.option("-s", "--start-time", type=int, default=10, help="Time to (re)start gain selection in HH format.")
+@click.option("-e", "--end-time", type=int, default=18, help="Time to stop gain selection in HH format.")
 def main(
     dates_file: Path = None, 
     output_basedir: Path = None, 
