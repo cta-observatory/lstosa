@@ -327,6 +327,12 @@ def provprocess_argparser():
         help="use this flag to reset session and remove log file",
     )
     parser.add_argument(
+        "--no-dl2",
+        action="store_true",
+        default=False,
+        help="Do not produce DL2 files (default False)",
+    )
+    parser.add_argument(
         "drs4_pedestal_run_id", help="Number of the drs4_pedestal used in the calibration"
     )
     parser.add_argument("pedcal_run_id", help="Number of the used pedcal used in the calibration")
@@ -354,6 +360,7 @@ def provprocessparsing():
     options.configfile = opts.config.resolve()
     options.filter = opts.filter
     options.quit = opts.quit
+    options.no_dl2 = opts.no_dl2
     set_prod_ids()
 
 

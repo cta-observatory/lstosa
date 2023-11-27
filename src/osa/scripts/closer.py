@@ -193,7 +193,6 @@ def post_process_files(seq_list: list):
     output_files_set = set(Path(options.directory).rglob("*Run*"))
 
     DL1AB_RE = re.compile(rf"{options.dl1_prod_id}/dl1.*.(?:h5|hdf5|hdf)")
-    DL2_RE = re.compile(f"{options.dl2_prod_id}/dl2.*.(?:h5|hdf5|hdf)")
     MUONS_RE = re.compile(r"muons.*.fits")
     DATACHECK_RE = re.compile(r"datacheck_dl1.*.(?:h5|hdf5|hdf)")
     INTERLEAVED_RE = re.compile(r"interleaved.*.(?:h5|hdf5|hdf)")
@@ -201,12 +200,15 @@ def post_process_files(seq_list: list):
     pattern_files = dict(
         [
             ("DL1AB", DL1AB_RE),
-            ("DL2", DL2_RE),
             ("MUON", MUONS_RE),
             ("DATACHECK", DATACHECK_RE),
             ("INTERLEAVED", INTERLEAVED_RE),
         ]
     )
+
+    if not options.no_dl2:
+        DL2_RE = re.compile(f"{options.dl2_prod_id}/dl2.*.(?:h5|hdf5|hdf)")
+        pattern_files["DL2"] = DL2_RE
 
     for concept, pattern_re in pattern_files.items():
         log.info(f"Post processing {concept} files, {len(output_files_set)} files left")
@@ -368,6 +370,9 @@ def extract_provenance(seq_list):
                 nightdir,
                 options.prod_id,
             ]
+            if options.no_dl2:
+                cmd.append("--no-dl2")
+                
             if not options.simulate and not options.test and shutil.which("sbatch") is not None:
                 subprocess.run(cmd, check=True)
             else:
