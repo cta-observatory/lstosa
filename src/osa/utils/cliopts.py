@@ -354,6 +354,7 @@ def provprocessparsing():
     options.configfile = opts.config.resolve()
     options.filter = opts.filter
     options.quit = opts.quit
+    options.no_dl2 = opts.no_dl2
     set_prod_ids()
 
 

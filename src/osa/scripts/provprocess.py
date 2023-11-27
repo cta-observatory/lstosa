@@ -442,15 +442,17 @@ def produce_provenance(session_log_filename, base_filename):
         calibration_to_dl1 = define_paths(
             "calibration_to_dl1", PATH_DL1, options.dl1_prod_id, base_filename
         )
-        calibration_to_dl2 = define_paths(
-            "calibration_to_dl2", PATH_DL2, options.dl2_prod_id, base_filename
-        )
         calibration_to_dl1_lines = calibration_lines + dl1_lines[1:]
         lines_dl1 = copy.deepcopy(calibration_to_dl1_lines)
-        calibration_to_dl2_lines = calibration_to_dl1_lines + dl1_dl2_lines[1:]
-        lines_dl2 = copy.deepcopy(calibration_to_dl2_lines)
         produce_provenance_files(lines_dl1, calibration_to_dl1)
-        produce_provenance_files(lines_dl2, calibration_to_dl2)
+
+        if not options.no_dl2:
+            calibration_to_dl2 = define_paths(
+                "calibration_to_dl2", PATH_DL2, options.dl2_prod_id, base_filename
+            )
+            calibration_to_dl2_lines = calibration_to_dl1_lines + dl1_dl2_lines[1:]
+            lines_dl2 = copy.deepcopy(calibration_to_dl2_lines)
+            produce_provenance_files(lines_dl2, calibration_to_dl2)
 
 
 def main():
