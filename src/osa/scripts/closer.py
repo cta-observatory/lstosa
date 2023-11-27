@@ -370,6 +370,9 @@ def extract_provenance(seq_list):
                 nightdir,
                 options.prod_id,
             ]
+            if options.no_dl2:
+                cmd.append("--no-dl2")
+                
             if not options.simulate and not options.test and shutil.which("sbatch") is not None:
                 subprocess.run(cmd, check=True)
             else:
