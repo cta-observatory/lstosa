@@ -9,9 +9,8 @@ from typing import List
 import lstchain
 from astropy.table import Table
 from lstchain.onsite import (find_systematics_correction_file,
-                             find_time_calibration_file)
-from lstchain.scripts.onsite.onsite_create_calibration_file import \
-    search_filter
+                             find_time_calibration_file,
+                             find_filter_wheels)
 
 from osa.configs import options
 from osa.configs.config import DEFAULT_CFG, cfg
@@ -142,7 +141,7 @@ def get_calibration_filename(run_id: int, prod_id: str) -> Path:
         mongodb = cfg.get("database", "caco_db")
         try:
             # Cast run_id to int to avoid problems with numpy int64 encoding in MongoDB
-            options.filters = search_filter(int(run_id), mongodb)
+            options.filters = find_filter_wheels(int(run_id), mongodb)
         except IOError:
             log.warning("No filter information found in database. Assuming positions 52.")
             options.filters = 52
