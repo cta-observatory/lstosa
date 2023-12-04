@@ -11,7 +11,6 @@ from astropy.table import Table
 from lstchain.onsite import (find_systematics_correction_file,
                              find_time_calibration_file)
 from lstchain.onsite import find_filter_wheels
-    find_filter_wheels
 
 from osa.configs import options
 from osa.configs.config import DEFAULT_CFG, cfg
