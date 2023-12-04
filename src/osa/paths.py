@@ -10,7 +10,7 @@ import lstchain
 from astropy.table import Table
 from lstchain.onsite import (find_systematics_correction_file,
                              find_time_calibration_file)
-from lstchain.scripts.onsite.onsite_create_calibration_file import \
+from lstchain.onsite import find_filter_wheels
     find_filter_wheels
 
 from osa.configs import options
