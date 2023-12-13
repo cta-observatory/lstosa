@@ -160,20 +160,21 @@ def main(date: datetime = None, version: str = get_lstchain_version()):
     catalog_path = CATALOG_DIR / "LST_source_catalog.ecsv"
     catalog_table = Table.read(catalog_path)
 
-    # Open today's table and append its content to general table
+    # Open table for given date and append its content to the table with entire catalog
     datedir = date.strftime("%Y%m%d")
     today_catalog = Table.read(BASE_MONITORING / f"RunCatalog/RunCatalog_{datedir}.ecsv")
     today_runsummary = Table.read(BASE_MONITORING / f"RunSummary/RunSummary_{datedir}.ecsv")
+    # Keep only astronomical data runs
     today_runsummary = today_runsummary[today_runsummary["run_type"] == "DATA"]
     todays_info = join(today_runsummary, today_catalog)
     todays_info.add_column(date.strftime("%Y-%m-%d"), name="date_dir")
-    todays_info.keep_columns(["run_id", "run_start", "source_name", "date_dir"])
+    todays_info.keep_columns(["run_id", "source_name", "date_dir"])
 
     # Add start of run in iso format and elapsed time for each run
     log.info("Getting run start and elapsed time")
     add_start_and_elapsed(todays_info, datedir, version)
 
-    # Change col names
+    # Change column names
     todays_info.rename_column("run_id", "Run ID")
     todays_info.rename_column("source_name", "Source name")
     todays_info.rename_column("date_dir", "Date directory")
