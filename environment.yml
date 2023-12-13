@@ -24,8 +24,8 @@ dependencies:
   - protobuf=3.20
   - ctapipe_io_lst=0.22
   - ctaplot~=0.6.4
-  - pyirf=0.8
-  - lstchain~=0.10.0
+  - pyirf~=0.10
+  - lstchain>=0.10.5
   - tenacity
   # dev dependencies
   - pytest
