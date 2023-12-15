@@ -416,7 +416,7 @@ def produce_provenance(session_log_filename, base_filename):
         plines_check = parse_lines_run(
             "dl1_datacheck",
             read_prov(filename=session_log_filename),
-            str(paths_dl1_dl2["out_path"]),
+            str(paths_r0_dl1["out_path"]),
         )
         dl1_lines = plines_r0 + plines_ab[1:] + plines_check[1:]
 
