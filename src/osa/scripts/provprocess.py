@@ -413,29 +413,31 @@ def produce_provenance(session_log_filename, base_filename):
             read_prov(filename=session_log_filename),
             str(paths_r0_dl1["out_path"]),
         )
-        dl1_lines = plines_r0 + plines_ab[1:]
-
-    # create r0_to_dl1 prov files only if filtering
-    if options.filter == "r0_to_dl1":
-        produce_provenance_files(plines_r0 + plines_ab[1:], paths_r0_dl1)
-
-    if options.filter == "dl1_to_dl2" or not options.filter:
-        paths_dl1_dl2 = define_paths("dl1_to_dl2", PATH_DL2, options.dl2_prod_id, base_filename)
         plines_check = parse_lines_run(
             "dl1_datacheck",
             read_prov(filename=session_log_filename),
             str(paths_dl1_dl2["out_path"]),
         )
-        plines_dl2 = parse_lines_run(
-            "dl1_to_dl2",
-            read_prov(filename=session_log_filename),
-            str(paths_dl1_dl2["out_path"]),
-        )
-        dl1_dl2_lines = plines_check + plines_dl2[1:]
+        dl1_lines = plines_r0 + plines_ab[1:] + plines_check[1:]
+
+    # create r0_to_dl1 prov files only if filtering
+    if options.filter == "r0_to_dl1":
+        produce_provenance_files(plines_r0 + plines_ab[1:] + plines_check[1:], paths_r0_dl1)
+
+    if options.filter == "dl1_to_dl2" or not options.filter:
+        if not options.no_dl2:
+            paths_dl1_dl2 = define_paths("dl1_to_dl2", PATH_DL2, options.dl2_prod_id, base_filename)
+            plines_dl2 = parse_lines_run(
+                "dl1_to_dl2",
+                read_prov(filename=session_log_filename),
+                str(paths_dl1_dl2["out_path"]),
+            )
+            dl1_dl2_lines = plines_dl2
 
     # create dl1_to_dl2 prov files only if filtering
     if options.filter == "dl1_to_dl2":
-        produce_provenance_files(plines_check + plines_dl2[1:], paths_dl1_dl2)
+        if not options.no_dl2:
+            produce_provenance_files(plines_dl2, paths_dl1_dl2)
 
     # create calibration_to_dl1 and calibration_to_dl2 prov files
     if not options.filter:
