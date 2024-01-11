@@ -5,30 +5,30 @@ from pathlib import Path
 from textwrap import dedent
 
 import click
-import re
 import pandas as pd
 from astropy import units as u
-from astropy.table import Table, join, vstack, unique
+from astropy.table import Table, join, unique, vstack
 from astropy.time import Time
 from lstchain.io.io import dl1_params_lstcam_key
-from lstchain.reco.utils import get_effective_time, add_delta_t_key
+from lstchain.reco.utils import add_delta_t_key, get_effective_time
+
+from osa.paths import get_major_version
 from osa.utils.utils import get_lstchain_version
 
-pd.set_option('display.float_format', '{:.1f}'.format)
+pd.set_option("display.float_format", "{:.1f}".format)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s:%(levelname)s:%(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s")
 log = logging.getLogger(__name__)
 
 
 BASE_DL1 = Path("/fefs/aswg/data/real/DL1")
 BASE_MONITORING = Path("/fefs/aswg/data/real/monitoring")
+CATALOG_DIR = Path("/fefs/aswg/data/real/OSA/Catalog")
 
 
 def add_table_to_html(html_table):
-    return dedent(f"""\
+    return dedent(
+        f"""\
     <html>
       <head>
         <link href="osa.css" rel="stylesheet" type="text/css">
@@ -37,11 +37,13 @@ def add_table_to_html(html_table):
     {html_table}
     </body>
     </html>
-    """)
+    """
+    )
 
 
 def add_query_table_to_html(html_table):
-    return dedent(f"""\
+    return dedent(
+        f"""\
     <html>
      <head>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8">
@@ -96,87 +98,111 @@ def add_query_table_to_html(html_table):
         {html_table}
         </body>
         </html>
-        """)
+        """
+    )
 
 
-def add_run_start_iso(table):
+def add_start_and_elapsed(table: Table, datedir: str, version: str) -> None:
+    """Add columns with the timestamp of first events and elapsed time of the runs.
+
+    This information is taken from the merged DL1 files. Two new columns are added
+    to the input table.
+
+    Parameters
+    ----------
+    table : astropy.table.Table
+        Astropy Table to which the two new columns are to be added.
+    datedir : str
+        Date directory in YYYYMMDD format.
+    version : str
+        Production version of the processing in the format 'vW.X.Y.Z'.
+    """
+    if "run_id" not in table.columns:
+        raise KeyError("Run ID not present in given table. Please check its content.")
+
     start_times = []
-    for timestamp in table["run_start"]:
-        start_time = Time(timestamp * u.ns, format="unix_tai")
-        start_times.append(start_time.utc.iso)
-    table.replace_column("run_start", start_times)
-
-
-def add_elapsed(table, datedir, version):
     elapsed_times = []
+
     for run in table["run_id"]:
-        major_version = re.search(r'\D\d+\.\d+', version)[0]
+        major_version = get_major_version(version)
         file = BASE_DL1 / datedir / major_version / f"tailcut84/dl1_LST-1.Run{run:05d}.h5"
         df = pd.read_hdf(file, key=dl1_params_lstcam_key)
+
+        # Timestamp of the first event
+        first_time = Time(df["dragon_time"][0], format="unix", scale="utc")
+        start_times.append(first_time.utc.iso)
+
+        # Elapsed time of the run
         df_delta = add_delta_t_key(df)
         _, elapsed_t = get_effective_time(df_delta)
-
         elapsed_times.append(elapsed_t.to(u.min))
 
+    # Modify the input table by adding two new columns
     table.add_column(elapsed_times, name="Elapsed [min]")
+    table.add_column(start_times, name="Run start [UTC]")
 
 
 def copy_to_webserver(html_file, csv_file):
-    sp.run(["scp", str(html_file), "datacheck:/home/www/html/datacheck/lstosa/."])
-    sp.run(["scp", str(csv_file), "datacheck:/home/www/html/datacheck/lstosa/."])
+    sp.run(["scp", str(html_file), "datacheck:/home/www/html/datacheck/lstosa/."], check=True)
+    sp.run(["scp", str(csv_file), "datacheck:/home/www/html/datacheck/lstosa/."], check=True)
 
 
 @click.command()
-@click.argument(
-    'date',
-    type=click.DateTime(formats=["%Y-%m-%d"])
-)
+@click.argument("date", type=click.DateTime(formats=["%Y-%m-%d"]))
 @click.option("-v", "--version", type=str, default=get_lstchain_version())
 def main(date: datetime = None, version: str = get_lstchain_version()):
-    """
-    Update source catalog with new run entries from a given date in
-    format YYYY-MM-DD. It needs to be run as lstanalyzer user.
-    """
-    csv_file = Path("/fefs/aswg/data/real/OSA/Catalog/LST_source_catalog.ecsv")
-    table = Table.read(csv_file)
+    """Update source catalog with new run entries from a given date in format YYYY-MM-DD.
 
-    # Open today's table and append its content to general table
+    Notes
+    -----
+    It needs to be run as lstanalyzer user.
+    """
+    catalog_path = CATALOG_DIR / "LST_source_catalog.ecsv"
+    catalog_table = Table.read(catalog_path)
+
+    # Open table for given date and append its content to the table with entire catalog
     datedir = date.strftime("%Y%m%d")
     today_catalog = Table.read(BASE_MONITORING / f"RunCatalog/RunCatalog_{datedir}.ecsv")
     today_runsummary = Table.read(BASE_MONITORING / f"RunSummary/RunSummary_{datedir}.ecsv")
+    # Keep only astronomical data runs
     today_runsummary = today_runsummary[today_runsummary["run_type"] == "DATA"]
-    todays_join = join(today_runsummary, today_catalog)
-    todays_join.add_column(date.strftime("%Y-%m-%d"), name="date_dir")
-    todays_join.keep_columns(["run_id", "run_start", "source_name", "date_dir"])
+    todays_info = join(today_runsummary, today_catalog)
+    todays_info.add_column(date.strftime("%Y-%m-%d"), name="date_dir")
+    todays_info.keep_columns(["run_id", "source_name", "date_dir"])
+
     # Add start of run in iso format and elapsed time for each run
     log.info("Getting run start and elapsed time")
-    add_run_start_iso(todays_join)
-    add_elapsed(todays_join, datedir, version)
-    # Change col names
-    todays_join.rename_column('run_id', 'Run ID')
-    todays_join.rename_column('run_start', 'Run start [UTC]')
-    todays_join.rename_column('source_name', 'Source name')
-    todays_join.rename_column('date_dir', 'Date directory')
+    add_start_and_elapsed(todays_info, datedir, version)
 
-    # Add new rows
+    # Change column names
+    todays_info.rename_column("run_id", "Run ID")
+    todays_info.rename_column("source_name", "Source name")
+    todays_info.rename_column("date_dir", "Date directory")
+
+    # Add new rows from given date to the whole catalog table
     log.info("Adding new rows to table")
-    new_table = vstack([table, todays_join])
-    table_unique = unique(new_table, keys="Run ID", keep='last')
+    new_table = vstack([catalog_table, todays_info])
+    table_unique = unique(new_table, keys="Run ID", keep="last")
 
-    # To pandas and HTML
+    # To pandas
     log.info("Converting to pandas and HTML")
     df = table_unique.to_pandas()
     df = df.sort_values(by="Run ID", ascending=False)
+
+    # To HTML
     html_table = df.to_html(index=False, justify="left")
     html_table = html_table.replace(
         '<table border="1" class="dataframe">',
-        '<table class="display compact" id="table139855676982704">')
+        '<table class="display compact" id="table139855676982704">',
+    )
     html_content = add_query_table_to_html(html_table)
-    html_file = Path("LST_source_catalog.html")
-    html_file.write_text(html_content)
-    table_unique.write(csv_file, delimiter=",", overwrite=True)
 
-    copy_to_webserver(html_file, csv_file)
+    # Save the HTML and ECSV files and copy them to the LST-1 webserver
+    html_file = CATALOG_DIR / "LST_source_catalog.html"
+    html_file.write_text(html_content)
+    table_unique.write(catalog_path, delimiter=",", overwrite=True)
+
+    copy_to_webserver(html_file, catalog_path)
 
 
 if __name__ == "__main__":
