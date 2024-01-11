@@ -8,7 +8,7 @@ dependencies:
   - pip
   - astropy~=5.0
   - ctapipe~=0.19.2
-  - matplotlib=3.7
+  - matplotlib
   - pyparsing
   - prov
   - pyyaml
