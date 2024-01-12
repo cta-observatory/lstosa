@@ -100,9 +100,9 @@ def test_simulate_processing(
     with open(json_file_dl1) as file:
         dl1 = yaml.safe_load(file)
     assert len(dl1["entity"]) == 19
-    assert len(dl1["activity"]) == 4
-    assert len(dl1["used"]) == 13
-    assert len(dl1["wasGeneratedBy"]) == 7
+    assert len(dl1["activity"]) == 5
+    assert len(dl1["used"]) == 15
+    assert len(dl1["wasGeneratedBy"]) == 10
 
     with open(json_file_dl2) as file:
         dl2 = yaml.safe_load(file)
