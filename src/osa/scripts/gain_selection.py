@@ -20,7 +20,7 @@ from osa.job import get_sacct_output, FORMAT_SLURM
 
 log = myLogger(logging.getLogger(__name__))
 
-PATH = "PATH=/fefs/aswg/software/gain_selection/bin:$PATH"
+PATH = "PATH=/fefs/aswg/software/offline_dvr/bin:$PATH"
 
 
 def get_sbatch_script(
@@ -36,7 +36,7 @@ def get_sbatch_script(
     #SBATCH --job-name "gain_selection_{run_id:05d}"
     #SBATCH --export {PATH}
 
-    lst_select_gain {input_file} {output_dir} {ref_time} {ref_counter} {module} {ref_source}
+    lst_dvr {input_file} {output_dir} {ref_time} {ref_counter} {module} {ref_source}
     """
     )
 
