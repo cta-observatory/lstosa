@@ -81,8 +81,8 @@ def parse_lines_log(filter_cut, calib_runs, run_number):
         filter_cut = "all"
     cuts = {
         "calibration": ["drs4_pedestal", "calibrate_charge"],
-        "r0_to_dl1": ["r0_to_dl1", "dl1ab"],
-        "dl1_to_dl2": ["dl1_datacheck", "dl1_to_dl2"],
+        "r0_to_dl1": ["r0_to_dl1", "dl1ab", "dl1_datacheck"],
+        "dl1_to_dl2": ["dl1_to_dl2"],
     }
     cuts["all"] = cuts["calibration"] + cuts["r0_to_dl1"] + cuts["dl1_to_dl2"]
 
