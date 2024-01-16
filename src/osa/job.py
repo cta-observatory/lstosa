@@ -702,6 +702,33 @@ def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
     return sacct_output
 
 
+def get_closer_sacct_output(sacct_output) -> pd.DataFrame:
+    """
+    Fetch the information of jobs in the queue launched by AUTOCLOSER using the sacct 
+    SLURM output and store it in a pandas dataframe.
+
+    Returns
+    -------
+    queue_list: pd.DataFrame
+    """
+    sacct_output = pd.read_csv(sacct_output, names=FORMAT_SLURM)
+
+    # Keep only the jobs corresponding to AUTOCLOSER sequences
+    sacct_output = sacct_output[
+        (sacct_output["JobName"].str.contains("lstchain"))
+        | (sacct_output["JobName"].str.contains("provproces"))
+    ]
+
+    try:
+        sacct_output["JobID"] = sacct_output["JobID"].apply(lambda x: x.split("_")[0])
+        sacct_output["JobID"] = sacct_output["JobID"].str.strip(".batch").astype(int)
+
+    except AttributeError:
+        log.debug("No job info could be obtained from sacct")
+
+    return sacct_output
+
+
 def filter_jobs(job_info: pd.DataFrame, sequence_list: Iterable):
     """Filter the job info list to get the values of the jobs in the current queue."""
     sequences_info = pd.DataFrame([vars(seq) for seq in sequence_list])
