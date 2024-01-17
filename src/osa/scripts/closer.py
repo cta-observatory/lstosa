@@ -30,6 +30,7 @@ from osa.report import start
 from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import myLogger
 from osa.utils.register import register_found_pattern
+from osa.utils.mail import send_warning_mail
 from osa.utils.utils import (
     night_finished_flag,
     is_day_closed,
@@ -188,6 +189,10 @@ def post_process(seq_tuple):
         )
         time.sleep(600)
         n += 1
+
+    if n > n_max:
+        send_warning_mail(date=options.date)
+        return False
 
     if options.seqtoclose is None:
         database = cfg.get("database", "path")
