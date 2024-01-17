@@ -175,18 +175,18 @@ def post_process(seq_tuple):
     if not options.no_dl2:
         merge_files(seq_list, data_level="DL2")
 
-    time.sleep(300)
+    time.sleep(600)
 
     # Check if all jobs launched by autocloser finished correctly 
     # before creating the NightFinished.txt file
-    n_max = 10
+    n_max = 6
     n = 0
     while not all_closer_jobs_finished_correctly() & n <= n_max:
         log.info(
             "All jobs launched by autocloser did not finished correctly yet. "
-            "Checking again in 5 minutes..."
+            "Checking again in 10 minutes..."
         )
-        time.sleep(300)
+        time.sleep(600)
         n += 1
 
     if options.seqtoclose is None:
