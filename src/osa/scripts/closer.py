@@ -515,8 +515,8 @@ def cherenkov_transparency_cmd(longterm_job_id: str) -> List[str]:
 
 
 def cherenkov_transparency(cmd: List[str]):
-    """Update longterm dl1 check files with cherenkov transparency information."""
-    log.info("Daily dl1 checks using longterm script.")
+    """Update longterm dl1 check file with cherenkov transparency information."""
+    log.info("Update longterm dl1 check file with cherenkov_transparency script.")
     log.debug(f"Executing {stringify(cmd)}")
 
     if not options.simulate and not options.test and shutil.which("sbatch") is not None:
