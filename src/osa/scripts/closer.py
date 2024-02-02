@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Tuple, Iterable, List
@@ -156,6 +157,12 @@ def post_process(seq_tuple):
     if cfg.getboolean("lstchain", "merge_dl1_datacheck"):
         list_job_id = merge_dl1_datacheck(seq_list)
         daily_datacheck(daily_longterm_cmd(list_job_id))
+
+    # Wait 5 minutes for the longterm DL1 datacheck file to be produced
+    time.sleep(300)
+
+    # Update longterm DL1 datacheck file with cherenkov_transparency script
+    cherenkov_transparency()
 
     # Extract the provenance info
     extract_provenance(seq_list)
@@ -482,6 +489,32 @@ def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
 def daily_datacheck(cmd: List[str]):
     """Run daily dl1 checks using longterm script."""
     log.info("Daily dl1 checks using longterm script.")
+    log.debug(f"Executing {stringify(cmd)}")
+
+    if not options.simulate and not options.test and shutil.which("sbatch") is not None:
+        subprocess.run(cmd, check=True)
+    else:
+        log.debug("Simulate launching scripts")
+
+
+def cherenkov_transparency():
+    """Update longterm dl1 check files with cherenkov transparency information."""
+    nightdir = date_to_dir(options.date)
+    datacheck_dir = destination_dir("DATACHECK", create_dir=False)
+    longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
+    longterm_datacheck_file = longterm_dir / f"DL1_datacheck_{nightdir}.h5"
+
+    cmd = [
+        "sbatch",
+        "-D",
+        options.directory,
+        "-o",
+        "log/cherenkov_transparency_%j.log",
+        "lstchain_cherenkov_transparency",
+        f"--update-datacheck-file={longterm_datacheck_file}",
+        f"--input-dir={datacheck_dir}",
+    ]
+
     log.debug(f"Executing {stringify(cmd)}")
 
     if not options.simulate and not options.test and shutil.which("sbatch") is not None:
