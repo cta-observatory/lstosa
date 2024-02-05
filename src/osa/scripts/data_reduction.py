@@ -47,7 +47,7 @@ def get_sbatch_script(
             """
         )
     sbatch_part+= dedent(
-            f"""\
+            """\
     echo $PATH
     echo $LD_LIBRARY_PATH
     echo " Hostname : " 
@@ -77,7 +77,7 @@ def get_sbatch_instruction(
     )
 def get_sbatch_time():
     return dedent(
-        f"""\            
+        """\            
     time_aprox=$((total_time / n_subruns))
     echo $time_aprox
     """
