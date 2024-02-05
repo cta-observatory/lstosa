@@ -161,9 +161,9 @@ def apply_pixel_selection(date):
 #    for run in d_run:
     for run in data_runs:
         # Check slurm queue status and sleep for a while to avoid overwhelming the queue
-        #check_job_status_and_wait(max_jobs=1500)
+        check_job_status_and_wait(max_jobs=1500)
         # Avoid running jobs while it is still night time
-        #wait_for_daytime(start=12, end=18)
+        wait_for_daytime(start=10, end=18)
 
         run_id = run["run_id"]
         files = glob.glob(f"{original_dir}/LST-1.?.Run{run_id:05d}.????.fits.fz")
@@ -206,7 +206,7 @@ def apply_pixel_selection(date):
 
     for run in calib_runs:
         # Avoid copying files while it is still night time
-        #wait_for_daytime(start=12, end=18)
+        wait_for_daytime(start=10, end=18)
 
         run_id = run["run_id"]
         r0_files = original_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
