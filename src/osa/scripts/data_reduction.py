@@ -183,7 +183,7 @@ def apply_pixel_selection(date):
                 first_subrun=start_subrun
                 for subrun in range(start_subrun, end_subrun):
                     name_job=False
-                    job = drafts_job_file(original_dir, output_dir, log_dir, name_job,first_subrun,run_id, subrun,write_job_file, job_file,i)
+                    #job = drafts_job_file(original_dir, output_dir, log_dir, name_job,first_subrun,run_id, subrun,write_job_file, job_file,i)
                 
                 if os.path.exists(job_file):
                     #print(f"se va a lanzar el siguiente job{job_file}")
@@ -195,7 +195,7 @@ def apply_pixel_selection(date):
             i=0
             for subrun in range (n_subruns +1):
                   name_job=True
-                  job3=drafts_job_file(original_dir,output_dir,log_dir,name_job,first_subrun,run_id,subrun,write_job_file,job_file_2,i)
+                  #job3=drafts_job_file(original_dir,output_dir,log_dir,name_job,first_subrun,run_id,subrun,write_job_file,job_file_2,i)
 
             if os.path.exists(job_file_2):
                   #print(f"se va a lanzar el siguiente job{job_file_2}")
