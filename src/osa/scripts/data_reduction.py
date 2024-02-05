@@ -1,24 +1,17 @@
 """Script to run the gain selection over a list of dates."""
 import logging
-import re
-import shutil
 import glob
-import pandas as pd
 import os
-import csv
 import subprocess as sp
 from pathlib import Path
 from textwrap import dedent
-from io import StringIO
 
 import click
 from astropy.table import Table
-from lstchain.paths import run_info_from_filename, parse_r0_filename
 
 from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wait
 from osa.utils.utils import wait_for_daytime
 from osa.utils.logging import myLogger
-from osa.job import get_sacct_output, FORMAT_SLURM
 
 log = myLogger(logging.getLogger(__name__))
 
