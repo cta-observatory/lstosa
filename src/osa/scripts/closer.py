@@ -468,6 +468,7 @@ def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
 
     return [
         "sbatch",
+        "--parsable",
         "-D",
         options.directory,
         "-o",
