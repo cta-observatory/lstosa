@@ -319,6 +319,7 @@ def test_daily_longterm_cmd():
 
     expected_cmd = [
         "sbatch",
+        "--parsable",
         "-D",
         options.directory,
         "-o",

@@ -152,10 +152,12 @@ def post_process(seq_tuple):
     post_process_files(seq_list)
 
     # Merge DL1 datacheck files and produce PDFs. It also produces
-    # the daily datacheck report using the longterm script.
+    # the daily datacheck report using the longterm script, and updates
+    # the longterm DL1 datacheck file with the cherenkov_transparency script.
     if cfg.getboolean("lstchain", "merge_dl1_datacheck"):
         list_job_id = merge_dl1_datacheck(seq_list)
-        daily_datacheck(daily_longterm_cmd(list_job_id))
+        longterm_job_id = daily_datacheck(daily_longterm_cmd(list_job_id))
+        cherenkov_transparency(cherenkov_transparency_cmd(longterm_job_id))
 
     # Extract the provenance info
     extract_provenance(seq_list)
@@ -466,6 +468,7 @@ def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
 
     return [
         "sbatch",
+        "--parsable",
         "-D",
         options.directory,
         "-o",
@@ -482,6 +485,39 @@ def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
 def daily_datacheck(cmd: List[str]):
     """Run daily dl1 checks using longterm script."""
     log.info("Daily dl1 checks using longterm script.")
+    log.debug(f"Executing {stringify(cmd)}")
+
+    if not options.simulate and not options.test and shutil.which("sbatch") is not None:
+        job = subprocess.run(cmd, check=True)
+        job_id = job.stdout.strip()
+        return job_id
+    else:
+        log.debug("Simulate launching scripts")
+
+
+def cherenkov_transparency_cmd(longterm_job_id: str) -> List[str]:
+    """Build the cherenkov transparency command."""
+    nightdir = date_to_dir(options.date)
+    datacheck_dir = destination_dir("DATACHECK", create_dir=False)
+    longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
+    longterm_datacheck_file = longterm_dir / f"DL1_datacheck_{nightdir}.h5"
+
+    return [
+        "sbatch",
+        "-D",
+        options.directory,
+        "-o",
+        "log/cherenkov_transparency_%j.log",
+        f"--dependency=afterok:{longterm_job_id}",
+        "lstchain_cherenkov_transparency",
+        f"--update-datacheck-file={longterm_datacheck_file}",
+        f"--input-dir={datacheck_dir}",
+    ]
+
+
+def cherenkov_transparency(cmd: List[str]):
+    """Update longterm dl1 check file with cherenkov transparency information."""
+    log.info("Update longterm dl1 check file with cherenkov_transparency script.")
     log.debug(f"Executing {stringify(cmd)}")
 
     if not options.simulate and not options.test and shutil.which("sbatch") is not None:
