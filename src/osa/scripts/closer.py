@@ -531,10 +531,11 @@ def cherenkov_transparency(cmd: List[str]):
 
 def get_latest_version(longterm_files: List[str]) -> str:
     """Get the latest version of the produced longterm DL1 datacheck files."""
+    nightdir = date_to_dir(options.date)
     latest_version = 0
     for file in longterm_files:
         idx1 = file.find("/v0.")
-        idx2 = file.find(f"/{date}")
+        idx2 = file.find(f"/{nightdir}")
         version = file[idx1+1:idx2]
         if int(version[3:])>latest_version:
             latest_version = int(version[3:])
@@ -549,7 +550,7 @@ def create_longterm_symlink():
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR"))
     longterm_datacheck_file = longterm_dir / options.prod_id / nightdir / f"DL1_datacheck_{nightdir}.h5"
     linked_longterm_file = longterm_dir / f"night_wise/all/DL1_datacheck_{nightdir}.h5"
-    all_longterm_files = glob.glob(longterm_dir + f"/v*/{date}/DL1_datacheck_{date}.h5")
+    all_longterm_files = glob.glob(longterm_dir + f"/v*/{nightdir}/DL1_datacheck_{nightdir}.h5")
     
     if len(all_longterm_files) > 1:
         latest_version = get_latest_version(all_longterm_files)
