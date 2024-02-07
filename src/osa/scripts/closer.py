@@ -557,12 +557,13 @@ def create_longterm_symlink():
         current_version = get_major_version(get_lstchain_version())
         if current_version == latest_version:
             log.info("Make symlink of the longterm DL1 datacheck file in the common directory.")
+            linked_longterm_file.unlink()
             linked_longterm_file.symlink_to(longterm_datacheck_file)
         else:
             log.info("The created longterm DL1 datacheck file does not correspond to the \
                 latest available version, so no symlink is made.")
             return
-    else: 
+    else:
         log.info("Make symlink of the longterm DL1 datacheck file in the common directory.")
         linked_longterm_file.symlink_to(longterm_datacheck_file)
 
