@@ -561,7 +561,7 @@ def create_longterm_symlink():
         else:
             log.info("The created longterm DL1 datacheck file does not correspond to the \
                 latest available version, so no symlink is made.")
-            continue
+            return
     else: 
         log.info("Make symlink of the longterm DL1 datacheck file in the common directory.")
         linked_longterm_file.symlink_to(longterm_datacheck_file)
