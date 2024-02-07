@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import sys
+import glob
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Tuple, Iterable, List
@@ -18,7 +19,7 @@ from osa.configs.config import cfg
 from osa.job import are_all_jobs_correctly_finished, save_job_information
 from osa.nightsummary.extract import extract_runs, extract_sequences
 from osa.nightsummary.nightsummary import run_summary_table
-from osa.paths import destination_dir
+from osa.paths import destination_dir, get_major_version
 from osa.raw import is_raw_data_available
 from osa.report import start
 from osa.utils.cliopts import closercliparsing
@@ -32,6 +33,7 @@ from osa.utils.utils import (
     create_lock,
     gettag,
     date_to_iso,
+    get_lstchain_version,
 )
 
 __all__ = [
@@ -158,6 +160,7 @@ def post_process(seq_tuple):
         list_job_id = merge_dl1_datacheck(seq_list)
         longterm_job_id = daily_datacheck(daily_longterm_cmd(list_job_id))
         cherenkov_transparency(cherenkov_transparency_cmd(longterm_job_id))
+        create_longterm_symlink()
 
     # Extract the provenance info
     extract_provenance(seq_list)
@@ -520,16 +523,47 @@ def cherenkov_transparency(cmd: List[str]):
     log.info("Update longterm dl1 check file with cherenkov_transparency script.")
     log.debug(f"Executing {stringify(cmd)}")
 
-    nightdir = date_to_dir(options.date)
-    longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
-    longterm_datacheck_file = longterm_dir / f"DL1_datacheck_{nightdir}.h5"
-    linked_longterm_file = Path(cfg.get("LST1", "LONGTERM_DIR")) / f"night_wise/all/DL1_datacheck_{nightdir}.h5"
-
     if not options.simulate and not options.test and shutil.which("sbatch") is not None:
         subprocess.run(cmd, check=True)
-        linked_longterm_file.symlink_to(longterm_datacheck_file)
     else:
         log.debug("Simulate launching scripts")
+
+
+def get_latest_version(longterm_files: List[str]) -> str:
+    """Get the latest version of the produced longterm DL1 datacheck files."""
+    latest_version = 0
+    for file in longterm_files:
+        idx1 = file.find("/v0.")
+        idx2 = file.find(f"/{date}")
+        version = file[idx1+1:idx2]
+        if int(version[3:])>latest_version:
+            latest_version = int(version[3:])
+            
+    return "v0."+str(latest_version)
+
+
+def create_longterm_symlink():
+    """If the created longterm DL1 datacheck file corresponds to the latest 
+    version available, make symlink to it in the "all" common directory."""
+    nightdir = date_to_dir(options.date)
+    longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR"))
+    longterm_datacheck_file = longterm_dir / options.prod_id / nightdir / f"DL1_datacheck_{nightdir}.h5"
+    linked_longterm_file = longterm_dir / f"night_wise/all/DL1_datacheck_{nightdir}.h5"
+    all_longterm_files = glob.glob(longterm_dir + f"/v*/{date}/DL1_datacheck_{date}.h5")
+    
+    if len(all_longterm_files) > 1:
+        latest_version = get_latest_version(all_longterm_files)
+        current_version = get_major_version(get_lstchain_version())
+        if current_version == latest_version:
+            log.info("Make symlink of the longterm DL1 datacheck file in the common directory.")
+            linked_longterm_file.symlink_to(longterm_datacheck_file)
+        else:
+            log.info("The created longterm DL1 datacheck file does not correspond to the \
+                latest available version, so no symlink is made.")
+            continue
+    else: 
+        log.info("Make symlink of the longterm DL1 datacheck file in the common directory.")
+        linked_longterm_file.symlink_to(longterm_datacheck_file)
 
 
 if __name__ == "__main__":
