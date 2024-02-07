@@ -520,8 +520,14 @@ def cherenkov_transparency(cmd: List[str]):
     log.info("Update longterm dl1 check file with cherenkov_transparency script.")
     log.debug(f"Executing {stringify(cmd)}")
 
+    nightdir = date_to_dir(options.date)
+    longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
+    longterm_datacheck_file = longterm_dir / f"DL1_datacheck_{nightdir}.h5"
+    linked_longterm_file = Path(cfg.get("LST1", "LONGTERM_DIR")) / f"night_wise/all/DL1_datacheck_{nightdir}.h5"
+
     if not options.simulate and not options.test and shutil.which("sbatch") is not None:
         subprocess.run(cmd, check=True)
+        linked_longterm_file.symlink_to(longterm_datacheck_file)
     else:
         log.debug("Simulate launching scripts")
 
