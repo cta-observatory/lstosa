@@ -719,6 +719,7 @@ def get_closer_sacct_output(sacct_output) -> pd.DataFrame:
         (sacct_output["JobName"].str.contains("lstchain_merge_hdf5_files"))
         | (sacct_output["JobName"].str.contains("lstchain_check_dl1"))
         | (sacct_output["JobName"].str.contains("lstchain_longterm_dl1_check"))
+        | (sacct_output["JobName"].str.contains("lstchain_cherenkov_transparency"))
         | (sacct_output["JobName"].str.contains("provproces"))
     ]
 
