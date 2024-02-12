@@ -488,7 +488,13 @@ def daily_datacheck(cmd: List[str]):
     log.debug(f"Executing {stringify(cmd)}")
 
     if not options.simulate and not options.test and shutil.which("sbatch") is not None:
-        job = subprocess.run(cmd, check=True)
+        job = subprocess.run(
+            cmd,
+            encoding="utf-8",
+            capture_output=True,
+            text=True,
+            check=True,
+        )
         job_id = job.stdout.strip()
         return job_id
     else:
