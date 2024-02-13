@@ -180,6 +180,7 @@ def test_closer(
     systematic_correction_files,
     merged_run_summary,
     longterm_dir,
+    longterm_link_latest_dir,
 ):
     # First assure that the end of night flag is not set and remove it otherwise
     night_finished_flag = Path(

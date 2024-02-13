@@ -482,7 +482,14 @@ def datacheck_dl1_files(base_test_dir):
 
 @pytest.fixture(scope="session")
 def longterm_dir(base_test_dir):
-    directory = base_test_dir / "OSA" / "DL1DataCheck_LongTerm" / "v0.1.0" / "20200117"
+    directory = base_test_dir / "OSA" / "DL1DataCheck_LongTerm" / prod_id / date
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
+@pytest.fixture(scope="session")
+def longterm_link_latest_dir(base_test_dir):
+    directory = base_test_dir / "OSA" / "DL1DataCheck_LongTerm" / "night_wise" / "all"
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 
@@ -555,17 +562,3 @@ def database(base_test_dir):
         )
         cursor.connection.commit()
         yield cursor
-
-
-@pytest.fixture(scope="session")
-def longterm_link_latest_dir(base_test_dir):
-    directory = base_test_dir / "OSA" / "DL1DataCheck_LongTerm" / "night_wise" / "all"
-    directory.mkdir(parents=True, exist_ok=True)
-    return directory
-
-
-@pytest.fixture(scope="session")
-def longterm_dir(base_test_dir):
-    directory = base_test_dir / "OSA" / "DL1DataCheck_LongTerm" / prod_id / date
-    directory.mkdir(parents=True, exist_ok=True)
-    return directory
