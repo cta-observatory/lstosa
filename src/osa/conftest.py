@@ -482,7 +482,7 @@ def datacheck_dl1_files(base_test_dir):
 
 @pytest.fixture(scope="session")
 def longterm_dir(base_test_dir):
-    directory = base_test_dir / "OSA" / "DL1DataCheck_LongTerm" / prod_id / date
+    directory = base_test_dir / "OSA" / "DL1DataCheck_LongTerm" / prod_id / date_to_dir(date)
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 
