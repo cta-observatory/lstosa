@@ -17,6 +17,7 @@ from osa.configs.config import DEFAULT_CFG, cfg
 from osa.configs.datamodel import Sequence
 from osa.utils import utils
 from osa.utils.logging import myLogger
+from osa.utils.utils import date_to_dir
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -349,18 +350,10 @@ def create_source_directories(source_list: list, cuts_dir: Path):
             source_dir.mkdir(parents=True, exist_ok=True)
 
 
-def get_latest_version(longterm_files: List[str]) -> str:
-    """Get the latest version of the produced longterm DL1 datacheck files."""
-    nightdir = date_to_dir(options.date)
-    latest_version = 0
-    for file in longterm_files:
-        idx1 = file.find("/v0.")
-        idx2 = file.find(f"/{nightdir}")
-        version = file[idx1+1:idx2]
-        if int(version[3:])>latest_version:
-            latest_version = int(version[3:])
-            
-    return "v0."+str(latest_version)
+def get_latest_version_file(longterm_files: List[str]) -> Path:
+    """Get the latest version path of the produced longterm DL1 datacheck files for a given date."""
+    latest_version_path = max(longterm_files, key=lambda path: int(path.parents[1].name.split(".")[1]) if path.parents[1].name.startswith("v") else "")
+    return latest_version_path
 
 
 def create_longterm_symlink():
@@ -368,21 +361,10 @@ def create_longterm_symlink():
     version available, make symlink to it in the "all" common directory."""
     nightdir = date_to_dir(options.date)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR"))
-    longterm_datacheck_file = longterm_dir / options.prod_id / nightdir / f"DL1_datacheck_{nightdir}.h5"
     linked_longterm_file = longterm_dir / f"night_wise/all/DL1_datacheck_{nightdir}.h5"
-    all_longterm_files = glob.glob(longterm_dir + f"/v*/{nightdir}/DL1_datacheck_{nightdir}.h5")
-    
-    if len(all_longterm_files) > 1:
-        latest_version = get_latest_version(all_longterm_files)
-        current_version = get_major_version(get_lstchain_version())
-        if current_version == latest_version:
-            log.info("Make symlink of the longterm DL1 datacheck file in the common directory.")
-            linked_longterm_file.unlink()
-            linked_longterm_file.symlink_to(longterm_datacheck_file)
-        else:
-            log.info("The created longterm DL1 datacheck file does not correspond to the \
-                latest available version, so no symlink is made.")
-            return
-    else:
-        log.info("Make symlink of the longterm DL1 datacheck file in the common directory.")
-        linked_longterm_file.symlink_to(longterm_datacheck_file)
+    all_longterm_files = sorted(longterm_dir.rglob(f"v*/{nightdir}/DL1_datacheck_{nightdir}.h5"))
+    latest_version_file = get_latest_version_file(all_longterm_files)
+
+    log.info("Make symlink of the latest version longterm DL1 datacheck file in the common directory.")
+    linked_longterm_file.unlink()
+    linked_longterm_file.symlink_to(latest_version_file)

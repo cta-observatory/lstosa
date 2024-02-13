@@ -8,7 +8,6 @@ import re
 import shutil
 import subprocess
 import sys
-import glob
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Tuple, Iterable, List
@@ -19,7 +18,7 @@ from osa.configs.config import cfg
 from osa.job import are_all_jobs_correctly_finished, save_job_information
 from osa.nightsummary.extract import extract_runs, extract_sequences
 from osa.nightsummary.nightsummary import run_summary_table
-from osa.paths import destination_dir, get_major_version
+from osa.paths import destination_dir
 from osa.raw import is_raw_data_available
 from osa.report import start
 from osa.utils.cliopts import closercliparsing
@@ -33,7 +32,6 @@ from osa.utils.utils import (
     create_lock,
     gettag,
     date_to_iso,
-    get_lstchain_version,
 )
 
 __all__ = [
