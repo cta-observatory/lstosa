@@ -702,6 +702,37 @@ def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
     return sacct_output
 
 
+def get_closer_sacct_output(sacct_output) -> pd.DataFrame:
+    """
+    Fetch the information of jobs in the queue launched by AUTOCLOSER using the sacct 
+    SLURM output and store it in a pandas dataframe.
+
+    Returns
+    -------
+    queue_list: pd.DataFrame
+    """
+    sacct_output = pd.read_csv(sacct_output, names=FORMAT_SLURM)
+
+    # Keep only the jobs corresponding to AUTOCLOSER sequences 
+    # Until the merging of muon files is fixed, check all jobs except "lstchain_merge_muon_files"
+    sacct_output = sacct_output[
+        (sacct_output["JobName"].str.contains("lstchain_merge_hdf5_files"))
+        | (sacct_output["JobName"].str.contains("lstchain_check_dl1"))
+        | (sacct_output["JobName"].str.contains("lstchain_longterm_dl1_check"))
+        | (sacct_output["JobName"].str.contains("lstchain_cherenkov_transparency"))
+        | (sacct_output["JobName"].str.contains("provproces"))
+    ]
+
+    try:
+        sacct_output["JobID"] = sacct_output["JobID"].apply(lambda x: x.split("_")[0])
+        sacct_output["JobID"] = sacct_output["JobID"].str.strip(".batch").astype(int)
+
+    except AttributeError:
+        log.debug("No job info could be obtained from sacct")
+
+    return sacct_output
+
+
 def filter_jobs(job_info: pd.DataFrame, sequence_list: Iterable):
     """Filter the job info list to get the values of the jobs in the current queue."""
     sequences_info = pd.DataFrame([vars(seq) for seq in sequence_list])
