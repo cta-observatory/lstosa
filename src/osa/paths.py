@@ -142,7 +142,6 @@ def get_calibration_filename(run_id: int, prod_id: str) -> Path:
         mongodb = cfg.get("database", "caco_db")
         try:
             # Cast run_id to int to avoid problems with numpy int64 encoding in MongoDB
-            #options.filters = find_filter_wheels(int(run_id), mongodb)
             options.filters = find_filter_wheels(int(run_id), mongodb)
         except IOError:
             log.warning("No filter information found in database. Assuming positions 52.")
