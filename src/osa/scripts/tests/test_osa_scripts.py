@@ -203,6 +203,8 @@ def test_closer(
     assert merged_run_summary.exists()
     assert longterm_dir.exists()
     assert longterm_link_latest_dir.exists()
+    for check_file in daily_datacheck_dl1_files:
+        assert check_file.exists()
 
     run_program("closer", "-y", "-v", "-t", "-d", "2020-01-17", "LST1")
     closed_seq_file = running_analysis_dir / "sequence_LST1_01809.closed"
