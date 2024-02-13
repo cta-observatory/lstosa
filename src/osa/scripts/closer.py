@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Tuple, Iterable, List
@@ -15,7 +16,12 @@ from typing import Tuple, Iterable, List
 from osa import osadb
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import are_all_jobs_correctly_finished, save_job_information
+from osa.job import (
+    are_all_jobs_correctly_finished, 
+    save_job_information, 
+    run_sacct, 
+    get_closer_sacct_output
+)
 from osa.nightsummary.extract import extract_runs, extract_sequences
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import destination_dir
@@ -24,6 +30,7 @@ from osa.report import start
 from osa.utils.cliopts import closercliparsing
 from osa.utils.logging import myLogger
 from osa.utils.register import register_found_pattern
+from osa.utils.mail import send_warning_mail
 from osa.utils.utils import (
     night_finished_flag,
     is_day_closed,
@@ -170,6 +177,24 @@ def post_process(seq_tuple):
     # Merge DL2 files run-wise
     if not options.no_dl2:
         merge_files(seq_list, data_level="DL2")
+
+    time.sleep(600)
+
+    # Check if all jobs launched by autocloser finished correctly 
+    # before creating the NightFinished.txt file
+    n_max = 6
+    n = 0
+    while not all_closer_jobs_finished_correctly() & n <= n_max:
+        log.info(
+            "All jobs launched by autocloser did not finished correctly yet. "
+            "Checking again in 10 minutes..."
+        )
+        time.sleep(600)
+        n += 1
+
+    if n > n_max:
+        send_warning_mail(date=options.date)
+        return False
 
     if options.seqtoclose is None:
         database = cfg.get("database", "path")
@@ -530,6 +555,16 @@ def cherenkov_transparency(cmd: List[str]):
         subprocess.run(cmd, check=True)
     else:
         log.debug("Simulate launching scripts")
+
+
+def all_closer_jobs_finished_correctly():
+    """Check if all the jobs launched by autocloser finished correctly."""
+    sacct_output = run_sacct()
+    jobs_closer = get_closer_sacct_output(sacct_output)
+    if len(jobs_closer[jobs_closer["State"]!="COMPLETED"])==0:
+        return True
+    else:
+        return False
 
 
 if __name__ == "__main__":
