@@ -181,6 +181,7 @@ def test_closer(
     merged_run_summary,
     longterm_dir,
     longterm_link_latest_dir,
+    daily_datacheck_dl1_files,
 ):
     # First assure that the end of night flag is not set and remove it otherwise
     night_finished_flag = Path(
