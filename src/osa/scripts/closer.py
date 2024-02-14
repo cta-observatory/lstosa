@@ -24,7 +24,7 @@ from osa.job import (
 )
 from osa.nightsummary.extract import extract_runs, extract_sequences
 from osa.nightsummary.nightsummary import run_summary_table
-from osa.paths import destination_dir
+from osa.paths import destination_dir, create_longterm_symlink
 from osa.raw import is_raw_data_available
 from osa.report import start
 from osa.utils.cliopts import closercliparsing
@@ -165,6 +165,7 @@ def post_process(seq_tuple):
         list_job_id = merge_dl1_datacheck(seq_list)
         longterm_job_id = daily_datacheck(daily_longterm_cmd(list_job_id))
         cherenkov_transparency(cherenkov_transparency_cmd(longterm_job_id))
+        create_longterm_symlink()
 
     # Extract the provenance info
     extract_provenance(seq_list)
