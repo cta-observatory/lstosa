@@ -369,4 +369,5 @@ def create_longterm_symlink():
     latest_version_file = get_latest_version_file(all_longterm_files)
 
     log.info("Symlink the latest version longterm DL1 datacheck file in the common directory.")
+    linked_longterm_file.unlink(missing_ok=True)
     linked_longterm_file.symlink_to(latest_version_file)
