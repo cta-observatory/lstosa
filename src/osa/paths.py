@@ -17,7 +17,7 @@ from osa.configs.config import DEFAULT_CFG, cfg
 from osa.configs.datamodel import Sequence
 from osa.utils import utils
 from osa.utils.logging import myLogger
-from osa.utils.utils import date_to_dir
+
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -351,18 +351,22 @@ def create_source_directories(source_list: list, cuts_dir: Path):
 
 def get_latest_version_file(longterm_files: List[str]) -> Path:
     """Get the latest version path of the produced longterm DL1 datacheck files for a given date."""
-    latest_version_path = max(longterm_files, key=lambda path: int(path.parents[1].name.split(".")[1]) if path.parents[1].name.startswith("v") else "")
-    return latest_version_path
+    return max(
+        longterm_files,
+        key=lambda path: int(path.parents[1].name.split(".")[1])
+        if path.parents[1].name.startswith("v")
+        else "",
+    )
 
 
 def create_longterm_symlink():
     """If the created longterm DL1 datacheck file corresponds to the latest 
     version available, make symlink to it in the "all" common directory."""
-    nightdir = date_to_dir(options.date)
+    nightdir = utils.date_to_dir(options.date)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR"))
     linked_longterm_file = longterm_dir / f"night_wise/all/DL1_datacheck_{nightdir}.h5"
-    all_longterm_files = sorted(longterm_dir.rglob(f"v*/{nightdir}/DL1_datacheck_{nightdir}.h5"))
+    all_longterm_files = longterm_dir.rglob(f"v*/{nightdir}/DL1_datacheck_{nightdir}.h5")
     latest_version_file = get_latest_version_file(all_longterm_files)
 
-    log.info("Make symlink of the latest version longterm DL1 datacheck file in the common directory.")
+    log.info("Symlink the latest version longterm DL1 datacheck file in the common directory.")
     linked_longterm_file.symlink_to(latest_version_file)
