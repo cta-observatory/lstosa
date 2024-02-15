@@ -112,7 +112,7 @@ def drafts_job_file(original_dir,output_dir,log_dir,name_job,first_subrun,run_id
         with open(job_file, "a") as f:
             f.write(get_sbatch_time())
 
-def apply_pixel_selection(date):
+def apply_pixel_selection(date: str, start: int, end: int):
     """
     Submit the jobs to apply the pixel selection to the data for a given date
     on a run-by-run basis. Only data runs have pixel mask files, the rest of
@@ -123,14 +123,16 @@ def apply_pixel_selection(date):
     summary_table = Table.read(run_summary_file)
     # Apply pixel selection only to DATA runs
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
+
     output_basedir = Path("/fefs/aswg/data/real/R0V")
     output_dir = output_basedir / date
     log_dir = output_basedir / "log" / date
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
     original_dir = Path(f"/fefs/aswg/data/real/R0G/{date}")
+
     if not original_dir.exists():
-            original_dir = Path (f"/fefs/aswg/data/real/R0/{date}")
+        original_dir = Path (f"/fefs/aswg/data/real/R0/{date}")
 #    d_run = data_runs[data_runs["run_id"] == run]
 #    print(d_run)
 #    for run in d_run:
@@ -138,25 +140,24 @@ def apply_pixel_selection(date):
         # Check slurm queue status and sleep for a while to avoid overwhelming the queue
         check_job_status_and_wait(max_jobs=1500)
         # Avoid running jobs while it is still night time
-        wait_for_daytime(start=10, end=18)
+        wait_for_daytime(start, end)
 
         run_id = run["run_id"]
         files = glob.glob(f"{original_dir}/LST-1.?.Run{run_id:05d}.????.fits.fz")
         subrun_numbers = [int(file[-12:-8]) for file in files]
-        run=int(run_id)
+        run = int(run_id)
         n_subruns = max(subrun_numbers)
         write_job_file = False
 
-        # If the number of subruns is above 200, the run is split into multiple jobs
+        # If the number of subruns is above 190, the run is split into multiple jobs
         if n_subruns>=190:
             group_size = 100
-            i=0
+            i = 0
             for start_subrun in range(0, n_subruns+1, group_size):
                 end_subrun = min(start_subrun + group_size, n_subruns+1)
-                i=i+1
-        
+                i = i+1
                 job_file = log_dir / f"dvr_reduction_{run:05d}_{start_subrun}-{end_subrun}.sh"
-                first_subrun=start_subrun
+                first_subrun = start_subrun
                 for subrun in range(start_subrun, end_subrun):
                     name_job=False
                     #job = drafts_job_file(original_dir, output_dir, log_dir, name_job,first_subrun,run_id, subrun,write_job_file, job_file,i)
@@ -164,25 +165,24 @@ def apply_pixel_selection(date):
                 if job_file.exists():
                     log.info(f"Launching job {job_file}")
                     sp.run(["sbatch", job_file], check=True)
-
         else:
-            job_file_2 = log_dir / f"dvr_reduction_{run:05d}.sh"
-            first_subrun=0
-            i=0
+            job_file = log_dir / f"dvr_reduction_{run:05d}.sh"
+            first_subrun = 0
+            i = 0
             for subrun in range (n_subruns +1):
                   name_job=True
                   #job3=drafts_job_file(original_dir,output_dir,log_dir,name_job,first_subrun,run_id,subrun,write_job_file,job_file_2,i)
 
-            if job_file_2.exists():
-                  log.info(f"Launching job{job_file_2}")
-                  sp.run(["sbatch", job_file_2], check=True)
+            if job_file.exists():  
+                log.info(f"Launching job{job_file}")
+                sp.run(["sbatch", job_file], check=True)
 
     # Non-data files won't be reduced
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
 
     for run in calib_runs:
         # Avoid copying files while it is still night time
-        wait_for_daytime(start=10, end=18)
+        wait_for_daytime(start, end)
 
         run_id = run["run_id"]
         r0_files = original_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
@@ -193,7 +193,9 @@ def apply_pixel_selection(date):
 
 @click.command()
 @click.argument("dates-file", type=click.Path(exists=True, path_type=Path))
-def main(dates_file: Path = None):
+@click.option("-s", "--start-time", type=int, default=10, help="Time to (re)start data reduction in HH format.")
+@click.option("-e", "--end-time", type=int, default=18, help="Time to stop data reduction in HH format.")
+def main(dates_file: Path = None, start_time: int = 10, end_time: int = 18):
     """
     Loop over the dates listed in the input file and launch the data reduction
     script for each of them. The input file should list the dates in the format
@@ -209,8 +211,9 @@ def main(dates_file: Path = None):
 #            date = row[0]
 #            run = int(row[1]) 
     for date in list_of_dates:
-            print (date)
-            apply_pixel_selection(date)
+        log.info(f"Applying pixel selection for date {date}")
+        apply_pixel_selection(date, start_time, end_time)
+
     log.info("Done! No more dates to process.")
 
 
