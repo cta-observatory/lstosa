@@ -1,4 +1,4 @@
-"""Script to run the gain selection over a list of dates."""
+"""Script to run the data volume reduction over a list of dates."""
 import logging
 import glob
 import os
@@ -18,10 +18,9 @@ log = myLogger(logging.getLogger(__name__))
 PATH = "PATH=/fefs/aswg/lstosa/DVR/offline_data_volume_reduction_v0.2.1/build/:$PATH"
 LD_LIBRARY_PATH = "LD_LIBRARY_PATH=/usr/lib64/"
 
-#PART 1: we generate the .sh pointing out the main indications for SLURM, introducing the instructions of the function to be executed and that calculates the time it takes to execute this job
 
 def get_sbatch_script(
-    run_id, log_dir, name_job,i
+    run_id, log_dir, name_job, i
 ):
     """Build the sbatch job pilot script for running the pixel selection."""
     sbatch_part = dedent(
@@ -75,7 +74,9 @@ def get_sbatch_instruction(
     total_time=$((total_time + subruntime))
     """
     )
+
 def get_sbatch_time():
+    """Calculate the time it takes to execute the job."""
     return dedent(
         """\            
     time_aprox=$((total_time / n_subruns))
@@ -83,21 +84,18 @@ def get_sbatch_time():
     """
     )
 
-#PART 2:In this function check that pixel_mask exist to write the job (file.sh this is the job_file to launch)
-
 def drafts_job_file(original_dir,output_dir,log_dir,name_job,first_subrun,run_id,subrun,write_job_file,job_file,i):
-    #checks if the pixel file exists 
+    """Check if the pixel_mask file exists and write the job file to be launched.""" 
     new_file = Path(f"{original_dir}/LST-1.1.Run{run_id:05d}.{subrun:04d}.fits.fz")
     pixel_file = Path(f"/fefs/aswg/data/real/auxiliary/DataVolumeReduction/PixelMasks/Pixel_selection_LST-1.Run{run_id:05d}.{subrun:04d}.h5")
 
-    if not os.path.exists(pixel_file):
+    if not pixel_file.exists():
              pixel_file = Path(f"/fefs/aswg/data/real/auxiliary/DataVolumeReduction/PixelMasks/recreated/Pixel_selection_LST-1.Run{run_id:05d}.{subrun:04d}.h5")
-             if not os.path.exists(pixel_file):
-                 all_streams=original_dir.glob(f"LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
-                 for all_stream in all_streams:
-                    #print(f"Copia este new_file: {all_stream}")
+             if not pixel_file.exists():
+                 all_streams = original_dir.glob(f"LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
+                 for stream in all_streams:
+                    log.info(f"Copying file {stream} to {output_dir}")
                     sp.run(["cp", all_stream, output_dir])
-                    continue  # Skip creating instructions for this subrun
              else:
                  if not write_job_file:
                      write_job_file = True
@@ -135,14 +133,12 @@ def drafts_job_file(original_dir,output_dir,log_dir,name_job,first_subrun,run_id
             with open(job_file, "a") as f:
                 f.write(get_sbatch_time())
 
-#PART 3: In this function apply pixel_selection for files which have got pixel_mask(only data_runs have pixel mask!!!) and copy for files that haven't got it. So for those that are reduced we call the function that writes the job to check if the files exist(drafts_job_file), and write the sh with the 3 functions of part 1.
-#def apply_pixel_selection(date: str):
 def apply_pixel_selection(date):
     """
     Submit the jobs to apply the pixel selection to the data for a given date
-    on a run-by-run basis.
+    on a run-by-run basis. Only data runs have pixel mask files, the rest of
+    the files are directly copied without being reduced. 
     """
-
     run_summary_dir = Path("/fefs/aswg/data/real/monitoring/RunSummary")
     run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
     summary_table = Table.read(run_summary_file)
@@ -154,8 +150,8 @@ def apply_pixel_selection(date):
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
     original_dir = Path(f"/fefs/aswg/data/real/R0G/{date}")
-    if not os.path.exists(original_dir):
-            original_dir= Path (f"/fefs/aswg/data/real/R0/{date}")
+    if not original_dir.exists():
+            original_dir = Path (f"/fefs/aswg/data/real/R0/{date}")
 #    d_run = data_runs[data_runs["run_id"] == run]
 #    print(d_run)
 #    for run in d_run:
@@ -171,7 +167,8 @@ def apply_pixel_selection(date):
         run=int(run_id)
         n_subruns = max(subrun_numbers)
         write_job_file = False
-        #check the number of subruns, because if it is more than 200 we split the run into many jobs
+
+        # If the number of subruns is above 200, the run is split into multiple jobs
         if n_subruns>=190:
             group_size = 100
             i=0
@@ -185,8 +182,8 @@ def apply_pixel_selection(date):
                     name_job=False
                     #job = drafts_job_file(original_dir, output_dir, log_dir, name_job,first_subrun,run_id, subrun,write_job_file, job_file,i)
                 
-                if os.path.exists(job_file):
-                    #print(f"se va a lanzar el siguiente job{job_file}")
+                if job_file.exists():
+                    log.info(f"Launching job {job_file}")
                     sp.run(["sbatch", job_file], check=True)
 
         else:
@@ -197,11 +194,11 @@ def apply_pixel_selection(date):
                   name_job=True
                   #job3=drafts_job_file(original_dir,output_dir,log_dir,name_job,first_subrun,run_id,subrun,write_job_file,job_file_2,i)
 
-            if os.path.exists(job_file_2):
-                  #print(f"se va a lanzar el siguiente job{job_file_2}")
+            if job_file_2.exists():
+                  log.info(f"Launching job{job_file_2}")
                   sp.run(["sbatch", job_file_2], check=True)
 
-    #the calibration files won't reduced
+    # Non-data files won't be reduced
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
 
     for run in calib_runs:
@@ -212,14 +209,14 @@ def apply_pixel_selection(date):
         r0_files = original_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
 
         for file in r0_files:
-            #print(f"copia este archivo: {file}")
+            log.info(f"Copying {file} to {output_dir}")
             sp.run(["cp", file, output_dir])
 
 @click.command()
 @click.argument("dates-file", type=click.Path(exists=True, path_type=Path))
 def main(dates_file: Path = None):
     """
-    Loop over the dates listed in the input file and launch the gain selection
+    Loop over the dates listed in the input file and launch the data reduction
     script for each of them. The input file should list the dates in the format
     YYYYMMDD one date per line.
     """
