@@ -84,22 +84,22 @@ def get_sbatch_time():
     """
     )
 
-def drafts_job_file(original_dir,output_dir,log_dir,name_job,first_subrun,run_id,subrun,write_job_file,job_file,i):
+def drafts_job_file(original_dir,output_dir,log_dir,name_job,first_subrun,run_id,subrun,job_file,i,write_job_file=True):
     """Check if the pixel_mask file exists and write the job file to be launched.""" 
     new_file = Path(f"{original_dir}/LST-1.1.Run{run_id:05d}.{subrun:04d}.fits.fz")
-    pixel_file = Path(f"/fefs/aswg/data/real/auxiliary/DataVolumeReduction/PixelMasks/Pixel_selection_LST-1.Run{run_id:05d}.{subrun:04d}.h5")
+    pixel_masks_dir = Path("/fefs/aswg/data/real/auxiliary/DataVolumeReduction/PixelMasks/")
+    pixel_file = pixel_masks_dir / f"Pixel_selection_LST-1.Run{run_id:05d}.{subrun:04d}.h5"
 
     if not pixel_file.exists():
         all_streams = original_dir.glob(f"LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
         for stream in all_streams:
-            log.info(f"Copying file {stream} to {output_dir}")
-            sp.run(["cp", all_stream, output_dir])
+            log.info(f"No PixelMask file found for run {run_id:05d}.{subrun}, \
+                copying file {stream} to {output_dir}")
+            sp.run(["cp", all_stream, output_dir]) 
     else:
-        if not write_job_file:
-            write_job_file = True
         with open(job_file, "a") as f:
             if subrun == first_subrun:  # Only write instructions for the first subrun of the run
-                f.write(get_sbatch_script(run_id, log_dir,name_job,i))
+                f.write(get_sbatch_script(run_id, log_dir,name_job, i))
                 f.write(
                   get_sbatch_instruction(
                     run_id,
@@ -109,8 +109,6 @@ def drafts_job_file(original_dir,output_dir,log_dir,name_job,first_subrun,run_id
                     pixel_file
                     )
                 )
-   
-    if write_job_file:
         with open(job_file, "a") as f:
             f.write(get_sbatch_time())
 
