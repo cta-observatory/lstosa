@@ -90,48 +90,29 @@ def drafts_job_file(original_dir,output_dir,log_dir,name_job,first_subrun,run_id
     pixel_file = Path(f"/fefs/aswg/data/real/auxiliary/DataVolumeReduction/PixelMasks/Pixel_selection_LST-1.Run{run_id:05d}.{subrun:04d}.h5")
 
     if not pixel_file.exists():
-             pixel_file = Path(f"/fefs/aswg/data/real/auxiliary/DataVolumeReduction/PixelMasks/recreated/Pixel_selection_LST-1.Run{run_id:05d}.{subrun:04d}.h5")
-             if not pixel_file.exists():
-                 all_streams = original_dir.glob(f"LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
-                 for stream in all_streams:
-                    log.info(f"Copying file {stream} to {output_dir}")
-                    sp.run(["cp", all_stream, output_dir])
-             else:
-                 if not write_job_file:
-                     write_job_file = True
-                 with open(job_file, "a") as f:
-                      if subrun == first_subrun :  # Only write instructions for the first subrun of the run
-                          f.write(get_sbatch_script(run_id, log_dir,name_job,i))
-                      f.write(
-                          get_sbatch_instruction(
-                            run_id,
-                            log_dir,
-                            new_file,
-                            output_dir,
-                            pixel_file
-                           )
-                          )
-  
-
+        all_streams = original_dir.glob(f"LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
+        for stream in all_streams:
+            log.info(f"Copying file {stream} to {output_dir}")
+            sp.run(["cp", all_stream, output_dir])
     else:
-             if not write_job_file:
-                 write_job_file = True
-             with open(job_file, "a") as f:
-                  if subrun == first_subrun:  # Only write instructions for the first subrun of the run
-                      f.write(get_sbatch_script(run_id, log_dir,name_job,i))
-                  f.write(
-                      get_sbatch_instruction(
-                        run_id,
-                        log_dir,
-                        new_file,
-                        output_dir,
-                        pixel_file
-                       )
-                      )
+        if not write_job_file:
+            write_job_file = True
+        with open(job_file, "a") as f:
+            if subrun == first_subrun:  # Only write instructions for the first subrun of the run
+                f.write(get_sbatch_script(run_id, log_dir,name_job,i))
+                f.write(
+                  get_sbatch_instruction(
+                    run_id,
+                    log_dir,
+                    new_file,
+                    output_dir,
+                    pixel_file
+                    )
+                )
    
     if write_job_file:
-            with open(job_file, "a") as f:
-                f.write(get_sbatch_time())
+        with open(job_file, "a") as f:
+            f.write(get_sbatch_time())
 
 def apply_pixel_selection(date):
     """
