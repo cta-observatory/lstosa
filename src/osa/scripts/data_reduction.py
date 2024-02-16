@@ -220,12 +220,6 @@ def main(dates_file: Path = None, start_time: int = 10, end_time: int = 18):
     log.setLevel(logging.INFO)
 
     list_of_dates = get_list_of_dates(dates_file)
-#    with open('DVR/PixelSel/time_limit.csv', mode='r', newline='') as file:
-#        reader = csv.reader(file)
-#        header = next(reader)
-#        for row in reader:
-#            date = row[0]
-#            run = int(row[1]) 
     for date in list_of_dates:
         log.info(f"Applying pixel selection for date {date}")
         apply_pixel_selection(date, start_time, end_time)
