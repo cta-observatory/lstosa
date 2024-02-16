@@ -133,9 +133,7 @@ def apply_pixel_selection(date: str, start: int, end: int):
 
     if not original_dir.exists():
         original_dir = Path (f"/fefs/aswg/data/real/R0/{date}")
-#    d_run = data_runs[data_runs["run_id"] == run]
-#    print(d_run)
-#    for run in d_run:
+
     for run in data_runs:
         # Check slurm queue status and sleep for a while to avoid overwhelming the queue
         check_job_status_and_wait(max_jobs=1500)
@@ -159,8 +157,19 @@ def apply_pixel_selection(date: str, start: int, end: int):
                 job_file = log_dir / f"dvr_reduction_{run:05d}_{start_subrun}-{end_subrun}.sh"
                 first_subrun = start_subrun
                 for subrun in range(start_subrun, end_subrun):
-                    name_job=False
-                    #job = drafts_job_file(original_dir, output_dir, log_dir, name_job,first_subrun,run_id, subrun,write_job_file, job_file,i)
+                    name_job = False
+                    drafts_job_file(
+                        original_dir,
+                        output_dir,
+                        log_dir,
+                        name_job,
+                        first_subrun,
+                        run_id,
+                        subrun,
+                        write_job_file,
+                        job_file,
+                        i
+                    )
                 
                 if job_file.exists():
                     log.info(f"Launching job {job_file}")
@@ -169,9 +178,20 @@ def apply_pixel_selection(date: str, start: int, end: int):
             job_file = log_dir / f"dvr_reduction_{run:05d}.sh"
             first_subrun = 0
             i = 0
-            for subrun in range (n_subruns +1):
-                  name_job=True
-                  #job3=drafts_job_file(original_dir,output_dir,log_dir,name_job,first_subrun,run_id,subrun,write_job_file,job_file_2,i)
+            for subrun in range(n_subruns+1):
+                name_job = True
+                drafts_job_file(
+                    original_dir,
+                    output_dir,
+                    log_dir,
+                    name_job,
+                    first_subrun,
+                    run_id,
+                    subrun,
+                    write_job_file,
+                    job_file,
+                    i
+                )
 
             if job_file.exists():  
                 log.info(f"Launching job{job_file}")
