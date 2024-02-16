@@ -1,7 +1,6 @@
 """Script to run the data volume reduction over a list of dates."""
 import logging
 import glob
-import os
 import subprocess as sp
 from pathlib import Path
 from textwrap import dedent
@@ -84,7 +83,7 @@ def get_sbatch_time():
     """
     )
 
-def drafts_job_file(original_dir,output_dir,log_dir,name_job,first_subrun,run_id,subrun,job_file,i,write_job_file=True):
+def drafts_job_file(original_dir,output_dir,log_dir,name_job,first_subrun,run_id,subrun,job_file,i):
     """Check if the pixel_mask file exists and write the job file to be launched.""" 
     new_file = Path(f"{original_dir}/LST-1.1.Run{run_id:05d}.{subrun:04d}.fits.fz")
     pixel_masks_dir = Path("/fefs/aswg/data/real/auxiliary/DataVolumeReduction/PixelMasks/")
@@ -95,7 +94,7 @@ def drafts_job_file(original_dir,output_dir,log_dir,name_job,first_subrun,run_id
         for stream in all_streams:
             log.info(f"No PixelMask file found for run {run_id:05d}.{subrun}, \
                 copying file {stream} to {output_dir}")
-            sp.run(["cp", all_stream, output_dir]) 
+            sp.run(["cp", stream, output_dir]) 
     else:
         with open(job_file, "a") as f:
             if subrun == first_subrun:  # Only write instructions for the first subrun of the run
@@ -145,7 +144,6 @@ def apply_pixel_selection(date: str, start: int, end: int):
         subrun_numbers = [int(file[-12:-8]) for file in files]
         run = int(run_id)
         n_subruns = max(subrun_numbers)
-        write_job_file = False
 
         # If the number of subruns is above 190, the run is split into multiple jobs
         if n_subruns>=190:
@@ -166,7 +164,6 @@ def apply_pixel_selection(date: str, start: int, end: int):
                         first_subrun,
                         run_id,
                         subrun,
-                        write_job_file,
                         job_file,
                         i
                     )
@@ -188,7 +185,6 @@ def apply_pixel_selection(date: str, start: int, end: int):
                     first_subrun,
                     run_id,
                     subrun,
-                    write_job_file,
                     job_file,
                     i
                 )
