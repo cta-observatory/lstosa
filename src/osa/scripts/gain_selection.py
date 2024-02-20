@@ -247,7 +247,7 @@ def main(
         if check:
             check_failed_jobs(date, output_basedir)
         else:
-            apply_gain_selection(date, output_basedir)
+            apply_gain_selection(date, start_time, end_time, output_basedir)
 
 
     elif dates_file:
@@ -258,7 +258,7 @@ def main(
                 check_failed_jobs(date, output_basedir)
         else:
             for date in list_of_dates: 
-                apply_gain_selection(date, output_basedir)
+                apply_gain_selection(date, start_time, end_time, output_basedir)
             log.info("Done! No more dates to process.")
 
 
