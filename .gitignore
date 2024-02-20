@@ -7,6 +7,7 @@ prov.log
 docs/prov.log
 *.log
 
+
 # Compiled files
 *.py[co]
 *.a
@@ -22,8 +23,7 @@ __pycache__
 # Other generated files
 */cython_version.py
 htmlcov
-.coverage
-.coverage.*
+*coverage*
 MANIFEST
 
 # Sphinx

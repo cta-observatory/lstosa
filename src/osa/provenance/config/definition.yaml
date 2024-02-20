@@ -1,0 +1,472 @@
+---
+#
+# Definition of ActivityDescription and EntityDescription
+#
+# activities:
+#   <activity_name>:
+#     description:
+#     contact:
+#     parameters:
+#       - name:
+#         description:
+#         value:         # Python variable that contains the parameter value
+#         datatype/arraysize/xtype:
+#         unit/ucd/utype:
+#         min/max/options/default:
+#     usage/generation:
+#       - role:
+#         description:
+#         entityType:
+#         multiplicity:
+#         location:      # Python variable that contains the location of the entity
+#                        # any object that may be serialised should have a location property
+#                        # location and value properties are not mutually exclusive
+#         value:         # Python variable that contains the value of the entity
+#         id:            # Python variable that contains the id of the entity
+#         has_members:
+#           list:        # Python list of members /not mandatory
+#           entityType:
+#           location:
+#           value:
+#           id:
+#           namespace:
+#         has_progenitors:
+#           list:        # Python list of progenitors /not mandatory
+#           entityType:
+#           location:
+#           value:
+#           id:
+#           namespace:
+#
+# entities:
+#   <entity_name>:
+#     description:
+#     docurl:
+#     contentType:
+#     type: PythonObject, File, FileCollection
+#     index: index file applicable for a FileCollection
+#
+# agents:
+#   <agent_name>:
+#     email:
+#
+
+activities:
+    drs4_pedestal:
+        description:
+            "Create pedestal file"
+        parameters:
+        usage:
+            - role: "Subrun for pedestal"
+              description: "Raw observation file for pedestal"
+              entityName: RawObservationFile
+              value: RawObservationFilePedestal
+#              filepath: /fefs/aswg/data/real/R0/20210913/LST-1.1.Run06268.0000.fits.fz
+        generation:
+            - role: "Pedestal"
+              description: "Pedestal calibration file"
+              entityName: PedestalFile
+              value: PedestalFile
+#              filepath:  /fefs/aswg/data/real/calibration/20210913/v0.7.5/drs4_pedestal.Run06268.0000.fits
+            - role: "Check plot for pedestal"
+              description: "Pedestal check plot"
+              entityName: PedestalCheckPlot
+              value: PedestalCheckPlot
+#              filepath: /fefs/aswg/data/real/calibration/20210913/v0.7.5/log/drs4_pedestal.Run02068.0000.pdf
+
+    calibrate_charge:
+        description:
+            "Create charge calibration file"
+        parameters:
+        usage:
+            - role: "Subrun for calibration"
+              description: "Raw observation file for calibration"
+              entityName: RawObservationFile
+              value: RawObservationFileCalibration
+#              filepath: /fefs/aswg/data/real/R0/20210913/LST-1.1.Run06274.0000.fits.fz
+            - role: "Pedestal file"
+              description: "Pedestal file used"
+              entityName: PedestalFile
+              value: PedestalFile
+#              filepath: /fefs/aswg/data/real/calibration/20210913/v0.7.5/drs4_pedestal.Run06268.0000.fits
+#            - role: "Run summary"
+#              description: "Run summary configuration"
+#              entityName: RunSummaryFile
+#              value: RunSummaryFile
+#              filepath: /fefs/aswg/data/real/monitoring/RunSummary/RunSummary_20210913.ecsv
+#            - role: "Configuration file"
+#              description: "Configuration file for camera"
+#              entityName: AnalysisConfigFile
+#              value: CalibrationConfigurationFile
+#              filepath: /fefs/aswg/software/virtual_env/ctasoft/cta-lstchain/lstchain/data/onsite_camera_calibration_param.json
+#            - role: "Systematic correction file"
+#              description: "Systematic correction file"
+#              entityName: SystematicCorrectionFile
+#              value: SystematicCorrectionFile
+#              filepath: /path/to/ff_systematics_file.h5
+#            - role: "Time calibration file"
+#              description: "Time calibration file"
+#              entityName: TimeCalibrationFile
+#              value: TimeCalibrationFile
+#              filepath: /fefs/aswg/data/real/calibration/20210913/v0.7.5/time_calibration.Run06274.0000.hdf5
+        generation:
+            - role: "Coefficients calibration file"
+              description: "Coefficients calibration file"
+              entityName: CoefficientsCalibrationFile
+              value: CoefficientsCalibrationFile
+#              filepath: /fefs/aswg/data/real/calibration/20210913/v0.7.5/calibration.Run06274.0000.hdf5
+            - role: "Check plot for calibration"
+              description: "Calibration check plot"
+              entityName: CalibrationCheckPlot
+              value: CalibrationCheckPlot
+#              filepath: /fefs/aswg/data/real/calibration/20210913/v0.7.5/log/calibration.Run06274.0000.pedestal.Run06268.0000.pdf
+    r0_to_dl1:
+        description:
+            "Create DL1 files for an observation run and subrun"
+        parameters:
+        usage:
+            - role: "Observation subrun"
+              description: "Observation subrun used"
+              entityName: R0SubrunDataset
+              value: R0SubrunDataset
+              # filepath: /fefs/aswg/data/real/R0/20200218/LST1.1Run02006.0001.fits.fz
+            - role: "Pedestal file"
+              description: "Pedestal file used"
+              entityName: PedestalFile
+              value: PedestalFile
+              # filepath: /fefs/aswg/data/real/calibration/20200218/v00/drs4_pedestal.Run02005.0000.fits
+            - role: "Coefficients calibration file"
+              description: "Coefficients calibration file"
+              entityName: CoefficientsCalibrationFile
+              value: CoefficientsCalibrationFile
+              # filepath: /fefs/aswg/data/real/calibration/20200218/v00/calibration.Run02006.0000.hdf5
+            - role: "Time calibration file"
+              description: "Time calibration file"
+              entityName: TimeCalibrationFile
+              value: TimeCalibrationFile
+              # filepath: /fefs/aswg/data/real/calibration/20191124/v00/time_calibration.Run1625.0000.hdf5
+            - role: "Systematic correction factor file"
+              description: "Systematic correction factor file"
+              entityName: SystematicCorrectionFile
+              value: SystematicCorrectionFile
+              # filepath: /fefs/aswg/data/real/monitoring/PixelCalibration/LevelA/ffactor_systematics/20210514/v0.8.2/no_sys_corrected_calibration_scan_fit_20210514.0000.h5
+            - role: "Pointing file"
+              description: "Pointing filename for DL1"
+              entityName: PointingFile
+              value: PointingFile
+              # filepath: /fefs/home/lapp/DrivePositioning/DrivePosition_20200218.txt
+            - role: "Interleaved pedestal events file"
+              description: "Interleaved pedestal events file"
+              entityName: InterleavedPedestalEventsFile
+              value: InterleavedPedestalEventsFile
+              # filepath: .../path/to/interleaved/pedestal/events.h5
+            - role: "Run summary"
+              description: "Run summary configuration"
+              entityName: RunSummaryFile
+              value: RunSummaryFile
+              # filepath: /fefs/aswg/data/real/monitoring/RunSummary/RunSummary_20210913.ecsv
+
+            # - role: "R0 Collection"
+            #   description: "Set of subruns for a given run"
+            #   entityName: R0Collection
+            #   value: R0Collection
+            #   filepath: /fefs/aswg/data/real/R0/20200218
+            #   size: 128
+
+        generation:
+            - role: "DL1 subrun dataset"
+              description: "DL1 dataset for a given observation subrun"
+              entityName: DL1SubrunDataset
+              value: DL1SubrunDataset
+              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
+
+            - role: "Muons subrun dataset"
+              description: "Muons dataset for a given observation subrun"
+              entityName: MuonsSubrunDataset
+              value: MuonsSubrunDataset
+             # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/muons_LST-1.Run06275.0060.fits
+
+            # - role: "DL1 Collection"
+            #   description: "Set of DL1 files for a given run"
+            #   entityName: Dl1Collection
+            #   value: DL1Collection
+            #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84
+            #   size: 128
+
+            # - role: "Muons Collection"
+            #   description: "Set of muons files for a given run"
+            #   entityName: MuonsCollection
+            #   value: MuonsCollection
+            #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
+            #   size: 128
+
+    dl1ab:
+        description:
+            "Create DL1AB files for an observation run"
+        parameters:
+            - name: StoreImage
+              description: "Store DL1 Image"
+              value: StoreImage
+        usage:
+            - role: "DL1 subrun dataset"
+              description: "DL1 dataset for a given observation subrun"
+              entityName: DL1SubrunDataset
+              value: DL1SubrunDataset
+              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
+            - role: "Analysis configuration file"
+              description: "Configuration file for DL1"
+              entityName: AnalysisConfigFile
+              value: Analysisconfigfile_dl1
+              # filepath: /fefs/aswg/lstosa/config_files_lstchain/lstchain_standard_config.json
+
+        generation:
+            - role: "DL1AB subrun dataset"
+              description: "DL1AB dataset for a given observation subrun"
+              entityName: DL1SubrunDataset
+              value: DL1SubrunDataset
+              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
+
+           # - role: "DL1 Collection"
+           #   description: "Set of DL1 files for a given run"
+           #   entityName: Dl1Collection
+           #   value: DL1Collection
+           #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84
+           #   size: 128
+
+    dl1_datacheck:
+        description:
+            "Check the contents of LST DL1 files and associated muon ring files"
+        parameters:
+        usage:
+            - role: "DL1AB subrun dataset"
+              description: "DL1AB dataset for a given observation subrun"
+              entityName: DL1SubrunDataset
+              value: DL1SubrunDataset
+              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/dl1_LST-1.Run02006.0001.h5
+
+           # - role: "DL1 Collection"
+           #   description: "Set of DL1 files for a given run"
+           #   entityName: Dl1Collection
+           #   value: DL1Collection
+           #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84
+           #   size: 128
+
+            - role: "Muons subrun dataset"
+              description: "Muons dataset for a given observation subrun"
+              entityName: MuonsSubrunDataset
+              value: MuonsSubrunDataset
+             # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/muons_LST-1.Run06275.0060.fits
+
+           # - role: "Muons Collection"
+           #   description: "Set of muons files for a given run"
+           #   entityName: MuonsCollection
+           #   value: MuonsCollection
+           #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
+           #   size: 128
+
+        generation:
+            - role: "DL1Check HDF5 file"
+              description: "DL1Check HDF5 file for a given run"
+              entityName: DL1CheckHDF5File
+              value: DL1CheckHDF5File
+              # filepath: /fefs/aswg/data/real/DL1/20210913/v0.7.5/tailcut84/datacheck_dl1_LST-1.Run06269.h5
+            - role: "DL1Check PDF file"
+              description: "DL1Check PDF file for a given run"
+              entityName: DL1CheckPDFFile
+              value: DL1CheckPDFFile
+              # filepath: /fefs/aswg/data/real/DL1/20210913/v0.7.5/tailcut84/datacheck_dl1_LST-1.Run06269.pdf
+
+            - role: "DL1Check subrun dataset"
+              description: "DL1Check dataset for a given observation subrun"
+              entityName: DL1CheckSubrunDataset
+              value: DL1CheckSubrunDataset
+              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/tailcut84/datacheck_dl1_LST-1.Run06269.0021.h5
+
+            # - role: "DL1Check Collection Run"
+            #   description: "Set of DL1Check files for a given run"
+            #   entityName: DL1CheckCollection
+            #   value: DL1CheckCollection
+            #   filepath: /fefs/aswg/data/real/DL1/20210913/v0.7.5/tailcut84_dynamic_cleaning
+            #   size: 128
+
+    dl1_to_dl2:
+        description:
+            "Create DL2 files for an DL1 run and subrun"
+        parameters:
+        usage:
+            - role: "DL1 subrun dataset"
+              description: "DL1 dataset for a given observation subrun"
+              entityName: DL1SubrunDataset
+              value: DL1SubrunDataset
+              # filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/dl1_LST-1.Run02006.0001.h5
+            - role: "RFModelEnergyFile"
+              description: "Random Forest Model Energy File"
+              entityName: RFModelEnergyFile
+              value: RFModelEnergyFile
+              # filepath: /fefs/aswg/data/models/20190415/south_pointing/20200316_v0.4.5__EG1/reg_energy.sav
+            - role: "RFModelDispNormFile"
+              description: "Random Forest Model Direction File"
+              entityName: RFModelDispNormFile
+              value: RFModelDispNormFile
+              # filepath: /fefs/aswg/data/models/20190415/south_pointing/20200316_v0.4.5__EG1/reg_disp_norm.sav
+            - role: "RFModelDispSignFile"
+              description: "Random Forest Model Direction File"
+              entityName: RFModelDispSignFile
+              value: RFModelDispSignFile
+              # filepath: /fefs/aswg/data/models/20190415/south_pointing/20200316_v0.4.5__EG1/reg_disp_sign.sav
+            - role: "RFModelGammanessFile"
+              description: "Random Forest Model Gammaness File"
+              entityName: RFModelGammanessFile
+              value: RFModelGammanessFile
+              # filepath: /fefs/aswg/data/models/20190415/south_pointing/20200316_v0.4.5__EG1/cls_gh.sav
+            - role: "Analysis configuration file"
+              description: "LSTChain analysis configuration file"
+              entityName: AnalysisConfigFile
+              value: Analysisconfigfile_dl2
+              # filepath: /fefs/aswg/lstosa/config_files_lstchain/lstchain_standard_config_tailcut84_dynamic_cleaning_v075.json
+
+            # - role: "DL1 Collection"
+            #   description: "Set of DL1 files for a given run"
+            #   entityName: DL1Collection
+            #   value: DL1Collection
+            #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
+            #   size: 128
+
+        generation:
+            - role: "DL2 merged file"
+              description: "DL2 file for a given run"
+              entityName: DL2MergedFile
+              value: DL2MergedFile
+              # filepath: /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.h5
+            - role: "DL2 subrun dataset"
+              description: "DL2 dataset for a given DL1 subrun"
+              entityName: DL2SubrunDataset
+              value: DL2SubrunDataset
+              # filepath: /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/dl2_LST-1.Run02006.0001.h5
+
+           # - role: "DL2 Collection"
+           #   description: "Set of DL2 files for a given run"
+           #   entityName: DL2Collection
+           #   value: DL2Collection
+           #   filepath: /fefs/aswg/data/real/DL2/20200218/v0.4.3_v00/tailcut84
+           #   size: 128
+
+entities:
+    PythonObject:
+        description: "Python variable in memory"
+        type: PythonObject
+    RawObservationFile:
+        description: "Raw observation compressed FITS file"
+        type: File
+        contentType: application/fits
+    R0SubrunDataset:
+        description: "R0 subrun file in FITS format on the disk"
+        type: File
+        contentType: application/fits
+    RunSummaryFile:
+        description: "Run summary configuration file"
+        type: File
+        contentType: application/ecsv
+    PointingFile:
+        description: "Pointing text file on the disk"
+        type: File
+        contentType: text/plain
+    PedestalFile:
+        description: "Pedestal file in HDF5 format on the disk"
+        type: File
+        contentType: application/x-hdf
+    PedestalCheckPlot:
+        description: "Pedestal check plot PDF file"
+        type: File
+        contentType: application/pdf
+    CoefficientsCalibrationFile:
+        description: "Coefficients calibration file in HDF5 format on the disk"
+        type: File
+        contentType: application/x-hdf
+    SystematicCorrectionFile:
+        description: "Systematic correction file in HDF5 format on the disk"
+        type: File
+        contentType: application/x-hdf
+    InterleavedPedestalEventsFile:
+        description: "Interleaved pedestal events file in HDF5 format on the disk"
+        type: File
+        contentType: application/x-hdf
+    TimeCalibrationFile:
+        description: "Time calibration file in HDF5 format on the disk"
+        type: File
+        contentType: application/x-hdf
+    CalibrationCheckPlot:
+        description: "Calibration check plot PDF file"
+        type: File
+        contentType: application/pdf
+    AnalysisConfigFile:
+        description: "LSTChain analysis configuration file in JSON format on the disk"
+        type: File
+        contentType: application/json
+#    ProcessingConfigFile:
+#        description: "LSTOSA processing configuration file on the disk"
+#        type: File
+#        contentType: text/plain
+    DL1SubrunDataset:
+        description: "DL1 subrun file in HDF5 format"
+        type: File
+        contentType: application/x-hdf
+    DL2SubrunDataset:
+        description: "DL2 subrun file in HDF5 format"
+        type: File
+        contentType: application/x-hdf
+    R0Collection:
+        description: "Set of subruns for a given run"
+        type: SetCollection
+    DL1Collection:
+        description: "Set of DL1 files for a given run"
+        type: SetCollection
+    MuonsSubrunDataset:
+        description: "Muons subrun file in FITS format"
+        type: File
+        contentType: application/fits
+    MuonsCollection:
+        description: "Set of muons FITS files for a given run"
+        type: SetCollection
+    DL1CheckSubrunDataset:
+        description: "DL1 check subrun file in HDF5 format"
+        type: File
+        contentType: application/x-hdf
+    DL1CheckCollection:
+        description: "Set of DL1Check HDF5 files for a given run"
+        type: SetCollection
+    DL1CheckPDFFile:
+        description: "A DL1 PDF check file"
+        type: File
+        contentType: application/pdf
+    DL1CheckHDF5File:
+        description: "A DL1 HDF5 check file"
+        type: File
+        contentType: application/hdf5
+    RFModelEnergyFile:
+        description: "Model file for deriving reconstructed energy with Random Forest algorithm"
+        type: File
+        contentType: application/x-spss-sav
+    RFModelDispFile:
+        description: "Model file for deriving reconstructed direction with Random Forest algorithm and Disp vector method"
+        type: File
+        contentType: application/x-spss-sav
+    RFModelDispNormFile:
+        description: "Model file for deriving reconstructed direction with Random Forest algorithm and Disp vector method"
+        type: File
+        contentType: application/x-spss-sav
+    RFModelDispSignFile:
+        description: "Model file for deriving reconstructed direction with Random Forest algorithm and Disp vector method"
+        type: File
+        contentType: application/x-spss-sav
+    RFModelGammanessFile:
+        description: "Model file for deriving of gammaness with Random Forest algorithm"
+        type: File
+        contentType: application/x-spss-sav
+    DL2Collection:
+        description: "Set of DL2 files for a given run"
+        type: SetCollection
+    DL2MergedFile:
+        description: "DL2 HDF5 table file for a run"
+        type: File
+        contentType: application/hdf5

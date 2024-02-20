@@ -1,45 +1,44 @@
 name: osa-dev
 channels:
   - conda-forge
-  - default
 dependencies:
   # core dependencies
-  - python=3.8
-  - numpy=1.21
+  - python=3.11
+  - numpy
   - pip
-  - astropy~=4.2
-  - ctapipe~=0.12
-  - protozfits=2.0
-  - matplotlib=3.5
+  - astropy~=5.0
+  - ctapipe~=0.19.2
+  - matplotlib
   - pyparsing
   - prov
   - pyyaml
   - pydot
   - pydotplus
   - psutil
-  - gammapy=0.19
+  - gammapy=1.1
   - h5py
-  - joblib
+  - joblib~=1.2.0
   - click
   - pymongo
-  - scikit-learn=1.0
+  - scikit-learn=1.2
   - protobuf=3.20
+  - ctapipe_io_lst=0.22
+  - ctaplot~=0.6.4
+  - pyirf~=0.10
+  - lstchain>=0.10.7
+  - tenacity
   # dev dependencies
-  - pre-commit
   - pytest
   - pytest-cov
-  - coverage=6.2
+  - coverage
+  - freezegun
+  # formatting dependencies
+  - pre-commit
   - black
-  - isort
+  - ruff
+  # docs dependencies
   - sphinx
-  - sphinx_rtd_theme
   - sphinx-automodapi
+  - numpydoc
+  - pydata-sphinx-theme
   - sphinx-argparse
-  - sphinx-autoapi
-  - pip:
-      - lstchain~=0.9.6
-      - pytest_runner
-      - pytest-ordering
-      - ctapipe_io_lst~=0.18.1
-      - ctaplot~=0.5.5
-      - pyirf~=0.6.0
