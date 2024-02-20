@@ -155,7 +155,7 @@ def run_sacct_j(job) -> StringIO:
 def GainSel_flag_file() -> Path:
     filename = cfg.get("LSTOSA", "gain_selection_check")
     date = date_to_dir(options.date)
-    GainSel_dir = Path(cfg.get(options.tel_id, "GAIN_SELECTION_DIR"))
+    GainSel_dir = Path(cfg.get(options.tel_id, "GAIN_SELECTION_FLAG_DIR"))
     flagfile = GainSel_dir / date / filename
     return flagfile.resolve()
 
