@@ -93,7 +93,10 @@ def single_process(telescope):
         os.makedirs(options.log_directory, exist_ok=True)
 
     if not GainSel_finished():
-        log.info(f"Gain selection did not finish successfully for date {options.date}")
+        log.info(
+            f"Gain selection did not finish successfully for date {options.date}."
+            "Try again later, once gain selection has finished."
+        )
         sys.exit()
 
     if is_day_closed():
