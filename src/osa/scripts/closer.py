@@ -164,8 +164,8 @@ def post_process(seq_tuple):
     if cfg.getboolean("lstchain", "merge_dl1_datacheck"):
         list_job_id = merge_dl1_datacheck(seq_list)
         longterm_job_id = daily_datacheck(daily_longterm_cmd(list_job_id))
-        cherenkov_transparency(cherenkov_transparency_cmd(longterm_job_id))
-        create_longterm_symlink()
+        cherenkov_job_id = cherenkov_transparency(cherenkov_transparency_cmd(longterm_job_id))
+        create_longterm_symlink(cherenkov_job_id)
 
     # Extract the provenance info
     extract_provenance(seq_list)
@@ -178,6 +178,7 @@ def post_process(seq_tuple):
     # Merge DL2 files run-wise
     if not options.no_dl2:
         merge_files(seq_list, data_level="DL2")
+
 
     time.sleep(600)
 
@@ -536,6 +537,7 @@ def cherenkov_transparency_cmd(longterm_job_id: str) -> List[str]:
 
     return [
         "sbatch",
+        "--parsable",
         "-D",
         options.directory,
         "-o",
@@ -553,7 +555,16 @@ def cherenkov_transparency(cmd: List[str]):
     log.debug(f"Executing {stringify(cmd)}")
 
     if not options.simulate and not options.test and shutil.which("sbatch") is not None:
-        subprocess.run(cmd, check=True)
+        job = subprocess.run(
+            cmd,
+            encoding="utf-8",
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        job_id = job.stdout.strip()
+        return job_id
+
     else:
         log.debug("Simulate launching scripts")
 
