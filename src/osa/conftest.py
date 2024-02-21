@@ -572,8 +572,8 @@ def database(osa_dir):
 @pytest.fixture(scope="session")
 def gain_selection_flag_file(osa_dir):
 
-    GainSel_dir = osa_dir / "GainSel"
+    GainSel_dir = osa_dir / "GainSel" / "20200117"
     GainSel_dir.mkdir(parents=True, exist_ok=True)
-    file = GainSel_dir / "20200117" / "GainSelFinished.txt"
+    file = GainSel_dir / "GainSelFinished.txt"
     file.touch()
     return file
