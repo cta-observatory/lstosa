@@ -443,6 +443,8 @@ def sequence_file_list(
     drs4_time_calibration_files,
     systematic_correction_files,
     r0_data,
+    gain_selection_flag_file,
+    merged_run_summary,
 ):
     for r0_file in r0_data:
         assert r0_file.exists()
@@ -455,6 +457,8 @@ def sequence_file_list(
 
     assert run_summary_file.exists()
     assert run_catalog.exists()
+    assert gain_selection_flag_file.exists()
+    assert merged_run_summary.exists()
 
     run_program("sequencer", "-d", "2020-01-17", "--no-submit", "-t", "LST1")
     # First sequence in the list corresponds to the calibration run 1809
