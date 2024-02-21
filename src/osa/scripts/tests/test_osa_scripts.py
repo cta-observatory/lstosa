@@ -170,7 +170,7 @@ def test_autocloser(running_analysis_dir):
         "LST1",
     )
     assert os.path.exists(running_analysis_dir)
-    assert result.stdout.split()[-1] == "Exit"
+    assert result.stdout.split()[-1] == "Exiting."
 
 
 def test_closer(
