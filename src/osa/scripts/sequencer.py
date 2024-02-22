@@ -23,6 +23,7 @@ from osa.job import (
     run_squeue,
 )
 from osa.nightsummary.extract import build_sequences
+from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import analysis_path
 from osa.report import start
 from osa.utils.cliopts import sequencer_cli_parsing
