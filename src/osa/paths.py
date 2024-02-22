@@ -361,7 +361,7 @@ def get_latest_version_file(longterm_files: List[str]) -> Path:
     )
 
 
-def wait_for_job_completion(job_id: str):
+def is_job_completed(job_id: str):
     """Wait until the SLURM job corresponding to job_id finishes."""
     n_max = 10
     n = 0
@@ -381,7 +381,7 @@ def wait_for_job_completion(job_id: str):
 def create_longterm_symlink(cherenkov_job_id: str):
     """If the created longterm DL1 datacheck file corresponds to the latest 
     version available, make symlink to it in the "all" common directory."""
-    if wait_for_job_completion(cherenkov_job_id):
+    if is_job_completed(cherenkov_job_id):
         nightdir = utils.date_to_dir(options.date)
         longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR"))
         linked_longterm_file = longterm_dir / f"night_wise/all/DL1_datacheck_{nightdir}.h5"
