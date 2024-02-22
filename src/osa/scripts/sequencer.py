@@ -92,6 +92,11 @@ def single_process(telescope):
     if not options.simulate:
         os.makedirs(options.log_directory, exist_ok=True)
 
+    summary_table = run_summary_table(options.date)
+    if len(summary_table) == 0:
+        log.warning("No runs found for this date. Nothing to do. Exiting.")
+        sys.exit(0)
+
     if not GainSel_finished():
         log.info(
             f"Gain selection did not finish successfully for date {options.date}."

@@ -218,7 +218,7 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
                     sp.run(["cp", file, output_dir])
 
         flagfile = GainSel_flag_file()
-        flagfile.touch()  
+        flagfile.touch()
 
 
 @click.command()
@@ -243,7 +243,7 @@ def main(
     """
     log.setLevel(logging.INFO)
 
-    if date: 
+    if date:
         if check:
             check_failed_jobs(date, output_basedir)
         else:
@@ -257,7 +257,7 @@ def main(
             for date in list_of_dates:
                 check_failed_jobs(date, output_basedir)
         else:
-            for date in list_of_dates: 
+            for date in list_of_dates:
                 apply_gain_selection(date, start_time, end_time, output_basedir)
             log.info("Done! No more dates to process.")
 
