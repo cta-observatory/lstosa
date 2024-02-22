@@ -275,6 +275,12 @@ def sequencer_argparser():
         help="Do not produce DL2 files (default False)",
     )
     parser.add_argument(
+        "--no-gainsel",
+        action="store_true",
+        default=False,
+        help="Do not check if the gain selection finished correctly (default False)",
+    )
+    parser.add_argument(
         "tel_id",
         choices=["ST", "LST1", "LST2", "all"],
         help="telescope identifier LST1, LST2, ST or all.",
@@ -292,6 +298,7 @@ def sequencer_cli_parsing():
     options.no_submit = opts.no_submit
     options.no_calib = opts.no_calib
     options.no_dl2 = opts.no_dl2
+    options.no_gainsel = opts.no_gainsel
 
     log.debug(f"the options are {opts}")
 
