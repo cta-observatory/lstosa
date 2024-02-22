@@ -378,18 +378,25 @@ def is_job_completed(job_id: str):
     return False
 
 
-def create_longterm_symlink(cherenkov_job_id: str):
+def create_longterm_symlink(cherenkov_job_id: str = None):
     """If the created longterm DL1 datacheck file corresponds to the latest 
     version available, make symlink to it in the "all" common directory."""
-    if is_job_completed(cherenkov_job_id):
+    if not cherenkov_job_id or is_job_completed(cherenkov_job_id):
         nightdir = utils.date_to_dir(options.date)
         longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR"))
         linked_longterm_file = longterm_dir / f"night_wise/all/DL1_datacheck_{nightdir}.h5"
         all_longterm_files = longterm_dir.rglob(f"v*/{nightdir}/DL1_datacheck_{nightdir}.h5")
         latest_version_file = get_latest_version_file(all_longterm_files)
-
         log.info("Symlink the latest version longterm DL1 datacheck file in the common directory.")
         linked_longterm_file.unlink(missing_ok=True)
         linked_longterm_file.symlink_to(latest_version_file)
     else:
         log.warning(f"Job {cherenkov_job_id} (lstchain_cherenkov_transparency) did not finish successfully.")
+
+def dl1_datacheck_longterm_file_exits(): -> bool
+    """Return true if the longterm DL1 datacheck file was already produced."""
+    nightdir = utils.date_to_dir(options.date)
+    longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR"))
+    longterm_file = longterm_dir / options.prod_id / nightdir / f"DL1_datacheck_{nightdir}.h5"
+    return longterm_file.exists()
+
