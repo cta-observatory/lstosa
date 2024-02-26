@@ -5,6 +5,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 from typing import List
+import subprocess
+import time
 
 import lstchain
 from astropy.table import Table
@@ -359,15 +361,46 @@ def get_latest_version_file(longterm_files: List[str]) -> Path:
     )
 
 
-def create_longterm_symlink():
+def is_job_completed(job_id: str):
+    """
+    Check whether SLURM job `job_id` has finished.
+    
+    It keeps checking every 10 minutes for one our.
+    """
+    n_max = 10
+    n = 0
+    while n < n_max:
+        # Check if the status of the SLURM job is "COMPLETED"
+        status = subprocess.run(["sacct", "--format=state", "--jobs", job_id], capture_output=True, text=True)
+        if "COMPLETED" in status.stdout:
+            log.debug(f"Job {job_id} finished successfully!")
+            return True
+        n += 1
+        log.debug(f"Job {job_id} is not completed yet, checking again in 10 minutes...")
+        time.sleep(600)  # wait 10 minutes to check again
+    log.info(f"The maximum number of checks of job {job_id} was reached, job {job_id} did not finish succesfully yet.")
+    return False
+
+
+def create_longterm_symlink(cherenkov_job_id: str = None):
     """If the created longterm DL1 datacheck file corresponds to the latest 
     version available, make symlink to it in the "all" common directory."""
+    if not cherenkov_job_id or is_job_completed(cherenkov_job_id):
+        nightdir = utils.date_to_dir(options.date)
+        longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR"))
+        linked_longterm_file = longterm_dir / f"night_wise/all/DL1_datacheck_{nightdir}.h5"
+        all_longterm_files = longterm_dir.rglob(f"v*/{nightdir}/DL1_datacheck_{nightdir}.h5")
+        latest_version_file = get_latest_version_file(all_longterm_files)
+        log.info("Symlink the latest version longterm DL1 datacheck file in the common directory.")
+        linked_longterm_file.unlink(missing_ok=True)
+        linked_longterm_file.symlink_to(latest_version_file)
+    else:
+        log.warning(f"Job {cherenkov_job_id} (lstchain_cherenkov_transparency) did not finish successfully.")
+
+def dl1_datacheck_longterm_file_exits() -> bool:
+    """Return true if the longterm DL1 datacheck file was already produced."""
     nightdir = utils.date_to_dir(options.date)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR"))
-    linked_longterm_file = longterm_dir / f"night_wise/all/DL1_datacheck_{nightdir}.h5"
-    all_longterm_files = longterm_dir.rglob(f"v*/{nightdir}/DL1_datacheck_{nightdir}.h5")
-    latest_version_file = get_latest_version_file(all_longterm_files)
+    longterm_file = longterm_dir / options.prod_id / nightdir / f"DL1_datacheck_{nightdir}.h5"
+    return longterm_file.exists()
 
-    log.info("Symlink the latest version longterm DL1 datacheck file in the common directory.")
-    linked_longterm_file.unlink(missing_ok=True)
-    linked_longterm_file.symlink_to(latest_version_file)

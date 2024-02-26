@@ -24,7 +24,11 @@ from osa.job import (
 )
 from osa.nightsummary.extract import extract_runs, extract_sequences
 from osa.nightsummary.nightsummary import run_summary_table
-from osa.paths import destination_dir, create_longterm_symlink
+from osa.paths import (
+    destination_dir,
+    create_longterm_symlink,
+    dl1_datacheck_longterm_file_exits
+)
 from osa.raw import is_raw_data_available
 from osa.report import start
 from osa.utils.cliopts import closercliparsing
@@ -154,32 +158,38 @@ def ask_for_closing():
 def post_process(seq_tuple):
     """Set of last instructions."""
     seq_list = seq_tuple[1]
-
-    # Close the sequences
-    post_process_files(seq_list)
-
-    # Merge DL1 datacheck files and produce PDFs. It also produces
-    # the daily datacheck report using the longterm script, and updates
-    # the longterm DL1 datacheck file with the cherenkov_transparency script.
-    if cfg.getboolean("lstchain", "merge_dl1_datacheck"):
-        list_job_id = merge_dl1_datacheck(seq_list)
-        longterm_job_id = daily_datacheck(daily_longterm_cmd(list_job_id))
-        cherenkov_transparency(cherenkov_transparency_cmd(longterm_job_id))
+    
+    if dl1_datacheck_longterm_file_exits() and not options.test:
         create_longterm_symlink()
 
-    # Extract the provenance info
-    extract_provenance(seq_list)
+    else:
+        # Close the sequences
+        post_process_files(seq_list)
 
-    # Merge DL1b files run-wise
-    merge_files(seq_list, data_level="DL1AB")
+        # Merge DL1 datacheck files and produce PDFs. It also produces
+        # the daily datacheck report using the longterm script, and updates
+        # the longterm DL1 datacheck file with the cherenkov_transparency script.
+        if cfg.getboolean("lstchain", "merge_dl1_datacheck"):
+            list_job_id = merge_dl1_datacheck(seq_list)
+            longterm_job_id = daily_datacheck(daily_longterm_cmd(list_job_id))
+            cherenkov_job_id = cherenkov_transparency(cherenkov_transparency_cmd(longterm_job_id))
+            create_longterm_symlink(cherenkov_job_id)
 
-    merge_muon_files(seq_list)
+        # Extract the provenance info
+        extract_provenance(seq_list)
 
-    # Merge DL2 files run-wise
-    if not options.no_dl2:
-        merge_files(seq_list, data_level="DL2")
+        # Merge DL1b files run-wise
+        merge_files(seq_list, data_level="DL1AB")
 
-    time.sleep(600)
+        merge_muon_files(seq_list)
+
+        # Merge DL2 files run-wise
+        if not options.no_dl2:
+            merge_files(seq_list, data_level="DL2")
+
+
+        time.sleep(600)
+
 
     # Check if all jobs launched by autocloser finished correctly 
     # before creating the NightFinished.txt file
@@ -536,6 +546,7 @@ def cherenkov_transparency_cmd(longterm_job_id: str) -> List[str]:
 
     return [
         "sbatch",
+        "--parsable",
         "-D",
         options.directory,
         "-o",
@@ -553,7 +564,16 @@ def cherenkov_transparency(cmd: List[str]):
     log.debug(f"Executing {stringify(cmd)}")
 
     if not options.simulate and not options.test and shutil.which("sbatch") is not None:
-        subprocess.run(cmd, check=True)
+        job = subprocess.run(
+            cmd,
+            encoding="utf-8",
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        job_id = job.stdout.strip()
+        return job_id
+
     else:
         log.debug("Simulate launching scripts")
 
