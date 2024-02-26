@@ -158,8 +158,6 @@ def ask_for_closing():
 def post_process(seq_tuple):
     """Set of last instructions."""
     seq_list = seq_tuple[1]
-
-    a=False
     
     if dl1_datacheck_longterm_file_exits() and not options.test:
         create_longterm_symlink()
