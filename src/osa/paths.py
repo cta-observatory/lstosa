@@ -362,7 +362,11 @@ def get_latest_version_file(longterm_files: List[str]) -> Path:
 
 
 def is_job_completed(job_id: str):
-    """Wait until the SLURM job corresponding to job_id finishes."""
+    """
+    Check whether SLURM job `job_id` has finished.
+    
+    It keeps checking every 10 minutes for one our.
+    """
     n_max = 10
     n = 0
     while n < n_max:
@@ -374,7 +378,7 @@ def is_job_completed(job_id: str):
         n += 1
         log.debug(f"Job {job_id} is not completed yet, checking again in 10 minutes...")
         time.sleep(600)  # wait 10 minutes to check again
-    log.info(f"The maximum number of checks of job {job_id} was reached, job {job_id} did not finish succesfully.")
+    log.info(f"The maximum number of checks of job {job_id} was reached, job {job_id} did not finish succesfully yet.")
     return False
 
 
