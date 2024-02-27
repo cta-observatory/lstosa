@@ -29,16 +29,16 @@ parser.add_argument(
         "--check",                                                                                       
         action="store_true",
         default=False,
-        help="Check for failed jobs",
+        help="Check if any job failed",
 )
-parser.add_argument(                                                                                     
+parser.add_argument(
         "-c",                                                                                            
         "--config",                                                                                      
         action="store",
         type=Path,
         default=DEFAULT_CFG,
-        help="Use specific configuration file",
-)                                                                                                       
+        help="Configuration file",
+)
 parser.add_argument(                                                                                     
         "-d",                                                                                            
         "--date",                                                                                        
@@ -57,20 +57,21 @@ parser.add_argument(
         "--output-basedir",
         type=Path,
         default=Path("/fefs/aswg/data/real/R0G"),
+        help="Output directory of the gain selected files. Default is /fefs/aswg/data/real/R0G."
 )                                                                                                        
 parser.add_argument(                                                                                     
         "-s",                                                                                            
         "--start-time",
         type=int,
         default=10,
-        help="Time to (re)start gain selection in HH format",
+        help="Time to (re)start gain selection in HH format. Default is 10.",
 )                                                                                                       
 parser.add_argument(                                                                                     
         "-e",                                                                                            
         "--end-time",
         type=int,
         default=18,
-        help="Time to stop gain selection in HH format",
+        help="Time to stop gain selection in HH format. Default is 18.",
 )
 
 def get_sbatch_script(
@@ -120,6 +121,7 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
     summary_table = Table.read(run_summary_file)
     # Apply gain selection only to DATA runs
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
+    log.info(f"Found {len(data_runs)} DATA runs to which apply the gain selection")
 
     output_dir = output_basedir / date
     log_dir = output_basedir / "log" / date
@@ -147,7 +149,10 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
 
         if date < "20231205" and ref_source not in ["UCTS", "TIB"]:
             input_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
-
+            log.info(
+                f"Run {run_id} does not have UCTS or TIB info, so gain selection cannot"
+                f"be applied. Copying directly the R0 files to {output_dir}."
+            )
             for file in input_files:
                 sp.run(["cp", file, output_dir])
 
@@ -158,6 +163,9 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
                 new_files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
 
                 if len(new_files) != 4:
+                    log.info(f"Run {run_id}.{subrun:05d} does not have 4 streams of R0 files, so gain"
+                        f"selection cannot be applied. Copying directly the R0 files to {output_dir}."
+                    )
                     for file in new_files:
                         sp.run(["cp", file, output_dir])
 
@@ -165,6 +173,7 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
                     new_files.sort()
                     input_files.append(new_files[0])
 
+            log.info(f"Creating and launching the sbatch scripts for the rest of the runs to apply gain selection")
             for file in input_files:
                 run_info = run_info_from_filename(file)
                 job_file = log_dir / f"gain_selection_{run_info.run:05d}.{run_info.subrun:04d}.sh"
@@ -184,11 +193,13 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
                             script,
                         )
                     )
-                sp.run(["sbatch", job_file], check=True)       
+                sp.run(["sbatch", job_file], check=True)
 
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
+    log.info(f"Found {len(calib_runs)} NO-DATA runs")
 
     for run in calib_runs:
+        log.info(f"Copying R0 files corresponding to run {run} directly to {output_dir}")
         # Avoid copying files while it is still night time
         wait_for_daytime(start, end)
 
@@ -286,6 +297,8 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
         GainSel_dir = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
         flagfile_dir = GainSel_dir / date
         flagfile_dir.mkdir(parents=True, exist_ok=True)
+
+        log.info(f"Gain selection finished successfully, creating flag file for date {date} ({flagfile})")
         flagfile = GainSel_flag_file(date)
         flagfile.touch()
 
@@ -301,19 +314,24 @@ def main():
 
     if args.date:
         if args.check:
+            log.info(f"Checking gain selection status for date {args.date}")
             check_failed_jobs(args.date, args.output_basedir)
         else:
+            log.info(f"Applying gain selection to date {args.date}")
             apply_gain_selection(args.date, args.start_time, args.end_time, args.output_basedir)
 
 
     elif args.dates_file:
         list_of_dates = get_list_of_dates(args.dates_file)
+        log.info(f"Found {len(list_of_dates)} dates to apply or check gain selection")
 
         if args.check:
             for date in list_of_dates:
+                log.info(f"Checking gain selection status for date {date}")
                 check_failed_jobs(date, args.output_basedir)
         else:
             for date in list_of_dates:
+                log.info(f"Applying gain selection to date {date}")
                 apply_gain_selection(date, args.start_time, args.end_time, args.output_basedir)
             log.info("Done! No more dates to process.")
 
