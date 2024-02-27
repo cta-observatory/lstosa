@@ -101,7 +101,7 @@ def get_sbatch_script(
         #SBATCH --job-name "gain_selection_{run_id:05d}"
         #SBATCH --mem=40GB
 
-        lstchain_r0_to_r0g --R0-file={input_file} --output-dir={output_dir} --log={log_file}
+        lstchain_r0_to_r0g --R0-file={input_file} --output-dir={output_dir} --log={log_file} --no-flatfield-heuristic
         """
         )
 
