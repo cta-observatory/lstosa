@@ -8,8 +8,8 @@ import subprocess as sp
 from pathlib import Path
 from textwrap import dedent
 from io import StringIO
+import argparse
 
-import click
 from astropy.table import Table
 from lstchain.paths import run_info_from_filename, parse_r0_filename
 
@@ -19,11 +19,60 @@ from osa.utils.logging import myLogger
 from osa.job import get_sacct_output, FORMAT_SLURM
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.paths import DEFAULT_CFG
 
 log = myLogger(logging.getLogger(__name__))
 
 PATH = "PATH=/fefs/aswg/software/offline_dvr/bin:$PATH"
 
+parser = argparse.ArgumentParser(add_help=False)                                                         
+parser.add_argument(                                                                                     
+        "--check",                                                                                       
+        action="store_true",                                                                             
+        default=False,
+        help="Check for failed jobs",
+)                                                                                                        
+parser.add_argument(                                                                                     
+        "-c",                                                                                            
+        "--config",                                                                                      
+        action="store",                                                                                  
+        type=Path,
+        default=DEFAULT_CFG,
+        help="Use specific configuration file",                                                                                   
+)                                                                                                       
+parser.add_argument(                                                                                     
+        "-d",                                                                                            
+        "--date",                                                                                        
+        default=None,
+        type=str,
+        help="Night to apply the gain selection",                                                                                   
+)                                                                                                        
+parser.add_argument(                                                                                     
+        "-l",                                                                                            
+        "--dates-file",                                                                                  
+        default=None,  
+        help="List of dates to apply the gain selection",                                                                                 
+)
+parser.add_argument(                                                                                     
+        "-o",                                                                                            
+        "--output-basedir",                                                                              
+        type=Path,                                                                                       
+        default=Path("/fefs/aswg/data/real/R0G"),                                                      
+)                                                                                                        
+parser.add_argument(                                                                                     
+        "-s",                                                                                            
+        "--start-time",
+        type=int,
+        default=10,
+        help="Time to (re)start gain selection in HH format",                                                                               
+)                                                                                                       
+parser.add_argument(                                                                                     
+        "-e",                                                                                            
+        "--end-time",
+        type=int,
+        default=18,
+        help="Time to stop gain selection in HH format",                                                                                    
+)
 
 def get_sbatch_script(
     run_id, subrun, input_file, output_dir, log_dir, ref_time, ref_counter, module, ref_source
@@ -220,44 +269,31 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
         flagfile.touch()
 
 
-@click.command()
-@click.option("--check", is_flag=True, default=False, help="Check for failed jobs.")
-@click.option("-d", "--date", type=str)
-@click.option("-l", "--dates-file", type=click.Path(exists=True, path_type=Path))
-@click.option("-o", "--output-basedir", type=click.Path(path_type=Path))
-@click.option("-s", "--start-time", type=int, default=10, help="Time to (re)start gain selection in HH format.")
-@click.option("-e", "--end-time", type=int, default=18, help="Time to stop gain selection in HH format.")
-def main(
-    date: str = None,
-    dates_file: Path = None,
-    output_basedir: Path = None, 
-    check: bool = False, 
-    start_time: int = 10, 
-    end_time: int = 18
-):
+def main():
     """
     Loop over the dates listed in the input file and launch the gain selection
     script for each of them. The input file should list the dates in the format
     YYYYMMDD one date per line.
     """
     log.setLevel(logging.INFO)
+    args = parser.parse_args()
 
-    if date:
-        if check:
-            check_failed_jobs(date, output_basedir)
+    if args.date:
+        if args.check:
+            check_failed_jobs(args.date, args.output_basedir)
         else:
-            apply_gain_selection(date, start_time, end_time, output_basedir)
+            apply_gain_selection(args.date, args.start_time, args.end_time, args.output_basedir)
 
 
-    elif dates_file:
-        list_of_dates = get_list_of_dates(dates_file)
+    elif args.dates_file:
+        list_of_dates = get_list_of_dates(args.dates_file)
 
-        if check:
+        if args.check:
             for date in list_of_dates:
-                check_failed_jobs(date, output_basedir)
+                check_failed_jobs(args.date, args.output_basedir)
         else:
             for date in list_of_dates:
-                apply_gain_selection(date, start_time, end_time, output_basedir)
+                apply_gain_selection(args.date, args.start_time, args.end_time, args.output_basedir)
             log.info("Done! No more dates to process.")
 
 
