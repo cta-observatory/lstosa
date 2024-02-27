@@ -25,53 +25,53 @@ log = myLogger(logging.getLogger(__name__))
 
 PATH = "PATH=/fefs/aswg/software/offline_dvr/bin:$PATH"
 
-parser = argparse.ArgumentParser(add_help=False)                                                         
-parser.add_argument(                                                                                     
+parser = argparse.ArgumentParser(add_help=False)
+parser.add_argument(
         "--check",                                                                                       
-        action="store_true",                                                                             
+        action="store_true",
         default=False,
         help="Check for failed jobs",
-)                                                                                                        
+)
 parser.add_argument(                                                                                     
         "-c",                                                                                            
         "--config",                                                                                      
-        action="store",                                                                                  
+        action="store",
         type=Path,
         default=DEFAULT_CFG,
-        help="Use specific configuration file",                                                                                   
+        help="Use specific configuration file",
 )                                                                                                       
 parser.add_argument(                                                                                     
         "-d",                                                                                            
         "--date",                                                                                        
         default=None,
         type=str,
-        help="Night to apply the gain selection",                                                                                   
+        help="Night to apply the gain selection",
 )                                                                                                        
 parser.add_argument(                                                                                     
         "-l",                                                                                            
-        "--dates-file",                                                                                  
-        default=None,  
-        help="List of dates to apply the gain selection",                                                                                 
+        "--dates-file",
+        default=None,
+        help="List of dates to apply the gain selection",
 )
 parser.add_argument(                                                                                     
         "-o",                                                                                            
-        "--output-basedir",                                                                              
-        type=Path,                                                                                       
-        default=Path("/fefs/aswg/data/real/R0G"),                                                      
+        "--output-basedir",
+        type=Path,
+        default=Path("/fefs/aswg/data/real/R0G"),
 )                                                                                                        
 parser.add_argument(                                                                                     
         "-s",                                                                                            
         "--start-time",
         type=int,
         default=10,
-        help="Time to (re)start gain selection in HH format",                                                                               
+        help="Time to (re)start gain selection in HH format",
 )                                                                                                       
 parser.add_argument(                                                                                     
         "-e",                                                                                            
         "--end-time",
         type=int,
         default=18,
-        help="Time to stop gain selection in HH format",                                                                                    
+        help="Time to stop gain selection in HH format",
 )
 
 def get_sbatch_script(
@@ -203,7 +203,7 @@ def run_sacct_j(job) -> StringIO:
 
 def GainSel_flag_file(date: str) -> Path:
     filename = cfg.get("LSTOSA", "gain_selection_check")
-    GainSel_dir = Path(cfg.get(options.tel_id, "GAIN_SELECTION_FLAG_DIR"))
+    GainSel_dir = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
     flagfile = GainSel_dir / date / filename
     return flagfile.resolve()
 
@@ -265,7 +265,7 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
                 for file in files:
                     sp.run(["cp", file, output_dir])
 
-        GainSel_dir = Path(cfg.get(options.tel_id, "GAIN_SELECTION_FLAG_DIR"))
+        GainSel_dir = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
         flagfile_dir = GainSel_dir / date
         flagfile_dir.mkdir(parents=True, exist_ok=True)
         flagfile = GainSel_flag_file(date)
@@ -293,10 +293,10 @@ def main():
 
         if args.check:
             for date in list_of_dates:
-                check_failed_jobs(args.date, args.output_basedir)
+                check_failed_jobs(date, args.output_basedir)
         else:
             for date in list_of_dates:
-                apply_gain_selection(args.date, args.start_time, args.end_time, args.output_basedir)
+                apply_gain_selection(date, args.start_time, args.end_time, args.output_basedir)
             log.info("Done! No more dates to process.")
 
 
