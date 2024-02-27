@@ -17,7 +17,6 @@ from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wai
 from osa.utils.utils import wait_for_daytime
 from osa.utils.logging import myLogger
 from osa.job import get_sacct_output, FORMAT_SLURM
-from osa.configs import options
 from osa.configs.config import cfg
 from osa.paths import DEFAULT_CFG
 
