@@ -28,7 +28,7 @@ from osa.paths import analysis_path
 from osa.report import start
 from osa.utils.cliopts import sequencer_cli_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import is_day_closed, gettag, date_to_iso
+from osa.utils.utils import is_day_closed, gettag, date_to_iso, date_to_dir
 from osa.veto import get_closed_list, get_veto_list
 from osa.scripts.gain_selection import GainSel_finished
 
@@ -98,7 +98,7 @@ def single_process(telescope):
         log.warning("No runs found for this date. Nothing to do. Exiting.")
         sys.exit(0)
 
-    if not options.no_gainsel and not GainSel_finished():
+    if not options.no_gainsel and not GainSel_finished(date_to_dir(options.date)):
         log.info(
             f"Gain selection did not finish successfully for date {options.date}."
             "Try again later, once gain selection has finished."
