@@ -74,28 +74,46 @@ parser.add_argument(
 )
 
 def get_sbatch_script(
-    run_id, subrun, input_file, output_dir, log_dir, ref_time, ref_counter, module, ref_source
+    run_id, subrun, input_file, output_dir, log_dir, log_file, ref_time, ref_counter, module, ref_source, script
 ):
     """Build the sbatch job pilot script for running the gain selection."""
-    return dedent(
-        f"""\
-    #!/bin/bash
+    if script=="old":
+        return dedent(
+            f"""\
+        #!/bin/bash
 
-    #SBATCH -D {log_dir}
-    #SBATCH -o "gain_selection_{run_id:05d}_{subrun:04d}_%j.log"
-    #SBATCH --job-name "gain_selection_{run_id:05d}"
-    #SBATCH --export {PATH}
+        #SBATCH -D {log_dir}
+        #SBATCH -o "gain_selection_{run_id:05d}_{subrun:04d}_%j.log"
+        #SBATCH --job-name "gain_selection_{run_id:05d}"
+        #SBATCH --export {PATH}
 
-    lst_dvr {input_file} {output_dir} {ref_time} {ref_counter} {module} {ref_source}
-    """
-    )
+        lst_dvr {input_file} {output_dir} {ref_time} {ref_counter} {module} {ref_source}
+        """
+        )
+    elif script=="new":
+        return dedent(
+            f"""\
+        #!/bin/bash
 
+        #SBATCH -D {log_dir}
+        #SBATCH -o "gain_selection_{run_id:05d}_{subrun:04d}_%j.log"
+        #SBATCH --job-name "gain_selection_{run_id:05d}"
+        #SBATCH --mem=40GB
+
+        lstchain_r0_to_r0g --R0-file={input_file} --output-dir={output_dir} --log={log_file}
+        """
+        )
 
 def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path = None):
     """
     Submit the jobs to apply the gain selection to the data for a given date
     on a subrun-by-subrun basis.
     """
+
+    if date < "20231205":
+        script = "old"
+    else:
+        script = "new"
 
     run_summary_dir = Path("/fefs/aswg/data/real/monitoring/RunSummary")
     run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
@@ -107,6 +125,7 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
     log_dir = output_basedir / "log" / date
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / f"r0_to_r0g_{date}.log"
     r0_dir = Path(f"/fefs/aswg/data/real/R0/{date}")
 
     for run in data_runs:
@@ -126,8 +145,13 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
         subrun_numbers = [int(file[-12:-8]) for file in files]
         input_files = []
 
-        if ref_source in ["UCTS", "TIB"]:
+        if date < "20231205" and not ref_source in ["UCTS", "TIB"]:
+            input_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
 
+            for file in input_files:
+                sp.run(["cp", file, output_dir])
+
+        else:
             n_subruns = max(subrun_numbers)
 
             for subrun in range(n_subruns + 1):
@@ -152,20 +176,15 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
                             file,
                             output_dir,
                             log_dir,
+                            log_file,
                             ref_time,
                             ref_counter,
                             module,
                             ref_source,
+                            script,
                         )
                     )
-                sp.run(["sbatch", job_file], check=True)
-
-        else:
-
-            input_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
-
-            for file in input_files:
-                sp.run(["cp", file, output_dir])
+                sp.run(["sbatch", job_file], check=True)       
 
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
 
