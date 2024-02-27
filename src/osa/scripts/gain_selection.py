@@ -297,9 +297,9 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
         GainSel_dir = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
         flagfile_dir = GainSel_dir / date
         flagfile_dir.mkdir(parents=True, exist_ok=True)
-
-        log.info(f"Gain selection finished successfully, creating flag file for date {date} ({flagfile})")
+        
         flagfile = GainSel_flag_file(date)
+        log.info(f"Gain selection finished successfully, creating flag file for date {date} ({flagfile})")
         flagfile.touch()
 
 
