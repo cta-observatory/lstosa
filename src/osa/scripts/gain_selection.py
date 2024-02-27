@@ -173,7 +173,7 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
                     new_files.sort()
                     input_files.append(new_files[0])
 
-            log.info(f"Creating and launching the sbatch scripts for the rest of the runs to apply gain selection")
+            log.info("Creating and launching the sbatch scripts for the rest of the runs to apply gain selection")
             for file in input_files:
                 run_info = run_info_from_filename(file)
                 job_file = log_dir / f"gain_selection_{run_info.run:05d}.{run_info.subrun:04d}.sh"
