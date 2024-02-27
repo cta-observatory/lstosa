@@ -265,6 +265,9 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
                 for file in files:
                     sp.run(["cp", file, output_dir])
 
+        GainSel_dir = Path(cfg.get(options.tel_id, "GAIN_SELECTION_FLAG_DIR"))
+        flagfile_dir = GainSel_dir / date
+        flagfile_dir.mkdir(parents=True, exist_ok=True)
         flagfile = GainSel_flag_file(date)
         flagfile.touch()
 
