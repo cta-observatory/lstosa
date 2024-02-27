@@ -14,7 +14,7 @@ from astropy.table import Table
 from lstchain.paths import run_info_from_filename, parse_r0_filename
 
 from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wait
-from osa.utils.utils import wait_for_daytime, date_to_dir
+from osa.utils.utils import wait_for_daytime
 from osa.utils.logging import myLogger
 from osa.job import get_sacct_output, FORMAT_SLURM
 from osa.configs import options
@@ -152,17 +152,16 @@ def run_sacct_j(job) -> StringIO:
     return StringIO(sp.check_output(sacct_cmd).decode())
 
 
-def GainSel_flag_file() -> Path:
+def GainSel_flag_file(date: str) -> Path:
     filename = cfg.get("LSTOSA", "gain_selection_check")
-    date = date_to_dir(options.date)
     GainSel_dir = Path(cfg.get(options.tel_id, "GAIN_SELECTION_FLAG_DIR"))
     flagfile = GainSel_dir / date / filename
     return flagfile.resolve()
 
 
-def GainSel_finished() -> bool:
+def GainSel_finished(date: str) -> bool:
     """Check if gain selection finished successfully."""
-    flagfile = GainSel_flag_file()
+    flagfile = GainSel_flag_file(date)
     return flagfile.exists()
 
 
@@ -217,7 +216,7 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
                 for file in files:
                     sp.run(["cp", file, output_dir])
 
-        flagfile = GainSel_flag_file()
+        flagfile = GainSel_flag_file(date)
         flagfile.touch()
 
 
