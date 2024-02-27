@@ -145,7 +145,7 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
         subrun_numbers = [int(file[-12:-8]) for file in files]
         input_files = []
 
-        if date < "20231205" and not ref_source in ["UCTS", "TIB"]:
+        if date < "20231205" and ref_source not in ["UCTS", "TIB"]:
             input_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
 
             for file in input_files:
