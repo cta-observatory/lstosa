@@ -7,9 +7,11 @@ from pathlib import Path
 from typing import List
 import subprocess
 import time
+import os
 
 import lstchain
 from astropy.table import Table
+from astropy.coordinates import SkyCoord
 from lstchain.onsite import (find_systematics_correction_file,
                              find_time_calibration_file,
                              find_filter_wheels)
@@ -397,6 +399,7 @@ def create_longterm_symlink(cherenkov_job_id: str = None):
     else:
         log.warning(f"Job {cherenkov_job_id} (lstchain_cherenkov_transparency) did not finish successfully.")
 
+
 def dl1_datacheck_longterm_file_exits() -> bool:
     """Return true if the longterm DL1 datacheck file was already produced."""
     nightdir = utils.date_to_dir(options.date)
@@ -404,3 +407,92 @@ def dl1_datacheck_longterm_file_exits() -> bool:
     longterm_file = longterm_dir / options.prod_id / nightdir / f"DL1_datacheck_{nightdir}.h5"
     return longterm_file.exists()
 
+
+def convert_dec_string(dec_str: str) -> float:
+    """Return the declination angle in degrees corresponding to a 
+    given string of the form "dec_XXXX" or "dec_min_XXXX"."""
+    # Split the string into parts
+    parts = dec_str.split('_')
+
+    # Extract the sign, degrees, and minutes
+    sign = 1 if 'min' not in parts else -1
+    degrees = int(parts[-1])
+
+    # Calculate the numerical value
+    dec_value = sign * (degrees / 100)
+
+    return dec_value
+
+
+def get_corresponding_string(list1: list, list2: list) -> dict:
+    """Return a dictionary created from two given lists."""
+    corresponding_dict = {}
+    for index, element in enumerate(list2):
+        corresponding_dict[element] = list1[index]
+    return corresponding_dict
+
+
+def get_latest_RF_model_path(dec_str: str) -> Path:
+    """Get the path of the most recent version of RF models for a given declination,
+    excluding the ones produced for the source-dependent analysis."""
+    BASE_MODELS = Path("/fefs/aswg/data/models/AllSky")
+    # make sure the RF models correspond to the current version of lstchain
+    current_version = get_major_version(utils.get_lstchain_version())
+    list_nodes = sorted(BASE_MODELS.rglob(f"*{current_version}*/{dec_str}"), key=os.path.getmtime)
+    
+    log.debug(f"Found len(list_nodes) paths with {current_version} corresponding to {dec_str}:")
+    for path in list_nodes:
+        log.debug(path)
+    
+    # remove from the list the models produced for the source-dependent analysis        
+    for i in list_nodes:
+        if "srcdep" in str(i):
+            list_nodes.remove(i)
+
+    return list_nodes[-1]
+        
+
+def get_RF_model(run_str: str) -> Path:
+    """Get the path of the RF model to be used in the DL2 production for a given run."""
+    run_catalog_dir = Path("/fefs/aswg/data/real/monitoring/RunCatalog")
+    run_catalog_file = run_catalog_dir / f"RunCatalog_{options.date}.ecsv"
+    run_catalog = Table.read(run_catalog_file)
+    run = run_catalog[run_catalog["run_id"]==int(run_str)]
+    
+    try:
+        target_name = run["source_name"]
+        source_coordinates = SkyCoord.from_name(target_name)
+        source_dec = source_coordinates.dec.value
+        
+    except TypeError:
+        source_dec = run["source_dec"][0]
+    
+    source_culmination = utils.culmination_angle(source_dec)
+
+    dec_list = os.listdir("/fefs/aswg/data/mc/DL0/LSTProd2/TrainingDataset/Protons")[:-2]
+    
+    # Convert each string in the list to numerical values
+    dec_values = [convert_dec_string(dec) for dec in dec_list]
+    
+    closest_declination = min(dec_values, key=lambda x: abs(x - source_dec))
+    closest_dec_culmination = utils.culmination_angle(closest_declination)
+    log.debug(
+        f"The declination closest to {source_dec} is: {closest_declination}."
+        "Checking if the culmination angle is larger than the one of the target source."
+    )
+
+    if closest_dec_culmination > source_culmination:
+        # If the culmination angle of the closest declination line is larger than for the source, 
+        # remove it from the declination lines list and look for the second closest declination line.
+        corresponding_dict = get_corresponding_string(dec_list, dec_values)
+        corresponding_string = corresponding_dict[closest_declination]
+        dec_values.remove(closest_declination)
+        dec_list.remove(corresponding_string)
+        closest_declination = min(dec_values, key=lambda x: abs(x - source_dec))
+    
+        log.debug(f"The declination line to use for the DL2 production is: {closest_declination}")
+    
+    corresponding_dict = get_corresponding_string(dec_list, dec_values)
+    corresponding_string = corresponding_dict[closest_declination]
+
+    return get_latest_RF_model_path(corresponding_string)

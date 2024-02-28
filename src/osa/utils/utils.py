@@ -8,12 +8,15 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from socket import gethostname
+from gammapy.data import observatory_locations
+from astropy import units as u
 
 import osa.paths
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
+
 
 __all__ = [
     "get_lstchain_version",
@@ -285,3 +288,21 @@ def wait_for_daytime(start=8, end=18):
     while time.localtime().tm_hour <= start or time.localtime().tm_hour >= end:
         log.info("Waiting for sunrise to not interfere with the data-taking. Sleeping.")
         time.sleep(3600)
+
+
+def culmination_angle(dec: int) -> float:  
+    """
+    Calculate culmination angle for a given declination.
+
+    Parameters
+    ----------
+    dec: int
+        declination in degrees
+
+    Returns
+    -------
+    Culmination angle in degrees
+    """
+    location = observatory_locations["cta_north"]
+    Lat = location.lat  # latitude of the LST1 site    
+    return abs(Lat - dec*u.deg).value
