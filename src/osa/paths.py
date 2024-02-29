@@ -435,7 +435,7 @@ def get_corresponding_string(list1: list, list2: list) -> dict:
 def get_RF_model(run_str: str) -> Path:
     """Get the path of the RF model to be used in the DL2 production for a given run."""
     run_catalog_dir = Path(cfg.get(options.tel_id, "RUN_CATALOG"))
-    run_catalog_file = run_catalog_dir / f"RunCatalog_{options.date}.ecsv"
+    run_catalog_file = run_catalog_dir / f"RunCatalog_{utils.date_to_dir(options.date)}.ecsv"
     run_catalog = Table.read(run_catalog_file)
     run = run_catalog[run_catalog["run_id"]==int(run_str)]
     target_name = run["source_name"]
