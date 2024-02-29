@@ -106,10 +106,10 @@ def test_simulate_processing(
 
     with open(json_file_dl2) as file:
         dl2 = yaml.safe_load(file)
-    assert len(dl2["entity"]) == 25
-    assert len(dl2["activity"]) == 6
-    assert len(dl2["used"]) == 21
-    assert len(dl2["wasGeneratedBy"]) == 12
+    assert len(dl2["entity"]) == 19
+    assert len(dl2["activity"]) == 5
+    assert len(dl2["used"]) == 15
+    assert len(dl2["wasGeneratedBy"]) == 10
 
     rc = run_program("simulate_processing", "-p")
     assert rc.returncode == 0
@@ -248,6 +248,8 @@ def test_datasequence(running_analysis_dir):
     prod_id = "v0.1.0"
     run_number = "00003.0000"
     options.directory = running_analysis_dir
+
+    assert run_catalog.exists()
 
     output = run_program(
         "datasequence",
