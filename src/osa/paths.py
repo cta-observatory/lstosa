@@ -438,14 +438,15 @@ def get_RF_model(run_str: str) -> Path:
     run_catalog_file = run_catalog_dir / f"RunCatalog_{options.date}.ecsv"
     run_catalog = Table.read(run_catalog_file)
     run = run_catalog[run_catalog["run_id"]==int(run_str)]
+    target_name = run["source_name"]
     
     try:
-        target_name = run["source_name"]
         source_coordinates = SkyCoord.from_name(target_name)
         source_dec = source_coordinates.dec.value
         
     except TypeError:
-        source_dec = run["source_dec"][0]
+        tcu_server = cfg.get("database", "tcu_db")
+        source_dec = utils.get_source_dec_from_TCU(target_name, tcu_server)
     
     source_culmination = utils.culmination_angle(source_dec)
 

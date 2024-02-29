@@ -10,6 +10,7 @@ from pathlib import Path
 from socket import gethostname
 from gammapy.data import observatory_locations
 from astropy import units as u
+from pymongo import MongoClient
 
 import osa.paths
 from osa.configs import options
@@ -306,3 +307,11 @@ def culmination_angle(dec: int) -> float:
     location = observatory_locations["cta_north"]
     Lat = location.lat  # latitude of the LST1 site    
     return abs(Lat - dec*u.deg).value
+
+
+def get_source_dec_from_TCU(source_name: str, tcu_server: str) -> float:
+    """Get the declination of a given source from the TCU database."""
+    client = MongoClient(tcu_server)
+    collection = client["lst1_config"]["structure_configurations"]
+    source_dec = collection.find_one({"name": source_name})["target"]["source_dec"]
+    return source_dec
