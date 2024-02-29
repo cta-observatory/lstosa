@@ -430,31 +430,11 @@ def get_corresponding_string(list1: list, list2: list) -> dict:
     for index, element in enumerate(list2):
         corresponding_dict[element] = list1[index]
     return corresponding_dict
-
-
-def get_latest_RF_model_path(dec_str: str) -> Path:
-    """Get the path of the most recent version of RF models for a given declination,
-    excluding the ones produced for the source-dependent analysis."""
-    BASE_MODELS = Path("/fefs/aswg/data/models/AllSky")
-    # make sure the RF models correspond to the current version of lstchain
-    current_version = get_major_version(utils.get_lstchain_version())
-    list_nodes = sorted(BASE_MODELS.rglob(f"*{current_version}*/{dec_str}"), key=os.path.getmtime)
-    
-    log.debug(f"Found len(list_nodes) paths with {current_version} corresponding to {dec_str}:")
-    for path in list_nodes:
-        log.debug(path)
-    
-    # remove from the list the models produced for the source-dependent analysis        
-    for i in list_nodes:
-        if "srcdep" in str(i):
-            list_nodes.remove(i)
-
-    return list_nodes[-1]
         
 
 def get_RF_model(run_str: str) -> Path:
     """Get the path of the RF model to be used in the DL2 production for a given run."""
-    run_catalog_dir = Path("/fefs/aswg/data/real/monitoring/RunCatalog")
+    run_catalog_dir = Path(cfg.get(options.tel_id, "RUN_CATALOG"))
     run_catalog_file = run_catalog_dir / f"RunCatalog_{options.date}.ecsv"
     run_catalog = Table.read(run_catalog_file)
     run = run_catalog[run_catalog["run_id"]==int(run_str)]
@@ -495,4 +475,8 @@ def get_RF_model(run_str: str) -> Path:
     corresponding_dict = get_corresponding_string(dec_list, dec_values)
     corresponding_string = corresponding_dict[closest_declination]
 
-    return get_latest_RF_model_path(corresponding_string)
+    rf_models_dir = Path(cfg.get("lstchain", "rf_models"))
+    mc_prod = cfg.get("lstchain", "mc_prod")
+    rf_model_path = rf_models_dir / mc_prod / corresponding_string
+    
+    return rf_model_path
