@@ -266,7 +266,7 @@ def dl1_to_dl2(run_str: str) -> int:
     dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
     dl2_subdirectory = Path(options.directory) / options.dl2_prod_id
     dl2_config = Path(cfg.get("lstchain", "dl2_config"))
-    rf_models_directory = get_RF_model(run_str)
+    rf_models_directory = get_RF_model(run_str[:5])
     dl1_file = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
 
     command = cfg.get("lstchain", "dl1_to_dl2")
