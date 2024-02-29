@@ -238,7 +238,7 @@ def test_closer(
     assert closed_seq_file.exists()
 
 
-def test_datasequence(running_analysis_dir):
+def test_datasequence(running_analysis_dir, run_catalog):
     drs4_file = "drs4_pedestal.Run00001.0000.fits"
     calib_file = "calibration.Run00002.0000.hdf5"
     timecalib_file = "time_calibration.Run00002.0000.hdf5"
