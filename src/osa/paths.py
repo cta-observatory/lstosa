@@ -439,19 +439,21 @@ def get_RF_model(run_str: str) -> Path:
     run_catalog = Table.read(run_catalog_file)
     run = run_catalog[run_catalog["run_id"]==int(run_str)]
     target_name = run["source_name"]
-    
+
     try:
-        source_coordinates = SkyCoord.from_name(target_name)
+        source_coordinates = SkyCoord.from_name(target_name[0])
         source_dec = source_coordinates.dec.value
-        
+
     except TypeError:
         tcu_server = cfg.get("database", "tcu_db")
         source_dec = utils.get_source_dec_from_TCU(target_name, tcu_server)
     
     source_culmination = utils.culmination_angle(source_dec)
 
-    dec_list = os.listdir("/fefs/aswg/data/mc/DL0/LSTProd2/TrainingDataset/Protons")[:-2]
-    
+    rf_models_dir = Path(cfg.get("LST1", "RF_MODELS"))
+    mc_prod = cfg.get("lstchain", "mc_prod")
+    dec_list = os.listdir(rf_models_dir / mc_prod)
+
     # Convert each string in the list to numerical values
     dec_values = [convert_dec_string(dec) for dec in dec_list]
     
@@ -476,8 +478,6 @@ def get_RF_model(run_str: str) -> Path:
     corresponding_dict = get_corresponding_string(dec_list, dec_values)
     declination_str = corresponding_dict[closest_declination]
 
-    rf_models_dir = Path(cfg.get("lstchain", "rf_models"))
-    mc_prod = cfg.get("lstchain", "mc_prod")
     rf_model_path = rf_models_dir / mc_prod / declination_str
-    
+
     return rf_model_path
