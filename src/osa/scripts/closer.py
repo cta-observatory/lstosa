@@ -166,15 +166,6 @@ def post_process(seq_tuple):
         # Close the sequences
         post_process_files(seq_list)
 
-        # Merge DL1 datacheck files and produce PDFs. It also produces
-        # the daily datacheck report using the longterm script, and updates
-        # the longterm DL1 datacheck file with the cherenkov_transparency script.
-        if cfg.getboolean("lstchain", "merge_dl1_datacheck"):
-            list_job_id = merge_dl1_datacheck(seq_list)
-            longterm_job_id = daily_datacheck(daily_longterm_cmd(list_job_id))
-            cherenkov_job_id = cherenkov_transparency(cherenkov_transparency_cmd(longterm_job_id))
-            create_longterm_symlink(cherenkov_job_id)
-
         # Extract the provenance info
         extract_provenance(seq_list)
 
@@ -187,9 +178,16 @@ def post_process(seq_tuple):
         if not options.no_dl2:
             merge_files(seq_list, data_level="DL2")
 
+        # Merge DL1 datacheck files and produce PDFs. It also produces
+        # the daily datacheck report using the longterm script, and updates
+        # the longterm DL1 datacheck file with the cherenkov_transparency script.
+        if cfg.getboolean("lstchain", "merge_dl1_datacheck"):
+            list_job_id = merge_dl1_datacheck(seq_list)
+            longterm_job_id = daily_datacheck(daily_longterm_cmd(list_job_id))
+            cherenkov_job_id = cherenkov_transparency(cherenkov_transparency_cmd(longterm_job_id))
+            create_longterm_symlink(cherenkov_job_id)
 
         time.sleep(600)
-
 
     # Check if all jobs launched by autocloser finished correctly 
     # before creating the NightFinished.txt file
