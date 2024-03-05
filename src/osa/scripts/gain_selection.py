@@ -87,6 +87,7 @@ def get_sbatch_script(
         #SBATCH -o "gain_selection_{run_id:05d}_{subrun:04d}_%j.log"
         #SBATCH --job-name "gain_selection_{run_id:05d}"
         #SBATCH --export {PATH}
+        #SBATCH --partition=short,long
 
         lst_dvr {input_file} {output_dir} {ref_time} {ref_counter} {module} {ref_source}
         """
@@ -100,6 +101,7 @@ def get_sbatch_script(
         #SBATCH -o "gain_selection_{run_id:05d}_{subrun:04d}_%j.log"
         #SBATCH --job-name "gain_selection_{run_id:05d}"
         #SBATCH --mem=40GB
+        #SBATCH --partition=short,long
 
         lstchain_r0_to_r0g --R0-file={input_file} --output-dir={output_dir} --log={log_file} --no-flatfield-heuristic
         """
