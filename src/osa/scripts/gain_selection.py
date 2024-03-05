@@ -113,7 +113,7 @@ def get_sbatch_script(
         """
         )
 
-def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path = None):
+def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path = None, no_queue_check: bool = False):
     """
     Submit the jobs to apply the gain selection to the data for a given date
     on a subrun-by-subrun basis.
@@ -139,7 +139,7 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
     r0_dir = Path(f"/fefs/aswg/data/real/R0/{date}")
 
     for run in data_runs:
-        if not args.no_queue_check:
+        if not no_queue_check:
             # Check slurm queue status and sleep for a while to avoid overwhelming the queue
             check_job_status_and_wait(max_jobs=1500)
 
@@ -327,7 +327,7 @@ def main():
             check_failed_jobs(args.date, args.output_basedir)
         else:
             log.info(f"Applying gain selection to date {args.date}")
-            apply_gain_selection(args.date, args.start_time, args.end_time, args.output_basedir)
+            apply_gain_selection(args.date, args.start_time, args.end_time, args.output_basedir, no_queue_check=args.no_queue_check)
 
 
     elif args.dates_file:
@@ -341,7 +341,7 @@ def main():
         else:
             for date in list_of_dates:
                 log.info(f"Applying gain selection to date {date}")
-                apply_gain_selection(date, args.start_time, args.end_time, args.output_basedir)
+                apply_gain_selection(date, args.start_time, args.end_time, args.output_basedir, no_queue_check=args.no_queue_check)
             log.info("Done! No more dates to process.")
 
 
