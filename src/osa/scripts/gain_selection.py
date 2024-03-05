@@ -139,7 +139,7 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
     r0_dir = Path(f"/fefs/aswg/data/real/R0/{date}")
 
     for run in data_runs:
-        if not options.no_queue_check:
+        if not args.no_queue_check:
             # Check slurm queue status and sleep for a while to avoid overwhelming the queue
             check_job_status_and_wait(max_jobs=1500)
 
