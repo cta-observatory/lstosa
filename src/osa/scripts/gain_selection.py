@@ -32,6 +32,12 @@ parser.add_argument(
         help="Check if any job failed",
 )
 parser.add_argument(
+        "--no-queue-check",
+        action="store_true",
+        default=False,
+        help="Do not wait until the number of jobs in the slurm queue is < 1500",
+)
+parser.add_argument(
         "-c",                                                                                            
         "--config",                                                                                      
         action="store",
@@ -133,8 +139,9 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
     r0_dir = Path(f"/fefs/aswg/data/real/R0/{date}")
 
     for run in data_runs:
-        # Check slurm queue status and sleep for a while to avoid overwhelming the queue
-        check_job_status_and_wait(max_jobs=1500)
+        if not options.no_queue_check:
+            # Check slurm queue status and sleep for a while to avoid overwhelming the queue
+            check_job_status_and_wait(max_jobs=1500)
 
         # Avoid running jobs while it is still night time
         wait_for_daytime(start, end)
