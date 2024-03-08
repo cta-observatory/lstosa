@@ -202,7 +202,7 @@ def post_process(seq_tuple):
         n += 1
 
     if n > n_max:
-        send_warning_mail(date=options.date)
+        send_warning_mail(date=date_to_iso(options.date))
         return False
 
     if options.seqtoclose is None:
