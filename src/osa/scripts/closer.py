@@ -193,7 +193,7 @@ def post_process(seq_tuple):
     # before creating the NightFinished.txt file
     n_max = 6
     n = 0
-    while not all_closer_jobs_finished_correctly() & n <= n_max:
+    while not all_closer_jobs_finished_correctly() and n <= n_max:
         log.info(
             "All jobs launched by autocloser did not finished correctly yet. "
             "Checking again in 10 minutes..."
