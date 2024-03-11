@@ -41,6 +41,7 @@ class Telescope:
         config_file: Path,
         ignore_cronlock: bool = False,
         test: bool = False,
+        no_gainsel: bool = False,
     ):
         """
         Parameters
@@ -82,7 +83,7 @@ class Telescope:
         if not self.lock_automatic_sequencer() and not ignore_cronlock:
             log.warning(f"{self.telescope} already locked! Ignoring {self.telescope}")
             return
-        if not self.simulate_sequencer(date, config_file, test):
+        if not self.simulate_sequencer(date, config_file, test, no_gainsel):
             log.warning(
                 f"Simulation of the sequencer failed "
                 f"for {self.telescope}! Ignoring {self.telescope}"
@@ -121,7 +122,7 @@ class Telescope:
         self.locked = True
         return True
 
-    def simulate_sequencer(self, date: str, config_file: Path, test: bool):
+    def simulate_sequencer(self, date: str, config_file: Path, test: bool, no_gainsel: bool):
         """Launch the sequencer in simulation mode."""
         if test:
             self.read_file()
@@ -135,6 +136,9 @@ class Telescope:
                 date,
                 self.telescope,
             ]
+            if no_gainsel:
+                sequencer_cmd.insert(1, "--no-gainsel")
+
             log.debug(f"Executing {' '.join(sequencer_cmd)}")
             sequencer = subprocess.Popen(
                 sequencer_cmd,
@@ -445,7 +449,7 @@ def main():
     # create telescope and sequence objects
     log.info("Simulating sequencer...")
 
-    telescope = Telescope(args.tel_id, date, args.config)
+    telescope = Telescope(args.tel_id, date, args.config, no_gainsel=args.no_gainsel)
 
     log.info(f"Processing {args.tel_id}...")
 

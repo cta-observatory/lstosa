@@ -483,6 +483,12 @@ def autocloser_cli_parser():
         default=False,
         help="Disregard the production of DL2 files",
     )
+    parser.add_argument(
+        "--no-gainsel",
+        action="store_true",
+        default=False,
+        help="Do not check if the gain selection finished correctly (default False)",
+    )
     parser.add_argument("-r", "--runwise", action="store_true", help="Close the day run-wise.")
     parser.add_argument("-l", "--log", type=Path, default=None, help="Write log to a file.")
     parser.add_argument("tel_id", type=str, choices=["LST1"])
