@@ -126,9 +126,11 @@ def test_simulated_sequencer(
     run_catalog,
     r0_data,
     merged_run_summary,
+    gain_selection_flag_file,
 ):
     assert run_summary_file.exists()
     assert run_catalog.exists()
+    assert gain_selection_flag_file.exists()
 
     for r0_file in r0_data:
         assert r0_file.exists()

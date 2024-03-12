@@ -7,6 +7,7 @@ prepares a SLURM job array which launches the data sequences for every subrun.
 
 import logging
 import os
+import sys
 from decimal import Decimal
 
 from osa import osadb
@@ -22,12 +23,14 @@ from osa.job import (
     run_squeue,
 )
 from osa.nightsummary.extract import build_sequences
+from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import analysis_path
 from osa.report import start
 from osa.utils.cliopts import sequencer_cli_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import is_day_closed, gettag, date_to_iso
+from osa.utils.utils import is_day_closed, gettag, date_to_iso, date_to_dir
 from osa.veto import get_closed_list, get_veto_list
+from osa.scripts.gain_selection import GainSel_finished
 
 __all__ = [
     "single_process",
@@ -89,6 +92,18 @@ def single_process(telescope):
 
     if not options.simulate:
         os.makedirs(options.log_directory, exist_ok=True)
+
+    summary_table = run_summary_table(options.date)
+    if len(summary_table) == 0:
+        log.warning("No runs found for this date. Nothing to do. Exiting.")
+        sys.exit(0)
+
+    if not options.no_gainsel and not GainSel_finished(date_to_dir(options.date)):
+        log.info(
+            f"Gain selection did not finish successfully for date {options.date}."
+            "Try again later, once gain selection has finished."
+        )
+        sys.exit()
 
     if is_day_closed():
         log.info(f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}")
