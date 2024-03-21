@@ -411,17 +411,22 @@ def dl1_datacheck_longterm_file_exits() -> bool:
 def convert_dec_string(dec_str: str) -> float:
     """Return the declination angle in degrees corresponding to a 
     given string of the form "dec_XXXX" or "dec_min_XXXX"."""
-    # Split the string into parts
-    parts = dec_str.split('_')
+    
+    # Check if dec_str has a valid format
+    pattern = r'^dec(_min)?_[0-9]{4}$'
+    if re.match(pattern, dec_str):
+        
+        # Split the string into parts
+        parts = dec_str.split('_')
 
-    # Extract the sign, degrees, and minutes
-    sign = 1 if 'min' not in parts else -1
-    degrees = int(parts[-1])
+        # Extract the sign, degrees, and minutes
+        sign = 1 if 'min' not in parts else -1
+        degrees = int(parts[-1])
 
-    # Calculate the numerical value
-    dec_value = sign * (degrees / 100)
+        # Calculate the numerical value
+        dec_value = sign * (degrees / 100)
 
-    return dec_value
+        return dec_value
 
 
 def get_corresponding_string(list1: list, list2: list) -> dict:
@@ -450,6 +455,7 @@ def get_RF_model(run_str: str) -> Path:
 
     # Convert each string in the list to numerical values
     dec_values = [convert_dec_string(dec) for dec in dec_list]
+    dec_values = [dec for dec in dec_values if dec is not None]
     
     closest_declination = min(dec_values, key=lambda x: abs(x - source_dec))
     closest_dec_culmination = utils.culmination_angle(closest_declination)
