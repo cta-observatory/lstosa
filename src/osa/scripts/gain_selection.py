@@ -208,7 +208,8 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
     log.info(f"Found {len(calib_runs)} NO-DATA runs")
 
     for run in calib_runs:
-        log.info(f"Copying R0 files corresponding to run {run} directly to {output_dir}")
+        run_id = run["run_id"]
+        log.info(f"Copying R0 files corresponding to run {run_id} directly to {output_dir}")
         # Avoid copying files while it is still night time
         wait_for_daytime(start, end)
 
