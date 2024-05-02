@@ -55,7 +55,7 @@ def html_content(body: str, date: str) -> str:
     )
 
 
-def get_sequencer_output(date: str, config: str, test=False) -> list:
+def get_sequencer_output(date: str, config: str, test=False, no_gainsel=False) -> list:
     """Call sequencer to get table with the sequencer status report.
 
     Parameters
@@ -82,6 +82,9 @@ def get_sequencer_output(date: str, config: str, test=False) -> list:
         options.tel_id,
     ]
 
+    if no_gainsel:
+        commandargs.insert(1, "--no-gainsel")
+        
     if test:
         commandargs.insert(-1, "-t")
 
@@ -144,7 +147,7 @@ def main():
         sys.exit(1)
 
     # Get the table with the sequencer status report:
-    lines = get_sequencer_output(date, args.config, args.test)
+    lines = get_sequencer_output(date, args.config, test=args.test, no_gainsel=args.no_gainsel)
 
     # Build the html sequencer table that will be place in the body of the HTML file
     matrix = lines_to_matrix(lines)

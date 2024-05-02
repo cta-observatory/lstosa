@@ -447,6 +447,12 @@ def sequencer_webmaker_argparser():
     parser = ArgumentParser(
         description="Script to make an xhtml from LSTOSA sequencer output", parents=[common_parser]
     )
+    parser.add_argument(
+        "--no-gainsel",
+        action="store_true",
+        default=False,
+        help="Do not check if the gain selection finished correctly (default False)",
+    )
     options.tel_id = "LST1"
     options.prod_id = get_prod_id()
 
