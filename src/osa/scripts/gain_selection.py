@@ -24,7 +24,7 @@ log = myLogger(logging.getLogger(__name__))
 
 PATH = "PATH=/fefs/aswg/software/offline_dvr/bin:$PATH"
 
-parser = argparse.ArgumentParser(add_help=False)
+parser = argparse.ArgumentParser()
 parser.add_argument(
         "--check",                                                                                       
         action="store_true",
@@ -50,13 +50,14 @@ parser.add_argument(
         "--date",                                                                                        
         default=None,
         type=str,
-        help="Night to apply the gain selection",
+        help="Night to apply the gain selection in YYYYMMDD format",
 )                                                                                                        
 parser.add_argument(                                                                                     
         "-l",                                                                                            
         "--dates-file",
         default=None,
-        help="List of dates to apply the gain selection",
+        help="List of dates to apply the gain selection. The input file should list"
+        "the dates in the format YYYYMMDD, one date per line.",
 )
 parser.add_argument(                                                                                     
         "-o",                                                                                            
