@@ -85,7 +85,7 @@ parser.add_argument(
         "--tool",
         type=str,
         default=None,
-        help="Choose tool to apply the gain selection. Possible options are: lst_dvr (by default used for dates "
+        help="Choose tool to apply the gain selection regardless the date. Possible options are: lst_dvr (by default used for dates "
         "previous to 20231205) and lstchain_r0_to_r0g (by default used for dates later than 20231205).",
 )
 
