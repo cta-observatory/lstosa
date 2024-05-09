@@ -79,12 +79,20 @@ parser.add_argument(
         default=18,
         help="Time to stop gain selection in HH format. Default is 18.",
 )
+parser.add_argument(                                                                                     
+        "-t",                                                                                            
+        "--tool",
+        type=str,
+        default=None,
+        help="Choose tool to apply the gain selection. Possible options are: lst_dvr (by default used for dates "
+        "previous to 20231205) and lstchain_r0_to_r0g (by default used for dates later than 20231205).",
+)
 
 def get_sbatch_script(
-    run_id, subrun, input_file, output_dir, log_dir, log_file, ref_time, ref_counter, module, ref_source, script
+    run_id, subrun, input_file, output_dir, log_dir, log_file, ref_time, ref_counter, module, ref_source, tool
 ):
     """Build the sbatch job pilot script for running the gain selection."""
-    if script=="old":
+    if tool == "lst_dvr":
         return dedent(
             f"""\
         #!/bin/bash
@@ -98,7 +106,7 @@ def get_sbatch_script(
         lst_dvr {input_file} {output_dir} {ref_time} {ref_counter} {module} {ref_source}
         """
         )
-    elif script=="new":
+    elif tool == "lstchain_r0_to_r0g":
         return dedent(
             f"""\
         #!/bin/bash
@@ -113,16 +121,17 @@ def get_sbatch_script(
         """
         )
 
-def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path = None, no_queue_check: bool = False):
+def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path = None, tool: str = None, no_queue_check: bool = False):
     """
     Submit the jobs to apply the gain selection to the data for a given date
     on a subrun-by-subrun basis.
     """
 
-    if date < "20231205":
-        script = "old"
-    else:
-        script = "new"
+    if not tool:
+        if date < "20231205":
+            tool = "lst_dvr"
+        else:
+            tool = "lstchain_r0_to_r0g"
 
     run_summary_dir = Path("/fefs/aswg/data/real/monitoring/RunSummary")
     run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
@@ -199,7 +208,7 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
                             ref_counter,
                             module,
                             ref_source,
-                            script,
+                            tool,
                         )
                     )
                 sp.run(["sbatch", job_file], check=True)
@@ -328,7 +337,14 @@ def main():
             check_failed_jobs(args.date, args.output_basedir)
         else:
             log.info(f"Applying gain selection to date {args.date}")
-            apply_gain_selection(args.date, args.start_time, args.end_time, args.output_basedir, no_queue_check=args.no_queue_check)
+            apply_gain_selection(
+                args.date, 
+                args.start_time, 
+                args.end_time, 
+                args.output_basedir,
+                args.tool,
+                no_queue_check=args.no_queue_check, 
+            )
 
 
     elif args.dates_file:
@@ -342,7 +358,14 @@ def main():
         else:
             for date in list_of_dates:
                 log.info(f"Applying gain selection to date {date}")
-                apply_gain_selection(date, args.start_time, args.end_time, args.output_basedir, no_queue_check=args.no_queue_check)
+                apply_gain_selection(
+                    date, 
+                    args.start_time, 
+                    args.end_time,
+                    args.output_basedir,
+                    args.tool,
+                    no_queue_check=args.no_queue_check,
+                )
             log.info("Done! No more dates to process.")
 
 
