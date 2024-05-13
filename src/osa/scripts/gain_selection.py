@@ -166,7 +166,7 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
         subrun_numbers = [int(file[-12:-8]) for file in files]
         input_files = []
 
-        if date < "20231205" and ref_source not in ["UCTS", "TIB"]:
+        if tool == "lst_dvr" and ref_source not in ["UCTS", "TIB"]:
             input_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
             log.info(
                 f"Run {run_id} does not have UCTS or TIB info, so gain selection cannot"
