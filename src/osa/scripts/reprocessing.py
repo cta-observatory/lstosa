@@ -22,7 +22,7 @@ def number_of_pending_jobs():
 
 
 def run_script(
-    script: str, date, config: Path, no_dl2: bool, no_calib: bool, simulate: bool, force: bool
+    script: str, date, config: Path, no_dl2: bool, no_gainsel: bool, no_calib: bool, simulate: bool, force: bool
 ):
     """Run the sequencer for a given date."""
     osa_config = Path(config).resolve()
@@ -31,6 +31,9 @@ def run_script(
 
     if no_dl2:
         cmd.append("--no-dl2")
+
+    if no_gainsel:
+        cmd.append("--no-gainsel")
 
     if no_calib:
         cmd.append("--no-calib")
@@ -64,6 +67,7 @@ def get_list_of_dates(dates_file):
 
 @click.command()
 @click.option("--no-dl2", is_flag=True, help="Do not run the DL2 step.")
+@click.option("--no-gainsel", is_flag=True, help="Do not require gain selection to be finished.")
 @click.option("--no-calib", is_flag=True, help="Do not run the calibration step.")
 @click.option("-s", "--simulate", is_flag=True, help="Activate simulation mode.")
 @click.option("-f", "--force", is_flag=True, help="Force the autocloser to close the day.")
@@ -83,6 +87,7 @@ def main(
     dates_file: Path = None,
     config: Path = DEFAULT_CFG,
     no_dl2: bool = False,
+    no_gainsel: bool = False,
     no_calib: bool = False,
     simulate: bool = False,
     force: bool = False,
@@ -102,7 +107,7 @@ def main(
         # Avoid running jobs while it is still night time
         wait_for_daytime()
 
-        run_script(script, date, config, no_dl2, no_calib, simulate, force)
+        run_script(script, date, config, no_dl2, no_gainsel, no_calib, simulate, force)
         log.info("Waiting 1 minute to launch the process for the next date...\n")
         time.sleep(60)
 
