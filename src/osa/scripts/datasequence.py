@@ -53,7 +53,7 @@ def data_sequence(
     level, rc = (4, 0) if options.simulate else historylevel(history_file, "DATA")
     log.info(f"Going to level {level}")
 
-    if level == 4:
+    if level == 5:
         rc = r0_to_dl1(
             calibration_file,
             pedestal_file,
@@ -63,6 +63,12 @@ def data_sequence(
             run_summary,
             pedestal_ids_file,
             run_str,
+        )
+        level -= 1
+        log.info(f"Going to level {level}")
+
+    if level == 4:
+        rc = catB_calibration(
         )
         level -= 1
         log.info(f"Going to level {level}")
@@ -161,6 +167,27 @@ def r0_to_dl1(
         return 0
 
     analysis_step = AnalysisStage(run=run_str, command_args=cmd, config_file=dl1a_config.name)
+    analysis_step.execute()
+    return analysis_step.rc
+
+
+@trace
+def catB_calibration(run_str: str) -> int:
+    if run_str[-4:] != "0000":  #not first subrun
+        return
+
+    base_dir = Path(cfg.get("LST1", "BASE")).resolve()
+    r0_dir = Path(cfg.get("LST1", "R0_DIR")).resolve()
+    cmd = [
+        "onsite_create_cat_B_calibration_file",
+        f"--run_number={run_str[:5]}",
+        f"--base_dir={base_dir}",
+        f"--r0-dir={r0_dir}",
+    ]
+    if options.simulate:
+        return 0
+
+    analysis_step = AnalysisStage(run=run_str, command_args=cmd)
     analysis_step.execute()
     return analysis_step.rc
 
