@@ -173,7 +173,23 @@ def r0_to_dl1(
 
 @trace
 def catB_calibration(run_str: str) -> int:
-    if run_str[-4:] != "0000":  #not first subrun
+    """
+    Prepare and launch the lstchain script that creates the 
+    Category B calibration files. It should be executed runwise,
+    so it is only launched for the first subrun of each run.
+
+    Parameters
+    ----------
+    run_str: str
+
+    Returns
+    -------
+    rc: int
+        Return code of the executed command.
+    """
+    if run_str[-4:] != "0000":
+        log.debug(f"{run_str} is not the first subrun of the run, so the script "
+            "onsite_create_cat_B_calibration_file will not be launched for this subrun.")
         return
 
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
