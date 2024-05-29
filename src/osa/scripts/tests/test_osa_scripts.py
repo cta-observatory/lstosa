@@ -298,10 +298,12 @@ def test_drs4_pedestal_cmd(base_test_dir):
     from osa.scripts.calibration_pipeline import drs4_pedestal_command
 
     cmd = drs4_pedestal_command(drs4_pedestal_run_id="01804")
+    r0_dir = base_test_dir / "R0"
     expected_command = [
         "onsite_create_drs4_pedestal_file",
         "--run_number=01804",
         f"--base_dir={base_test_dir}",
+        f"--r0-dir={r0_dir}",
         "--no-progress",
     ]
     assert cmd == expected_command
@@ -311,11 +313,13 @@ def test_calibration_file_cmd(base_test_dir):
     from osa.scripts.calibration_pipeline import calibration_file_command
 
     cmd = calibration_file_command(drs4_pedestal_run_id="01804", pedcal_run_id="01809")
+    r0_dir = base_test_dir / "R0"
     expected_command = [
         "onsite_create_calibration_file",
         "--pedestal_run=01804",
         "--run_number=01809",
         f"--base_dir={base_test_dir}",
+        f"--r0-dir={r0_dir}",
     ]
     assert cmd == expected_command
 
