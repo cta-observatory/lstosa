@@ -68,8 +68,7 @@ def data_sequence(
         log.info(f"Going to level {level}")
 
     if level == 4:
-        rc = catB_calibration(
-        )
+        rc = catB_calibration(run_str)
         level -= 1
         log.info(f"Going to level {level}")
 
