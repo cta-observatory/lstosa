@@ -50,7 +50,7 @@ def data_sequence(
     history_file = Path(options.directory) / f"sequence_{options.tel_id}_{run_str}.history"
     # Set the starting level and corresponding return code from last analysis step
     # registered in the history file.
-    level, rc = (4, 0) if options.simulate else historylevel(history_file, "DATA")
+    level, rc = (5, 0) if options.simulate else historylevel(history_file, "DATA")
     log.info(f"Going to level {level}")
 
     if level == 5:
@@ -189,7 +189,7 @@ def catB_calibration(run_str: str) -> int:
     if run_str[-4:] != "0000":
         log.debug(f"{run_str} is not the first subrun of the run, so the script "
             "onsite_create_cat_B_calibration_file will not be launched for this subrun.")
-        return
+        return 0
 
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     r0_dir = Path(cfg.get("LST1", "R0_DIR")).resolve()
