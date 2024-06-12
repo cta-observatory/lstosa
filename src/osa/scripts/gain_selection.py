@@ -173,10 +173,15 @@ def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool
                     else:
                         gainsel_rc = history_file.read_text().splitlines()[-1][-1]
                         if gainsel_rc == "1":
-                            relaunch_job
+                            if job_finished_in_timeout(run, subrun, log_dir):
+                                # Relaunch the job that finished in TIMEOUT
+                                job_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.sh"
+                                sp.run(["sbatch", job_file], stdout=sp.PIPE, stderr=sp.STDOUT, check=True)
+                            else:
+                                log.warning(f"Gain selection failed for run {run_id:05d}.{subrun:04d}")
                         elif gainsel_rc == "0":
-                            log.debug(f"Gain selection finished successfully for run {run_id:05d}.{subrun:04d}")
-                            continue
+                            log.debug(f"Gain selection finished successfully for run {run_id:05d}.{subrun:04d},"
+                                        "no additional jobs will be submitted for this subrun.")
                         else:
                             new_files.sort()
                             input_files.append(new_files[0])
@@ -202,9 +207,9 @@ def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool
                                         )
                                     )
 
-                            #submit job
-                            history_file.touch()
-                            sp.run(["sbatch", job_file], stdout=sp.PIPE, stderr=sp.STDOUT, check=True)
+                                #submit job
+                                history_file.touch()
+                                sp.run(["sbatch", job_file], stdout=sp.PIPE, stderr=sp.STDOUT, check=True)
 
 
 def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path = None, tool: str = None, no_queue_check: bool = False):
@@ -268,9 +273,18 @@ def get_last_job_id(run, subrun, log_dir):
     return job_id
 
 
+def job_finished_in_timeout(run, subrun, log_dir):
+
+    job_id = get_last_job_id(run, subrun, log_dir)
+    job_status = get_sacct_output(run_sacct_j(job_id))["State"]
+    if job_status == "TIMEOUT":
+        return True
+    else:
+        return False
+
 def update_history_file(run, subrun, log_dir, history_file):
     
-    job_id = get_last_job_id(run, subrun)
+    job_id = get_last_job_id(run, subrun, log_dir)
     job_status = get_sacct_output(run_sacct_j(job_id))["State"]
     if job_status in ["RUNNING", "PENDING"]:
         log.info(f"Job {job_id} is still running.")
