@@ -17,7 +17,7 @@ from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wai
 from osa.utils.utils import wait_for_daytime
 from osa.utils.logging import myLogger
 from osa.utils.iofile import append_to_file
-from osa.job import get_sacct_output, FORMAT_SLURM
+from osa.job import get_sacct_output, run_sacct_j, FORMAT_SLURM
 from osa.configs.config import cfg
 from osa.paths import DEFAULT_CFG
 
@@ -283,28 +283,6 @@ def update_history_file(run, subrun, log_dir, history_file):
             f"{run:05d}.{subrun:04d} gain_selection 1\n"
         )
         append_to_file(history_file, string_to_write)
-
-
-
-def run_sacct_j(job) -> StringIO:
-    """Run sacct to obtain the job information."""
-    if shutil.which("sacct") is None:
-        log.warning("No job info available since sacct command is not available")
-        return StringIO()
-
-    sacct_cmd = [
-        "sacct",
-        "-n",
-        "--parsable2",
-        "--delimiter=,",
-        "--units=G",
-        "-o",
-        ",".join(FORMAT_SLURM),
-        "-j",
-        job,
-    ]
-
-    return StringIO(sp.check_output(sacct_cmd).decode())
 
 
 def GainSel_flag_file(date: str) -> Path:

@@ -44,6 +44,7 @@ __all__ = [
     "filter_jobs",
     "run_sacct",
     "run_squeue",
+    "run_sacct_j",
     "calibration_sequence_job_template",
     "data_sequence_job_template",
     "save_job_information",
@@ -672,6 +673,27 @@ def run_sacct() -> StringIO:
         days = int(cfg.get("SLURM", "STARTTIME_DAYS_SACCT"))
         start_date = (datetime.date.today() - datetime.timedelta(days=days)).isoformat()
         sacct_cmd.extend(["--starttime", start_date])
+
+    return StringIO(sp.check_output(sacct_cmd).decode())
+    
+
+def run_sacct_j(job) -> StringIO:
+    """Run sacct to obtain the job information."""
+    if shutil.which("sacct") is None:
+        log.warning("No job info available since sacct command is not available")
+        return StringIO()
+
+    sacct_cmd = [
+        "sacct",
+        "-n",
+        "--parsable2",
+        "--delimiter=,",
+        "--units=G",
+        "-o",
+        ",".join(FORMAT_SLURM),
+        "-j",
+        job,
+    ]
 
     return StringIO(sp.check_output(sacct_cmd).decode())
 
