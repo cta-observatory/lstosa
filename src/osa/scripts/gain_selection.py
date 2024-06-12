@@ -1,13 +1,11 @@
 """Script to run the gain selection over a list of dates."""
 import logging
 import re
-import shutil
 import glob
 import pandas as pd
 import subprocess as sp
 from pathlib import Path
 from textwrap import dedent
-from io import StringIO
 import argparse
 
 from astropy.table import Table
@@ -17,7 +15,7 @@ from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wai
 from osa.utils.utils import wait_for_daytime
 from osa.utils.logging import myLogger
 from osa.utils.iofile import append_to_file
-from osa.job import get_sacct_output, run_sacct_j, FORMAT_SLURM
+from osa.job import get_sacct_output, run_sacct_j
 from osa.configs.config import cfg
 from osa.paths import DEFAULT_CFG
 
