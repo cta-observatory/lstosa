@@ -127,58 +127,84 @@ def get_sbatch_script(
         
     return sbatch_script
 
-def launch_gainsel_subrunwise(run_id, subrun, output_dir, log_dir, log_file, ref_time, ref_counter, module, ref_source, tool):
-    new_files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
 
-    if len(new_files) != 4:
-        log.info(f"Run {run_id}.{subrun:05d} does not have 4 streams of R0 files, so gain"
-            f"selection cannot be applied. Copying directly the R0 files to {output_dir}."
+def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool):
+    
+    run_id = run["run_id"]
+    ref_time = run["dragon_reference_time"]
+    ref_counter = run["dragon_reference_counter"]
+    module = run["dragon_reference_module_index"]
+    ref_source = run["dragon_reference_source"].upper()
+
+    files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.????.fits.fz")
+    subrun_numbers = [int(file[-12:-8]) for file in files]
+    
+    if tool == "lst_dvr" and ref_source not in ["UCTS", "TIB"]:
+        input_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
+        log.info(
+            f"Run {run_id} does not have UCTS or TIB info, so gain selection cannot"
+            f"be applied. Copying directly the R0 files to {output_dir}."
         )
-        for file in new_files:
+        for file in input_files:
             sp.run(["cp", file, output_dir])
 
     else:
-        history_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.history"
-        if history_file.exists():
-            update_history_file(run, subrun, log_dir, history_file)
-            if history_file.read_text() == "":   # history_file is empty
-                log.info(f"Gain selection is still running for run {run_id:05d}.{subrun:04d}")
-                continue
+        n_subruns = max(subrun_numbers)
+        input_files = [] 
+
+        for subrun in range(n_subruns + 1):
+
+            new_files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
+
+            if len(new_files) != 4:
+                log.info(f"Run {run_id}.{subrun:05d} does not have 4 streams of R0 files, so gain"
+                    f"selection cannot be applied. Copying directly the R0 files to {output_dir}."
+                )
+                for file in new_files:
+                    sp.run(["cp", file, output_dir])
+
             else:
-                gainsel_rc = history_file.read_text().splitlines()[-1][-1]
-                if gainsel_rc == "1":
-                    relaunch_job
-                elif gainsel_rc == "0":
-                    log.debug(f"Gain selection finished successfully for run {run_id:05d}.{subrun:04d}")
-                    continue
-                else:
-                    new_files.sort()
-                    input_files.append(new_files[0])
+                history_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.history"
+                if history_file.exists():
+                    update_history_file(run, subrun, log_dir, history_file)
+                    if history_file.read_text() == "":   # history_file is empty
+                        log.info(f"Gain selection is still running for run {run_id:05d}.{subrun:04d}")
+                        continue
+                    else:
+                        gainsel_rc = history_file.read_text().splitlines()[-1][-1]
+                        if gainsel_rc == "1":
+                            relaunch_job
+                        elif gainsel_rc == "0":
+                            log.debug(f"Gain selection finished successfully for run {run_id:05d}.{subrun:04d}")
+                            continue
+                        else:
+                            new_files.sort()
+                            input_files.append(new_files[0])
 
-                    log.info("Creating and launching the sbatch scripts for the rest of the runs to apply gain selection")
-                    for file in input_files:
-                        run_info = run_info_from_filename(file)
-                        job_file = log_dir / f"gain_selection_{run_info.run:05d}.{run_info.subrun:04d}.sh"
-                        with open(job_file, "w") as f:
-                            f.write(
-                                get_sbatch_script(
-                                    run_id,
-                                    run_info.subrun,
-                                    file,
-                                    output_dir,
-                                    log_dir,
-                                    log_file,
-                                    ref_time,
-                                    ref_counter,
-                                    module,
-                                    ref_source,
-                                    tool,
-                                )
-                            )
+                            log.info("Creating and launching the sbatch scripts for the rest of the runs to apply gain selection")
+                            for file in input_files:
+                                run_info = run_info_from_filename(file)
+                                job_file = log_dir / f"gain_selection_{run_info.run:05d}.{run_info.subrun:04d}.sh"
+                                with open(job_file, "w") as f:
+                                    f.write(
+                                        get_sbatch_script(
+                                            run_id,
+                                            run_info.subrun,
+                                            file,
+                                            output_dir,
+                                            log_dir,
+                                            log_file,
+                                            ref_time,
+                                            ref_counter,
+                                            module,
+                                            ref_source,
+                                            tool,
+                                        )
+                                    )
 
-                    #submit job and write history_file
-                    history_file.touch()
-                    sp.run(["sbatch", job_file], stdout=sp.PIPE, stderr=sp.STDOUT, check=True)
+                            #submit job
+                            history_file.touch()
+                            sp.run(["sbatch", job_file], stdout=sp.PIPE, stderr=sp.STDOUT, check=True)
 
 
 def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path = None, tool: str = None, no_queue_check: bool = False):
@@ -215,31 +241,7 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
         # Avoid running jobs while it is still night time
         wait_for_daytime(start, end)
 
-        run_id = run["run_id"]
-        ref_time = run["dragon_reference_time"]
-        ref_counter = run["dragon_reference_counter"]
-        module = run["dragon_reference_module_index"]
-        ref_source = run["dragon_reference_source"].upper()
-
-        files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.????.fits.fz")
-        subrun_numbers = [int(file[-12:-8]) for file in files]
-        input_files = []
-
-        if tool == "lst_dvr" and ref_source not in ["UCTS", "TIB"]:
-            input_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
-            log.info(
-                f"Run {run_id} does not have UCTS or TIB info, so gain selection cannot"
-                f"be applied. Copying directly the R0 files to {output_dir}."
-            )
-            for file in input_files:
-                sp.run(["cp", file, output_dir])
-
-        else:
-            n_subruns = max(subrun_numbers)
-
-            for subrun in range(n_subruns + 1):
-
-                launch_gainsel_subrunwise(subrun)
+        launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool)
 
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
     log.info(f"Found {len(calib_runs)} NO-DATA runs")
