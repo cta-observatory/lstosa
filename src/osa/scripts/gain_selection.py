@@ -94,34 +94,38 @@ def get_sbatch_script(
     run_id, subrun, input_file, output_dir, log_dir, log_file, ref_time, ref_counter, module, ref_source, tool
 ):
     """Build the sbatch job pilot script for running the gain selection."""
-    if tool == "lst_dvr":
-        return dedent(
+    
+    sbatch_script = dedent(
             f"""\
         #!/bin/bash
 
         #SBATCH -D {log_dir}
         #SBATCH -o "gain_selection_{run_id:05d}_{subrun:04d}_%j.log"
         #SBATCH --job-name "gain_selection_{run_id:05d}"
-        #SBATCH --export {PATH}
         #SBATCH --partition=short,long
+        """
+        )
+    
+    if tool == "lst_dvr":
+        sbatch_script += dedent(
+            f"""   
+        #SBATCH --export {PATH}
 
         lst_dvr {input_file} {output_dir} {ref_time} {ref_counter} {module} {ref_source}
         """
         )
+        
     elif tool == "lstchain_r0_to_r0g":
-        return dedent(
-            f"""\
-        #!/bin/bash
-
-        #SBATCH -D {log_dir}
-        #SBATCH -o "gain_selection_{run_id:05d}_{subrun:04d}_%j.log"
-        #SBATCH --job-name "gain_selection_{run_id:05d}"
-        #SBATCH --mem=40GB
-        #SBATCH --partition=short,long
+        mem_per_job = cfg.get("SLURM", "MEMSIZE_GAINSEL")
+        sbatch_script += dedent(
+            f"""
+        #SBATCH --mem={mem_per_job}
 
         lstchain_r0_to_r0g --R0-file={input_file} --output-dir={output_dir} --log={log_file} --no-flatfield-heuristic
         """
         )
+        
+    return sbatch_script
 
 def launch_gainsel_subrunwise(run_id, subrun, output_dir, log_dir, log_file, ref_time, ref_counter, module, ref_source, tool):
     new_files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
