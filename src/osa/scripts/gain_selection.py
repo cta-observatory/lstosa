@@ -16,6 +16,7 @@ from lstchain.paths import run_info_from_filename, parse_r0_filename
 from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wait
 from osa.utils.utils import wait_for_daytime
 from osa.utils.logging import myLogger
+from osa.utils.iofile import append_to_file
 from osa.job import get_sacct_output, FORMAT_SLURM
 from osa.configs.config import cfg
 from osa.paths import DEFAULT_CFG
@@ -122,6 +123,60 @@ def get_sbatch_script(
         """
         )
 
+def launch_gainsel_subrunwise(run_id, subrun, output_dir, log_dir, log_file, ref_time, ref_counter, module, ref_source, tool):
+    new_files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
+
+    if len(new_files) != 4:
+        log.info(f"Run {run_id}.{subrun:05d} does not have 4 streams of R0 files, so gain"
+            f"selection cannot be applied. Copying directly the R0 files to {output_dir}."
+        )
+        for file in new_files:
+            sp.run(["cp", file, output_dir])
+
+    else:
+        history_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.history"
+        if history_file.exists():
+            update_history_file(run, subrun, log_dir, history_file)
+            if history_file.read_text() == "":   # history_file is empty
+                log.info(f"Gain selection is still running for run {run_id:05d}.{subrun:04d}")
+                continue
+            else:
+                gainsel_rc = history_file.read_text().splitlines()[-1][-1]
+                if gainsel_rc == "1":
+                    relaunch_job
+                elif gainsel_rc == "0":
+                    log.debug(f"Gain selection finished successfully for run {run_id:05d}.{subrun:04d}")
+                    continue
+                else:
+                    new_files.sort()
+                    input_files.append(new_files[0])
+
+                    log.info("Creating and launching the sbatch scripts for the rest of the runs to apply gain selection")
+                    for file in input_files:
+                        run_info = run_info_from_filename(file)
+                        job_file = log_dir / f"gain_selection_{run_info.run:05d}.{run_info.subrun:04d}.sh"
+                        with open(job_file, "w") as f:
+                            f.write(
+                                get_sbatch_script(
+                                    run_id,
+                                    run_info.subrun,
+                                    file,
+                                    output_dir,
+                                    log_dir,
+                                    log_file,
+                                    ref_time,
+                                    ref_counter,
+                                    module,
+                                    ref_source,
+                                    tool,
+                                )
+                            )
+
+                    #submit job and write history_file
+                    history_file.touch()
+                    sp.run(["sbatch", job_file], stdout=sp.PIPE, stderr=sp.STDOUT, check=True)
+
+
 def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path = None, tool: str = None, no_queue_check: bool = False):
     """
     Submit the jobs to apply the gain selection to the data for a given date
@@ -179,40 +234,8 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
             n_subruns = max(subrun_numbers)
 
             for subrun in range(n_subruns + 1):
-                new_files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
 
-                if len(new_files) != 4:
-                    log.info(f"Run {run_id}.{subrun:05d} does not have 4 streams of R0 files, so gain"
-                        f"selection cannot be applied. Copying directly the R0 files to {output_dir}."
-                    )
-                    for file in new_files:
-                        sp.run(["cp", file, output_dir])
-
-                else:
-                    new_files.sort()
-                    input_files.append(new_files[0])
-
-            log.info("Creating and launching the sbatch scripts for the rest of the runs to apply gain selection")
-            for file in input_files:
-                run_info = run_info_from_filename(file)
-                job_file = log_dir / f"gain_selection_{run_info.run:05d}.{run_info.subrun:04d}.sh"
-                with open(job_file, "w") as f:
-                    f.write(
-                        get_sbatch_script(
-                            run_id,
-                            run_info.subrun,
-                            file,
-                            output_dir,
-                            log_dir,
-                            log_file,
-                            ref_time,
-                            ref_counter,
-                            module,
-                            ref_source,
-                            tool,
-                        )
-                    )
-                sp.run(["sbatch", job_file], check=True)
+                launch_gainsel_subrunwise(subrun)
 
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
     log.info(f"Found {len(calib_runs)} NO-DATA runs")
@@ -228,6 +251,40 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
 
         for file in r0_files:
             sp.run(["cp", file, output_dir])
+
+
+def get_last_job_id(run, subrun, log_dir):
+    
+    filenames = glob.glob(f"{log_dir}/gain_selection_{run:05d}_{subrun:04d}_*.log")
+    match = re.search(f'gain_selection_{run:05d}_{subrun:04d}_(\d+).log', sorted(filenames)[-1])
+    job_id = match.group(1)
+    
+    return job_id
+
+
+def update_history_file(run, subrun, log_dir, history_file):
+    
+    job_id = get_last_job_id(run, subrun)
+    job_status = get_sacct_output(run_sacct_j(job_id))["State"]
+    if job_status in ["RUNNING", "PENDING"]:
+        log.info(f"Job {job_id} is still running.")
+        return
+        
+    elif job_status == "COMPLETED":
+        log.info(f"Job {job_id} finished successfully, updating history file.")
+        string_to_write = (
+            f"{run:05d}.{subrun:04d} gain_selection 0\n"
+        )
+        append_to_file(history_file, string_to_write)
+    
+    else:
+        log.info(f"Job {job_id} failed, updating history file.")
+        string_to_write = (
+            f"{run:05d}.{subrun:04d} gain_selection 1\n"
+        )
+        append_to_file(history_file, string_to_write)
+
+
 
 def run_sacct_j(job) -> StringIO:
     """Run sacct to obtain the job information."""
