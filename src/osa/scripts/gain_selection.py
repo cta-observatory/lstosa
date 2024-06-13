@@ -181,34 +181,34 @@ def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool
                         elif gainsel_rc == "0":
                             log.debug(f"Gain selection finished successfully for run {run_id:05d}.{subrun:04d},"
                                         "no additional jobs will be submitted for this subrun.")
-                        else:
-                            new_files.sort()
-                            input_files.append(new_files[0])
+                else:
+                    new_files.sort()
+                    input_files.append(new_files[0])
 
-                            log.info("Creating and launching the sbatch scripts for the rest of the runs to apply gain selection")
-                            for file in input_files:
-                                run_info = run_info_from_filename(file)
-                                job_file = log_dir / f"gain_selection_{run_info.run:05d}.{run_info.subrun:04d}.sh"
-                                with open(job_file, "w") as f:
-                                    f.write(
-                                        get_sbatch_script(
-                                            run_id,
-                                            run_info.subrun,
-                                            file,
-                                            output_dir,
-                                            log_dir,
-                                            log_file,
-                                            ref_time,
-                                            ref_counter,
-                                            module,
-                                            ref_source,
-                                            tool,
-                                        )
-                                    )
+                    log.info("Creating and launching the sbatch scripts for the rest of the runs to apply gain selection")
+                    for file in input_files:
+                        run_info = run_info_from_filename(file)
+                        job_file = log_dir / f"gain_selection_{run_info.run:05d}.{run_info.subrun:04d}.sh"
+                        with open(job_file, "w") as f:
+                            f.write(
+                                get_sbatch_script(
+                                    run_id,
+                                    run_info.subrun,
+                                    file,
+                                    output_dir,
+                                    log_dir,
+                                    log_file,
+                                    ref_time,
+                                    ref_counter,
+                                    module,
+                                    ref_source,
+                                    tool,
+                                )
+                            )
 
-                                #submit job
-                                history_file.touch()
-                                sp.run(["sbatch", job_file], stdout=sp.PIPE, stderr=sp.STDOUT, check=True)
+                        #submit job
+                        history_file.touch()
+                        sp.run(["sbatch", job_file], stdout=sp.PIPE, stderr=sp.STDOUT, check=True)
 
 
 def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path = None, tool: str = None, no_queue_check: bool = False):
