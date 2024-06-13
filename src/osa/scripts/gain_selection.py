@@ -10,7 +10,7 @@ import argparse
 import sys
 
 from astropy.table import Table
-from lstchain.paths import run_info_from_filename, parse_r0_filename
+from lstchain.paths import parse_r0_filename
 
 from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wait
 from osa.utils.utils import wait_for_daytime
@@ -182,13 +182,13 @@ def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool
                                         "no additional jobs will be submitted for this subrun.")
                 else:
                     log.info("Creating and launching the sbatch scripts for the rest of the runs to apply gain selection")
-                    job_file = log_dir / f"gain_selection_{run_id:05d}.{rsubrun:04d}.sh"
+                    job_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.sh"
                     r0_files.sort()
                     with open(job_file, "w") as f:
                         f.write(
                             get_sbatch_script(
                                 run_id,
-                                run_info.subrun,
+                                subrun,
                                 r0_files[0],
                                 output_dir,
                                 log_dir,
@@ -325,14 +325,14 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
     log.info(f"Checking history files of date {date}")
 
     for file in history_files:
-        match = re.search(f'gain_selection_(\d+).(\d+).history', file)
+        match = re.search("gain_selection_(\d+).(\d+).history", file)
         run = match.group(1)
         subrun = match.group(2)
         gainsel_rc = file.read_text().splitlines()[-1][-1]
 
         if gainsel_rc == "1":
             log.warning(f"Gain selection failed for run {run}.{subrun}")
-            failed_subruns.append(history_file)
+            failed_subruns.append(file)
 
         elif gainsel_rc == "0":
             log.debug(f"Gain selection finished successfully for run {run}.{subrun}")
