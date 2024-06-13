@@ -319,25 +319,28 @@ def GainSel_finished(date: str) -> bool:
 
 def check_failed_jobs(date: str, output_basedir: Path = None):
     """Search for failed jobs in the log directory."""
-    failed_jobs = []
     log_dir = output_basedir / "log" / date
-    filenames = glob.glob(f"{log_dir}/gain_selection*.log")
-    jobs = [re.search(r'(?<=_)(.[0-9.]+?)(?=.log)', i).group(0) for i in filenames]
+    history_files = glob.glob(f"{log_dir}/gain_selection_*.history")
+    failed_subruns = []
+    log.info(f"Checking history files of date {date}")
 
-    for job in jobs:
-        output = run_sacct_j(job)
-        df = get_sacct_output(output)
+    for file in history_files:
+        match = re.search(f'gain_selection_(\d+).(\d+).history', file)
+        run = match.group(1)
+        subrun = match.group(2)
+        gainsel_rc = file.read_text().splitlines()[-1][-1]
 
-        if not df.iloc[0]["State"] == "COMPLETED":
-            log.warning(f"Job {job} did not finish successfully")
-            failed_jobs.append(job)
+        if gainsel_rc == "1":
+            log.warning(f"Gain selection failed for run {run}.{subrun}")
+            failed_subruns.append(history_file)
 
-    if failed_jobs:
-        log.warning(f"{date}: some jobs did not finish successfully")
-
+        elif gainsel_rc == "0":
+            log.debug(f"Gain selection finished successfully for run {run}.{subrun}")
+                
+    if failed_subruns:
+        log.warning(f"{date}: Some gain selection jobs did not finish successfully")
     else:
-        log.info(f"{date}: all jobs finished successfully")
-
+        log.info(f"{date}: All jobs finished successfully")
 
         run_summary_dir = Path("/fefs/aswg/data/real/monitoring/RunSummary")
         run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
