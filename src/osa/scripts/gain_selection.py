@@ -7,6 +7,7 @@ import subprocess as sp
 from pathlib import Path
 from textwrap import dedent
 import argparse
+import sys
 
 from astropy.table import Table
 from lstchain.paths import run_info_from_filename, parse_r0_filename
@@ -225,6 +226,11 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
     run_summary_dir = Path("/fefs/aswg/data/real/monitoring/RunSummary")
     run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
     summary_table = Table.read(run_summary_file)
+
+    if len(summary_table) == 0:
+        log.warning(f"No runs are found in the run summary of {date}. Nothing to do. Exiting.")
+        sys.exit(0)
+
     # Apply gain selection only to DATA runs
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
     log.info(f"Found {len(data_runs)} DATA runs to which apply the gain selection")
