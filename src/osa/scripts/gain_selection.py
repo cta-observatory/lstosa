@@ -88,6 +88,12 @@ parser.add_argument(
         help="Choose tool to apply the gain selection regardless the date. Possible options are: lst_dvr (by default used for dates "
         "previous to 20231205) and lstchain_r0_to_r0g (by default used for dates later than 20231205).",
 )
+parser.add_argument(                                                                                          
+        "--simulate",
+        type=str,
+        default=False,
+        help="Simulate launching of the gain selection script.",
+)
 
 def get_sbatch_script(
     run_id, subrun, input_file, output_dir, log_dir, log_file, ref_time, ref_counter, module, ref_source, tool
@@ -127,7 +133,7 @@ def get_sbatch_script(
     return sbatch_script
 
 
-def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool):
+def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool, simulate=False):
     
     run_id = run["run_id"]
     ref_time = run["dragon_reference_time"]
@@ -140,12 +146,20 @@ def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool
     
     if tool == "lst_dvr" and ref_source not in ["UCTS", "TIB"]:
         input_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
-        log.info(
-            f"Run {run_id} does not have UCTS or TIB info, so gain selection cannot"
-            f"be applied. Copying directly the R0 files to {output_dir}."
-        )
-        for file in input_files:
-            sp.run(["cp", file, output_dir])
+        
+        if not simulate:
+            for file in input_files:
+                log.info(
+                    f"Run {run_id} does not have UCTS or TIB info, so gain selection cannot"
+                    f"be applied. Copying directly the R0 files to {output_dir}."
+                )
+                sp.run(["cp", file, output_dir])
+
+        else:
+            log.info(
+                f"Run {run_id} does not have UCTS or TIB info, so gain selection cannot"
+                f"be applied. Simulate copy of the R0 files directly to {output_dir}."
+            )
 
     else:
         n_subruns = max(subrun_numbers) 
@@ -155,23 +169,30 @@ def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool
             r0_files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
 
             if len(r0_files) != 4:
-                log.info(f"Run {run_id}.{subrun:05d} does not have 4 streams of R0 files, so gain"
-                    f"selection cannot be applied. Copying directly the R0 files to {output_dir}."
-                )
-                for file in r0_files:
-                    sp.run(["cp", file, output_dir])
+                if not simulate:
+                    log.info(f"Run {run_id}.{subrun:05d} does not have 4 streams of R0 files, so gain"
+                        f"selection cannot be applied. Copying directly the R0 files to {output_dir}."
+                    )
+                    for file in r0_files:
+                        sp.run(["cp", file, output_dir])
+                else:
+                    log.info(f"Run {run_id}.{subrun:05d} does not have 4 streams of R0 files, so gain"
+                        f"selection cannot be applied. Simulate copy of the R0 files directly to {output_dir}."
+                    )
 
             else:
                 history_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.history"
                 if history_file.exists():
-                    update_history_file(run, subrun, log_dir, history_file)
+                    if not simulate:
+                        update_history_file(run, subrun, log_dir, history_file)
+
                     if history_file.read_text() == "":   # history_file is empty
                         log.info(f"Gain selection is still running for run {run_id:05d}.{subrun:04d}")
                         continue
                     else:
                         gainsel_rc = history_file.read_text().splitlines()[-1][-1]
                         if gainsel_rc == "1":
-                            if job_finished_in_timeout(run, subrun, log_dir):
+                            if job_finished_in_timeout(run, subrun, log_dir) and not simulate:
                                 # Relaunch the job that finished in TIMEOUT
                                 job_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.sh"
                                 sp.run(["sbatch", job_file], stdout=sp.PIPE, stderr=sp.STDOUT, check=True)
@@ -179,34 +200,35 @@ def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool
                                 log.warning(f"Gain selection failed for run {run_id:05d}.{subrun:04d}")
                         elif gainsel_rc == "0":
                             log.debug(f"Gain selection finished successfully for run {run_id:05d}.{subrun:04d},"
-                                        "no additional jobs will be submitted for this subrun.")
+                                        "no additional jobs will be submitted for this subrun.") 
                 else:
                     log.info("Creating and launching the sbatch scripts for the rest of the runs to apply gain selection")
-                    job_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.sh"
-                    r0_files.sort()
-                    with open(job_file, "w") as f:
-                        f.write(
-                            get_sbatch_script(
-                                run_id,
-                                subrun,
-                                r0_files[0],
-                                output_dir,
-                                log_dir,
-                                log_file,
-                                ref_time,
-                                ref_counter,
-                                module,
-                                ref_source,
-                                tool,
+                    if not simulate:
+                        job_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.sh"
+                        r0_files.sort()
+                        with open(job_file, "w") as f:
+                            f.write(
+                                get_sbatch_script(
+                                    run_id,
+                                    subrun,
+                                    r0_files[0],
+                                    output_dir,
+                                    log_dir,
+                                    log_file,
+                                    ref_time,
+                                    ref_counter,
+                                    module,
+                                    ref_source,
+                                    tool,
+                                )
                             )
-                        )
 
-                    #submit job
-                    history_file.touch()
-                    sp.run(["sbatch", job_file], stdout=sp.PIPE, stderr=sp.STDOUT, check=True)
+                        #submit job
+                        history_file.touch()
+                        sp.run(["sbatch", job_file], stdout=sp.PIPE, stderr=sp.STDOUT, check=True)
 
 
-def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path = None, tool: str = None, no_queue_check: bool = False):
+def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path = None, tool: str = None, no_queue_check: bool = False, simulate: bool = False):
     """
     Submit the jobs to apply the gain selection to the data for a given date
     on a subrun-by-subrun basis.
@@ -245,7 +267,7 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
         # Avoid running jobs while it is still night time
         wait_for_daytime(start, end)
 
-        launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool)
+        launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool, simulate)
 
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
     log.info(f"Found {len(calib_runs)} NO-DATA runs")
@@ -253,14 +275,16 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
     for run in calib_runs:
         run_id = run["run_id"]
         log.info(f"Copying R0 files corresponding to run {run_id} directly to {output_dir}")
-        # Avoid copying files while it is still night time
-        wait_for_daytime(start, end)
 
-        run_id = run["run_id"]
-        r0_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
+        if not simulate:
+            # Avoid copying files while it is still night time
+            wait_for_daytime(start, end)
 
-        for file in r0_files:
-            sp.run(["cp", file, output_dir])
+            run_id = run["run_id"]
+            r0_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
+
+            for file in r0_files:
+                sp.run(["cp", file, output_dir])
 
 
 def get_last_job_id(run, subrun, log_dir):
@@ -402,6 +426,7 @@ def main():
                 args.output_basedir,
                 args.tool,
                 no_queue_check=args.no_queue_check, 
+                simulate=args.simulate,
             )
 
 
@@ -423,6 +448,7 @@ def main():
                     args.output_basedir,
                     args.tool,
                     no_queue_check=args.no_queue_check,
+                    simulate=args.simulate,
                 )
             log.info("Done! No more dates to process.")
 
