@@ -335,69 +335,85 @@ def GainSel_finished(date: str) -> bool:
     return flagfile.exists()
 
 
-def check_failed_jobs(date: str):
+def check_gainsel_jobs_runwise(date: str, run_id: int) -> bool:
     """Search for failed jobs in the log directory."""
     base_dir = Path(cfg.get("LST1", "BASE"))
     log_dir = base_dir / f"R0G/log/{date}"
-    history_files = glob.glob(f"{log_dir}/gain_selection_*.history")
+    history_files = glob.glob(f"{log_dir}/gain_selection_{run_id:05d}.????.history")
     failed_subruns = []
-    log.info(f"Checking history files of date {date}")
+    log.info(f"Checking all history files of run {run_id}")
 
     for file in history_files:
-        match = re.search("gain_selection_(\d+).(\d+).history", file)
-        run = match.group(1)
-        subrun = match.group(2)
+        match = re.search(f"gain_selection_{run_id:05d}.(\d+).history", file)
+        subrun = match.group(1)
         gainsel_rc = file.read_text().splitlines()[-1][-1]
 
         if gainsel_rc == "1":
-            log.warning(f"Gain selection failed for run {run}.{subrun}")
+            log.warning(f"Gain selection failed for run {run_id}.{subrun}")
             failed_subruns.append(file)
 
         elif gainsel_rc == "0":
-            log.debug(f"Gain selection finished successfully for run {run}.{subrun}")
+            log.debug(f"Gain selection finished successfully for run {run_id}.{subrun}")
                 
     if failed_subruns:
-        log.warning(f"{date}: Some gain selection jobs did not finish successfully")
+        log.warning(f"{date}: Some gain selection jobs did not finish successfully for run {run_id}")
+        return False
     else:
-        log.info(f"{date}: All jobs finished successfully")
+        log.info(f"{date}: All jobs finished successfully for run {run_id}")
+        return True
 
-        run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
-        run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
-        summary_table = Table.read(run_summary_file)
-        runs = summary_table["run_id"]
-        missing_runs = []
 
-        r0_files = glob.glob(base_dir / f"R0/{date}/LST-1.?.Run?????.????.fits.fz")
-        r0g_files = glob.glob(base_dir f"R0G/{date}/LST-1.?.Run?????.????.fits.fz")
-        all_r0_runs = [parse_r0_filename(i).run for i in r0_files]
-        all_r0g_runs = [parse_r0_filename(i).run for i in r0g_files]
+def check_failed_jobs(date: str):
+    """Search for failed jobs in the log directory."""
 
-        for run in all_r0_runs:
-            if run not in runs:
-                if run not in all_r0g_runs:
-                    missing_runs.append(run)
+    run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
+    run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
+    summary_table = Table.read(run_summary_file)
+    data_runs = summary_table[summary_table["run_type"] == "DATA"]
 
-        missing_runs.sort()
-        if missing_runs:
-            output_dir = base_dir / f"R0G/{date}/"
-            log.info(
-                f"Some runs are missing. Copying R0 files of runs {pd.Series(missing_runs).unique()} "
-                f"directly to {output_dir}"
-            )
-
-            for run in missing_runs:
-                
-                files = glob.glob(base_dir / f"R0/{date}/LST-1.?.Run{run:05d}.????.fits.fz")
-                for file in files:
-                    sp.run(["cp", file, output_dir])
-
-        GainSel_dir = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
-        flagfile_dir = GainSel_dir / date
-        flagfile_dir.mkdir(parents=True, exist_ok=True)
+    for run in data_runs:
+        run_id = run["run_id"]
         
-        flagfile = GainSel_flag_file(date)
-        log.info(f"Gain selection finished successfully, creating flag file for date {date} ({flagfile})")
-        flagfile.touch()
+        if not check_gainsel_jobs_runwise(date: str, run_id: int):
+            log.warning(f"Gain selection did not finish successfully for run {run_id}. Exiting...")
+            sys.exit(0)
+
+
+    runs = summary_table["run_id"]
+    missing_runs = []
+
+    base_dir = Path(cfg.get("LST1", "BASE"))
+    r0_files = glob.glob(base_dir / f"R0/{date}/LST-1.?.Run?????.????.fits.fz")
+    r0g_files = glob.glob(base_dir f"R0G/{date}/LST-1.?.Run?????.????.fits.fz")
+    all_r0_runs = [parse_r0_filename(i).run for i in r0_files]
+    all_r0g_runs = [parse_r0_filename(i).run for i in r0g_files]
+
+    for run in all_r0_runs:
+        if run not in runs:
+            if run not in all_r0g_runs:
+                missing_runs.append(run)
+
+    missing_runs.sort()
+    if missing_runs:
+        output_dir = base_dir / f"R0G/{date}/"
+        log.info(
+            f"Some runs are missing. Copying R0 files of runs {pd.Series(missing_runs).unique()} "
+            f"directly to {output_dir}"
+        )
+
+        for run in missing_runs:
+            
+            files = glob.glob(base_dir / f"R0/{date}/LST-1.?.Run{run:05d}.????.fits.fz")
+            for file in files:
+                sp.run(["cp", file, output_dir])
+
+    GainSel_dir = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
+    flagfile_dir = GainSel_dir / date
+    flagfile_dir.mkdir(parents=True, exist_ok=True)
+    
+    flagfile = GainSel_flag_file(date)
+    log.info(f"Gain selection finished successfully, creating flag file for date {date} ({flagfile})")
+    flagfile.touch()
 
 
 def main():
