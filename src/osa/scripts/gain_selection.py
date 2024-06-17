@@ -376,7 +376,7 @@ def check_failed_jobs(date: str):
     for run in data_runs:
         run_id = run["run_id"]
         
-        if not check_gainsel_jobs_runwise(date: str, run_id: int):
+        if not check_gainsel_jobs_runwise(date, run_id):
             log.warning(f"Gain selection did not finish successfully for run {run_id}. Exiting...")
             sys.exit(0)
 
