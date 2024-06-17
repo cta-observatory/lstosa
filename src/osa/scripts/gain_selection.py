@@ -58,14 +58,7 @@ parser.add_argument(
         default=None,
         help="List of dates to apply the gain selection. The input file should list"
         "the dates in the format YYYYMMDD, one date per line.",
-)
-parser.add_argument(                                                                                     
-        "-o",                                                                                            
-        "--output-basedir",
-        type=Path,
-        default=Path("/fefs/aswg/data/real/R0G"),
-        help="Output directory of the gain selected files. Default is /fefs/aswg/data/real/R0G."
-)                                                                                                        
+)                                                                                                       
 parser.add_argument(                                                                                     
         "-s",                                                                                            
         "--start-time",
@@ -228,7 +221,7 @@ def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool
                         sp.run(["sbatch", job_file], stdout=sp.PIPE, stderr=sp.STDOUT, check=True)
 
 
-def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path = None, tool: str = None, no_queue_check: bool = False, simulate: bool = False):
+def apply_gain_selection(date: str, start: int, end: int, tool: str = None, no_queue_check: bool = False, simulate: bool = False):
     """
     Submit the jobs to apply the gain selection to the data for a given date
     on a subrun-by-subrun basis.
@@ -240,7 +233,7 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
         else:
             tool = "lstchain_r0_to_r0g"
 
-    run_summary_dir = Path("/fefs/aswg/data/real/monitoring/RunSummary")
+    run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
     run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
     summary_table = Table.read(run_summary_file)
 
@@ -252,12 +245,13 @@ def apply_gain_selection(date: str, start: int, end: int, output_basedir: Path =
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
     log.info(f"Found {len(data_runs)} DATA runs to which apply the gain selection")
 
-    output_dir = output_basedir / date
-    log_dir = output_basedir / "log" / date
+    base_dir = Path(cfg.get("LST1", "BASE"))
+    output_dir = base_dir / f"R0G/{date}"
+    log_dir = base_dir / f"R0G/log{date}"
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / f"r0_to_r0g_{date}.log"
-    r0_dir = Path(f"/fefs/aswg/data/real/R0/{date}")
+    r0_dir = base_dir / "R0" / date
 
     for run in data_runs:
         if not no_queue_check:
@@ -341,9 +335,10 @@ def GainSel_finished(date: str) -> bool:
     return flagfile.exists()
 
 
-def check_failed_jobs(date: str, output_basedir: Path = None):
+def check_failed_jobs(date: str):
     """Search for failed jobs in the log directory."""
-    log_dir = output_basedir / "log" / date
+    base_dir = Path(cfg.get("LST1", "BASE"))
+    log_dir = base_dir / f"R0G/log/{date}"
     history_files = glob.glob(f"{log_dir}/gain_selection_*.history")
     failed_subruns = []
     log.info(f"Checking history files of date {date}")
@@ -366,14 +361,14 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
     else:
         log.info(f"{date}: All jobs finished successfully")
 
-        run_summary_dir = Path("/fefs/aswg/data/real/monitoring/RunSummary")
+        run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
         run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
         summary_table = Table.read(run_summary_file)
         runs = summary_table["run_id"]
         missing_runs = []
 
-        r0_files = glob.glob(f"/fefs/aswg/data/real/R0/{date}/LST-1.?.Run?????.????.fits.fz")
-        r0g_files = glob.glob(f"/fefs/aswg/data/real/R0G/{date}/LST-1.?.Run?????.????.fits.fz")
+        r0_files = glob.glob(base_dir / f"R0/{date}/LST-1.?.Run?????.????.fits.fz")
+        r0g_files = glob.glob(base_dir f"R0G/{date}/LST-1.?.Run?????.????.fits.fz")
         all_r0_runs = [parse_r0_filename(i).run for i in r0_files]
         all_r0g_runs = [parse_r0_filename(i).run for i in r0g_files]
 
@@ -384,14 +379,15 @@ def check_failed_jobs(date: str, output_basedir: Path = None):
 
         missing_runs.sort()
         if missing_runs:
+            output_dir = base_dir / f"R0G/{date}/"
             log.info(
                 f"Some runs are missing. Copying R0 files of runs {pd.Series(missing_runs).unique()} "
-                f"directly to /fefs/aswg/data/real/R0G/{date}"
+                f"directly to {output_dir}"
             )
 
             for run in missing_runs:
-                output_dir = Path(f"/fefs/aswg/data/real/R0G/{date}/")
-                files = glob.glob(f"/fefs/aswg/data/real/R0/{date}/LST-1.?.Run{run:05d}.????.fits.fz")
+                
+                files = glob.glob(base_dir / f"R0/{date}/LST-1.?.Run{run:05d}.????.fits.fz")
                 for file in files:
                     sp.run(["cp", file, output_dir])
 
@@ -416,14 +412,13 @@ def main():
     if args.date:
         if args.check:
             log.info(f"Checking gain selection status for date {args.date}")
-            check_failed_jobs(args.date, args.output_basedir)
+            check_failed_jobs(args.date)
         else:
             log.info(f"Applying gain selection to date {args.date}")
             apply_gain_selection(
                 args.date, 
                 args.start_time, 
-                args.end_time, 
-                args.output_basedir,
+                args.end_time,
                 args.tool,
                 no_queue_check=args.no_queue_check, 
                 simulate=args.simulate,
@@ -437,7 +432,7 @@ def main():
         if args.check:
             for date in list_of_dates:
                 log.info(f"Checking gain selection status for date {date}")
-                check_failed_jobs(date, args.output_basedir)
+                check_failed_jobs(date)
         else:
             for date in list_of_dates:
                 log.info(f"Applying gain selection to date {date}")
@@ -445,7 +440,6 @@ def main():
                     date, 
                     args.start_time, 
                     args.end_time,
-                    args.output_basedir,
                     args.tool,
                     no_queue_check=args.no_queue_check,
                     simulate=args.simulate,
