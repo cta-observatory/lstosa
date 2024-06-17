@@ -385,8 +385,8 @@ def check_failed_jobs(date: str):
     missing_runs = []
 
     base_dir = Path(cfg.get("LST1", "BASE"))
-    r0_files = glob.glob(base_dir / f"R0/{date}/LST-1.?.Run?????.????.fits.fz")
-    r0g_files = glob.glob(base_dir / f"R0G/{date}/LST-1.?.Run?????.????.fits.fz")
+    r0_files = glob.glob(f"{base_dir}/R0/{date}/LST-1.?.Run?????.????.fits.fz")
+    r0g_files = glob.glob(f"{base_dir}/R0G/{date}/LST-1.?.Run?????.????.fits.fz")
     all_r0_runs = [parse_r0_filename(i).run for i in r0_files]
     all_r0g_runs = [parse_r0_filename(i).run for i in r0g_files]
 
