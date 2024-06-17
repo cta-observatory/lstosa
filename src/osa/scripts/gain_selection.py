@@ -359,7 +359,9 @@ def check_gainsel_jobs_runwise(date: str, run_id: int) -> bool:
         log.warning(f"{date}: Some gain selection jobs did not finish successfully for run {run_id}")
         return False
     else:
-        log.info(f"{date}: All jobs finished successfully for run {run_id}")
+        log.info(f"{date}: All jobs finished successfully for run {run_id}, creating the corresponding history file")
+        run_history_file = log_dir / f"gain_selection_{run_id:05d}.history"
+        run_history_file.touch()
         return True
 
 
