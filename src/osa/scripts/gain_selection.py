@@ -83,7 +83,7 @@ parser.add_argument(
 )
 parser.add_argument(                                                                                          
         "--simulate",
-        type=str,
+        action="store_true",
         default=False,
         help="Simulate launching of the gain selection script.",
 )
