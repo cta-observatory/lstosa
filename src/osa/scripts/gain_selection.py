@@ -85,7 +85,7 @@ parser.add_argument(
         "--simulate",
         action="store_true",
         default=False,
-        help="Simulate launching of the gain selection script.",
+        help="Simulate launching of the gain selection script. Dry run.",
 )
 
 def get_sbatch_script(
