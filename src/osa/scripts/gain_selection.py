@@ -16,7 +16,7 @@ from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wai
 from osa.utils.utils import wait_for_daytime
 from osa.utils.logging import myLogger
 from osa.utils.iofile import append_to_file
-from osa.job import get_sacct_output, run_sacct
+from osa.job import get_sacct_output, run_sacct, job_finihsed_in_timeout
 from osa.configs.config import cfg
 from osa.paths import DEFAULT_CFG
 
@@ -184,7 +184,8 @@ def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool
                     else:
                         gainsel_rc = history_file.read_text().splitlines()[-1][-1]
                         if gainsel_rc == "1":
-                            if job_finished_in_timeout(run, subrun, log_dir) and not simulate:
+                            job_id = get_last_job_id(run, subrun, log_dir)
+                            if job_finished_in_timeout(job_id) and not simulate:
                                 # Relaunch the job that finished in TIMEOUT
                                 job_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.sh"
                                 sp.run(["sbatch", job_file], stdout=sp.PIPE, stderr=sp.STDOUT, check=True)
@@ -288,15 +289,6 @@ def get_last_job_id(run, subrun, log_dir):
     
     return job_id
 
-
-def job_finished_in_timeout(run, subrun, log_dir):
-
-    job_id = get_last_job_id(run, subrun, log_dir)
-    job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
-    if job_status == "TIMEOUT":
-        return True
-    else:
-        return False
 
 def update_history_file(run, subrun, log_dir, history_file):
     
