@@ -16,7 +16,7 @@ from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wai
 from osa.utils.utils import wait_for_daytime
 from osa.utils.logging import myLogger
 from osa.utils.iofile import append_to_file
-from osa.job import get_sacct_output, run_sacct_j
+from osa.job import get_sacct_output, run_sacct
 from osa.configs.config import cfg
 from osa.paths import DEFAULT_CFG
 
@@ -293,7 +293,7 @@ def get_last_job_id(run, subrun, log_dir):
 def job_finished_in_timeout(run, subrun, log_dir):
 
     job_id = get_last_job_id(run, subrun, log_dir)
-    job_status = get_sacct_output(run_sacct_j(job_id))["State"]
+    job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
     if job_status == "TIMEOUT":
         return True
     else:
@@ -302,7 +302,7 @@ def job_finished_in_timeout(run, subrun, log_dir):
 def update_history_file(run, subrun, log_dir, history_file):
     
     job_id = get_last_job_id(run, subrun, log_dir)
-    job_status = get_sacct_output(run_sacct_j(job_id))["State"]
+    job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
     if job_status in ["RUNNING", "PENDING"]:
         log.info(f"Job {job_id} is still running.")
         return

@@ -44,7 +44,6 @@ __all__ = [
     "filter_jobs",
     "run_sacct",
     "run_squeue",
-    "run_sacct_j",
     "calibration_sequence_job_template",
     "data_sequence_job_template",
     "save_job_information",
@@ -654,7 +653,7 @@ def get_squeue_output(squeue_output: StringIO) -> pd.DataFrame:
     return df
 
 
-def run_sacct() -> StringIO:
+def run_sacct(job_id=None) -> StringIO:
     """Run sacct to obtain the job information."""
     if shutil.which("sacct") is None:
         log.warning("No job info available since sacct command is not available")
@@ -669,6 +668,11 @@ def run_sacct() -> StringIO:
         "-o",
         ",".join(FORMAT_SLURM),
     ]
+
+    if job_id:
+        sacct_cmd.append("--jobs")
+        sacct_cmd.append(job_id)
+
     if cfg.get("SLURM", "STARTTIME_DAYS_SACCT"):
         days = int(cfg.get("SLURM", "STARTTIME_DAYS_SACCT"))
         start_date = (datetime.date.today() - datetime.timedelta(days=days)).isoformat()
@@ -676,27 +680,6 @@ def run_sacct() -> StringIO:
 
     return StringIO(sp.check_output(sacct_cmd).decode())
     
-
-def run_sacct_j(job) -> StringIO:
-    """Run sacct to obtain the job information."""
-    if shutil.which("sacct") is None:
-        log.warning("No job info available since sacct command is not available")
-        return StringIO()
-
-    sacct_cmd = [
-        "sacct",
-        "-n",
-        "--parsable2",
-        "--delimiter=,",
-        "--units=G",
-        "-o",
-        ",".join(FORMAT_SLURM),
-        "-j",
-        job,
-    ]
-
-    return StringIO(sp.check_output(sacct_cmd).decode())
-
 
 def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
     """
