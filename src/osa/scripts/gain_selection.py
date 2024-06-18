@@ -162,13 +162,13 @@ def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool
 
             if len(r0_files) != 4:
                 if not simulate:
-                    log.info(f"Run {run_id}.{subrun:05d} does not have 4 streams of R0 files, so gain"
+                    log.info(f"Run {run_id:05d}.{subrun:04d} does not have 4 streams of R0 files, so gain"
                         f"selection cannot be applied. Copying directly the R0 files to {output_dir}."
                     )
                     for file in r0_files:
                         sp.run(["cp", file, output_dir])
                 else:
-                    log.info(f"Run {run_id}.{subrun:05d} does not have 4 streams of R0 files, so gain"
+                    log.info(f"Run {run_id:05d}.{subrun:04d} does not have 4 streams of R0 files, so gain"
                         f"selection cannot be applied. Simulate copy of the R0 files directly to {output_dir}."
                     )
 
@@ -176,7 +176,7 @@ def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool
                 history_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.history"
                 if history_file.exists():
                     if not simulate:
-                        update_history_file(run, subrun, log_dir, history_file)
+                        update_history_file(run_id, subrun, log_dir, history_file)
 
                     if history_file.read_text() == "":   # history_file is empty
                         log.info(f"Gain selection is still running for run {run_id:05d}.{subrun:04d}")
@@ -184,7 +184,7 @@ def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool
                     else:
                         gainsel_rc = history_file.read_text().splitlines()[-1][-1]
                         if gainsel_rc == "1":
-                            job_id = get_last_job_id(run, subrun, log_dir)
+                            job_id = get_last_job_id(run_id, subrun, log_dir)
                             if job_finished_in_timeout(job_id) and not simulate:
                                 # Relaunch the job that finished in TIMEOUT
                                 job_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.sh"
@@ -294,11 +294,11 @@ def update_history_file(run, subrun, log_dir, history_file):
     
     job_id = get_last_job_id(run, subrun, log_dir)
     job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
-    if job_status in ["RUNNING", "PENDING"]:
+    if job_status.item() in ["RUNNING", "PENDING"]:
         log.info(f"Job {job_id} is still running.")
         return
         
-    elif job_status == "COMPLETED":
+    elif job_status.item() == "COMPLETED":
         log.info(f"Job {job_id} finished successfully, updating history file.")
         string_to_write = (
             f"{run:05d}.{subrun:04d} gain_selection 0\n"
