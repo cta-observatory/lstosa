@@ -16,7 +16,7 @@ from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wai
 from osa.utils.utils import wait_for_daytime
 from osa.utils.logging import myLogger
 from osa.utils.iofile import append_to_file
-from osa.job import get_sacct_output, run_sacct, job_finihsed_in_timeout
+from osa.job import get_sacct_output, run_sacct, job_finished_in_timeout
 from osa.configs.config import cfg
 from osa.paths import DEFAULT_CFG
 
