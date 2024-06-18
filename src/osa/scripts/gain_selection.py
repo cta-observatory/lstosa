@@ -92,7 +92,7 @@ def get_sbatch_script(
     run_id, subrun, input_file, output_dir, log_dir, log_file, ref_time, ref_counter, module, ref_source, tool
 ):
     """Build the sbatch job pilot script for running the gain selection."""
-    
+    mem_per_job = cfg.get("SLURM", "MEMSIZE_GAINSEL")
     sbatch_script = dedent(
             f"""\
         #!/bin/bash
@@ -101,6 +101,7 @@ def get_sbatch_script(
         #SBATCH -o "gain_selection_{run_id:05d}_{subrun:04d}_%j.log"
         #SBATCH --job-name "gain_selection_{run_id:05d}"
         #SBATCH --partition=short,long
+        #SBATCH --mem={mem_per_job}
         """
         )
     
@@ -114,11 +115,9 @@ def get_sbatch_script(
         )
         
     elif tool == "lstchain_r0_to_r0g":
-        mem_per_job = cfg.get("SLURM", "MEMSIZE_GAINSEL")
+        
         sbatch_script += dedent(
             f"""
-        #SBATCH --mem={mem_per_job}
-
         lstchain_r0_to_r0g --R0-file={input_file} --output-dir={output_dir} --log={log_file} --no-flatfield-heuristic
         """
         )
@@ -247,7 +246,7 @@ def apply_gain_selection(date: str, start: int, end: int, tool: str = None, no_q
 
     base_dir = Path(cfg.get("LST1", "BASE"))
     output_dir = base_dir / f"R0G/{date}"
-    log_dir = base_dir / f"R0G/log{date}"
+    log_dir = base_dir / f"R0G/log/{date}"
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / f"r0_to_r0g_{date}.log"
