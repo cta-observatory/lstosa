@@ -345,22 +345,25 @@ def check_gainsel_jobs_runwise(date: str, run_id: int) -> bool:
     """Search for failed jobs in the log directory."""
     base_dir = Path(cfg.get("LST1", "BASE"))
     log_dir = base_dir / f"R0G/log/{date}"
-    history_files = glob.glob(f"{log_dir}/gain_selection_{run_id:05d}.????.history")
+    history_files = log_dir.glob(f"gain_selection_{run_id:05d}.????.history")
     failed_subruns = []
     log.info(f"Checking all history files of run {run_id}")
-
-    for file in history_files:
-        match = re.search(f"gain_selection_{run_id:05d}.(\d+).history", file)
+    
+    for file in list(history_files):
+        match = re.search(f"gain_selection_{run_id:05d}.(\d+).history", str(file))
         subrun = match.group(1)
-        gainsel_rc = file.read_text().splitlines()[-1][-1]
+        if file.read_text() != "":
+            gainsel_rc = file.read_text().splitlines()[-1][-1]
 
-        if gainsel_rc == "1":
-            log.warning(f"Gain selection failed for run {run_id}.{subrun}")
-            failed_subruns.append(file)
+            if gainsel_rc == "1":
+                log.warning(f"Gain selection failed for run {run_id}.{subrun}")
+                failed_subruns.append(file)
 
-        elif gainsel_rc == "0":
-            log.debug(f"Gain selection finished successfully for run {run_id}.{subrun}")
-                
+            elif gainsel_rc == "0":
+                log.debug(f"Gain selection finished successfully for run {run_id}.{subrun}")
+        else:
+            log.info(f"Gain selection is still running for run {run_id}.{subrun}")
+ 
     if failed_subruns:
         log.warning(f"{date}: Some gain selection jobs did not finish successfully for run {run_id}")
         return False
@@ -411,7 +414,7 @@ def check_failed_jobs(date: str):
 
         for run in missing_runs:
             
-            files = glob.glob(base_dir / f"R0/{date}/LST-1.?.Run{run:05d}.????.fits.fz")
+            files = base_dir.glob(f"R0/{date}/LST-1.?.Run{run:05d}.????.fits.fz")
             for file in files:
                 sp.run(["cp", file, output_dir])
 
