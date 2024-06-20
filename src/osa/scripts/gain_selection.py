@@ -125,7 +125,7 @@ def get_sbatch_script(
     return sbatch_script
 
 
-def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool, simulate=False):
+def launch_gainsel_for_data_run(date, run, output_dir, r0_dir, log_dir, log_file, tool, simulate=False):
     
     run_id = run["run_id"]
     ref_time = run["dragon_reference_time"]
@@ -139,19 +139,22 @@ def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool
     if tool == "lst_dvr" and ref_source not in ["UCTS", "TIB"]:
         input_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
         
-        if not simulate:
-            for file in input_files:
+        if run_already_copied(date, run_id):
+            log.debug(f"The R0 files corresponding to run {run_id} have already been copied to the R0G directory.")
+        else:
+            if not simulate:
+                for file in input_files:
+                    log.info(
+                        f"Run {run_id} does not have UCTS or TIB info, so gain selection cannot"
+                        f"be applied. Copying directly the R0 files to {output_dir}."
+                    )
+                    sp.run(["cp", file, output_dir])
+
+            else:
                 log.info(
                     f"Run {run_id} does not have UCTS or TIB info, so gain selection cannot"
-                    f"be applied. Copying directly the R0 files to {output_dir}."
+                    f"be applied. Simulate copy of the R0 files directly to {output_dir}."
                 )
-                sp.run(["cp", file, output_dir])
-
-        else:
-            log.info(
-                f"Run {run_id} does not have UCTS or TIB info, so gain selection cannot"
-                f"be applied. Simulate copy of the R0 files directly to {output_dir}."
-            )
 
     else:
         n_subruns = max(subrun_numbers) 
@@ -160,7 +163,7 @@ def launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool
 
             r0_files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
 
-            if len(r0_files) != 4:
+            if len(r0_files) != 4 and not run_already_copied(date, run_id):
                 if not simulate:
                     log.info(f"Run {run_id:05d}.{subrun:04d} does not have 4 streams of R0 files, so gain"
                         f"selection cannot be applied. Copying directly the R0 files to {output_dir}."
@@ -261,24 +264,27 @@ def apply_gain_selection(date: str, start: int, end: int, tool: str = None, no_q
         # Avoid running jobs while it is still night time
         wait_for_daytime(start, end)
 
-        launch_gainsel_for_data_run(run, output_dir, r0_dir, log_dir, log_file, tool, simulate)
+        launch_gainsel_for_data_run(date, run, output_dir, r0_dir, log_dir, log_file, tool, simulate)
 
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
     log.info(f"Found {len(calib_runs)} NO-DATA runs")
 
     for run in calib_runs:
         run_id = run["run_id"]
-        log.info(f"Copying R0 files corresponding to run {run_id} directly to {output_dir}")
+        
+        if run_already_copied(date, run_id):
+            log.info(f"The R0 files corresponding to run {run_id:05d} have already been copied, nothing to do.")
+        else:
+            log.info(f"Copying R0 files corresponding to run {run_id} directly to {output_dir}")
+       	    if not simulate:
+            	# Avoid copying files while it is still night time
+            	wait_for_daytime(start, end)
 
-        if not simulate:
-            # Avoid copying files while it is still night time
-            wait_for_daytime(start, end)
+            	run_id = run["run_id"]
+            	r0_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
 
-            run_id = run["run_id"]
-            r0_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
-
-            for file in r0_files:
-                sp.run(["cp", file, output_dir])
+            	for file in r0_files:
+                    sp.run(["cp", file, output_dir])
 
 
 def get_last_job_id(run, subrun, log_dir):
@@ -311,6 +317,15 @@ def update_history_file(run, subrun, log_dir, history_file):
             f"{run:05d}.{subrun:04d} gain_selection 1\n"
         )
         append_to_file(history_file, string_to_write)
+
+
+def run_already_copied(date: str, run_id: int) -> bool:
+    """Check if the R0 files of a given run have already been copied to the R0G directory."""
+    base_dir = Path(cfg.get("LST1", "BASE"))
+    r0_files = glob.glob(f"{base_dir}/R0/{date}/LST-1.?.Run{run_id:05d}.????.fits.fz")
+    r0g_files = glob.glob(f"{base_dir}/R0G/{date}/LST-1.?.Run{run_id:05d}.????.fits.fz")
+    
+    return len(r0_files)==len(r0g_files)
 
 
 def GainSel_flag_file(date: str) -> Path:
