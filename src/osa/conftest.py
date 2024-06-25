@@ -49,6 +49,13 @@ def monitoring_dir(base_test_dir):
 
 
 @pytest.fixture(scope="session")
+def osa_dir(base_test_dir):
+    osa_dir = base_test_dir / "OSA"
+    osa_dir.mkdir(parents=True, exist_ok=True)
+    return osa_dir
+
+
+@pytest.fixture(scope="session")
 def run_summary_dir(monitoring_dir):
     summary_dir = monitoring_dir / "RunSummary"
     summary_dir.mkdir(parents=True, exist_ok=True)
@@ -436,6 +443,8 @@ def sequence_file_list(
     drs4_time_calibration_files,
     systematic_correction_files,
     r0_data,
+    gain_selection_flag_file,
+    merged_run_summary,
 ):
     for r0_file in r0_data:
         assert r0_file.exists()
@@ -448,6 +457,8 @@ def sequence_file_list(
 
     assert run_summary_file.exists()
     assert run_catalog.exists()
+    assert gain_selection_flag_file.exists()
+    assert merged_run_summary.exists()
 
     run_program("sequencer", "-d", "2020-01-17", "--no-submit", "-t", "LST1")
     # First sequence in the list corresponds to the calibration run 1809
@@ -548,11 +559,9 @@ def run_catalog(run_catalog_dir):
 
 
 @pytest.fixture(scope="session")
-def database(base_test_dir):
+def database(osa_dir):
     import sqlite3
 
-    osa_dir = base_test_dir / "OSA"
-    osa_dir.mkdir(parents=True, exist_ok=True)
     db_file = osa_dir / "osa.db"
     with sqlite3.connect(db_file) as connection:
         cursor = connection.cursor()
@@ -579,4 +588,11 @@ def rf_model_path(rf_models_dir):
     rf_model_path.mkdir(parents=True, exist_ok=True)
     return rf_model_path
 
-
+  
+@pytest.fixture(scope="session")
+def gain_selection_flag_file(osa_dir):
+    GainSel_dir = osa_dir / "GainSel" / "20200117"
+    GainSel_dir.mkdir(parents=True, exist_ok=True)
+    file = GainSel_dir / "GainSelFinished.txt"
+    file.touch()
+    return file
