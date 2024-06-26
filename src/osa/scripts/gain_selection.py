@@ -126,7 +126,11 @@ def get_sbatch_script(
 
 
 def launch_gainsel_for_data_run(date, run, output_dir, r0_dir, log_dir, log_file, tool, simulate=False):
-    
+    """
+    Create the gain selection sbatch script and launch it for a given run. Runs from before 20231205
+    without UCTS or TIB info are directly copied to the final directory. Subruns that do not have 
+    four streams are also directly copied.
+    """
     run_id = run["run_id"]
     ref_time = run["dragon_reference_time"]
     ref_counter = run["dragon_reference_counter"]
@@ -249,12 +253,13 @@ def apply_gain_selection(date: str, start: int, end: int, tool: str = None, no_q
     log.info(f"Found {len(data_runs)} DATA runs to which apply the gain selection")
 
     base_dir = Path(cfg.get("LST1", "BASE"))
+    r0_dir = base_dir / "R0" / date
     output_dir = base_dir / f"R0G/{date}"
     log_dir = base_dir / f"R0G/log/{date}"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / f"r0_to_r0g_{date}.log"
-    r0_dir = base_dir / "R0" / date
+    if not simulate:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        log_dir.mkdir(parents=True, exist_ok=True)
 
     for run in data_runs:
         if not no_queue_check:
@@ -288,7 +293,7 @@ def apply_gain_selection(date: str, start: int, end: int, tool: str = None, no_q
 
 
 def get_last_job_id(run, subrun, log_dir):
-    
+    """Get job id of the last gain selection job that was launched for a given subrun."""
     filenames = glob.glob(f"{log_dir}/gain_selection_{run:05d}_{subrun:04d}_*.log")
     match = re.search(f'gain_selection_{run:05d}_{subrun:04d}_(\d+).log', sorted(filenames)[-1])
     job_id = match.group(1)
@@ -297,7 +302,10 @@ def get_last_job_id(run, subrun, log_dir):
 
 
 def update_history_file(run, subrun, log_dir, history_file):
-    
+    """
+    Update the gain selection history file with the result 
+    of the last job launched for a given subrun.
+    """
     job_id = get_last_job_id(run, subrun, log_dir)
     job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
     if job_status.item() in ["RUNNING", "PENDING"]:
@@ -324,11 +332,11 @@ def run_already_copied(date: str, run_id: int) -> bool:
     base_dir = Path(cfg.get("LST1", "BASE"))
     r0_files = glob.glob(f"{base_dir}/R0/{date}/LST-1.?.Run{run_id:05d}.????.fits.fz")
     r0g_files = glob.glob(f"{base_dir}/R0G/{date}/LST-1.?.Run{run_id:05d}.????.fits.fz")
-    
     return len(r0_files)==len(r0g_files)
 
 
 def GainSel_flag_file(date: str) -> Path:
+    """Return the name of the gain selection flag file."""
     filename = cfg.get("LSTOSA", "gain_selection_check")
     GainSel_dir = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
     flagfile = GainSel_dir / date / filename
