@@ -336,7 +336,7 @@ def run_already_copied(date: str, run_id: int) -> bool:
 
 
 def GainSel_flag_file(date: str) -> Path:
-    """Return the name of the gain selection flag file."""
+    """Return the path to the file indicating the completion of the gain selection stage."""
     filename = cfg.get("LSTOSA", "gain_selection_check")
     GainSel_dir = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
     flagfile = GainSel_dir / date / filename
