@@ -89,7 +89,17 @@ parser.add_argument(
 )
 
 def get_sbatch_script(
-    run_id, subrun, input_file, output_dir, log_dir, log_file, ref_time, ref_counter, module, ref_source, tool
+    run_id: str,
+    subrun: str,
+    input_file: Path,
+    output_dir: Path,
+    log_dir: Path,
+    log_file: Path,
+    ref_time: int,
+    ref_counter: int,
+    module: int,
+    ref_source: str,
+    tool: str
 ):
     """Build the sbatch job pilot script for running the gain selection."""
     mem_per_job = cfg.get("SLURM", "MEMSIZE_GAINSEL")
@@ -125,7 +135,9 @@ def get_sbatch_script(
     return sbatch_script
 
 
-def launch_gainsel_for_data_run(date, run, output_dir, r0_dir, log_dir, log_file, tool, simulate=False):
+def launch_gainsel_for_data_run(
+    date: str, run: Table, output_dir: Path, r0_dir: Path, log_dir: Path, log_file: Path, tool: str, simulate: bool = False
+    ):
     """
     Create the gain selection sbatch script and launch it for a given run. Runs from before 20231205
     without UCTS or TIB info are directly copied to the final directory. Subruns that do not have 
@@ -285,28 +297,27 @@ def apply_gain_selection(date: str, start: int, end: int, tool: str = None, no_q
             	# Avoid copying files while it is still night time
             	wait_for_daytime(start, end)
 
-            	run_id = run["run_id"]
             	r0_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
 
             	for file in r0_files:
                     sp.run(["cp", file, output_dir])
 
 
-def get_last_job_id(run, subrun, log_dir):
+def get_last_job_id(run_id: str, subrun: str, log_dir: Path) -> int:
     """Get job id of the last gain selection job that was launched for a given subrun."""
-    filenames = glob.glob(f"{log_dir}/gain_selection_{run:05d}_{subrun:04d}_*.log")
-    match = re.search(f'gain_selection_{run:05d}_{subrun:04d}_(\d+).log', sorted(filenames)[-1])
+    filenames = glob.glob(f"{log_dir}/gain_selection_{run_id:05d}_{subrun:04d}_*.log")
+    match = re.search(f'gain_selection_{run_id:05d}_{subrun:04d}_(\d+).log', sorted(filenames)[-1])
     job_id = match.group(1)
     
     return job_id
 
 
-def update_history_file(run, subrun, log_dir, history_file):
+def update_history_file(run_id: str, subrun: str, log_dir: Path, history_file: Path):
     """
     Update the gain selection history file with the result 
     of the last job launched for a given subrun.
     """
-    job_id = get_last_job_id(run, subrun, log_dir)
+    job_id = get_last_job_id(run_id, subrun, log_dir)
     job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
     if job_status.item() in ["RUNNING", "PENDING"]:
         log.info(f"Job {job_id} is still running.")
@@ -315,14 +326,14 @@ def update_history_file(run, subrun, log_dir, history_file):
     elif job_status.item() == "COMPLETED":
         log.info(f"Job {job_id} finished successfully, updating history file.")
         string_to_write = (
-            f"{run:05d}.{subrun:04d} gain_selection 0\n"
+            f"{run_id:05d}.{subrun:04d} gain_selection 0\n"
         )
         append_to_file(history_file, string_to_write)
     
     else:
         log.info(f"Job {job_id} failed, updating history file.")
         string_to_write = (
-            f"{run:05d}.{subrun:04d} gain_selection 1\n"
+            f"{run_id:05d}.{subrun:04d} gain_selection 1\n"
         )
         append_to_file(history_file, string_to_write)
 
