@@ -45,8 +45,8 @@ __all__ = [
 
 
 DATACHECK_WEB_BASEDIR = Path(cfg.get("WEBSERVER", "DATACHECK"))
-CALIB_BASEDIR = Path(cfg.get("LST1", "CALIB_DIR"))
-DRS4_PEDESTAL_BASEDIR = Path(cfg.get("LST1", "PEDESTAL_DIR"))
+CALIB_BASEDIR = Path(cfg.get("LST1", "CAT_A_CALIB_DIR"))
+DRS4_PEDESTAL_BASEDIR = Path(cfg.get("LST1", "CAT_A_PEDESTAL_DIR"))
 
 
 def analysis_path(tel) -> Path:

@@ -43,8 +43,8 @@ def parse_variables(class_instance):
     rf_models_directory = Path(cfg.get("lstchain", "RF_MODELS"))
     dl1_dir = Path(cfg.get("LST1", "DL1_DIR"))
     dl2_dir = Path(cfg.get("LST1", "DL2_DIR"))
-    calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
-    pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
+    calib_dir = Path(cfg.get("LST1", "CAT_A_CALIB_DIR"))
+    pedestal_dir = Path(cfg.get("LST1", "CAT_A_PEDESTAL_DIR"))
 
     class_instance.SoftwareVersion = get_lstchain_version()
     class_instance.ProcessingConfigFile = str(options.configfile)

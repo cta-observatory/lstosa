@@ -233,7 +233,7 @@ def dl1ab(run_str: str) -> int:
     output_dl1_datafile = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
     night_dir = date_to_dir(options.date)
     calib_prod_id = cfg.get("LST1", "CALIB_PROD_ID")
-    catB_calib_dir = Path(cfg.get("LST1", "CATB_CALIB_DIR")) / night_dir / calib_prod_id
+    catB_calib_dir = Path(cfg.get("LST1", "CAT_B_CALIB_BASE")) / night_dir / calib_prod_id
     catB_calibration_file = catB_calib_dir / f"cat_B_calibration_filters_{options.filters}.Run{run_str[:5]}.h5"
 
     # Prepare and launch the actual lstchain script
