@@ -9,9 +9,11 @@ from osa.configs.config import cfg
 from osa.job import historylevel
 from osa.workflow.stages import AnalysisStage
 from osa.provenance.capture import trace
+from osa.paths import get_major_version
 from osa.utils.cliopts import data_sequence_cli_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import date_to_dir
+from osa.utils.utils import date_to_dir, get_lstchain_version
+
 
 __all__ = ["data_sequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
 
@@ -232,7 +234,7 @@ def dl1ab(run_str: str) -> int:
     # DL1b output file to be stored in the dl1ab subdirectory
     output_dl1_datafile = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
     night_dir = date_to_dir(options.date)
-    calib_prod_id = cfg.get("LST1", "CALIB_PROD_ID")
+    calib_prod_id = get_major_version(get_lstchain_version())
     catB_calib_dir = Path(cfg.get("LST1", "CAT_B_CALIB_BASE")) / night_dir / calib_prod_id
     catB_calibration_file = catB_calib_dir / f"cat_B_calibration_filters_{options.filters}.Run{run_str[:5]}.h5"
 
