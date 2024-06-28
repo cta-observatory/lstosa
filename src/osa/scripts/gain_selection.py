@@ -87,6 +87,13 @@ parser.add_argument(
         default=False,
         help="Simulate launching of the gain selection script. Dry run.",
 )
+parser.add_argument(
+        "-v",                                                                                      
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="Activate debugging mode.",
+)
 
 def get_sbatch_script(
     run_id: str,
@@ -455,8 +462,12 @@ def main():
     script for each of them. The input file should list the dates in the format
     YYYYMMDD one date per line.
     """
-    log.setLevel(logging.INFO)
     args = parser.parse_args()
+    
+    if args.verbose:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
 
     if args.date:
         if args.check:
