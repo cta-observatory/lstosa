@@ -306,10 +306,10 @@ def apply_gain_selection(date: str, start: int, end: int, tool: str = None, no_q
 def get_last_job_id(run_id: str, subrun: str, log_dir: Path) -> int:
     """Get job id of the last gain selection job that was launched for a given subrun."""
     filenames = glob.glob(f"{log_dir}/gain_selection_{run_id:05d}_{subrun:04d}_*.log")
-    match = re.search(f'gain_selection_{run_id:05d}_{subrun:04d}_(\d+).log', sorted(filenames)[-1])
-    job_id = match.group(1)
-    
-    return job_id
+    if filenames:
+        match = re.search(f'gain_selection_{run_id:05d}_{subrun:04d}_(\d+).log', sorted(filenames)[-1])
+        job_id = match.group(1)
+        return job_id
 
 
 def update_history_file(run_id: str, subrun: str, log_dir: Path, history_file: Path):
@@ -318,24 +318,27 @@ def update_history_file(run_id: str, subrun: str, log_dir: Path, history_file: P
     of the last job launched for a given subrun.
     """
     job_id = get_last_job_id(run_id, subrun, log_dir)
-    job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
-    if job_status.item() in ["RUNNING", "PENDING"]:
-        log.info(f"Job {job_id} is still running.")
-        return
-        
-    elif job_status.item() == "COMPLETED":
-        log.info(f"Job {job_id} finished successfully, updating history file.")
-        string_to_write = (
-            f"{run_id:05d}.{subrun:04d} gain_selection 0\n"
-        )
-        append_to_file(history_file, string_to_write)
-    
+    if not job_id:
+        log.debug(f"Cannot find a job_id for the run {run_id:05d}.{subrun:04d}")
     else:
-        log.info(f"Job {job_id} failed, updating history file.")
-        string_to_write = (
-            f"{run_id:05d}.{subrun:04d} gain_selection 1\n"
-        )
-        append_to_file(history_file, string_to_write)
+        job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
+        if job_status.item() in ["RUNNING", "PENDING"]:
+            log.info(f"Job {job_id} is still running.")
+            return
+            
+        elif job_status.item() == "COMPLETED":
+            log.info(f"Job {job_id} finished successfully, updating history file.")
+            string_to_write = (
+                f"{run_id:05d}.{subrun:04d} gain_selection 0\n"
+            )
+            append_to_file(history_file, string_to_write)
+        
+        else:
+            log.info(f"Job {job_id} failed, updating history file.")
+            string_to_write = (
+                f"{run_id:05d}.{subrun:04d} gain_selection 1\n"
+            )
+            append_to_file(history_file, string_to_write)
 
 
 def run_already_copied(date: str, run_id: int) -> bool:
