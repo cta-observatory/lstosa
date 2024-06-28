@@ -819,7 +819,7 @@ def update_sequence_state(sequence, filtered_job_info: pd.DataFrame) -> None:
 def job_finished_in_timeout(job_id) -> bool:
     """Return True if the input job_id finished in TIMEOUT state."""
     job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
-    if job_status.item() == "TIMEOUT":
+    if job_id and job_status.item() == "TIMEOUT":
         return True
     else:
         return False
