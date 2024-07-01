@@ -260,9 +260,7 @@ def apply_gain_selection(date: str, start: int, end: int, tool: str = None, no_q
         else:
             tool = "lstchain_r0_to_r0g"
 
-    run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
-    run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
-    summary_table = Table.read(run_summary_file)
+    summary_table = run_summary_table(date)
 
     if len(summary_table) == 0:
         log.warning(f"No runs are found in the run summary of {date}. Nothing to do. Exiting.")
@@ -309,6 +307,14 @@ def apply_gain_selection(date: str, start: int, end: int, tool: str = None, no_q
 
             	for file in r0_files:
                     sp.run(["cp", file, output_dir])
+
+
+def run_summary_table(date: str) -> Table:
+    """Return a table with all the runs of a given date."""
+    run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
+    run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
+    summary_table = Table.read(run_summary_file)
+    return summary_table
 
 
 def get_last_job_id(run_id: str, subrun: str, log_dir: Path) -> int:
@@ -407,9 +413,7 @@ def check_gainsel_jobs_runwise(date: str, run_id: int) -> bool:
 def check_failed_jobs(date: str):
     """Search for failed jobs in the log directory."""
 
-    run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
-    run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
-    summary_table = Table.read(run_summary_file)
+    summary_table = run_summary_table(date)
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
 
     for run in data_runs:
