@@ -276,7 +276,6 @@ def apply_gain_selection(date: str, start: int, end: int, tool: str = None, no_q
     log_dir = base_dir / f"R0G/log/{date}"
     log_file = log_dir / f"r0_to_r0g_{date}.log"
     if not simulate:
-        output_dir.mkdir(parents=True, exist_ok=True)
         log_dir.mkdir(parents=True, exist_ok=True)
 
     for run in data_runs:
@@ -385,7 +384,7 @@ def check_gainsel_jobs_runwise(date: str, run_id: int) -> bool:
     failed_subruns = []
     log.info(f"Checking all history files of run {run_id}")
     
-    for file in list(history_files):
+    for file in history_files:
         match = re.search(f"gain_selection_{run_id:05d}.(\d+).history", str(file))
         subrun = match.group(1)
         if file.read_text() != "":
