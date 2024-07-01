@@ -186,17 +186,18 @@ def launch_gainsel_for_data_run(
 
             r0_files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
 
-            if len(r0_files) != 4 and not run_already_copied(date, run_id):
-                if not simulate:
+            if len(r0_files) != 4:
+                if not simulate and not run_already_copied(date, run_id):
                     log.info(f"Run {run_id:05d}.{subrun:04d} does not have 4 streams of R0 files, so gain"
-                        f"selection cannot be applied. Copying directly the R0 files to {output_dir}."
-                    )
+                        f"selection cannot be applied. Copying directly the R0 files to {output_dir}.")
                     for file in r0_files:
                         sp.run(["cp", file, output_dir])
-                else:
+                elif run_already_copied(date, run_id):
+                    log.debug(f"Run {run_id:05d}.{subrun:04d} does not have 4 streams of R0 files. The R0 files"
+                        f"have already been copied to {output_dir}.")
+                elif simulate:
                     log.info(f"Run {run_id:05d}.{subrun:04d} does not have 4 streams of R0 files, so gain"
-                        f"selection cannot be applied. Simulate copy of the R0 files directly to {output_dir}."
-                    )
+                        f"selection cannot be applied. Simulate copy of the R0 files directly to {output_dir}.")
 
             else:
                 history_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.history"
