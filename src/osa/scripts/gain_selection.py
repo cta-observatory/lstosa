@@ -162,7 +162,7 @@ def launch_gainsel_for_data_run(
     if tool == "lst_dvr" and ref_source not in ["UCTS", "TIB"]:
         input_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
         
-        if run_already_copied(date, run_id):
+        if is_run_already_copied(date, run_id):
             log.debug(f"The R0 files corresponding to run {run_id} have already been copied to the R0G directory.")
         else:
             if not simulate:
@@ -187,12 +187,12 @@ def launch_gainsel_for_data_run(
             r0_files = glob.glob(f"{r0_dir}/LST-1.?.Run{run_id:05d}.{subrun:04d}.fits.fz")
 
             if len(r0_files) != 4:
-                if not simulate and not run_already_copied(date, run_id):
+                if not simulate and not is_run_already_copied(date, run_id):
                     log.info(f"Run {run_id:05d}.{subrun:04d} does not have 4 streams of R0 files, so gain"
                         f"selection cannot be applied. Copying directly the R0 files to {output_dir}.")
                     for file in r0_files:
                         sp.run(["cp", file, output_dir])
-                elif run_already_copied(date, run_id):
+                elif is_run_already_copied(date, run_id):
                     log.debug(f"Run {run_id:05d}.{subrun:04d} does not have 4 streams of R0 files. The R0 files"
                         f"have already been copied to {output_dir}.")
                 elif simulate:
@@ -295,7 +295,7 @@ def apply_gain_selection(date: str, start: int, end: int, tool: str = None, no_q
     for run in calib_runs:
         run_id = run["run_id"]
         
-        if run_already_copied(date, run_id):
+        if is_run_already_copied(date, run_id):
             log.info(f"The R0 files corresponding to run {run_id:05d} have already been copied, nothing to do.")
         else:
             log.info(f"Copying R0 files corresponding to run {run_id} directly to {output_dir}")
@@ -355,7 +355,7 @@ def update_history_file(run_id: str, subrun: str, log_dir: Path, history_file: P
             append_to_file(history_file, string_to_write)
 
 
-def run_already_copied(date: str, run_id: int) -> bool:
+def is_run_already_copied(date: str, run_id: int) -> bool:
     """Check if the R0 files of a given run have already been copied to the R0G directory."""
     base_dir = Path(cfg.get("LST1", "BASE"))
     r0_files = glob.glob(f"{base_dir}/R0/{date}/LST-1.?.Run{run_id:05d}.????.fits.fz")
