@@ -1,5 +1,4 @@
 from pathlib import Path
-from textwrap import dedent
 from astropy.table import Table
 from datetime import datetime, timedelta
 from osa.utils.utils import date_to_dir, date_to_iso
