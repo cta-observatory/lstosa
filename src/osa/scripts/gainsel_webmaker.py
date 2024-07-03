@@ -105,15 +105,15 @@ def check_failed_jobs(date: str):
 ,1)
     summary_table = summary_table.to_pandas()
     final_table = pd.merge(summary_table, gainsel_df, on="run_id")[['run_id','n_subruns','run_type','pending','success','failed','GainSelStatus', 'GainSel%']]
-    
-    return final_table
 
+    return final_table
+    
 def main():
     """Produce the html file with the processing OSA Gain Selection status."""
     args = ArgumentParser(
         description="Script to make an xhtml from LSTOSA sequencer output", parents=[common_parser]
     ).parse_args()
-
+    
     html_table = ''
 
     if args.date:
