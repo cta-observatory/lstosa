@@ -1,9 +1,6 @@
-import logging
 import re
-import glob
+from glob import glob
 from pathlib import Path
-import argparse
-import sys
 from textwrap import dedent
 
 from astropy.table import Table
@@ -15,7 +12,6 @@ from osa.paths import DEFAULT_CFG
 from osa.nightsummary.nightsummary import run_summary_table
 import numpy as np
 import pandas as pd
-from typing import Iterable
 from argparse import ArgumentParser
 from osa.configs import options
 
@@ -87,7 +83,6 @@ def check_gainsel_jobs_runwise(date: str, run_id: int) -> bool:
         
     for file in history_files:
         match = re.search(f"gain_selection_{run_id:05d}.(\d+).history", str(file))
-        subrun = match.group(1)
         if file.read_text() != "":
             gainsel_rc = file.read_text().splitlines()[-1][-1]
             
@@ -117,7 +112,6 @@ def check_failed_jobs(date: str):
     gainsel_df['GainSelStatus'] = np.where(gainsel_df['failed'] != 0, 'FAILED', np.where(gainsel_df['pending'] != 0, 'PENDING', 'COMPLETED'))
     gainsel_df['GainSel%'] = round(gainsel_df['success']*100/(gainsel_df['pending']+gainsel_df['failed']+gainsel_df['success'])
 ,1)
-    runs = summary_table["run_id"]
     summary_table = summary_table.to_pandas()
     final_table = pd.merge(summary_table, gainsel_df, on="run_id")[['run_id','n_subruns','run_type','pending','success','failed','GainSelStatus', 'GainSel%']]
     
