@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from argparse import ArgumentParser
 from osa.configs import options
+from osa.scripts.sequencer_webmaker import html_content
 
 def valid_date(string):
     """Check if the string is a valid date and return a datetime object."""
@@ -31,39 +32,6 @@ common_parser.add_argument(
     type=valid_date,
 )
 
-def html_content(body: str, date: str) -> str:
-    """Build the HTML content.
-
-    Parameters
-    ----------
-    body : str
-        Table with the sequencer status report.
-    date : str
-        Date of the processing YYYY-MM-DD.
-
-    Returns
-    -------
-    str
-        HTML content.
-    """
-    time_update = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-
-    return dedent(
-        f"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-        <html xmlns="http://www.w3.org/1999/xhtml">
-         <head>
-          <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-          <title>OSA Gain Selection status</title><link href="osa.css" rel="stylesheet"
-          type="text/css" /><style>table{{width:152ex;}}</style>
-         </head>
-         <body>
-         <h1>OSA Gain Selection processing status</h1>
-         <p>Processing data from: {date}. Last updated: {time_update} UTC</p>
-         {body}
-         </body>
-        </html>"""
-    )
 
 def check_gainsel_jobs_runwise(date: str, run_id: int) -> bool:
     """Search for failed jobs in the log directory."""
@@ -138,7 +106,7 @@ def main():
         directory = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
         directory.mkdir(parents=True, exist_ok=True)
         html_file = directory / Path(f"osa_gainsel_status_{flat_date}.html")
-        html_file.write_text(html_content(html_table, date), encoding="utf-8")
+        html_file.write_text(html_content(html_table, date, "OSA Gain Selection"), encoding="utf-8")
 
     else:
        # Get the table with the sequencer status report:
@@ -149,12 +117,12 @@ def main():
             html_table = lines.to_html()
 
         # Save the HTML file
-        directory = Path("/fefs/aswg/data/real/OSA/GainSelWeb")#Path(cfg.get("LST1", "SEQUENCER_WEB_DIR"))
+        directory = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
 
         directory.mkdir(parents=True, exist_ok=True)
 
         html_file = directory / Path(f"osa_gainsel_status_{flat_date}.html")
-        html_file.write_text(html_content(html_table, date), encoding="utf-8")
+        html_file.write_text(html_content(html_table, date, "OSA Gain Selection"), encoding="utf-8")
 
 if __name__ == "__main__":
     main()
