@@ -1,9 +1,7 @@
 from pathlib import Path
 from textwrap import dedent
-
 from astropy.table import Table
 from datetime import datetime, timedelta
-
 from osa.utils.utils import date_to_dir, date_to_iso
 from osa.configs.config import cfg
 from osa.paths import DEFAULT_CFG
@@ -16,7 +14,8 @@ from osa.configs import options
 def valid_date(string):
     """Check if the string is a valid date and return a datetime object."""
     return datetime.strptime(string, "%Y%m%d")
-    
+
+
 common_parser = ArgumentParser(add_help=False)
 common_parser.add_argument(
     "-c",
@@ -31,8 +30,6 @@ common_parser.add_argument(
     help="Date (YYYYMMDD) of the start of the night",
     type=valid_date,
 )
-
-
 
 def html_content(body: str, date: str) -> str:
     """Build the HTML content.
