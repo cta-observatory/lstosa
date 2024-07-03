@@ -65,7 +65,6 @@ def html_content(body: str, date: str) -> str:
         </html>"""
     )
 
-    
 def check_gainsel_jobs_runwise(date: str, run_id: int) -> bool:
     """Search for failed jobs in the log directory."""
     base_dir = Path("/fefs/aswg/data/real") #Path(cfg.get("LST1", "BASE"))
@@ -110,13 +109,12 @@ def check_failed_jobs(date: str):
     final_table = pd.merge(summary_table, gainsel_df, on="run_id")[['run_id','n_subruns','run_type','pending','success','failed','GainSelStatus', 'GainSel%']]
     
     return final_table
-
+    
 def main():
     """Produce the html file with the processing OSA Gain Selection status."""
     args = ArgumentParser(
         description="Script to make an xhtml from LSTOSA sequencer output", parents=[common_parser]
     ).parse_args()
-
     
     html_table = ''
     
