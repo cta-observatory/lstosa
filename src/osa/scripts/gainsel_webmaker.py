@@ -74,11 +74,11 @@ def check_gainsel_jobs_runwise(date: str, run_id: int) -> bool:
     success_subruns = 0
     failed_subruns = 0
     pending_subruns = 0
-        
+
     for file in history_files:
         if file.read_text() != "":
             gainsel_rc = file.read_text().splitlines()[-1][-1]
-            
+
             if gainsel_rc == "1":
                 failed_subruns = failed_subruns+1
 
@@ -87,8 +87,6 @@ def check_gainsel_jobs_runwise(date: str, run_id: int) -> bool:
         else:
             pending_subruns = pending_subruns+1
     return [pending_subruns, success_subruns, failed_subruns]
-
-
 
 def check_failed_jobs(date: str):
     """Search for failed jobs in the log directory."""
@@ -100,7 +98,7 @@ def check_failed_jobs(date: str):
         run_id = run["run_id"]
         checkgainsel = check_gainsel_jobs_runwise(date.replace('-',''), run_id)
         gainsel_summary.append([run_id, checkgainsel[0], checkgainsel[1], checkgainsel[2]])
-        
+
     gainsel_df = pd.DataFrame(gainsel_summary, columns=['run_id', 'pending','success','failed'])
     gainsel_df['GainSelStatus'] = np.where(gainsel_df['failed'] != 0, 'FAILED', np.where(gainsel_df['pending'] != 0, 'PENDING', 'COMPLETED'))
     gainsel_df['GainSel%'] = round(gainsel_df['success']*100/(gainsel_df['pending']+gainsel_df['failed']+gainsel_df['success'])
@@ -109,19 +107,19 @@ def check_failed_jobs(date: str):
     final_table = pd.merge(summary_table, gainsel_df, on="run_id")[['run_id','n_subruns','run_type','pending','success','failed','GainSelStatus', 'GainSel%']]
     
     return final_table
-    
+
 def main():
     """Produce the html file with the processing OSA Gain Selection status."""
     args = ArgumentParser(
         description="Script to make an xhtml from LSTOSA sequencer output", parents=[common_parser]
     ).parse_args()
-    
+
     html_table = ''
-    
+
     if args.date:
         flat_date = date_to_dir(args.date)
         options.date = args.date
-
+        
     else:
     # yesterday by default
     	yesterday = datetime.now() - timedelta(days=1)
@@ -129,35 +127,34 @@ def main():
     	flat_date = date_to_dir(yesterday)
 
     date = date_to_iso(options.date)
-    
+
     run_summary_directory = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
     run_summary_file = run_summary_directory / f"RunSummary_{flat_date}.ecsv"
-    
+
     if not run_summary_file.is_file() or len(Table.read(run_summary_file)["run_id"]) == 0:
-        
+
         html_table = "<p>No data found</p>"
         # Save the HTML file
         directory = Path("/fefs/aswg/data/real/OSA/GainSelWeb")#Path(cfg.get("LST1", "SEQUENCER_WEB_DIR"$
         directory.mkdir(parents=True, exist_ok=True)
         html_file = directory / Path(f"osa_gainsel_status_{flat_date}.html")
         html_file.write_text(html_content(html_table, date), encoding="utf-8")
-        
+
     else:
        # Get the table with the sequencer status report:
         lines = check_failed_jobs(date)
 
-
         lines.reset_index(drop=True, inplace=True)
         if html_table == '':
             html_table = lines.to_html()
-      
+
         # Save the HTML file
         directory = Path("/fefs/aswg/data/real/OSA/GainSelWeb")#Path(cfg.get("LST1", "SEQUENCER_WEB_DIR"))
-    
+
         directory.mkdir(parents=True, exist_ok=True)
 
         html_file = directory / Path(f"osa_gainsel_status_{flat_date}.html")
         html_file.write_text(html_content(html_table, date), encoding="utf-8")
-    
+
 if __name__ == "__main__":
     main()
