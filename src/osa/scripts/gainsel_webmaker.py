@@ -1,5 +1,4 @@
 import re
-from glob import glob
 from pathlib import Path
 from textwrap import dedent
 
@@ -82,7 +81,6 @@ def check_gainsel_jobs_runwise(date: str, run_id: int) -> bool:
     pending_subruns = 0
         
     for file in history_files:
-        match = re.search(f"gain_selection_{run_id:05d}.(\d+).history", str(file))
         if file.read_text() != "":
             gainsel_rc = file.read_text().splitlines()[-1][-1]
             
