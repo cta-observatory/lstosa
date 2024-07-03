@@ -67,7 +67,7 @@ def html_content(body: str, date: str) -> str:
 
 def check_gainsel_jobs_runwise(date: str, run_id: int) -> bool:
     """Search for failed jobs in the log directory."""
-    base_dir = Path("/fefs/aswg/data/real") #Path(cfg.get("LST1", "BASE"))
+    base_dir = Path(cfg.get("LST1", "BASE"))
     log_dir = base_dir / f"R0G/log/{date}"
     history_files = log_dir.glob(f"gain_selection_{run_id:05d}.????.history")
 
@@ -135,7 +135,7 @@ def main():
 
         html_table = "<p>No data found</p>"
         # Save the HTML file
-        directory = Path("/fefs/aswg/data/real/OSA/GainSelWeb")#Path(cfg.get("LST1", "SEQUENCER_WEB_DIR"$
+        directory = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
         directory.mkdir(parents=True, exist_ok=True)
         html_file = directory / Path(f"osa_gainsel_status_{flat_date}.html")
         html_file.write_text(html_content(html_table, date), encoding="utf-8")
