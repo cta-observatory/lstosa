@@ -316,8 +316,8 @@ def main():
 
     if is_datasequence_running(run_number):
         log.info(
-            f"Jobs launched by datasequence are still running or pending for"
-            "run {run_number}, try again later."
+            "Jobs launched by datasequence are still running or pending for"
+            f"run {run_number}, try again later."
         )
         return
 
