@@ -17,6 +17,7 @@ from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wai
 from osa.utils.utils import wait_for_daytime
 from osa.utils.logging import myLogger
 from osa.utils.iofile import append_to_file
+from osa.utils.cliopts import valid_date
 from osa.job import get_sacct_output, run_sacct, job_finished_in_timeout
 from osa.configs.config import cfg
 from osa.paths import DEFAULT_CFG
@@ -52,15 +53,15 @@ parser.add_argument(
         "-d",                                                                                            
         "--date",                                                                                        
         default=None,
-        type=str,
-        help="Night to apply the gain selection in YYYYMMDD format",
+        type=valid_date,
+        help="Night to apply the gain selection in YYYY-MM-DD format",
 )                                                                                                        
 parser.add_argument(                                                                                     
         "-l",                                                                                            
         "--dates-file",
         default=None,
         help="List of dates to apply the gain selection. The input file should list"
-        "the dates in the format YYYYMMDD, one date per line.",
+        "the dates in the format YYYY-MM-DD, one date per line.",
 )                                                                                                       
 parser.add_argument(                                                                                     
         "-s",                                                                                            
@@ -82,7 +83,7 @@ parser.add_argument(
         type=str,
         default=None,
         help="Choose tool to apply the gain selection regardless the date. Possible options are: lst_dvr (by default used for dates "
-        "previous to 20231205) and lstchain_r0_to_r0g (by default used for dates later than 20231205).",
+        "previous to 2023-12-05) and lstchain_r0_to_r0g (by default used for dates later than 2023-12-05).",
 )
 parser.add_argument(                                                                                          
         "--simulate",
@@ -146,7 +147,7 @@ def get_sbatch_script(
 
 
 def launch_gainsel_for_data_run(
-    date: str, run: Table, output_dir: Path, r0_dir: Path, log_dir: Path, log_file: Path, tool: str, simulate: bool = False
+    date: datetime, run: Table, output_dir: Path, r0_dir: Path, log_dir: Path, log_file: Path, tool: str, simulate: bool = False
     ):
     """
     Create the gain selection sbatch script and launch it for a given run. Runs from before 20231205
@@ -251,22 +252,22 @@ def launch_gainsel_for_data_run(
                         sp.run(["sbatch", job_file], stdout=sp.PIPE, stderr=sp.STDOUT, check=True)
 
 
-def apply_gain_selection(date: str, start: int, end: int, tool: str = None, no_queue_check: bool = False, simulate: bool = False):
+def apply_gain_selection(date: datetime, start: int, end: int, tool: str = None, no_queue_check: bool = False, simulate: bool = False):
     """
     Submit the jobs to apply the gain selection to the data for a given date
     on a subrun-by-subrun basis.
     """
 
     if not tool:
-        if date < "20231205":
+        if date_to_dir(date) < "20231205":
             tool = "lst_dvr"
         else:
             tool = "lstchain_r0_to_r0g"
 
-    summary_table = run_summary_table(datetime.fromisoformat(date))
+    summary_table = run_summary_table(date)
 
     if len(summary_table) == 0:
-        log.warning(f"No runs are found in the run summary of {date}. Nothing to do. Exiting.")
+        log.warning(f"No runs are found in the run summary of {date_to_iso(date)}. Nothing to do. Exiting.")
         sys.exit(0)
 
     # Apply gain selection only to DATA runs
@@ -274,10 +275,11 @@ def apply_gain_selection(date: str, start: int, end: int, tool: str = None, no_q
     log.info(f"Found {len(data_runs)} DATA runs to which apply the gain selection")
 
     base_dir = Path(cfg.get("LST1", "BASE"))
-    r0_dir = base_dir / "R0" / date
-    output_dir = base_dir / f"R0G/{date}"
-    log_dir = base_dir / f"R0G/log/{date}"
-    log_file = log_dir / f"r0_to_r0g_{date}.log"
+    date_str = date_to_dir(date)
+    r0_dir = base_dir / "R0" / date_str
+    output_dir = base_dir / f"R0G/{date_str}"
+    log_dir = base_dir / f"R0G/log/{date_str}"
+    log_file = log_dir / f"r0_to_r0g_{date_str}.log"
     if not simulate:
         output_dir.mkdir(parents=True, exist_ok=True)
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -350,32 +352,32 @@ def update_history_file(run_id: str, subrun: str, log_dir: Path, history_file: P
             append_to_file(history_file, string_to_write)
 
 
-def is_run_already_copied(date: str, run_id: int) -> bool:
+def is_run_already_copied(date: datetime, run_id: int) -> bool:
     """Check if the R0 files of a given run have already been copied to the R0G directory."""
     base_dir = Path(cfg.get("LST1", "BASE"))
-    r0_files = glob.glob(f"{base_dir}/R0/{date}/LST-1.?.Run{run_id:05d}.????.fits.fz")
-    r0g_files = glob.glob(f"{base_dir}/R0G/{date}/LST-1.?.Run{run_id:05d}.????.fits.fz")
+    r0_files = glob.glob(f"{base_dir}/R0/{date_to_dir(date)}/LST-1.?.Run{run_id:05d}.????.fits.fz")
+    r0g_files = glob.glob(f"{base_dir}/R0G/{date_to_dir(date)}/LST-1.?.Run{run_id:05d}.????.fits.fz")
     return len(r0_files)==len(r0g_files)
 
 
-def GainSel_flag_file(date: str) -> Path:
+def GainSel_flag_file(date: datetime) -> Path:
     """Return the path to the file indicating the completion of the gain selection stage."""
     filename = cfg.get("LSTOSA", "gain_selection_check")
     GainSel_dir = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
-    flagfile = GainSel_dir / date / filename
+    flagfile = GainSel_dir / date_to_dir(date) / filename
     return flagfile.resolve()
 
 
-def GainSel_finished(date: str) -> bool:
+def GainSel_finished(date: datetime) -> bool:
     """Check if gain selection finished successfully."""
     flagfile = GainSel_flag_file(date)
     return flagfile.exists()
 
 
-def check_gainsel_jobs_runwise(date: str, run_id: int) -> bool:
+def check_gainsel_jobs_runwise(date: datetime, run_id: int) -> bool:
     """Search for failed jobs in the log directory."""
     base_dir = Path(cfg.get("LST1", "BASE"))
-    log_dir = base_dir / f"R0G/log/{date}"
+    log_dir = base_dir / f"R0G/log/{date_to_dir(date)}"
     history_files = log_dir.glob(f"gain_selection_{run_id:05d}.????.history")
     failed_subruns = []
     log.info(f"Checking all history files of run {run_id}")
@@ -396,19 +398,19 @@ def check_gainsel_jobs_runwise(date: str, run_id: int) -> bool:
             log.info(f"Gain selection is still running for run {run_id}.{subrun}")
  
     if failed_subruns:
-        log.warning(f"{date}: Some gain selection jobs did not finish successfully for run {run_id}")
+        log.warning(f"{date_to_iso(date)}: Some gain selection jobs did not finish successfully for run {run_id}")
         return False
     else:
-        log.info(f"{date}: All jobs finished successfully for run {run_id}, creating the corresponding history file")
+        log.info(f"{date_to_iso(date)}: All jobs finished successfully for run {run_id}, creating the corresponding history file")
         run_history_file = log_dir / f"gain_selection_{run_id:05d}.history"
         run_history_file.touch()
         return True
 
 
-def check_failed_jobs(date: str):
+def check_failed_jobs(date: datetime):
     """Search for failed jobs in the log directory."""
 
-    summary_table = run_summary_table(datetime.fromisoformat(date))
+    summary_table = run_summary_table(date)
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
     failed_runs = []
 
@@ -420,15 +422,16 @@ def check_failed_jobs(date: str):
             failed_runs.append(run)
 
     if failed_runs:
-        log.info(f"Gain selection did not finish successfully for {date}, cannot create the flag file.")
+        log.info(f"Gain selection did not finish successfully for {date_to_iso(date)}, cannot create the flag file.")
         return
 
     runs = summary_table["run_id"]
     missing_runs = []
 
+    date_str = date_to_dir(date)
     base_dir = Path(cfg.get("LST1", "BASE"))
-    r0_files = glob.glob(f"{base_dir}/R0/{date}/LST-1.?.Run?????.????.fits.fz")
-    r0g_files = glob.glob(f"{base_dir}/R0G/{date}/LST-1.?.Run?????.????.fits.fz")
+    r0_files = glob.glob(f"{base_dir}/R0/{date_str}/LST-1.?.Run?????.????.fits.fz")
+    r0g_files = glob.glob(f"{base_dir}/R0G/{date_str}/LST-1.?.Run?????.????.fits.fz")
     all_r0_runs = [parse_r0_filename(i).run for i in r0_files]
     all_r0g_runs = [parse_r0_filename(i).run for i in r0g_files]
 
@@ -439,7 +442,7 @@ def check_failed_jobs(date: str):
 
     missing_runs.sort()
     if missing_runs:
-        output_dir = base_dir / f"R0G/{date}/"
+        output_dir = base_dir / f"R0G/{date_str}/"
         log.info(
             f"Some runs are missing. Copying R0 files of runs {pd.Series(missing_runs).unique()} "
             f"directly to {output_dir}"
@@ -447,16 +450,16 @@ def check_failed_jobs(date: str):
 
         for run in missing_runs:
             
-            files = base_dir.glob(f"R0/{date}/LST-1.?.Run{run:05d}.????.fits.fz")
+            files = base_dir.glob(f"R0/{date_str}/LST-1.?.Run{run:05d}.????.fits.fz")
             for file in files:
                 sp.run(["cp", file, output_dir])
 
     GainSel_dir = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
-    flagfile_dir = GainSel_dir / date
+    flagfile_dir = GainSel_dir / date_str
     flagfile_dir.mkdir(parents=True, exist_ok=True)
     
     flagfile = GainSel_flag_file(date)
-    log.info(f"Gain selection finished successfully, creating flag file for date {date} ({flagfile})")
+    log.info(f"Gain selection finished successfully, creating flag file for date {date_to_iso(date)} ({flagfile})")
     flagfile.touch()
 
 
