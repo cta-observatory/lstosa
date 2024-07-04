@@ -410,14 +410,18 @@ def check_failed_jobs(date: str):
 
     summary_table = run_summary_table(datetime.fromisoformat(date))
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
+    failed_runs = []
 
     for run in data_runs:
         run_id = run["run_id"]
         
         if not check_gainsel_jobs_runwise(date, run_id):
-            log.warning(f"Gain selection did not finish successfully for run {run_id}. Exiting...")
-            sys.exit(0)
+            log.warning(f"Gain selection did not finish successfully for run {run_id}.")
+            failed_runs.append(run)
 
+    if failed_runs:
+        log.info(f"Gain selection did not finish successfully for {date}, cannot create the flag file.")
+        return
 
     runs = summary_table["run_id"]
     missing_runs = []
