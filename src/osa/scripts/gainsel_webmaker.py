@@ -108,7 +108,7 @@ def main():
         html_file.write_text(html_content(html_table, date, "OSA Gain Selection"), encoding="utf-8")
 
     else:
-       # Get the table with the sequencer status report:
+       # Get the table with the gain selection check report:
         lines = check_failed_jobs(date)
 
         lines.reset_index(drop=True, inplace=True)
