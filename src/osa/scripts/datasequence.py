@@ -289,7 +289,7 @@ def is_datasequence_running(run_str: str) -> bool:
     """Return True if any datasequence jobs are running for the given run number."""
     sacct_output = run_sacct()
     sacct_info = get_sacct_output(sacct_output)
-    jobs_run = sacct_info[sacct_info["JobName"]=="LST1_"+run_number]
+    jobs_run = sacct_info[sacct_info["JobName"]=="LST1_"+run_str[:5]]
     if jobs_run:
         return True
     else: 
