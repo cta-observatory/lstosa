@@ -67,11 +67,25 @@ def check_failed_jobs(date: str):
         gainsel_summary.append([run_id, gainsel_job_status])
 
     gainsel_df = pd.DataFrame(gainsel_summary, columns=['run_id', 'pending','success','failed'])
-    gainsel_df['GainSelStatus'] = np.where(gainsel_df['failed'] != 0, 'FAILED', np.where(gainsel_df['pending'] != 0, 'PENDING', 'COMPLETED'))
+    gainsel_df['GainSelStatus'] = np.where(gainsel_df['failed'] != 0,
+                                           'FAILED',
+                                           np.where(gainsel_df['pending'] != 0,
+                                                    'PENDING',
+                                                    'COMPLETED'))
+
     gainsel_df['GainSel%'] = round(gainsel_df['success']*100/(gainsel_df['pending']+gainsel_df['failed']+gainsel_df['success'])
 ,1)
+
     summary_table = summary_table.to_pandas()
-    final_table = pd.merge(summary_table, gainsel_df, on="run_id")[['run_id','n_subruns','run_type','pending','success','failed','GainSelStatus', 'GainSel%']]
+
+    final_table = pd.merge(summary_table, gainsel_df, on="run_id")[['run_id',
+                                                                    'n_subruns',
+                                                                    'run_type',
+                                                                    'pending',
+                                                                    'success',
+                                                                    'failed',
+                                                                    'GainSelStatus',
+                                                                    'GainSel%']]
 
     return final_table
 
