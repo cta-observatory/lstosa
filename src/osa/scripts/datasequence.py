@@ -6,7 +6,7 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import historylevel
+from osa.job import historylevel, get_sacct_output, run_sacct
 from osa.workflow.stages import AnalysisStage
 from osa.provenance.capture import trace
 from osa.utils.cliopts import data_sequence_cli_parsing
@@ -285,6 +285,17 @@ def dl1_to_dl2(run_str: str) -> int:
     return analysis_step.rc
 
 
+def is_datasequence_running(run_str: str) -> bool:
+    """Return True if any datasequence jobs are running for the given run number."""
+    sacct_output = run_sacct()
+    sacct_info = get_sacct_output(sacct_output)
+    jobs_run = sacct_info[sacct_info["JobName"]=="LST1_"+run_number]
+    if jobs_run:
+        return True
+    else: 
+        return False
+
+
 def main():
     """Performs the analysis steps to convert raw data into DL2 files."""
     (
@@ -303,18 +314,26 @@ def main():
     else:
         log.setLevel(logging.INFO)
 
-    # Run the routine piping all the analysis steps
-    rc = data_sequence(
-        calibration_file,
-        drs4_ped_file,
-        time_calibration_file,
-        systematic_correction_file,
-        drive_log_file,
-        run_summary_file,
-        pedestal_ids_file,
-        run_number,
-    )
-    sys.exit(rc)
+    if is_datasequence_running(run_number):
+        log.info(
+            f"Jobs launched by datasequence are still running or pending for"
+            "run {run_number}, try again later."
+        )
+        return
+
+    else:
+        # Run the routine piping all the analysis steps
+        rc = data_sequence(
+            calibration_file,
+            drs4_ped_file,
+            time_calibration_file,
+            systematic_correction_file,
+            drive_log_file,
+            run_summary_file,
+            pedestal_ids_file,
+            run_number,
+        )
+        sys.exit(rc)
 
 
 if __name__ == "__main__":
