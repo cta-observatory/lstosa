@@ -63,8 +63,8 @@ def check_failed_jobs(date: str):
     gainsel_summary = []
     for run in data_runs:
         run_id = run["run_id"]
-        checkgainsel = check_gainsel_jobs_runwise(date.replace('-',''), run_id)
-        gainsel_summary.append([run_id, checkgainsel[0], checkgainsel[1], checkgainsel[2]])
+        gainsel_job_status = check_gainsel_jobs_runwise(date.replace('-',''), run_id)
+        gainsel_summary.append([run_id, gainsel_job_status])
 
     gainsel_df = pd.DataFrame(gainsel_summary, columns=['run_id', 'pending','success','failed'])
     gainsel_df['GainSelStatus'] = np.where(gainsel_df['failed'] != 0, 'FAILED', np.where(gainsel_df['pending'] != 0, 'PENDING', 'COMPLETED'))
@@ -80,8 +80,6 @@ def main():
     args = ArgumentParser(
         description="Script to make an xhtml from LSTOSA sequencer output", parents=[common_parser]
     ).parse_args()
-
-    html_table = ''
 
     if args.date:
         flat_date = date_to_dir(args.date)
@@ -109,11 +107,10 @@ def main():
 
     else:
        # Get the table with the gain selection check report:
-        lines = check_failed_jobs(date)
+        table_gain_selection_jobs = check_failed_jobs(date)
 
-        lines.reset_index(drop=True, inplace=True)
-        if html_table == '':
-            html_table = lines.to_html()
+        table_gain_selection_jobs.reset_index(drop=True, inplace=True)
+        html_table = table_gain_selection_jobs.to_html()
 
         # Save the HTML file
         directory = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
