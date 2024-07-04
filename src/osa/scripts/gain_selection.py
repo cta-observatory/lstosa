@@ -14,7 +14,7 @@ from lstchain.paths import parse_r0_filename
 from datetime import datetime
 
 from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wait
-from osa.utils.utils import wait_for_daytime
+from osa.utils.utils import wait_for_daytime, date_to_dir, date_to_iso
 from osa.utils.logging import myLogger
 from osa.utils.iofile import append_to_file
 from osa.utils.cliopts import valid_date
