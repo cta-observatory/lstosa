@@ -279,6 +279,7 @@ def apply_gain_selection(date: str, start: int, end: int, tool: str = None, no_q
     log_dir = base_dir / f"R0G/log/{date}"
     log_file = log_dir / f"r0_to_r0g_{date}.log"
     if not simulate:
+        output_dir.mkdir(parents=True, exist_ok=True)
         log_dir.mkdir(parents=True, exist_ok=True)
 
     for run in data_runs:
