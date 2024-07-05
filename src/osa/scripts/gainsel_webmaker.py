@@ -63,7 +63,7 @@ def check_failed_jobs(date: str):
     gainsel_summary = []
     for run in data_runs:
         run_id = run["run_id"]
-        gainsel_job_status = check_gainsel_jobs_runwise(date.replace('-',''), run_id)
+        gainsel_job_status = check_gainsel_jobs_runwise(date, run_id)
         gainsel_summary.append([run_id, gainsel_job_status])
 
     gainsel_df = pd.DataFrame(gainsel_summary, columns=['run_id', 'pending','success','failed'])
