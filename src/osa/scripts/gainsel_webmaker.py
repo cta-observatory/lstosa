@@ -56,7 +56,7 @@ def check_gainsel_jobs_runwise(date: datetime, run_id: int) -> bool:
             pending_subruns = pending_subruns+1
     return [pending_subruns, success_subruns, failed_subruns]
 
-def check_failed_jobs(date: str):
+def check_failed_jobs(date: datetime):
     """Search for failed jobs in the log directory."""
     summary_table = run_summary_table(date)
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
