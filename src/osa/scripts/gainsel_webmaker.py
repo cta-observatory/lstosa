@@ -130,9 +130,10 @@ def main():
         directory = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
 
         directory.mkdir(parents=True, exist_ok=True)
-
-        html_file = directory / f"osa_gainsel_status_{flat_date}.html"
-        html_file.write_text(html_content(html_table, flat_date, "OSA Gain Selection"), encoding="utf-8")
+        
+        html_file =open( directory / f"osa_gainsel_status_{date}.html", "w")
+        html_file.write(html_content(html_table, date, "OSA Gain Selection"))
+        html_file.close()
 
 if __name__ == "__main__":
     main()
