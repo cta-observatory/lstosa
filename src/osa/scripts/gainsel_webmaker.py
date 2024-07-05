@@ -73,8 +73,8 @@ def check_failed_jobs(date: str):
                                                     'PENDING',
                                                     'COMPLETED'))
 
-    gainsel_df['GainSel%'] = round(gainsel_df['success']*100/(gainsel_df['pending']+gainsel_df['failed']+gainsel_df['success'])
-,1)
+    total_job_number = gainsel_df['pending'] + gainsel_df['failed'] + gainsel_df['success']
+    gainsel_df['GainSel%'] = round(gainsel_df['success'] * 100 / total_job_number, 1)
 
     summary_table = summary_table.to_pandas()
 
