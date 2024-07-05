@@ -28,7 +28,7 @@ from osa.paths import analysis_path
 from osa.report import start
 from osa.utils.cliopts import sequencer_cli_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import is_day_closed, gettag, date_to_iso, date_to_dir
+from osa.utils.utils import is_day_closed, gettag, date_to_iso
 from osa.veto import get_closed_list, get_veto_list
 from osa.scripts.gain_selection import GainSel_finished
 
