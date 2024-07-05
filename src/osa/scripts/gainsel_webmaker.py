@@ -36,7 +36,7 @@ def check_gainsel_jobs_runwise(date: datetime, run_id: int) -> bool:
     """Search for failed jobs in the log directory."""
     base_dir = Path(cfg.get("LST1", "BASE"))
     flat_date = date_to_dir(date)
-    log_dir = base_dir / f"R0G/log/{date}"
+    log_dir = base_dir / f"R0G/log/{flat_date}"
     history_files = log_dir.glob(f"gain_selection_{run_id:05d}.????.history")
 
     success_subruns = 0
