@@ -98,9 +98,9 @@ def single_process(telescope):
         log.warning("No runs found for this date. Nothing to do. Exiting.")
         sys.exit(0)
 
-    if not options.no_gainsel and not GainSel_finished(date_to_dir(options.date)):
+    if not options.no_gainsel and not GainSel_finished(options.date):
         log.info(
-            f"Gain selection did not finish successfully for date {options.date}."
+            f"Gain selection did not finish successfully for date {date_to_iso(options.date)}."
             "Try again later, once gain selection has finished."
         )
         sys.exit()
