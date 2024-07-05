@@ -13,7 +13,7 @@ from osa.scripts.sequencer_webmaker import html_content
 
 def valid_date(string):
     """Check if the string is a valid date and return a datetime object."""
-    return datetime.strptime(string, "%Y%m%d")
+    return datetime.strptime(string, "%Y-%m-%d")
 
 
 common_parser = ArgumentParser(add_help=False)
@@ -65,7 +65,7 @@ def check_failed_jobs(date: datetime):
     for run in data_runs:
         run_id = run["run_id"]
         gainsel_job_status = check_gainsel_jobs_runwise(date, run_id)
-        gainsel_summary.append([run_id, gainsel_job_status])
+        gainsel_summary.append([run_id, gainsel_job_status[0], gainsel_job_status[1], gainsel_job_status[2]])
 
     gainsel_df = pd.DataFrame(gainsel_summary, columns=['run_id', 'pending','success','failed'])
     gainsel_df['GainSelStatus'] = np.where(gainsel_df['failed'] != 0,
@@ -102,12 +102,11 @@ def main():
 
     else:
     # yesterday by default
-    	yesterday = datetime.now() - timedelta(days=1)
-    	options.date = yesterday
-    	flat_date = date_to_dir(yesterday)
+        yesterday = datetime.now() - timedelta(days=1)
+        options.date = yesterday
+        flat_date = date_to_dir(yesterday)
 
     date = date_to_iso(options.date)
-
     run_summary_directory = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
     run_summary_file = run_summary_directory / f"RunSummary_{flat_date}.ecsv"
 
@@ -122,7 +121,7 @@ def main():
 
     else:
        # Get the table with the gain selection check report:
-        table_gain_selection_jobs = check_failed_jobs(date)
+        table_gain_selection_jobs = check_failed_jobs(datetime.strptime(date, "%Y-%m-%d"))
 
         table_gain_selection_jobs.reset_index(drop=True, inplace=True)
         html_table = table_gain_selection_jobs.to_html()
