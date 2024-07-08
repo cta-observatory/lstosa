@@ -91,7 +91,10 @@ def check_failed_jobs(date: datetime):
     return final_table
 
 def main():
-    """Produce the html file with the processing OSA Gain Selection status."""
+    """Produce the html file with the processing OSA Gain Selection status.
+    
+    It creates an HTML file osa_gainsel_status_YYYYMMDD.html
+    """
     args = ArgumentParser(
         description="Script to make an xhtml from LSTOSA sequencer output", parents=[common_parser]
     ).parse_args()
