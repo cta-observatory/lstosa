@@ -314,7 +314,7 @@ def main():
     else:
         log.setLevel(logging.INFO)
 
-    if is_datasequence_running(run_number):
+    if not options.simulate and is_datasequence_running(run_number):
         log.info(
             "Jobs launched by datasequence are still running or pending for"
             f"run {run_number}, try again later."
