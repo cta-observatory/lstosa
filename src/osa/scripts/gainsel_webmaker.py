@@ -121,7 +121,7 @@ def main():
 
     else:
        # Get the table with the gain selection check report:
-        table_gain_selection_jobs = check_failed_jobs(datetime.strptime(date, "%Y-%m-%d"))
+        table_gain_selection_jobs = check_failed_jobs(options.date)
 
         table_gain_selection_jobs.reset_index(drop=True, inplace=True)
         html_table = table_gain_selection_jobs.to_html()
