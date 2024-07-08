@@ -96,7 +96,8 @@ def main():
     It creates an HTML file osa_gainsel_status_YYYYMMDD.html
     """
     args = ArgumentParser(
-        description="Script to make an xhtml from LSTOSA sequencer output", parents=[common_parser]
+        description="Script to create an HTML file for gain selection status (osa_gainsel_status_YYYYMMDD.html)",
+        parents=[common_parser]
     ).parse_args()
 
     if args.date:
