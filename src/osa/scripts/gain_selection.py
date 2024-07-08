@@ -396,7 +396,8 @@ def check_gainsel_jobs_runwise(date: datetime, run_id: int) -> bool:
                 log.debug(f"Gain selection finished successfully for run {run_id}.{subrun}")
         else:
             log.info(f"Gain selection is still running for run {run_id}.{subrun}")
- 
+            return False
+            
     if failed_subruns:
         log.warning(f"{date_to_iso(date)}: Some gain selection jobs did not finish successfully for run {run_id}")
         return False
