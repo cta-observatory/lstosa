@@ -135,7 +135,7 @@ def main():
 
     gain_selection_web_directory = Path(cfg.get("LST1", "GAIN_SELECTION_WEB_DIR"))
     gain_selection_web_directory.mkdir(parents=True, exist_ok=True)
-    html_file = gain_selection_web_directory / f"osa_gainsel_status_{flat_date}.html"
+    html_file = gain_selection_web_directory / f"osa_gainsel_status_{date}.html"
 
     # Create and save the HTML file
     if not run_summary_file.is_file() or len(Table.read(run_summary_file)["run_id"]) == 0:
