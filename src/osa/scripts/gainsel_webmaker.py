@@ -68,11 +68,13 @@ def check_failed_jobs(date: datetime):
         gainsel_summary.append([run_id, gainsel_job_status[0], gainsel_job_status[1], gainsel_job_status[2]])
 
     gainsel_df = pd.DataFrame(gainsel_summary, columns=['run_id', 'pending','success','failed'])
-    gainsel_df['GainSelStatus'] = np.where(gainsel_df['failed'] != 0,
+    gainsel_df['GainSelStatus'] = np.where((gainsel_df['failed'] == 0) & (gainsel_df['pending'] == 0) & (gainsel_df['success'] == 0),
+                                           'NOT STARTED', 
+                                           np.where(gainsel_df['failed'] != 0,
                                            'FAILED',
                                            np.where(gainsel_df['pending'] != 0,
                                                     'PENDING',
-                                                    'COMPLETED'))
+                                                    'COMPLETED')))
 
     total_job_number = gainsel_df['pending'] + gainsel_df['failed'] + gainsel_df['success']
     gainsel_df['GainSel%'] = round(gainsel_df['success'] * 100 / total_job_number, 1)
