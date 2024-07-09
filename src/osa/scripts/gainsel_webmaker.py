@@ -141,7 +141,6 @@ def main():
     if not run_summary_file.is_file() or len(Table.read(run_summary_file)["run_id"]) == 0:
         content = "<p>No data found</p>"
         log.warning(f"No data found for date {date}, creating an empty HTML file.")
-        html_file.write_text(html_content(content, date, "OSA Gain Selection"), encoding="utf-8")
 
     else:
         # Get the table with the gain selection check report in HTML format:
