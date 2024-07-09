@@ -109,12 +109,12 @@ def check_failed_jobs(date: datetime) -> pd.DataFrame:
 def main():
     """Produce the html file with the processing OSA Gain Selection status.
 
-    It creates an HTML file osa_gainsel_status_YYYYMMDD.html
+    It creates an HTML file osa_gainsel_status_YYYY-MM-DD.html
     """
     args = ArgumentParser(
         description=(
             "Script to create an HTML file with the gain selection status "
-            "(osa_gainsel_status_YYYYMMDD.html)"
+            "(osa_gainsel_status_YYYY-MM-DD.html)"
         ),
         parents=[common_parser],
     ).parse_args()
