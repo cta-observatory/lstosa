@@ -409,3 +409,18 @@ def test_gainsel_webmaker(
     directory = base_test_dir / "OSA" / "GainSelWeb"
     expected_file = directory / "osa_gainsel_status_20200117.html"
     assert expected_file.exists()
+
+    # Test a date with non-existing run summary
+    output = sp.run(["gainsel_webmaker", "-d", "2024-01-12"])
+    assert output.returncode == 0
+    directory = base_test_dir / "OSA" / "GainSelWeb"
+    expected_file = directory / "osa_gainsel_status_20240112.html"
+    assert expected_file.exists()
+
+
+def test_gainsel_web_content():
+    from osa.scripts.gainsel_webmaker import check_failed_jobs
+
+    table = check_failed_jobs(options.date)
+    assert table["GainSelStatus"][0] == "NOT STARTED"
+    assert table["GainSel%"][0] == 0.0
