@@ -109,12 +109,12 @@ def check_failed_jobs(date: datetime) -> pd.DataFrame:
 def main():
     """Produce the html file with the processing OSA Gain Selection status.
 
-    It creates an HTML file osa_gainsel_status_YYYYMMDD.html
+    It creates an HTML file osa_gainsel_status_YYYY-MM-DD.html
     """
     args = ArgumentParser(
         description=(
             "Script to create an HTML file with the gain selection status "
-            "(osa_gainsel_status_YYYYMMDD.html)"
+            "(osa_gainsel_status_YYYY-MM-DD.html)"
         ),
         parents=[common_parser],
     ).parse_args()
@@ -135,7 +135,7 @@ def main():
 
     gain_selection_web_directory = Path(cfg.get("LST1", "GAIN_SELECTION_WEB_DIR"))
     gain_selection_web_directory.mkdir(parents=True, exist_ok=True)
-    html_file = gain_selection_web_directory / f"osa_gainsel_status_{flat_date}.html"
+    html_file = gain_selection_web_directory / f"osa_gainsel_status_{date}.html"
 
     # Create and save the HTML file
     if not run_summary_file.is_file() or len(Table.read(run_summary_file)["run_id"]) == 0:
