@@ -23,6 +23,7 @@ ALL_SCRIPTS = [
     "theta2_significance",
     "source_coordinates",
     "sequencer_webmaker",
+    "gainsel_webmaker",
 ]
 
 options.date = datetime.datetime.fromisoformat("2020-01-17")
@@ -397,3 +398,29 @@ def test_sequencer_webmaker(
     # Running without test option will make the script fail
     output = sp.run(["sequencer_webmaker", "-d", "2020-01-17"])
     assert output.returncode != 0
+
+
+def test_gainsel_webmaker(
+    base_test_dir,
+):
+
+    output = sp.run(["gainsel_webmaker", "-d", "2020-01-17"])
+    assert output.returncode == 0
+    directory = base_test_dir / "OSA" / "GainSelWeb"
+    expected_file = directory / "osa_gainsel_status_20200117.html"
+    assert expected_file.exists()
+
+    # Test a date with non-existing run summary
+    output = sp.run(["gainsel_webmaker", "-d", "2024-01-12"])
+    assert output.returncode == 0
+    directory = base_test_dir / "OSA" / "GainSelWeb"
+    expected_file = directory / "osa_gainsel_status_20240112.html"
+    assert expected_file.exists()
+
+
+def test_gainsel_web_content():
+    from osa.scripts.gainsel_webmaker import check_failed_jobs
+
+    table = check_failed_jobs(options.date)
+    assert table["GainSelStatus"][0] == "NOT STARTED"
+    assert table["GainSel%"][0] == 0.0
