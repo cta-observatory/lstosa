@@ -407,14 +407,14 @@ def test_gainsel_webmaker(
     output = sp.run(["gainsel_webmaker", "-d", "2020-01-17"])
     assert output.returncode == 0
     directory = base_test_dir / "OSA" / "GainSelWeb"
-    expected_file = directory / "osa_gainsel_status_20200117.html"
+    expected_file = directory / "osa_gainsel_status_2020-01-17.html"
     assert expected_file.exists()
 
     # Test a date with non-existing run summary
     output = sp.run(["gainsel_webmaker", "-d", "2024-01-12"])
     assert output.returncode == 0
     directory = base_test_dir / "OSA" / "GainSelWeb"
-    expected_file = directory / "osa_gainsel_status_20240112.html"
+    expected_file = directory / "osa_gainsel_status_2024-01-12.html"
     assert expected_file.exists()
 
 
