@@ -122,7 +122,7 @@ def main():
         # Save the HTML file
         directory = Path(cfg.get("LST1", "GAIN_SELECTION_WEB_DIR"))
         directory.mkdir(parents=True, exist_ok=True)
-        html_file = directory / f"osa_gainsel_status_{flat_date}.html"
+        html_file = directory / f"osa_gainsel_status_{date}.html"
         html_file.write_text(html_content(html_table, date, "OSA Gain Selection"), encoding="utf-8")
 
     else:
@@ -137,7 +137,7 @@ def main():
 
         directory.mkdir(parents=True, exist_ok=True)
 
-        html_file =open( directory / f"osa_gainsel_status_{flat_date}.html", "w")
+        html_file =open( directory / f"osa_gainsel_status_{date}.html", "w")
         html_file.write(html_content(html_table, date, "OSA Gain Selection"))
         html_file.close()
 
