@@ -423,7 +423,7 @@ def check_failed_jobs(date: datetime):
             failed_runs.append(run)
 
     if failed_runs:
-        log.info(f"Gain selection did not finish successfully for {date_to_iso(date)}, cannot create the flag file.")
+        log.warning(f"Gain selection did not finish successfully for {date_to_iso(date)}, cannot create the flag file.")
         return
 
     runs = summary_table["run_id"]
