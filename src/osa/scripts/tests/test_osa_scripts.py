@@ -404,7 +404,7 @@ def test_gainsel_webmaker(
     base_test_dir,
 ):
 
-    output = sp.run(["gainsel_webmaker", "-d", "20200117"])
+    output = sp.run(["gainsel_webmaker", "-d", "2020-01-17"])
     assert output.returncode == 0
     directory = base_test_dir / "OSA" / "GainSelWeb"
     expected_file = directory / "osa_gainsel_status_20200117.html"
