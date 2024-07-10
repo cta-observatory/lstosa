@@ -410,6 +410,7 @@ def check_gainsel_jobs_runwise(date: datetime, run_id: int) -> bool:
 
 def check_warnings_in_logs(date: datetime, run_id: int) -> bool:
     """Look for warnings in the log files created by lstchain_r0_to_r0g."""
+    base_dir = Path(cfg.get("LST1", "BASE"))
     log_dir = base_dir / f"R0G/log/{date_to_dir(date)}"
     log_files = log_dir.glob(f"r0_to_r0g_{run_id:05d}.*.log")
     for file in log_files:
