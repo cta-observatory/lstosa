@@ -93,12 +93,12 @@ def check_failed_jobs(date: datetime) -> pd.DataFrame:
     def determine_status(row):
         if row["failed"] > 0:
             return "FAILED"
-        elif row["pending"] > 0:
-            return "RUNNING"
         elif row["pending"] == row["n_subruns"]:
             return "PENDING"
         elif row["success"] == row["n_subruns"]:
             return "COMPLETED"
+        elif row["pending"] > 0:
+            return "RUNNING"
         else:
             return "NOT STARTED"
 
