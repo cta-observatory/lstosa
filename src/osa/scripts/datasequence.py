@@ -314,26 +314,18 @@ def main():
     else:
         log.setLevel(logging.INFO)
 
-    if not options.simulate and is_datasequence_running(run_number):
-        log.info(
-            "Jobs launched by datasequence are still running or pending for"
-            f"run {run_number}, try again later."
-        )
-        return
-
-    else:
-        # Run the routine piping all the analysis steps
-        rc = data_sequence(
-            calibration_file,
-            drs4_ped_file,
-            time_calibration_file,
-            systematic_correction_file,
-            drive_log_file,
-            run_summary_file,
-            pedestal_ids_file,
-            run_number,
-        )
-        sys.exit(rc)
+    # Run the routine piping all the analysis steps
+    rc = data_sequence(
+        calibration_file,
+        drs4_ped_file,
+        time_calibration_file,
+        systematic_correction_file,
+        drive_log_file,
+        run_summary_file,
+        pedestal_ids_file,
+        run_number,
+    )
+    sys.exit(rc)
 
 
 if __name__ == "__main__":

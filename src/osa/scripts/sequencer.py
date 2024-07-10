@@ -109,6 +109,10 @@ def single_process(telescope):
         log.info(f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}")
         return sequence_list
 
+    if is_sequencer_running(options.date):
+        log.info(f"Sequencer is still running for date {options.date}. Try again later.")
+        sys.exit(0)
+
     # Build the sequences
     sequence_list = build_sequences(options.date)
 
@@ -305,6 +309,20 @@ def output_matrix(matrix: list, padding_space: int):
 
         log.info(stringrow)
 
+
+def is_sequencer_running(date) -> bool:
+    """Check if the jobs launched by sequencer are running or pending for the given date."""
+    summary_table = run_summary_table(date)
+    sacct_output = run_sacct()
+    sacct_info = get_sacct_output(sacct_output)
+
+    for run in summary_table["run_id"]:
+        jobs_run = sacct_info[sacct_info["JobName"]==f"LST1_{run}"]
+        queued_jobs = jobs_run[(jobs_run["State"] == "RUNNING") | (jobs_run["State"] == "PENDING")]
+        if len(queued_jobs) != 0:
+            return True
+
+    return False
 
 if __name__ == "__main__":
     main()
