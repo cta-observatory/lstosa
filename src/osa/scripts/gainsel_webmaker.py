@@ -94,6 +94,8 @@ def check_failed_jobs(date: datetime) -> pd.DataFrame:
         if row["failed"] > 0:
             return "FAILED"
         elif row["pending"] > 0:
+            return "RUNNING"
+        elif row["pending"] == row["n_subruns"]:
             return "PENDING"
         elif row["success"] == row["n_subruns"]:
             return "COMPLETED"
