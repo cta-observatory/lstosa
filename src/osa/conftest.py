@@ -574,8 +574,23 @@ def database(osa_dir):
 
 
 @pytest.fixture(scope="session")
-def gain_selection_flag_file(osa_dir):
+def rf_models_dir(base_test_dir):
+    directory = base_test_dir / "models/AllSky"
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
 
+
+@pytest.fixture(scope="session")
+def rf_model_path(rf_models_dir):
+    mc_prod = "20240131_allsky_v0.10.5_all_dec_base"
+    declination_str = "dec_2276"
+    rf_model_path = rf_models_dir / mc_prod / declination_str
+    rf_model_path.mkdir(parents=True, exist_ok=True)
+    return rf_model_path
+
+  
+@pytest.fixture(scope="session")
+def gain_selection_flag_file(osa_dir):
     GainSel_dir = osa_dir / "GainSel" / "20200117"
     GainSel_dir.mkdir(parents=True, exist_ok=True)
     file = GainSel_dir / "GainSelFinished.txt"

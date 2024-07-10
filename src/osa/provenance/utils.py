@@ -40,7 +40,7 @@ def parse_variables(class_instance):
     configfile_dl1b = cfg.get("lstchain", "dl1b_config")
     configfile_dl2 = cfg.get("lstchain", "dl2_config")
     raw_dir = Path(cfg.get("LST1", "R0_DIR"))
-    rf_models_directory = Path(cfg.get("lstchain", "RF_MODELS"))
+    rf_models_directory = Path(cfg.get("LST1", "RF_MODELS"))
     dl1_dir = Path(cfg.get("LST1", "DL1_DIR"))
     dl2_dir = Path(cfg.get("LST1", "DL2_DIR"))
     calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))

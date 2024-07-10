@@ -107,10 +107,10 @@ def test_simulate_processing(
 
     with open(json_file_dl2) as file:
         dl2 = yaml.safe_load(file)
-    assert len(dl2["entity"]) == 25
-    assert len(dl2["activity"]) == 6
-    assert len(dl2["used"]) == 21
-    assert len(dl2["wasGeneratedBy"]) == 12
+    assert len(dl2["entity"]) == 19
+    assert len(dl2["activity"]) == 5
+    assert len(dl2["used"]) == 15
+    assert len(dl2["wasGeneratedBy"]) == 10
 
     rc = run_program("simulate_processing", "-p")
     assert rc.returncode == 0
@@ -241,7 +241,13 @@ def test_closer(
     assert closed_seq_file.exists()
 
 
-def test_datasequence(running_analysis_dir):
+def test_datasequence(
+    running_analysis_dir,
+    run_catalog,
+    run_catalog_dir,
+    rf_models_dir,
+    rf_model_path
+):
     drs4_file = "drs4_pedestal.Run00001.0000.fits"
     calib_file = "calibration.Run00002.0000.hdf5"
     timecalib_file = "time_calibration.Run00002.0000.hdf5"
@@ -249,8 +255,13 @@ def test_datasequence(running_analysis_dir):
     drive_file = "DrivePosition_20200117.txt"
     runsummary_file = "RunSummary_20200117.ecsv"
     prod_id = "v0.1.0"
-    run_number = "00003.0000"
+    run_number = "01807.0000"
     options.directory = running_analysis_dir
+
+    assert run_catalog_dir.exists()
+    assert run_catalog.exists()
+    assert rf_models_dir.exists()
+    assert rf_model_path.exists()
 
     output = run_program(
         "datasequence",
