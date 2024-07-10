@@ -147,7 +147,7 @@ def get_sbatch_script(
 
 
 def launch_gainsel_for_data_run(
-    date: datetime, run: Table, output_dir: Path, r0_dir: Path, log_dir: Path, log_file: Path, tool: str, simulate: bool = False
+    date: datetime, run: Table, output_dir: Path, r0_dir: Path, log_dir: Path, tool: str, simulate: bool = False
     ):
     """
     Create the gain selection sbatch script and launch it for a given run. Runs from before 20231205
@@ -228,6 +228,7 @@ def launch_gainsel_for_data_run(
                 else:
                     log.info("Creating and launching the sbatch scripts for the rest of the runs to apply gain selection")
                     if not simulate:
+                        log_file = log_dir / f"r0_to_r0g_{run_id:05d}.{subrun:04d}.log"
                         job_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.sh"
                         r0_files.sort()
                         with open(job_file, "w") as f:
@@ -279,7 +280,6 @@ def apply_gain_selection(date: datetime, start: int, end: int, tool: str = None,
     r0_dir = base_dir / "R0" / date_str
     output_dir = base_dir / f"R0G/{date_str}"
     log_dir = base_dir / f"R0G/log/{date_str}"
-    log_file = log_dir / f"r0_to_r0g_{date_str}.log"
     if not simulate:
         output_dir.mkdir(parents=True, exist_ok=True)
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -292,7 +292,7 @@ def apply_gain_selection(date: datetime, start: int, end: int, tool: str = None,
         # Avoid running jobs while it is still night time
         wait_for_daytime(start, end)
 
-        launch_gainsel_for_data_run(date, run, output_dir, r0_dir, log_dir, log_file, tool, simulate)
+        launch_gainsel_for_data_run(date, run, output_dir, r0_dir, log_dir, tool, simulate)
 
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
     log.info(f"Found {len(calib_runs)} NO-DATA runs")
@@ -408,12 +408,27 @@ def check_gainsel_jobs_runwise(date: datetime, run_id: int) -> bool:
         return True
 
 
+def check_warnings_in_logs(date: datetime, run_id: int) -> bool:
+    """Look for warnings in the log files created by lstchain_r0_to_r0g."""
+    log_dir = base_dir / f"R0G/log/{date_to_dir(date)}"
+    log_files = log_dir.glob(f"r0_to_r0g_{run_id:05d}.*.log")
+    for file in log_files:
+        content = file.read_text().splitlines()
+        for line in content:
+            if "WARNING" in line:
+                log.warning(f"There is a warning in the log files of run {run_id}: {line}")
+                return False
+
+    return True
+
+
 def check_failed_jobs(date: datetime):
     """Search for failed jobs in the log directory."""
 
     summary_table = run_summary_table(date)
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
     failed_runs = []
+    warnings = []
 
     for run in data_runs:
         run_id = run["run_id"]
@@ -422,7 +437,10 @@ def check_failed_jobs(date: datetime):
             log.warning(f"Gain selection did not finish successfully for run {run_id}.")
             failed_runs.append(run)
 
-    if failed_runs:
+        if not check_warnings_in_logs(date, run_id):
+            warnings.append(run)
+
+    if failed_runs or warnings:
         log.warning(f"Gain selection did not finish successfully for {date_to_iso(date)}, cannot create the flag file.")
         return
 
