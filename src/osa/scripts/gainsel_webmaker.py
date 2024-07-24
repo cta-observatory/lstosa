@@ -147,7 +147,7 @@ def main():
     else:
         # Get the table with the gain selection check report in HTML format:
         table_gain_selection_jobs = check_failed_jobs(options.date)
-        content = table_gain_selection_jobs.to_html()
+        content = table_gain_selection_jobs.to_html(justify="left")
 
     html_file.write_text(html_content(content, date, "OSA Gain Selection"))
     log.info(f"Created HTML file {html_file}")
