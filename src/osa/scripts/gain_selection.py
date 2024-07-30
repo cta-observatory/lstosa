@@ -429,7 +429,7 @@ def check_failed_jobs(date: datetime):
     summary_table = run_summary_table(date)
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
     failed_runs = []
-    warnings = []
+    warnings_in_logs = []
 
     for run in data_runs:
         run_id = run["run_id"]
@@ -439,9 +439,9 @@ def check_failed_jobs(date: datetime):
             failed_runs.append(run)
 
         if not check_warnings_in_logs(date, run_id):
-            warnings.append(run)
+            warnings_in_logs.append(run)
 
-    if failed_runs or warnings:
+    if failed_runs or warnings_in_logs:
         log.warning(f"Gain selection did not finish successfully for {date_to_iso(date)}, cannot create the flag file.")
         return
 
