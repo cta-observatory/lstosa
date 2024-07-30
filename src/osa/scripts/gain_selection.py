@@ -497,11 +497,14 @@ def main():
         log.setLevel(logging.INFO)
 
     if args.date:
-        if args.check:
-            log.info(f"Checking gain selection status for date {args.date}")
+        if GainSel_finished(args.date):
+            log.warning(f"Gain selection already done for date {date_to_iso(args.date)}. Exiting.")
+            sys.exit(0)
+        elif args.check:
+            log.info(f"Checking gain selection status for date {date_to_iso(args.date)}")
             check_failed_jobs(args.date)
         else:
-            log.info(f"Applying gain selection to date {args.date}")
+            log.info(f"Applying gain selection to date {date_to_iso(args.date)}")
             apply_gain_selection(
                 args.date, 
                 args.start_time, 
