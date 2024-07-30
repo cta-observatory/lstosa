@@ -286,11 +286,17 @@ def dl1_to_dl2(run_str: str) -> int:
 
 
 def is_datasequence_running(run_str: str) -> bool:
-    """Return True if any datasequence jobs are running or pending for the given run number."""
+    """Return True if any datasequence jobs are running or pending for the given run number.
+    
+    Parameters
+    ----------
+    run_str : str
+        Run number and subrun number in the format XXXXX.XXXX
+    """
     sacct_output = run_sacct()
     sacct_info = get_sacct_output(sacct_output)
-    jobs_run = sacct_info[sacct_info["JobName"]=="LST1_"+run_str[:5]]
-    if jobs_run:
+    queued_jobs = sacct_info[sacct_info["JobName"]=="LST1_"+run_str[:5]]
+    if queued_jobs:
         return True
     else: 
         return False
