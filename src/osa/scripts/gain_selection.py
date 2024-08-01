@@ -150,9 +150,10 @@ def launch_gainsel_for_data_run(
     date: datetime, run: Table, output_dir: Path, r0_dir: Path, log_dir: Path, tool: str, simulate: bool = False
     ):
     """
-    Create the gain selection sbatch script and launch it for a given run. Runs from before 20231205
-    without UCTS or TIB info are directly copied to the final directory. Subruns that do not have 
-    four streams are also directly copied.
+    Create the gain selection sbatch script and launch it for a given run.
+    
+    Runs from before 20231205 without UCTS or TIB info are directly copied to the final directory.
+    Subruns that do not have four streams are also directly copied.
     """
     run_id = run["run_id"]
     ref_time = run["dragon_reference_time"]
@@ -167,11 +168,11 @@ def launch_gainsel_for_data_run(
         input_files = r0_dir.glob(f"LST-1.?.Run{run_id:05d}.????.fits.fz")
         
         if is_run_already_copied(date, run_id):
-            log.debug(f"The R0 files corresponding to run {run_id} have already been copied to the R0G directory.")
+            log.info(f"The R0 files corresponding to run {run_id} have already been copied to the R0G directory.")
         else:
             if not simulate:
                 for file in input_files:
-                    log.info(
+                    log.debug(
                         f"Run {run_id} does not have UCTS or TIB info, so gain selection cannot"
                         f"be applied. Copying directly the R0 files to {output_dir}."
                     )
@@ -192,7 +193,7 @@ def launch_gainsel_for_data_run(
 
             if len(r0_files) != 4:
                 if not simulate and not is_run_already_copied(date, run_id):
-                    log.info(f"Run {run_id:05d}.{subrun:04d} does not have 4 streams of R0 files, so gain"
+                    log.debug(f"Run {run_id:05d}.{subrun:04d} does not have 4 streams of R0 files, so gain"
                         f"selection cannot be applied. Copying directly the R0 files to {output_dir}.")
                     for file in r0_files:
                         sp.run(["cp", file, output_dir])
@@ -200,7 +201,7 @@ def launch_gainsel_for_data_run(
                     log.debug(f"Run {run_id:05d}.{subrun:04d} does not have 4 streams of R0 files. The R0 files"
                         f"have already been copied to {output_dir}.")
                 elif simulate:
-                    log.info(f"Run {run_id:05d}.{subrun:04d} does not have 4 streams of R0 files, so gain"
+                    log.debug(f"Run {run_id:05d}.{subrun:04d} does not have 4 streams of R0 files, so gain"
                         f"selection cannot be applied. Simulate copy of the R0 files directly to {output_dir}.")
 
             else:
@@ -210,7 +211,7 @@ def launch_gainsel_for_data_run(
                         update_history_file(run_id, subrun, log_dir, history_file)
 
                     if history_file.read_text() == "":   # history_file is empty
-                        log.info(f"Gain selection is still running for run {run_id:05d}.{subrun:04d}")
+                        log.debug(f"Gain selection is still running for run {run_id:05d}.{subrun:04d}")
                         continue
                     else:
                         gainsel_rc = history_file.read_text().splitlines()[-1][-1]
@@ -226,7 +227,7 @@ def launch_gainsel_for_data_run(
                             log.debug(f"Gain selection finished successfully for run {run_id:05d}.{subrun:04d},"
                                         "no additional jobs will be submitted for this subrun.") 
                 else:
-                    log.info("Creating and launching the sbatch scripts for the rest of the runs to apply gain selection")
+                    log.debug("Creating and launching the gain selection sbatch script for subrun {run_id:05d}.{subrun:04d}")
                     if not simulate:
                         log_file = log_dir / f"r0_to_r0g_{run_id:05d}.{subrun:04d}.log"
                         job_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.sh"
@@ -504,7 +505,7 @@ def main():
             log.info(f"Checking gain selection status for date {date_to_iso(args.date)}")
             check_failed_jobs(args.date)
         else:
-            log.info(f"Applying gain selection to date {date_to_iso(args.date)}")
+            log.info(f"\nApplying gain selection to date {date_to_iso(args.date)}")
             apply_gain_selection(
                 args.date, 
                 args.start_time, 
