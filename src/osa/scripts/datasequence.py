@@ -6,7 +6,7 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import historylevel, get_sacct_output, run_sacct
+from osa.job import historylevel, get_sacct_output
 from osa.workflow.stages import AnalysisStage
 from osa.provenance.capture import trace
 from osa.utils.cliopts import data_sequence_cli_parsing
