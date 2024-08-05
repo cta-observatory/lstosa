@@ -245,10 +245,13 @@ def dl1ab(run_str: str) -> int:
         f"--input-file={input_dl1_datafile}",
         f"--output-file={output_dl1_datafile}",
         f"--config={dl1b_config}",
-        f"--catB-calibration-file={catB_calibration_file}",
     ]
+    
     if not cfg.getboolean("lstchain", "store_image_dl1ab"):
         cmd.append("--no-image=True")
+
+    if cfg.getboolean("lstchain", "apply_catB_calibration"):
+        cmd.append(f"--catB-calibration-file={catB_calibration_file}")
 
     if options.simulate:
         return 0
