@@ -110,8 +110,8 @@ def single_process(telescope):
         return sequence_list
 
     if not options.test and is_sequencer_running(options.date):
-            log.info(f"Sequencer is still running for date {date_to_iso(options.date)}. Try again later.")
-            sys.exit(0)
+        log.info(f"Sequencer is still running for date {date_to_iso(options.date)}. Try again later.")
+        sys.exit(0)
 
     # Build the sequences
     sequence_list = build_sequences(options.date)
