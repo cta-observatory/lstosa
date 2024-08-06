@@ -417,8 +417,8 @@ def check_warnings_in_logs(date: datetime, run_id: int) -> bool:
     for file in log_files:
         content = file.read_text().splitlines()
         for line in content:
-            if "WARNING" in line:
-                log.warning(f"There is a warning in the log files of run {run_id}: {line}")
+            if "WARNING - You should use heuristic identification of FF events!" in line:
+                log.warning(f"You should use heuristic identification of FF events for run {run_id}!")
                 return False
 
     return True
