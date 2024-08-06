@@ -100,7 +100,7 @@ def single_process(telescope):
 
     if not options.no_gainsel and not GainSel_finished(options.date):
         log.info(
-            f"Gain selection did not finish successfully for date {date_to_iso(options.date)}."
+            f"Gain selection did not finish successfully for date {date_to_iso(options.date)}. "
             "Try again later, once gain selection has finished."
         )
         sys.exit()
@@ -109,7 +109,7 @@ def single_process(telescope):
         log.info(f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}")
         return sequence_list
 
-    if not options.test and is_sequencer_running(options.date):
+    if not options.test and is_sequencer_running(options.date) and not options.simulate:
         log.info(f"Sequencer is still running for date {date_to_iso(options.date)}. Try again later.")
         sys.exit(0)
 
