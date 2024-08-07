@@ -10,7 +10,7 @@ from osa.utils.utils import date_to_dir, get_lstchain_version
 
 __all__ = ["parse_variables", "get_log_config"]
 
-REDUCTION_TASKS = ["r0_to_dl1", "dl1ab", "dl1_datacheck", "dl1_to_dl2"]
+REDUCTION_TASKS = ["r0_to_dl1", "catB_calibration", "dl1ab", "dl1_datacheck", "dl1_to_dl2"]
 
 
 def parse_variables(class_instance):
@@ -43,8 +43,8 @@ def parse_variables(class_instance):
     rf_models_directory = Path(cfg.get("lstchain", "RF_MODELS"))
     dl1_dir = Path(cfg.get("LST1", "DL1_DIR"))
     dl2_dir = Path(cfg.get("LST1", "DL2_DIR"))
-    calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
-    pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
+    calib_dir = Path(cfg.get("LST1", "CAT_A_CALIB_DIR"))
+    pedestal_dir = Path(cfg.get("LST1", "CAT_A_PEDESTAL_DIR"))
 
     class_instance.SoftwareVersion = get_lstchain_version()
     class_instance.ProcessingConfigFile = str(options.configfile)
@@ -133,6 +133,9 @@ def parse_variables(class_instance):
         class_instance.InterleavedPedestalEventsFile = None
         if class_instance.args[6] is not None:
             class_instance.InterleavedPedestalEventsFile = str(Path(class_instance.args[6]))
+  
+    if class_instance.__name__ == "catB_calibration":
+        class_instance.ObservationRun = class_instance.args[0].split(".")[0]
 
     if class_instance.__name__ == "dl1ab":
         # run_str       [0] 02006.0000
