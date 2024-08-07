@@ -342,6 +342,7 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
 
     sbatch_parameters.append(f"--partition={cfg.get('SLURM', f'PARTITION_{sequence.type}')}")
     sbatch_parameters.append(f"--mem-per-cpu={cfg.get('SLURM', f'MEMSIZE_{sequence.type}')}")
+    sbatch_parameters.append(f"--account={cfg.get('SLURM', 'ACCOUNT')}")
 
     return ["#SBATCH " + line for line in sbatch_parameters]
 
