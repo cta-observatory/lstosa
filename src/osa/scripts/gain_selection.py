@@ -426,6 +426,11 @@ def check_failed_jobs(date: datetime):
     """Search for failed jobs in the log directory."""
 
     summary_table = run_summary_table(date)
+
+    if len(summary_table) == 0:
+        log.warning(f"No runs are found in the run summary of {date_to_iso(date)}. Nothing to do. Exiting.")
+        sys.exit(0)
+        
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
     failed_runs = []
     warnings_in_logs = []
