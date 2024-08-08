@@ -28,7 +28,7 @@ from osa.paths import analysis_path
 from osa.report import start
 from osa.utils.cliopts import sequencer_cli_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import is_day_closed, gettag, date_to_iso, date_to_dir
+from osa.utils.utils import is_day_closed, gettag, date_to_iso
 from osa.veto import get_closed_list, get_veto_list
 from osa.scripts.gain_selection import GainSel_finished
 
@@ -98,9 +98,9 @@ def single_process(telescope):
         log.warning("No runs found for this date. Nothing to do. Exiting.")
         sys.exit(0)
 
-    if not options.no_gainsel and not GainSel_finished(date_to_dir(options.date)):
+    if not options.no_gainsel and not GainSel_finished(options.date):
         log.info(
-            f"Gain selection did not finish successfully for date {options.date}."
+            f"Gain selection did not finish successfully for date {date_to_iso(options.date)}. "
             "Try again later, once gain selection has finished."
         )
         sys.exit()
@@ -108,6 +108,10 @@ def single_process(telescope):
     if is_day_closed():
         log.info(f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}")
         return sequence_list
+
+    if not options.test and is_sequencer_running(options.date) and not options.simulate:
+        log.info(f"Sequencer is still running for date {date_to_iso(options.date)}. Try again later.")
+        sys.exit(0)
 
     # Build the sequences
     sequence_list = build_sequences(options.date)
@@ -305,6 +309,20 @@ def output_matrix(matrix: list, padding_space: int):
 
         log.info(stringrow)
 
+
+def is_sequencer_running(date) -> bool:
+    """Check if the jobs launched by sequencer are running or pending for the given date."""
+    summary_table = run_summary_table(date)
+    sacct_output = run_sacct()
+    sacct_info = get_sacct_output(sacct_output)
+
+    for run in summary_table["run_id"]:
+        jobs_run = sacct_info[sacct_info["JobName"]==f"LST1_{run}"]
+        queued_jobs = jobs_run[(jobs_run["State"] == "RUNNING") | (jobs_run["State"] == "PENDING")]
+        if len(queued_jobs) != 0:
+            return True
+
+    return False
 
 if __name__ == "__main__":
     main()
