@@ -137,7 +137,7 @@ def get_sbatch_script(
         
     elif tool == "lstchain_r0_to_r0g":
         cmd = f"lstchain_r0_to_r0g --R0-file={input_file} --output-dir={output_dir} --log={log_file}"
-        if not cfg.get("lstchain", "use_ff_heuristic_gain_selection"): 
+        if not cfg.getboolean("lstchain", "use_ff_heuristic_gain_selection"): 
             cmd += " --no-flatfield-heuristic"
         sbatch_script += dedent(cmd)
 
