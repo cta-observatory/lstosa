@@ -84,7 +84,7 @@ def test_scheduler_env_variables(sequence_list, running_analysis_dir):
         "#SBATCH --error=log/Run01807.%4a_jobid_%A.err",
         "#SBATCH --array=0-10",
         f'#SBATCH --partition={cfg.get("SLURM", "PARTITION_DATA")}',
-        "#SBATCH --mem-per-cpu=16GB",
+        "#SBATCH --mem-per-cpu=6GB",
         "#SBATCH --account=dpps",
     ]
 
@@ -125,7 +125,7 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     #SBATCH --error=log/Run01807.%4a_jobid_%A.err
     #SBATCH --array=0-10
     #SBATCH --partition={cfg.get('SLURM', 'PARTITION_DATA')}
-    #SBATCH --mem-per-cpu=16GB
+    #SBATCH --mem-per-cpu=6GB
     #SBATCH --account=dpps"""
     )
     assert header == output_string2
