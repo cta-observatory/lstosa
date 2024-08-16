@@ -333,13 +333,14 @@ def is_sequencer_running(date) -> bool:
 def sequencer_finished(date) -> bool:
     """Check if the jobs launched by sequencer are running or pending for the given date."""
     summary_table = run_summary_table(date)
+    data_runs = summary_table[summary_table["run_type"] == "DATA"]
     sacct_output = run_sacct()
     sacct_info = get_sacct_output(sacct_output)
 
-    for run in summary_table["run_id"]:
+    for run in data_runs["run_id"]:
         jobs_run = sacct_info[sacct_info["JobName"]==f"LST1_{run}"]
         incomplete_jobs = jobs_run[(jobs_run["State"] != "COMPLETED")]
-        if len(incomplete_jobs) != 0:
+        if len(jobs_run) == 0 or len(incomplete_jobs) != 0:
             return False
 
     return True
