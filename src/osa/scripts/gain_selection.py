@@ -415,11 +415,8 @@ def check_warnings_in_logs(date: datetime, run_id: int) -> bool:
     for file in log_files:
         content = file.read_text().splitlines()
         for line in content:
-            if "WARNING - You should use heuristic identification of FF events!" in line:
-                log.warning(f"You should use heuristic identification of FF events for run {run_id}!")
-                return False
-
-    return True
+            if "FlatField(FF)-like events are not tagged as FF" in line:
+                log.warning(f"Warning for run {run_id}: {line}")
 
 
 def check_failed_jobs(date: datetime):
@@ -433,19 +430,16 @@ def check_failed_jobs(date: datetime):
         
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
     failed_runs = []
-    warnings_in_logs = []
 
     for run in data_runs:
         run_id = run["run_id"]
+        check_warnings_in_logs(date, run_id)
         
         if not check_gainsel_jobs_runwise(date, run_id):
             log.warning(f"Gain selection did not finish successfully for run {run_id}.")
             failed_runs.append(run)
 
-        if not check_warnings_in_logs(date, run_id):
-            warnings_in_logs.append(run)
-
-    if failed_runs or warnings_in_logs:
+    if failed_runs:
         log.warning(f"Gain selection did not finish successfully for {date_to_iso(date)}, cannot create the flag file.")
         return
 
