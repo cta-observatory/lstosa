@@ -291,7 +291,8 @@ def apply_gain_selection(date: datetime, start: int, end: int, tool: str = None,
         # Avoid running jobs while it is still night time
         wait_for_daytime(start, end)
 
-        launch_gainsel_for_data_run(date, run, output_dir, r0_dir, log_dir, tool, simulate)
+        if not is_closed(date, run["run_id"]):
+            launch_gainsel_for_data_run(date, run, output_dir, r0_dir, log_dir, tool, simulate)
 
     calib_runs = summary_table[summary_table["run_type"] != "DATA"]
     log.info(f"Found {len(calib_runs)} NO-DATA runs")
