@@ -337,7 +337,7 @@ def update_history_file(run_id: str, subrun: str, log_dir: Path, history_file: P
             return
             
         elif job_status.item() == "COMPLETED":
-            log.info(f"Job {job_id} finished successfully, updating history file.")
+            log.debug(f"Job {job_id} finished successfully, updating history file.")
             string_to_write = (
                 f"{run_id:05d}.{subrun:04d} gain_selection 0\n"
             )
@@ -357,6 +357,14 @@ def is_run_already_copied(date: datetime, run_id: int) -> bool:
     r0_files = glob.glob(f"{base_dir}/R0/{date_to_dir(date)}/LST-1.?.Run{run_id:05d}.????.fits.fz")
     r0g_files = glob.glob(f"{base_dir}/R0G/{date_to_dir(date)}/LST-1.?.Run{run_id:05d}.????.fits.fz")
     return len(r0_files)==len(r0g_files)
+
+
+def is_closed(date: datetime, run_id: str) -> bool:
+    """Check if run is already closed."""
+    base_dir = Path(cfg.get("LST1", "BASE"))
+    log_dir = base_dir / f"R0G/log/{date_to_dir(date)}"
+    closed_run_file = log_dir / f"gain_selection_{run_id:05d}.closed"
+    return closed_run_file.exists()
 
 
 def GainSel_flag_file(date: datetime) -> Path:
@@ -401,9 +409,9 @@ def check_gainsel_jobs_runwise(date: datetime, run_id: int) -> bool:
         log.warning(f"{date_to_iso(date)}: Some gain selection jobs did not finish successfully for run {run_id}")
         return False
     else:
-        log.info(f"{date_to_iso(date)}: All jobs finished successfully for run {run_id}, creating the corresponding history file")
-        run_history_file = log_dir / f"gain_selection_{run_id:05d}.history"
-        run_history_file.touch()
+        log.info(f"{date_to_iso(date)}: All jobs finished successfully for run {run_id}, creating the corresponding .closed file")
+        closed_run_file = log_dir / f"gain_selection_{run_id:05d}.closed"
+        closed_run_file.touch()
         return True
 
 
@@ -434,10 +442,10 @@ def check_failed_jobs(date: datetime):
     for run in data_runs:
         run_id = run["run_id"]
         check_warnings_in_logs(date, run_id)
-        
-        if not check_gainsel_jobs_runwise(date, run_id):
-            log.warning(f"Gain selection did not finish successfully for run {run_id}.")
-            failed_runs.append(run)
+        if not is_closed(date, run_id):
+            if not check_gainsel_jobs_runwise(date, run_id):
+                log.warning(f"Gain selection did not finish successfully for run {run_id}.")
+                failed_runs.append(run)
 
     if failed_runs:
         log.warning(f"Gain selection did not finish successfully for {date_to_iso(date)}, cannot create the flag file.")
