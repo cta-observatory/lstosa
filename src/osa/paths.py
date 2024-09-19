@@ -472,7 +472,7 @@ def get_RF_model(run_str: str) -> Path:
         dec_values.remove(closest_declination)
         dec_list.remove(declination_str)
         closest_declination = min(dec_values, key=lambda x: abs(x - source_dec))
-        closest_dec_culmination = culmination_angle(closest_declination)
+        closest_dec_culmination = utils.culmination_angle(closest_declination)
     
     log.debug(f"The declination line to use for the DL2 production is: {closest_declination}")
     
