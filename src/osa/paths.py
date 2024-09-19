@@ -463,7 +463,7 @@ def get_RF_model(run_str: str) -> Path:
         "Checking if the culmination angle is larger than the one of the target source."
     )
 
-    if closest_dec_culmination > source_culmination:
+    while closest_dec_culmination > source_culmination:
         # If the culmination angle of the closest declination line is larger than for the source, 
         # remove it from the declination lines list and look for the second closest declination line.
         corresponding_dict = get_corresponding_string(dec_list, dec_values)
@@ -471,6 +471,7 @@ def get_RF_model(run_str: str) -> Path:
         dec_values.remove(closest_declination)
         dec_list.remove(declination_str)
         closest_declination = min(dec_values, key=lambda x: abs(x - source_dec))
+        closest_dec_culmination = culmination_angle(closest_declination)
     
         log.debug(f"The declination line to use for the DL2 production is: {closest_declination}")
     
