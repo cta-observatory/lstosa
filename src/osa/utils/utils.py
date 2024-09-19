@@ -306,7 +306,7 @@ def culmination_angle(dec: u.Quantity) -> u.Quantity:
     """
     location = observatory_locations["cta_north"]
     Lat = location.lat  # latitude of the LST1 site    
-    return abs(Lat - dec*u.deg)
+    return abs(Lat - dec)
 
 
 def get_source_dec_from_TCU(source_name: str, tcu_server: str) -> u.Quantity:
