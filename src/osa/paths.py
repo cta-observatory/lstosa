@@ -11,6 +11,7 @@ import os
 
 import lstchain
 from astropy.table import Table
+from astropy import units as u
 from lstchain.onsite import (find_systematics_correction_file,
                              find_time_calibration_file,
                              find_filter_wheels)
@@ -407,7 +408,7 @@ def dl1_datacheck_longterm_file_exits() -> bool:
     return longterm_file.exists()
 
 
-def convert_dec_string(dec_str: str) -> float:
+def convert_dec_string(dec_str: str) -> u.Quantity:
     """Return the declination angle in degrees corresponding to a 
     given string of the form "dec_XXXX" or "dec_min_XXXX"."""
     
@@ -425,7 +426,7 @@ def convert_dec_string(dec_str: str) -> float:
         # Calculate the numerical value
         dec_value = sign * (degrees / 100)
 
-        return dec_value
+        return dec_value*u.deg
 
 
 def get_corresponding_string(list1: list, list2: list) -> dict:
@@ -473,7 +474,7 @@ def get_RF_model(run_str: str) -> Path:
         closest_declination = min(dec_values, key=lambda x: abs(x - source_dec))
         closest_dec_culmination = culmination_angle(closest_declination)
     
-        log.debug(f"The declination line to use for the DL2 production is: {closest_declination}")
+    log.debug(f"The declination line to use for the DL2 production is: {closest_declination}")
     
     corresponding_dict = get_corresponding_string(dec_list, dec_values)
     declination_str = corresponding_dict[closest_declination]

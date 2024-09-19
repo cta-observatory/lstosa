@@ -291,14 +291,14 @@ def wait_for_daytime(start=8, end=18):
         time.sleep(3600)
 
 
-def culmination_angle(dec: int) -> float:  
+def culmination_angle(dec: u.Quantity) -> u.Quantity:  
     """
     Calculate culmination angle for a given declination.
 
     Parameters
     ----------
-    dec: int
-        declination in degrees
+    dec: Quantity
+        declination coordinate in degrees
 
     Returns
     -------
@@ -306,12 +306,12 @@ def culmination_angle(dec: int) -> float:
     """
     location = observatory_locations["cta_north"]
     Lat = location.lat  # latitude of the LST1 site    
-    return abs(Lat - dec*u.deg).value
+    return abs(Lat - dec*u.deg)
 
 
-def get_source_dec_from_TCU(source_name: str, tcu_server: str) -> float:
+def get_source_dec_from_TCU(source_name: str, tcu_server: str) -> u.Quantity:
     """Get the declination of a given source from the TCU database."""
     client = MongoClient(tcu_server)
     collection = client["lst1_config"]["structure_configurations"]
     source_dec = collection.find_one({"name": source_name})["target"]["source_dec"]
-    return source_dec
+    return source_dec*u.deg
