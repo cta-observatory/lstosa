@@ -11,7 +11,6 @@ import os
 
 import lstchain
 from astropy.table import Table
-from astropy.coordinates import SkyCoord
 from lstchain.onsite import (find_systematics_correction_file,
                              find_time_calibration_file,
                              find_filter_wheels)
