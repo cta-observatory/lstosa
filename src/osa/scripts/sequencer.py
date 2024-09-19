@@ -322,7 +322,7 @@ def is_sequencer_running(date) -> bool:
     sacct_info = get_sacct_output(sacct_output)
 
     for run in summary_table["run_id"]:
-        jobs_run = sacct_info[sacct_info["JobName"]==f"LST1_{run}"]
+        jobs_run = sacct_info[sacct_info["JobName"]==f"LST1_{run:05d}"]
         queued_jobs = jobs_run[(jobs_run["State"] == "RUNNING") | (jobs_run["State"] == "PENDING")]
         if len(queued_jobs) != 0:
             return True
@@ -338,7 +338,7 @@ def sequencer_finished(date: datetime.datetime) -> bool:
     sacct_info = get_sacct_output(sacct_output)
 
     for run in data_runs["run_id"]:
-        jobs_run = sacct_info[sacct_info["JobName"]==f"LST1_{run}"]
+        jobs_run = sacct_info[sacct_info["JobName"]==f"LST1_{run:05d}"]
         incomplete_jobs = jobs_run[(jobs_run["State"] != "COMPLETED")]
         if len(jobs_run) == 0 or len(incomplete_jobs) != 0:
             return False
