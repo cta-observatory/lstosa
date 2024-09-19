@@ -413,7 +413,7 @@ def convert_dec_string(dec_str: str) -> u.Quantity:
     given string of the form "dec_XXXX" or "dec_min_XXXX"."""
     
     # Check if dec_str has a valid format
-    pattern = r'^dec(_min)?_[0-9]{4}$'
+    pattern = r'^dec_(\d{3,4})$|^dec_min_(\d{3,4})$'
     if re.match(pattern, dec_str):
         
         # Split the string into parts

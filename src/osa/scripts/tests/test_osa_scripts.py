@@ -244,7 +244,7 @@ def test_datasequence(
     running_analysis_dir,
     run_catalog,
     run_catalog_dir,
-    rf_models_dir,
+    rf_models_allsky_basedir,
     rf_model_path
 ):
     drs4_file = "drs4_pedestal.Run00001.0000.fits"
@@ -259,7 +259,7 @@ def test_datasequence(
 
     assert run_catalog_dir.exists()
     assert run_catalog.exists()
-    assert rf_models_dir.exists()
+    assert rf_models_allsky_basedir.exists()
     assert rf_model_path.exists()
 
     output = run_program(
