@@ -574,17 +574,17 @@ def database(osa_dir):
 
 
 @pytest.fixture(scope="session")
-def rf_models_dir(base_test_dir):
+def rf_models_allsky_basedir(base_test_dir):
     directory = base_test_dir / "models/AllSky"
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 
 
 @pytest.fixture(scope="session")
-def rf_model_path(rf_models_dir):
+def rf_model_path(rf_models_allsky_basedir):
     mc_prod = "20240131_allsky_v0.10.5_all_dec_base"
     declination_str = "dec_2276"
-    rf_model_path = rf_models_dir / mc_prod / declination_str
+    rf_model_path = rf_models_allsky_basedir / mc_prod / declination_str
     rf_model_path.mkdir(parents=True, exist_ok=True)
     return rf_model_path
 
