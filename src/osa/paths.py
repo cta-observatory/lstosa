@@ -446,13 +446,13 @@ def get_RF_model(run_str: str) -> Path:
     run = run_catalog[run_catalog["run_id"]==int(run_str)]
     target_name = run["source_name"]
 
-    if options.test:
+    if options.test or options.simulate:
         source_coordinates = SkyCoord.from_name(target_name[0])
         source_dec = source_coordinates.dec
     else:
         tcu_server = cfg.get("database", "tcu_db")
         source_dec = utils.get_source_dec_from_TCU(target_name[0], tcu_server)
-    
+        
     source_culmination = utils.culmination_angle(source_dec)
 
     rf_models_dir = Path(cfg.get("LST1", "RF_MODELS"))
