@@ -11,8 +11,7 @@ import time
 import lstchain
 from astropy.table import Table
 from lstchain.onsite import (find_systematics_correction_file,
-                             find_time_calibration_file,
-                             find_filter_wheels)
+                             find_time_calibration_file)
 
 from osa.configs import options
 from osa.configs.config import DEFAULT_CFG, cfg
@@ -150,7 +149,7 @@ def get_catB_calibration_filename(run_id: int) -> Path:
     date = utils.date_to_dir(options.date)
     calib_prod_id = utils.get_lstchain_version()
     catB_calib_dir = Path(cfg.get("LST1", "CAT_B_CALIB_BASE")) / date / calib_prod_id
-    filters = utils.get_calib_filters(int(run_str))
+    filters = utils.get_calib_filters(run_id)
     return catB_calib_dir / f"cat_B_calibration_filters_{filters}.Run{run_id:05d}.h5"
 
 

@@ -10,7 +10,7 @@ from osa.configs.config import cfg
 from osa.job import historylevel
 from osa.workflow.stages import AnalysisStage
 from osa.provenance.capture import trace
-from osa.paths import get_major_version, get_catB_calibration_filename
+from osa.paths import get_catB_calibration_filename
 from osa.utils.cliopts import data_sequence_cli_parsing
 from osa.utils.logging import myLogger
 from osa.utils.utils import date_to_dir, get_calib_filters
