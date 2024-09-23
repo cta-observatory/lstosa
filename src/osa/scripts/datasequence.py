@@ -239,7 +239,7 @@ def dl1ab(run_str: str) -> int:
     # DL1b output file to be stored in the dl1ab subdirectory
     output_dl1_datafile = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
     night_dir = date_to_dir(options.date)
-    calib_prod_id = get_major_version(get_lstchain_version())
+    calib_prod_id = get_lstchain_version()
     
     # Prepare and launch the actual lstchain script
     command = cfg.get("lstchain", "dl1ab")
@@ -254,7 +254,7 @@ def dl1ab(run_str: str) -> int:
         cmd.append("--no-image=True")
 
     if cfg.getboolean("lstchain", "apply_catB_calibration"):
-        catB_calib_dir = Path(cfg.get("LST1", "CAT_B_CALIB_BASE")) / night_dir / calib_prod_id
+        catB_calib_dir = Path(cfg.get("LST1", "CAT_B_CALIB_BASE")) / "calibration" / night_dir / calib_prod_id
         catB_calibration_file = catB_calib_dir / f"cat_B_calibration_filters_{options.filters}.Run{run_str[:5]}.h5"
         cmd.append(f"--catB-calibration-file={catB_calibration_file}")
 
