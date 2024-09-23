@@ -436,7 +436,7 @@ def check_R0G_files(date: datetime, run_id: int):
     for file in r0g_files:
         n_events = 10
         try:
-            source = LSTEventSource(
+            LSTEventSource(
                 input_url=file,
                 max_events=n_events,
                 apply_drs4_corrections=False,
