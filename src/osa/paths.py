@@ -136,18 +136,7 @@ def get_calibration_filename(run_id: int, prod_id: str) -> Path:
         return files[-1]  # Get the latest production among the major lstchain version
 
     date = utils.date_to_dir(get_run_date(run_id))
-
-    if options.test:  # Run tests avoiding the access to the database
-        options.filters = 52
-
-    else:
-        mongodb = cfg.get("database", "caco_db")
-        try:
-            # Cast run_id to int to avoid problems with numpy int64 encoding in MongoDB
-            options.filters = find_filter_wheels(int(run_id), mongodb)
-        except IOError:
-            log.warning("No filter information found in database. Assuming positions 52.")
-            options.filters = 52
+    options.filters = utils.get_calib_filters(run_id)
 
     return (
         CALIB_BASEDIR

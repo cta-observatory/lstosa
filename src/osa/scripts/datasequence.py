@@ -12,7 +12,7 @@ from osa.provenance.capture import trace
 from osa.paths import get_major_version
 from osa.utils.cliopts import data_sequence_cli_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import date_to_dir, get_lstchain_version
+from osa.utils.utils import date_to_dir, get_lstchain_version, get_calib_filters
 from osa.nightsummary.extract import get_last_pedcalib
 
 
@@ -194,6 +194,7 @@ def catB_calibration(run_str: str) -> int:
             "onsite_create_cat_B_calibration_file will not be launched for this subrun.")
         return 0
 
+    options.filters = get_calib_filters(int(run_str[:5])) 
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     r0_dir = Path(cfg.get("LST1", "R0_DIR")).resolve()
     catA_calib_run = get_last_pedcalib(options.date)
@@ -203,6 +204,7 @@ def catB_calibration(run_str: str) -> int:
         f"--catA_calibration_run={catA_calib_run}",
         f"--base_dir={base_dir}",
         f"--r0-dir={r0_dir}",
+        f"--filters={options.filters}",
     ]
     if options.simulate:
         return 0
