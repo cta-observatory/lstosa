@@ -3,16 +3,17 @@
 import logging
 import sys
 from pathlib import Path
+import time
 
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import historylevel
 from osa.workflow.stages import AnalysisStage
 from osa.provenance.capture import trace
-from osa.paths import get_major_version
+from osa.paths import get_major_version, get_catB_calibration_filename
 from osa.utils.cliopts import data_sequence_cli_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import date_to_dir, get_lstchain_version, get_calib_filters
+from osa.utils.utils import date_to_dir, get_calib_filters
 from osa.nightsummary.extract import get_last_pedcalib
 
 
@@ -192,6 +193,13 @@ def catB_calibration(run_str: str) -> int:
     if run_str[-4:] != "0000":
         log.debug(f"{run_str} is not the first subrun of the run, so the script "
             "onsite_create_cat_B_calibration_file will not be launched for this subrun.")
+
+        catB_calibration_file = get_catB_calibration_filename(int(run_str[:5]))
+        n = 0
+        n_max = 10
+        while not catB_calibration_file.exists() and n<=n_max:
+            time.sleep(120)
+            n += 1
         return 0
 
     options.filters = get_calib_filters(int(run_str[:5])) 
@@ -238,8 +246,6 @@ def dl1ab(run_str: str) -> int:
     input_dl1_datafile = Path(options.directory) / f"dl1_LST-1.Run{run_str}.h5"
     # DL1b output file to be stored in the dl1ab subdirectory
     output_dl1_datafile = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
-    night_dir = date_to_dir(options.date)
-    calib_prod_id = get_lstchain_version()
     
     # Prepare and launch the actual lstchain script
     command = cfg.get("lstchain", "dl1ab")
@@ -254,8 +260,7 @@ def dl1ab(run_str: str) -> int:
         cmd.append("--no-image=True")
 
     if cfg.getboolean("lstchain", "apply_catB_calibration"):
-        catB_calib_dir = Path(cfg.get("LST1", "CAT_B_CALIB_BASE")) / "calibration" / night_dir / calib_prod_id
-        catB_calibration_file = catB_calib_dir / f"cat_B_calibration_filters_{options.filters}.Run{run_str[:5]}.h5"
+        catB_calibration_file = get_catB_calibration_filename(int(run_str[:5]))
         cmd.append(f"--catB-calibration-file={catB_calibration_file}")
 
     if options.simulate:
