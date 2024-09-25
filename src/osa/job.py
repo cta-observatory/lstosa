@@ -188,7 +188,7 @@ def historylevel(history_file: Path, data_type: str):
     #  into account not only the last history line but also the others.
 
     if data_type == "DATA":
-        level = 4
+        level = 5
     elif data_type == "PEDCALIB":
         level = 2
     else:
@@ -214,6 +214,8 @@ def historylevel(history_file: Path, data_type: str):
                     level = 0 if exit_status == 0 else 1
                 # Data sequence
                 elif program == cfg.get("lstchain", "r0_to_dl1"):
+                    level = 4 if exit_status == 0 else 5
+                elif program == cfg.get("lstchain", "catB_calibration"):
                     level = 3 if exit_status == 0 else 4
                 elif program == cfg.get("lstchain", "dl1ab"):
                     if (exit_status == 0) and (prod_id == options.dl1_prod_id):

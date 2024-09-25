@@ -202,12 +202,13 @@ def catB_calibration(run_str: str) -> int:
             n += 1
         return 0
 
+    command = cfg.get("lstchain", "catB_calibration")
     options.filters = get_calib_filters(int(run_str[:5])) 
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     r0_dir = Path(cfg.get("LST1", "R0_DIR")).resolve()
     catA_calib_run = get_last_pedcalib(options.date)
     cmd = [
-        "onsite_create_cat_B_calibration_file",
+        command,
         f"--run_number={run_str[:5]}",
         f"--catA_calibration_run={catA_calib_run}",
         f"--base_dir={base_dir}",

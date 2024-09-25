@@ -148,7 +148,7 @@ def get_catB_calibration_filename(run_id: int) -> Path:
     """Return the Category-B calibration filename of a given run."""
     date = utils.date_to_dir(options.date)
     calib_prod_id = utils.get_lstchain_version()
-    catB_calib_dir = Path(cfg.get("LST1", "CAT_B_CALIB_BASE")) / date / calib_prod_id
+    catB_calib_dir = Path(cfg.get("LST1", "CAT_B_CALIB_BASE")) / "calibration" / date / calib_prod_id
     filters = utils.get_calib_filters(run_id)
     return catB_calib_dir / f"cat_B_calibration_filters_{filters}.Run{run_id:05d}.h5"
 
