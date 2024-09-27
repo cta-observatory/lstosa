@@ -13,6 +13,7 @@ import lstchain
 from astropy.table import Table
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+from gammapy.data import observatory_locations
 from lstchain.onsite import (find_systematics_correction_file,
                              find_time_calibration_file,
                              find_filter_wheels)
@@ -466,7 +467,13 @@ def get_RF_model(run_str: str) -> Path:
     closest_declination = min(dec_values, key=lambda x: abs(x - source_dec))
     closest_dec_culmination = utils.culmination_angle(closest_declination)
     
-    if source_dec < 22.76*u.deg or source_dec > 34.76*u.deg:
+    location = observatory_locations["cta_north"]
+    Lat = location.lat  # latitude of the LST1 site    
+    closest_lines = sorted(sorted(dec_values, key=lambda x: abs(x - Lat))[:2])
+
+    if source_dec < closest_lines[0] or source_dec > closest_lines[1]:
+        # If the source declination is between the two MC lines closest to the latitude of 
+        # the LST1 site, this check is not necessary.
         log.debug(
             f"The declination closest to {source_dec} is: {closest_declination}."
             "Checking if the culmination angle is larger than the one of the target source."
