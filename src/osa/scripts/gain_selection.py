@@ -11,7 +11,6 @@ import sys
 
 from astropy.table import Table
 from lstchain.paths import parse_r0_filename
-from ctapipe_io_lst import LSTEventSource
 from datetime import datetime
 
 from osa.scripts.reprocessing import get_list_of_dates, check_job_status_and_wait
@@ -429,23 +428,6 @@ def check_warnings_in_logs(date: datetime, run_id: int):
                 log.warning(f"Warning for run {run_id}: {line}")
 
 
-def check_R0G_files(date: datetime, run_id: int):
-    """Check if the produced R0G files can be correctly opened with ctapipe_io_lst."""
-    base_dir = Path(cfg.get("LST1", "BASE"))
-    r0g_files = glob.glob(f"{base_dir}/R0G/{date_to_dir(date)}/LST-1.?.Run{run_id:05d}.????.fits.fz")
-    for file in r0g_files:
-        n_events = 10
-        try:
-            LSTEventSource(
-                input_url=file,
-                max_events=n_events,
-                apply_drs4_corrections=False,
-                pointing_information=False,
-            )
-        except AttributeError:
-            log.warning(f"File {file} cannot be opened with ctapipe_io_lst.")
-
-
 def check_failed_jobs(date: datetime):
     """Search for failed jobs in the log directory."""
 
@@ -465,8 +447,6 @@ def check_failed_jobs(date: datetime):
             if not check_gainsel_jobs_runwise(date, run_id):
                 log.warning(f"Gain selection did not finish successfully for run {run_id}.")
                 failed_runs.append(run)
-        else:
-            check_R0G_files(date, run_id)
 
     if failed_runs:
         log.warning(f"Gain selection did not finish successfully for {date_to_iso(date)}, cannot create the flag file.")
