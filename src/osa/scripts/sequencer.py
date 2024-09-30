@@ -340,6 +340,9 @@ def sequencer_finished(date: datetime.datetime) -> bool:
 
     for run in data_runs["run_id"]:
         jobs_run = sacct_info[sacct_info["JobName"]==f"LST1_{run:05d}"]
+        if len(jobs_run["JobID"].unique())>1:
+            last_job_id = sorted(jobs_run["JobID"].unique())[-1]
+            jobs_run = sacct_info[sacct_info["JobID"]==last_job_id]
         incomplete_jobs = jobs_run[(jobs_run["State"] != "COMPLETED")]
         if len(jobs_run) == 0 or len(incomplete_jobs) != 0:
             return False
