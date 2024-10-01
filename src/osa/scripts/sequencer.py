@@ -316,7 +316,7 @@ def output_matrix(matrix: list, padding_space: int):
         log.info(stringrow)
 
 
-def is_sequencer_running(date) -> bool:
+def is_sequencer_running(date: datetime.datetime) -> bool:
     """Check if the jobs launched by sequencer are running or pending for the given date."""
     summary_table = run_summary_table(date)
     sacct_output = run_sacct()
