@@ -653,7 +653,7 @@ def get_squeue_output(squeue_output: StringIO) -> pd.DataFrame:
     return df
 
 
-def run_sacct(job_id=None) -> StringIO:
+def run_sacct(job_id: str = None) -> StringIO:
     """Run sacct to obtain the job information."""
     if shutil.which("sacct") is None:
         log.warning("No job info available since sacct command is not available")
