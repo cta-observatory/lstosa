@@ -331,7 +331,7 @@ def is_sequencer_running(date) -> bool:
     return False
 
 
-def sequencer_finished(date: datetime.datetime) -> bool:
+def is_sequencer_completed(date: datetime.datetime) -> bool:
     """Check if the jobs launched by sequencer are running or pending for the given date."""
     summary_table = run_summary_table(date)
     data_runs = summary_table[summary_table["run_type"] == "DATA"]

@@ -282,7 +282,7 @@ def sequencer_argparser():
     )
     parser.add_argument(
         "-f",
-        "--force",
+        "--force-submit",
         action="store_true",
         default=False,
         help="Force sequencer to submit jobs"
