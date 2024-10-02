@@ -306,7 +306,7 @@ def sequencer_cli_parsing():
     options.no_calib = opts.no_calib
     options.no_dl2 = opts.no_dl2
     options.no_gainsel = opts.no_gainsel
-    options.force = opts.force
+    options.force_submit = opts.force_submit
 
     log.debug(f"the options are {opts}")
 
