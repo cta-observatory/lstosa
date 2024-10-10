@@ -72,22 +72,22 @@ def data_sequence(
         log.info(f"Going to level {level}")
 
     if level == 4:
-        rc = catB_calibration(run_str)
-        level -= 1
-        log.info(f"Going to level {level}")
-
-    if level == 3:
         if options.no_dl1ab:
             level = 0
             log.info(f"No DL1B are going to be produced. Going to level {level}")
         else:
-            rc = dl1ab(run_str)
-            if cfg.getboolean("lstchain", "store_image_dl1ab"):
-                level -= 1
-                log.info(f"Going to level {level}")
-            else:
-                level -= 2
-                log.info(f"No images stored in dl1ab. Producing DL2. Going to level {level}")
+            rc = catB_calibration(run_str)
+            level -= 1
+            log.info(f"Going to level {level}")
+
+    if level == 3:
+        rc = dl1ab(run_str)
+        if cfg.getboolean("lstchain", "store_image_dl1ab"):
+            level -= 1
+            log.info(f"Going to level {level}")
+        else:
+            level -= 2
+            log.info(f"No images stored in dl1ab. Producing DL2. Going to level {level}")
 
     if level == 2:
         rc = dl1_datacheck(run_str)
