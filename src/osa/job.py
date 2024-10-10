@@ -21,6 +21,7 @@ from osa.paths import (
     get_summary_file,
     get_pedestal_ids_file,
 )
+from osa.scripts.datasequence import data_sequence
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
 from osa.utils.utils import date_to_dir, time_to_seconds, stringify, date_to_iso
@@ -157,95 +158,7 @@ def check_history_level(history_file: Path, program_levels: dict):
                 continue
 
         return level, exit_status
-
-
-def historylevel(history_file: Path, data_type: str):
-    """
-    Returns the level from which the analysis should begin and
-    the rc of the last executable given a certain history file.
-
-    Notes
-    -----
-    Workflow for PEDCALIB sequences:
-     - Creation of DRS4 pedestal file, level 2->1
-     - Creation of charge calibration file, level 1->0
-     - Sequence completed when reaching level 0
-
-    Workflow for DATA sequences:
-     - R0->DL1, level 4->3
-     - DL1->DL1AB, level 3->2
-     - DATACHECK, level 2->1
-     - DL1->DL2, level 1->0
-     - Sequence completed when reaching level 0
-
-    Parameters
-    ----------
-    history_file: pathlib.Path
-    data_type: str
-        Type of the sequence, either 'DATA' or 'PEDCALIB'
-
-    Returns
-    -------
-    level : int
-    exit_status : int
-    """
-
-    # TODO: Create a dict with the program exit status and prod id to take
-    #  into account not only the last history line but also the others.
-
-    if data_type == "DATA":
-        level = 5
-    elif data_type == "PEDCALIB":
-        level = 2
-    else:
-        raise ValueError(f"Type {data_type} not expected")
-
-    exit_status = 0
-
-    if history_file.exists():
-        for line in history_file.read_text().splitlines():
-            words = line.split()
-            try:
-                program = words[1]
-                prod_id = words[2]
-                exit_status = int(words[-1])
-                log.debug(f"{program}, finished with error {exit_status} and prod ID {prod_id}")
-            except (IndexError, ValueError) as err:
-                log.exception(f"Malformed history file {history_file}, {err}")
-            else:
-                # Calibration sequence
-                if program == cfg.get("lstchain", "drs4_baseline"):
-                    level = 1 if exit_status == 0 else 2
-                elif program == cfg.get("lstchain", "charge_calibration"):
-                    level = 0 if exit_status == 0 else 1
-                # Data sequence
-                elif program == cfg.get("lstchain", "r0_to_dl1"):
-                    level = 4 if exit_status == 0 else 5
-                elif program == cfg.get("lstchain", "catB_calibration"):
-                    level = 3 if exit_status == 0 else 4
-                elif program == cfg.get("lstchain", "dl1ab"):
-                    if (exit_status == 0) and (prod_id == options.dl1_prod_id):
-                        log.debug(f"DL1ab prod ID: {options.dl1_prod_id} already produced")
-                        level = 2
-                    else:
-                        level = 3
-                        log.debug(f"DL1ab prod ID: {options.dl1_prod_id} not produced yet")
-                        break
-                elif program == cfg.get("lstchain", "check_dl1"):
-                    level = 1 if exit_status == 0 else 2
-                elif program == cfg.get("lstchain", "dl1_to_dl2"):
-                    if (exit_status == 0) and (prod_id == options.dl2_prod_id):
-                        log.debug(f"DL2 prod ID: {options.dl2_prod_id} already produced")
-                        level = 0
-                    else:
-                        level = 1
-                        log.debug(f"DL2 prod ID: {options.dl2_prod_id} not produced yet")
-
-                else:
-                    log.warning(f"Program name not identified: {program}")
-
-    return level, exit_status
-
+    
 
 def prepare_jobs(sequence_list):
     """Prepare job file template for each sequence."""
@@ -593,6 +506,11 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
         # Add the job dependencies after calibration sequence
         if sequence.type == "DATA":
             if not options.simulate and not options.no_calib and not options.test:
+                data_sequence(sequence, parent_jobid)
+            else:
+                data_sequence(sequence)
+            """
+            if not options.simulate and not options.no_calib and not options.test:
                 log.debug("Adding dependencies to job submission")
                 depend_string = f"--dependency=afterok:{parent_jobid}"
                 commandargs.append(depend_string)
@@ -618,6 +536,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
             log.debug(stringify(commandargs))
 
         job_list.append(sequence.script)
+        """
 
     return job_list
 

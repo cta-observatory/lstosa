@@ -2,11 +2,13 @@
 
 import logging
 import re
+import numpy as np
 from datetime import datetime
 from pathlib import Path
 from typing import List
 import subprocess
 import time
+import sys
 
 import lstchain
 from astropy.table import Table
@@ -18,6 +20,7 @@ from osa.configs.config import DEFAULT_CFG, cfg
 from osa.configs.datamodel import Sequence
 from osa.utils import utils
 from osa.utils.logging import myLogger
+from osa.nightsummary.nightsummary import run_summary_table
 
 
 log = myLogger(logging.getLogger(__name__))
@@ -90,6 +93,42 @@ def get_run_date(run_id: int) -> datetime:
         date_string = utils.date_to_iso(options.date)
 
     return datetime.strptime(date_string, "%Y-%m-%d")
+
+
+def get_last_drs4(date: datetime) -> int:
+    """Return run_id of the last DRS4 run for the given date to be used for data processing."""
+    summary = run_summary_table(date)
+    n_max = 4
+    n = 1
+    while (np.array(summary["run_type"] == "DRS4")).any() == False & n <= n_max:
+        date = date - timedelta(days=1)
+        summary = run_summary_table(date)
+        n += 1
+
+    try:
+        return summary[summary["run_type"] == "DRS4"]["run_id"].max()
+
+    except ValueError:
+        log.warning("No DRS4 run found. Nothing to do. Exiting.")
+        sys.exit(0)
+
+
+def get_last_pedcalib(date) -> int:
+    """Return run_id of the last PEDCALIB run for the given date to be used for data processing."""
+    summary = run_summary_table(date)
+    n_max = 4
+    n = 1
+    while (np.array(summary["run_type"] == "PEDCALIB")).any() == False & n <= n_max:
+        date = date - timedelta(days=1)
+        summary = run_summary_table(date)
+        n += 1
+
+    try:
+        return summary[summary["run_type"] == "PEDCALIB"]["run_id"].max()
+
+    except ValueError:
+        log.warning("No PEDCALIB run found. Nothing to do. Exiting.")
+        sys.exit(0)
 
 
 def get_drs4_pedestal_filename(run_id: int, prod_id: str) -> Path:

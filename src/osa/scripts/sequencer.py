@@ -9,6 +9,8 @@ import logging
 import os
 import sys
 from decimal import Decimal
+from pathlib import Path
+import subprocess as sp
 
 from osa import osadb
 from osa.configs import options
@@ -16,19 +18,20 @@ from osa.configs.config import cfg
 from osa.job import (
     set_queue_values,
     prepare_jobs,
-    submit_jobs,
+    #submit_jobs,
     get_sacct_output,
     get_squeue_output,
     run_sacct,
     run_squeue,
 )
+from osa.scripts.datasequence import data_sequence
 from osa.nightsummary.extract import build_sequences
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import analysis_path
 from osa.report import start
 from osa.utils.cliopts import sequencer_cli_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import is_day_closed, gettag, date_to_iso, date_to_dir
+from osa.utils.utils import is_day_closed, gettag, date_to_iso, date_to_dir, stringify
 from osa.veto import get_closed_list, get_veto_list
 from osa.scripts.gain_selection import GainSel_finished
 
@@ -131,6 +134,53 @@ def single_process(telescope):
     report_sequences(sequence_list)
 
     return sequence_list
+
+def submit_jobs(sequence_list, batch_command="sbatch"):
+    """
+    Submit the jobs to the cluster.
+
+    Parameters
+    ----------
+    sequence_list: list
+        List of sequences to submit.
+    batch_command: str
+        The batch command to submit the job (Default: sbatch)
+
+    Returns
+    -------
+    job_list: list
+        List of submitted job IDs.
+    """
+    job_list = []
+    no_display_backend = "--export=ALL,MPLBACKEND=Agg"
+
+    for sequence in sequence_list:
+        commandargs = [batch_command, "--parsable", no_display_backend]
+        if sequence.type == "PEDCALIB":
+            commandargs.append(str(sequence.script))
+            if options.simulate or options.no_calib or options.test:
+                log.debug("SIMULATE Launching scripts")
+            else:
+                try:
+                    log.debug(f"Launching script {sequence.script}")
+                    parent_jobid = sp.check_output(
+                        commandargs, universal_newlines=True, shell=False
+                    ).split()[0]
+                except sp.CalledProcessError as error:
+                    rc = error.returncode
+                    log.exception(f"Command '{batch_command}' not found, error {rc}")
+
+            log.debug(stringify(commandargs))
+
+        # Here sequence.jobid has not been redefined, so it keeps the one
+        # from previous time sequencer was launched.
+
+        # Add the job dependencies after calibration sequence
+        if sequence.type == "DATA":
+            if options.simulate or options.no_calib or options.test:
+                data_sequence(sequence)
+            else:
+                data_sequence(sequence, parent_jobid)
 
 
 def update_job_info(sequence_list):

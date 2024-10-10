@@ -47,6 +47,7 @@ class AnalysisStage:
         self.config_file = config_file
         self.command = self.command_args[0]
         self.rc = None
+        self.jobid = None
         self.history_file = (
             Path(options.directory) / f"sequence_{options.tel_id}_{self.run}.history"
         )
@@ -55,8 +56,9 @@ class AnalysisStage:
     def execute(self):
         """Run the program and retry if it fails."""
         log.info(f"Executing {stringify(self.command_args)}")
-        output = sp.run(self.command_args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8")
+        output = sp.run(self.command_args, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8", text=True)
         self.rc = output.returncode
+        self.jobid = output.stdout.strip()
         self._write_checkpoint()
 
         # If fails, remove products from the directory for subsequent trials
