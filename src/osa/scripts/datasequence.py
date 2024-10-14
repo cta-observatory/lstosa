@@ -54,10 +54,10 @@ def data_sequence(
     history_file = Path(options.directory) / f"sequence_{options.tel_id}_{run_str}.history"
     # Set the starting level and corresponding return code from last analysis step
     # registered in the history file.
-    level, rc = (5, 0) if options.simulate else historylevel(history_file, "DATA")
+    level, rc = (4, 0) if options.simulate else historylevel(history_file, "DATA")
     log.info(f"Going to level {level}")
 
-    if level == 5:
+    if level == 4:
         rc = r0_to_dl1(
             calibration_file,
             pedestal_file,
@@ -71,23 +71,18 @@ def data_sequence(
         level -= 1
         log.info(f"Going to level {level}")
 
-    if level == 4:
+    if level == 3:
         if options.no_dl1ab:
             level = 0
             log.info(f"No DL1B are going to be produced. Going to level {level}")
-        else:
-            rc = catB_calibration(run_str)
-            level -= 1
-            log.info(f"Going to level {level}")
-
-    if level == 3:
-        rc = dl1ab(run_str)
-        if cfg.getboolean("lstchain", "store_image_dl1ab"):
-            level -= 1
-            log.info(f"Going to level {level}")
-        else:
-            level -= 2
-            log.info(f"No images stored in dl1ab. Producing DL2. Going to level {level}")
+        else: 
+            rc = dl1ab(run_str)
+            if cfg.getboolean("lstchain", "store_image_dl1ab"):
+                level -= 1
+                log.info(f"Going to level {level}")
+            else:
+                level -= 2
+                log.info(f"No images stored in dl1ab. Producing DL2. Going to level {level}")
 
     if level == 2:
         rc = dl1_datacheck(run_str)

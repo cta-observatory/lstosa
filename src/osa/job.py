@@ -194,7 +194,7 @@ def historylevel(history_file: Path, data_type: str):
     #  into account not only the last history line but also the others.
 
     if data_type == "DATA":
-        level = 5
+        level = 4
     elif data_type == "PEDCALIB":
         level = 2
     else:
