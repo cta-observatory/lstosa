@@ -220,9 +220,9 @@ def historylevel(history_file: Path, data_type: str):
                     level = 0 if exit_status == 0 else 1
                 # Data sequence
                 elif program == cfg.get("lstchain", "r0_to_dl1"):
-                    level = 4 if exit_status == 0 else 5
-                elif program == cfg.get("lstchain", "catB_calibration"):
                     level = 3 if exit_status == 0 else 4
+                #elif program == cfg.get("lstchain", "catB_calibration"):
+                #    level = 3 if exit_status == 0 else 4
                 elif program == cfg.get("lstchain", "dl1ab"):
                     if (exit_status == 0) and (prod_id == options.dl1_prod_id):
                         log.debug(f"DL1ab prod ID: {options.dl1_prod_id} already produced")
