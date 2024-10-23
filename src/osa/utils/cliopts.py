@@ -189,6 +189,12 @@ def data_sequence_argparser():
         default=False,
         help="Do not produce DL2 files (default False)",
     )
+    parser.add_argument(
+        "--no-dl1ab",
+        action="store_true",
+        default=False,
+        help="Do not launch the script lstchain_dl1ab (default False)",
+    )
     parser.add_argument("--pedcal-file", type=Path, help="Path of the calibration file")
     parser.add_argument("--drs4-pedestal-file", type=Path, help="Path of the DRS4 pedestal file")
     parser.add_argument("--time-calib-file", type=Path, help="Path of the time calibration file")
@@ -227,6 +233,7 @@ def data_sequence_cli_parsing():
     options.simulate = opts.simulate
     options.prod_id = opts.prod_id
     options.no_dl2 = opts.no_dl2
+    options.no_dl1ab = opts.no_dl1ab
     options.tel_id = opts.tel_id
 
     log.debug(f"The options and arguments are {opts}")
@@ -275,6 +282,12 @@ def sequencer_argparser():
         help="Do not produce DL2 files (default False)",
     )
     parser.add_argument(
+        "--no-dl1ab",
+        action="store_true",
+        default=False,
+        help="Do not launch the script lstchain_dl1ab (default False)",
+    )
+    parser.add_argument(
         "--no-gainsel",
         action="store_true",
         default=False,
@@ -298,6 +311,7 @@ def sequencer_cli_parsing():
     options.no_submit = opts.no_submit
     options.no_calib = opts.no_calib
     options.no_dl2 = opts.no_dl2
+    options.no_dl1ab = opts.no_dl1ab
     options.no_gainsel = opts.no_gainsel
 
     log.debug(f"the options are {opts}")

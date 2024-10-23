@@ -87,7 +87,7 @@ class AnalysisStage:
             self._remove_drs4_baseline()
 
     def _remove_drs4_baseline(self):
-        drs4_pedestal_basedir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
+        drs4_pedestal_basedir = Path(cfg.get("LST1", "CAT_A_PEDESTAL_DIR"))
         date = date_to_dir(get_run_date(self.run))
         drs4_pedestal_dir = drs4_pedestal_basedir / date / lstchain.__version__
         file = drs4_pedestal_dir / "drs4_pedestal.Run{self.run}.0000.h5"
@@ -97,7 +97,7 @@ class AnalysisStage:
         drs4_pedestal_dir_pro.unlink(missing_ok=True)
 
     def _remove_calibration(self):
-        calib_basedir = Path(cfg.get("LST1", "CALIB_DIR"))
+        calib_basedir = Path(cfg.get("LST1", "CAT_A_CALIB_DIR"))
         date = date_to_dir(get_run_date(self.run))
         calib_dir = file = calib_basedir / date / lstchain.__version__
         file = calib_dir / f"calibration_filters_{options.filters}.Run{self.run}.0000.h5"

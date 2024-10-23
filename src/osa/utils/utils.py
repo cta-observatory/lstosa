@@ -8,6 +8,7 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from socket import gethostname
+from lstchain.onsite import find_filter_wheels
 
 import osa.paths
 from osa.configs import options
@@ -285,3 +286,18 @@ def wait_for_daytime(start=8, end=18):
     while time.localtime().tm_hour <= start or time.localtime().tm_hour >= end:
         log.info("Waiting for sunrise to not interfere with the data-taking. Sleeping.")
         time.sleep(3600)
+
+
+def get_calib_filters(run_id):
+    """Get the filters used for the calibration."""
+    if options.test:  # Run tests avoiding the access to the database
+        return 52
+
+    else:
+        mongodb = cfg.get("database", "caco_db")
+        try:
+            # Cast run_id to int to avoid problems with numpy int64 encoding in MongoDB
+            return find_filter_wheels(int(run_id), mongodb)
+        except IOError:
+            log.warning("No filter information found in database. Assuming positions 52.")
+            return 52

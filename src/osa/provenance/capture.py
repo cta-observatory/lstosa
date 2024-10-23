@@ -53,7 +53,7 @@ LOG_FILENAME = provconfig["handlers"]["provHandler"]["filename"]
 PROV_PREFIX = provconfig["PREFIX"]
 SUPPORTED_HASH_METHOD = ["md5"]
 SUPPORTED_HASH_BUFFER = ["content", "path"]
-REDUCTION_TASKS = ["r0_to_dl1", "dl1ab", "dl1_datacheck", "dl1_to_dl2"]
+REDUCTION_TASKS = ["r0_to_dl1", "catB_calibration", "dl1ab", "dl1_datacheck", "dl1_to_dl2"]
 
 # global variables
 traced_entities = {}
