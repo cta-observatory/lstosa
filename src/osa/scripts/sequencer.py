@@ -9,6 +9,7 @@ import logging
 import os
 import sys
 from decimal import Decimal
+import datetime
 
 from osa import osadb
 from osa.configs import options
@@ -28,7 +29,7 @@ from osa.paths import analysis_path
 from osa.report import start
 from osa.utils.cliopts import sequencer_cli_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import is_day_closed, gettag, date_to_iso, date_to_dir
+from osa.utils.utils import is_day_closed, gettag, date_to_iso
 from osa.veto import get_closed_list, get_veto_list
 from osa.scripts.gain_selection import GainSel_finished
 
@@ -98,9 +99,9 @@ def single_process(telescope):
         log.warning("No runs found for this date. Nothing to do. Exiting.")
         sys.exit(0)
 
-    if not options.no_gainsel and not GainSel_finished(date_to_dir(options.date)):
+    if not options.no_gainsel and not GainSel_finished(options.date):
         log.info(
-            f"Gain selection did not finish successfully for date {options.date}."
+            f"Gain selection did not finish successfully for date {date_to_iso(options.date)}. "
             "Try again later, once gain selection has finished."
         )
         sys.exit()
@@ -108,6 +109,15 @@ def single_process(telescope):
     if is_day_closed():
         log.info(f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}")
         return sequence_list
+
+    if not options.test and not options.simulate:
+        if is_sequencer_running(options.date):
+            log.info(f"Sequencer is still running for date {date_to_iso(options.date)}. Try again later.")
+            sys.exit(0)
+
+        elif is_sequencer_completed(options.date) and not options.force_submit:
+            log.info(f"Sequencer already finished for date {date_to_iso(options.date)}. Exiting")
+            sys.exit(0)
 
     # Build the sequences
     sequence_list = build_sequences(options.date)
@@ -304,6 +314,40 @@ def output_matrix(matrix: list, padding_space: int):
             )
 
         log.info(stringrow)
+
+
+def is_sequencer_running(date: datetime.datetime) -> bool:
+    """Check if the jobs launched by sequencer are running or pending for the given date."""
+    summary_table = run_summary_table(date)
+    sacct_output = run_sacct()
+    sacct_info = get_sacct_output(sacct_output)
+
+    for run in summary_table["run_id"]:
+        jobs_run = sacct_info[sacct_info["JobName"]==f"LST1_{run:05d}"]
+        queued_jobs = jobs_run[(jobs_run["State"] == "RUNNING") | (jobs_run["State"] == "PENDING")]
+        if len(queued_jobs) != 0:
+            return True
+
+    return False
+
+
+def is_sequencer_completed(date: datetime.datetime) -> bool:
+    """Check if the jobs launched by sequencer are running or pending for the given date."""
+    summary_table = run_summary_table(date)
+    data_runs = summary_table[summary_table["run_type"] == "DATA"]
+    sacct_output = run_sacct()
+    sacct_info = get_sacct_output(sacct_output)
+
+    for run in data_runs["run_id"]:
+        jobs_run = sacct_info[sacct_info["JobName"]==f"LST1_{run:05d}"]
+        if len(jobs_run["JobID"].unique())>1:
+            last_job_id = sorted(jobs_run["JobID"].unique())[-1]
+            jobs_run = sacct_info[sacct_info["JobID"]==last_job_id]
+        incomplete_jobs = jobs_run[(jobs_run["State"] != "COMPLETED")]
+        if len(jobs_run) == 0 or len(incomplete_jobs) != 0:
+            return False
+
+    return True
 
 
 if __name__ == "__main__":
