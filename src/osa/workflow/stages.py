@@ -81,9 +81,9 @@ class AnalysisStage:
             self._remove_dl1b_output('dl1_LST-1.Run')
         elif self.command == "lstchain_check_dl1":
             self._remove_dl1b_output('datacheck_dl1_LST-1.Run')
-        elif self.command == "onsite_create_calibration_file":
+        elif self.command == cfg.get("lstchain", "charge_calibration"):
             self._remove_calibration()
-        elif self.command == "onsite_create_drs4_pedestal_file":
+        elif self.command == cfg.get("lstchain", "drs4_baseline"):
             self._remove_drs4_baseline()
 
     def _remove_drs4_baseline(self):

@@ -44,8 +44,9 @@ def is_calibration_produced(drs4_pedestal_run_id: int, pedcal_run_id: int) -> bo
 def drs4_pedestal_command(drs4_pedestal_run_id: int) -> list:
     """Build the create_drs4_pedestal command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
+    command = cfg.get("lstchain", "drs4_baseline")
     return [
-        "onsite_create_drs4_pedestal_file",
+        command,
         f"--run_number={drs4_pedestal_run_id}",
         f"--base_dir={base_dir}",
         "--no-progress",
@@ -55,8 +56,9 @@ def drs4_pedestal_command(drs4_pedestal_run_id: int) -> list:
 def calibration_file_command(drs4_pedestal_run_id: int, pedcal_run_id: int) -> list:
     """Build the create_calibration_file command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
+    command = cfg.get("lstchain", "charge_calibration")
     cmd = [
-        "onsite_create_calibration_file",
+        command,
         f"--pedestal_run={drs4_pedestal_run_id}",
         f"--run_number={pedcal_run_id}",
         f"--base_dir={base_dir}",

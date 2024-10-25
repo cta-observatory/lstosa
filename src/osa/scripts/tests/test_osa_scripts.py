@@ -300,7 +300,7 @@ def test_drs4_pedestal_cmd(base_test_dir):
 
     cmd = drs4_pedestal_command(drs4_pedestal_run_id="01804")
     expected_command = [
-        "onsite_create_drs4_pedestal_file",
+        "lstcam_calib_onsite_create_drs4_pedestal_file",
         "--run_number=01804",
         f"--base_dir={base_test_dir}",
         "--no-progress",
@@ -313,7 +313,7 @@ def test_calibration_file_cmd(base_test_dir):
 
     cmd = calibration_file_command(drs4_pedestal_run_id="01804", pedcal_run_id="01809")
     expected_command = [
-        "onsite_create_calibration_file",
+        "lstcam_calib_onsite_create_calibration_file",
         "--pedestal_run=01804",
         "--run_number=01809",
         f"--base_dir={base_test_dir}",
