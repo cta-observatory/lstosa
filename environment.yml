@@ -27,6 +27,7 @@ dependencies:
   - pyirf~=0.10
   - lstchain>=0.10.7
   - tenacity
+  - lstcam_calib
   # dev dependencies
   - pytest
   - pytest-cov
