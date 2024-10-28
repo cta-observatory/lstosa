@@ -8,6 +8,7 @@ import pytest
 import yaml
 
 from osa.configs import options
+from osa.configs.config import cfg
 from osa.scripts.closer import is_sequencer_successful, is_finished_check
 
 ALL_SCRIPTS = [
@@ -300,7 +301,7 @@ def test_drs4_pedestal_cmd(base_test_dir):
 
     cmd = drs4_pedestal_command(drs4_pedestal_run_id="01804")
     expected_command = [
-        "lstcam_calib_onsite_create_drs4_pedestal_file",
+        cfg.get("lstchain", "drs4_baseline"),
         "--run_number=01804",
         f"--base_dir={base_test_dir}",
         "--no-progress",
@@ -313,7 +314,7 @@ def test_calibration_file_cmd(base_test_dir):
 
     cmd = calibration_file_command(drs4_pedestal_run_id="01804", pedcal_run_id="01809")
     expected_command = [
-        "lstcam_calib_onsite_create_calibration_file",
+        cfg.get("lstchain", "charge_calibration"),
         "--pedestal_run=01804",
         "--run_number=01809",
         f"--base_dir={base_test_dir}",

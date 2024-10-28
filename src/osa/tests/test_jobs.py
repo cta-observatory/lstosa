@@ -395,7 +395,7 @@ def test_set_cache_dirs():
 def test_calibration_history_level():
     from osa.job import check_history_level
 
-    levels = {"lstcam_calib_onsite_create_drs4_pedestal_file": 1, "lstcam_calib_onsite_create_calibration_file": 0}
+    levels = {cfg.get("lstchain", "drs4_baseline"): 1, cfg.get("lstchain", "charge_calibration"): 0}
     level, exit_status = check_history_level(calibration_history_file, levels)
     assert level == 0
     assert exit_status == 0
