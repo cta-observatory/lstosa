@@ -119,6 +119,11 @@ def single_process(telescope):
             log.info(f"Sequencer already finished for date {date_to_iso(options.date)}. Exiting")
             sys.exit(0)
 
+        elif timeout_in_sequencer(options.date) and not options.force_submit:
+            log.info(f"Some jobs of sequencer finished in TIMEOUT for date {date_to_iso(options.date)}."
+                " Please relaunch the affected sequences manually.")
+            sys.exit(0)
+
     # Build the sequences
     sequence_list = build_sequences(options.date)
 
@@ -332,7 +337,7 @@ def is_sequencer_running(date: datetime.datetime) -> bool:
 
 
 def is_sequencer_completed(date: datetime.datetime) -> bool:
-    """Check if the jobs launched by sequencer are already completed or finished in timeout."""
+    """Check if the jobs launched by sequencer are already completed."""
     summary_table = run_summary_table(date)
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
     sacct_output = run_sacct()
@@ -343,11 +348,29 @@ def is_sequencer_completed(date: datetime.datetime) -> bool:
         if len(jobs_run["JobID"].unique())>1:
             last_job_id = sorted(jobs_run["JobID"].unique())[-1]
             jobs_run = sacct_info[sacct_info["JobID"]==last_job_id]
-        incomplete_jobs = jobs_run[(jobs_run["State"] != "COMPLETED") & (jobs_run["State"] != "TIMEOUT")]
+        incomplete_jobs = jobs_run[(jobs_run["State"] != "COMPLETED")]
         if len(jobs_run) == 0 or len(incomplete_jobs) != 0:
             return False
 
     return True
+
+
+def timeout_in_sequencer(date: datetime.datetime) -> bool:
+    """Check if any of the jobs launched by sequencer finished in timeout."""
+    summary_table = run_summary_table(date)
+    data_runs = summary_table[summary_table["run_type"] == "DATA"]
+    sacct_output = run_sacct()
+    sacct_info = get_sacct_output(sacct_output)
+
+    for run in data_runs["run_id"]:
+        jobs_run = sacct_info[sacct_info["JobName"]==f"LST1_{run:05d}"]
+        last_job_id = sorted(jobs_run["JobID"].unique())[-1]
+        jobs_run = sacct_info[sacct_info["JobID"]==last_job_id]
+        timeout_jobs = jobs_run[(jobs_run["State"] == "TIMEOUT")]
+        if len(timeout_jobs) != 0:
+            return True
+
+    return False
 
 
 if __name__ == "__main__":
