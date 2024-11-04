@@ -332,7 +332,7 @@ def is_sequencer_running(date: datetime.datetime) -> bool:
 
 
 def is_sequencer_completed(date: datetime.datetime) -> bool:
-    """Check if the jobs launched by sequencer are running or pending for the given date."""
+    """Check if the jobs launched by sequencer are already completed or finished in timeout."""
     summary_table = run_summary_table(date)
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
     sacct_output = run_sacct()
@@ -343,7 +343,7 @@ def is_sequencer_completed(date: datetime.datetime) -> bool:
         if len(jobs_run["JobID"].unique())>1:
             last_job_id = sorted(jobs_run["JobID"].unique())[-1]
             jobs_run = sacct_info[sacct_info["JobID"]==last_job_id]
-        incomplete_jobs = jobs_run[(jobs_run["State"] != "COMPLETED")]
+        incomplete_jobs = jobs_run[(jobs_run["State"] != "COMPLETED") & (jobs_run["State"] != "TIMEOUT")]
         if len(jobs_run) == 0 or len(incomplete_jobs) != 0:
             return False
 
