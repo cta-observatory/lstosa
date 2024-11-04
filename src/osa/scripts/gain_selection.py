@@ -380,13 +380,20 @@ def GainSel_finished(date: datetime) -> bool:
     """Check if gain selection finished successfully."""
     flagfile = GainSel_flag_file(date)
     return flagfile.exists()
-
+   
 
 def check_gainsel_jobs_runwise(date: datetime, run_id: int) -> bool:
     """Search for failed jobs in the log directory."""
     base_dir = Path(cfg.get("LST1", "BASE"))
     log_dir = base_dir / f"R0G/log/{date_to_dir(date)}"
     history_files = log_dir.glob(f"gain_selection_{run_id:05d}.????.history")
+    summary_table = run_summary_table(date)
+    n_subruns = summary_table[summary_table["run_id"] == run_id]["n_subruns"]
+    
+    if len(list(history_files)) != n_subruns:
+        log.debug(f"All history files of run {run_id} were not created yet")
+        return False
+
     failed_subruns = []
     log.info(f"Checking all history files of run {run_id}")
     
