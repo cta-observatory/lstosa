@@ -19,6 +19,7 @@ from osa.report import history
 from osa.utils.logging import myLogger
 from osa.utils.utils import stringify, date_to_dir
 from osa.paths import get_run_date
+from osa.configs.config import cfg
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -75,15 +76,15 @@ class AnalysisStage:
         reproduced in subsequent trials.
         """
 
-        if self.command == "lstchain_data_r0_to_dl1":
+        if self.command == cfg.get("lstchain", "r0_to_dl1"):
             self._remove_dl1a_output()
-        elif self.command == "lstchain_dl1ab":
+        elif self.command == cfg.get("lstchain", "dl1ab"):
             self._remove_dl1b_output('dl1_LST-1.Run')
-        elif self.command == "lstchain_check_dl1":
+        elif self.command == cfg.get("lstchain", "check_dl1"):
             self._remove_dl1b_output('datacheck_dl1_LST-1.Run')
-        elif self.command == "onsite_create_calibration_file":
+        elif self.command == cfg.get("lstchain", "charge_calibration"):
             self._remove_calibration()
-        elif self.command == "onsite_create_drs4_pedestal_file":
+        elif self.command == cfg.get("lstchain", "drs4_baseline"):
             self._remove_drs4_baseline()
 
     def _remove_drs4_baseline(self):
@@ -121,9 +122,14 @@ class AnalysisStage:
 
     def _write_checkpoint(self):
         """Write the checkpoint in the history file."""
-        if self.command in ["lstchain_data_r0_to_dl1", "lstchain_dl1ab", "lstchain_check_dl1"]: 
+        dl1_commands = [
+            cfg.get("lstchain", "r0_to_dl1"),
+            cfg.get("lstchain", "dl1ab"),
+            cfg.get("lstchain", "check_dl1")
+            ]
+        if self.command in dl1_commands: 
             prod_id = options.dl1_prod_id
-        elif self.command == "lstchain_dl1_to_dl2":
+        elif self.command == cfg.get("lstchain", "dl1_to_dl2"):
             prod_id = options.dl2_prod_id
         
         history(
