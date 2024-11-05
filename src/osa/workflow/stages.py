@@ -19,7 +19,6 @@ from osa.report import history
 from osa.utils.logging import myLogger
 from osa.utils.utils import stringify, date_to_dir
 from osa.paths import get_run_date
-from osa.configs.config import cfg
 
 log = myLogger(logging.getLogger(__name__))
 
