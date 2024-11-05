@@ -121,9 +121,14 @@ class AnalysisStage:
 
     def _write_checkpoint(self):
         """Write the checkpoint in the history file."""
+        if self.command in ["lstchain_data_r0_to_dl1", "lstchain_dl1ab", "lstchain_check_dl1"]: 
+            prod_id = options.dl1_prod_id
+        elif self.command == "lstchain_dl1_to_dl2":
+            prod_id = options.dl2_prod_id
+        
         history(
             run=self.run,
-            prod_id=options.prod_id,
+            prod_id=prod_id,
             stage=self.command,
             return_code=self.rc,
             history_file=self.history_file,
