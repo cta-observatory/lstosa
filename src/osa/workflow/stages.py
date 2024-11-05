@@ -121,16 +121,13 @@ class AnalysisStage:
 
     def _write_checkpoint(self):
         """Write the checkpoint in the history file."""
-        dl1_commands = [
-            cfg.get("lstchain", "r0_to_dl1"),
-            cfg.get("lstchain", "dl1ab"),
-            cfg.get("lstchain", "check_dl1")
-            ]
-        if self.command in dl1_commands: 
-            prod_id = options.dl1_prod_id
-        elif self.command == cfg.get("lstchain", "dl1_to_dl2"):
-            prod_id = options.dl2_prod_id
-        
+        command_to_prod_id = {
+            cfg.get("lstchain", "r0_to_dl1"): options.prod_id,
+            cfg.get("lstchain", "dl1ab"): options.dl1_prod_id,
+            cfg.get("lstchain", "check_dl1"): options.dl1_prod_id,
+            cfg.get("lstchain", "dl1_to_dl2"): options.dl2_prod_id
+        }
+        prod_id = command_to_prod_id.get(self.command)
         history(
             run=self.run,
             prod_id=prod_id,
