@@ -327,11 +327,12 @@ def test_daily_longterm_cmd():
 
     job_ids = ["12345", "54321"]
     cmd = daily_longterm_cmd(parent_job_ids=job_ids)
+    slurm_account = cfg.get("SLURM", "ACCOUNT")
 
     expected_cmd = [
         "sbatch",
         "--parsable",
-        f"--account={cfg.get("SLURM", "ACCOUNT")}",
+        f"--account={slurm_account}",
         "-D",
         options.directory,
         "-o",
