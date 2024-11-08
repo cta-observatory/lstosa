@@ -8,6 +8,7 @@ import pytest
 import yaml
 
 from osa.configs import options
+from osa.configs.config import cfg
 from osa.scripts.closer import is_sequencer_successful, is_finished_check
 
 ALL_SCRIPTS = [
@@ -330,6 +331,7 @@ def test_daily_longterm_cmd():
     expected_cmd = [
         "sbatch",
         "--parsable",
+        f"--account={cfg.get("SLURM", "ACCOUNT")}",
         "-D",
         options.directory,
         "-o",
