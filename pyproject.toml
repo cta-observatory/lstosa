@@ -33,7 +33,7 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "astropy~=5.0",
-    "lstchain>=0.10.7",
+    "lstchain>=0.10.13",
     "matplotlib",
     "numpy",
     "pandas",
