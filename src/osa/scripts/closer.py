@@ -336,6 +336,7 @@ def merge_dl1_datacheck(seq_list) -> List[str]:
 
     muons_dir = destination_dir("MUON", create_dir=False)
     datacheck_dir = destination_dir("DATACHECK", create_dir=False)
+    slurm_account = cfg.get("SLURM", "ACCOUNT")
 
     list_job_id = []
 
@@ -344,6 +345,7 @@ def merge_dl1_datacheck(seq_list) -> List[str]:
             cmd = [
                 "sbatch",
                 "--parsable",
+                f"--account={slurm_account}",
                 "-D",
                 options.directory,
                 "-o",
@@ -386,6 +388,7 @@ def extract_provenance(seq_list):
     log.info("Extract provenance run wise")
 
     nightdir = date_to_dir(options.date)
+    slurm_account = cfg.get("SLURM", "ACCOUNT")
 
     for sequence in seq_list:
         if sequence.type == "DATA":
@@ -393,6 +396,7 @@ def extract_provenance(seq_list):
             pedcal_run_id = str(sequence.pedcal_run)
             cmd = [
                 "sbatch",
+                f"--account={slurm_account}",
                 "-D",
                 options.directory,
                 "-o",
@@ -433,6 +437,7 @@ def merge_files(sequence_list, data_level="DL2"):
 
     data_dir = destination_dir(data_level, create_dir=False)
     pattern, prefix = get_pattern(data_level)
+    slurm_account = cfg.get("SLURM", "ACCOUNT")
 
     for sequence in sequence_list:
         if sequence.type == "DATA":
@@ -440,6 +445,7 @@ def merge_files(sequence_list, data_level="DL2"):
 
             cmd = [
                 "sbatch",
+                f"--account={slurm_account}",
                 "-D",
                 options.directory,
                 "-o",
@@ -467,12 +473,14 @@ def merge_muon_files(sequence_list):
 
     data_dir = destination_dir("MUON", create_dir=False)
     pattern, prefix = get_pattern("MUON")
+    slurm_account = cfg.get("SLURM", "ACCOUNT")
 
     for sequence in sequence_list:
         merged_file = Path(data_dir) / f"muons_LST-1.Run{sequence.run:05d}.fits"
 
         cmd = [
             "sbatch",
+            f"--account={slurm_account}",
             "-D",
             options.directory,
             "-o",
@@ -499,10 +507,12 @@ def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
     muons_dir = destination_dir("MUON", create_dir=False)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
     longterm_output_file = longterm_dir / f"DL1_datacheck_{nightdir}.h5"
+    slurm_account = cfg.get("SLURM", "ACCOUNT")
 
     return [
         "sbatch",
         "--parsable",
+        f"--account={slurm_account}",
         "-D",
         options.directory,
         "-o",
@@ -541,10 +551,12 @@ def cherenkov_transparency_cmd(longterm_job_id: str) -> List[str]:
     datacheck_dir = destination_dir("DATACHECK", create_dir=False)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
     longterm_datacheck_file = longterm_dir / f"DL1_datacheck_{nightdir}.h5"
+    slurm_account = cfg.get("SLURM", "ACCOUNT")
 
     return [
         "sbatch",
         "--parsable",
+        f"--account={slurm_account}",
         "-D",
         options.directory,
         "-o",

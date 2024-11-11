@@ -114,6 +114,7 @@ def get_sbatch_script(
 ):
     """Build the sbatch job pilot script for running the gain selection."""
     mem_per_job = cfg.get("SLURM", "MEMSIZE_GAINSEL")
+    slurm_account = cfg.get("SLURM", "ACCOUNT")
     sbatch_script = dedent(
             f"""\
         #!/bin/bash
@@ -123,6 +124,7 @@ def get_sbatch_script(
         #SBATCH --job-name "gain_selection_{run_id:05d}"
         #SBATCH --partition=short,long
         #SBATCH --mem={mem_per_job}
+        #SBATCH --account={slurm_account}
         """
         )
     
