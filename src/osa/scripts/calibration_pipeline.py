@@ -47,8 +47,8 @@ def drs4_pedestal_command(drs4_pedestal_run_id: int) -> list:
     command = cfg.get("lstchain", "drs4_baseline")
     return [
         command,
-        f"--run-number={drs4_pedestal_run_id}",
-        f"--base-dir={base_dir}",
+        "-r", drs4_pedestal_run_id,
+        "-b", base_dir,
         "--no-progress",
     ]
 
@@ -59,9 +59,9 @@ def calibration_file_command(drs4_pedestal_run_id: int, pedcal_run_id: int) -> l
     command = cfg.get("lstchain", "charge_calibration")
     cmd = [
         command,
-        f"--pedestal-run={drs4_pedestal_run_id}",
-        f"--run-number={pedcal_run_id}",
-        f"--base-dir={base_dir}",
+        "-p", drs4_pedestal_run_id,
+        "-r", pedcal_run_id,
+        "-b", base_dir,
     ]
     # In case of problems with trigger tagging:
     if cfg.getboolean("lstchain", "use_ff_heuristic_id"):
