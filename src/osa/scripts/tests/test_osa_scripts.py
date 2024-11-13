@@ -302,8 +302,8 @@ def test_drs4_pedestal_cmd(base_test_dir):
     cmd = drs4_pedestal_command(drs4_pedestal_run_id="01804")
     expected_command = [
         cfg.get("lstchain", "drs4_baseline"),
-        "--run_number=01804",
-        f"--base_dir={base_test_dir}",
+        "--run-number=01804",
+        f"--base-dir={base_test_dir}",
         "--no-progress",
     ]
     assert cmd == expected_command
@@ -315,9 +315,9 @@ def test_calibration_file_cmd(base_test_dir):
     cmd = calibration_file_command(drs4_pedestal_run_id="01804", pedcal_run_id="01809")
     expected_command = [
         cfg.get("lstchain", "charge_calibration"),
-        "--pedestal_run=01804",
-        "--run_number=01809",
-        f"--base_dir={base_test_dir}",
+        "--pedestal-run=01804",
+        "--run-number=01809",
+        f"--base-dir={base_test_dir}",
     ]
     assert cmd == expected_command
 
