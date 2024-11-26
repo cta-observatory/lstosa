@@ -21,7 +21,6 @@ dependencies:
   - click
   - pymongo
   - scikit-learn=1.2
-  - protobuf=3.20
   - ctapipe_io_lst=0.24
   - ctaplot~=0.6.4
   - pyirf~=0.10
