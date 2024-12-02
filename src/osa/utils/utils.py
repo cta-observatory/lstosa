@@ -8,12 +8,16 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from socket import gethostname
+from gammapy.data import observatory_locations
+from astropy import units as u
+from pymongo import MongoClient
 
 import osa.paths
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
+
 
 __all__ = [
     "get_lstchain_version",
@@ -285,3 +289,29 @@ def wait_for_daytime(start=8, end=18):
     while time.localtime().tm_hour <= start or time.localtime().tm_hour >= end:
         log.info("Waiting for sunrise to not interfere with the data-taking. Sleeping.")
         time.sleep(3600)
+
+
+def culmination_angle(dec: u.Quantity) -> u.Quantity:  
+    """
+    Calculate culmination angle for a given declination.
+
+    Parameters
+    ----------
+    dec: Quantity
+        declination coordinate in degrees
+
+    Returns
+    -------
+    Culmination angle in degrees
+    """
+    location = observatory_locations["cta_north"]
+    Lat = location.lat  # latitude of the LST1 site    
+    return abs(Lat - dec)
+
+
+def get_source_dec_from_TCU(source_name: str, tcu_server: str) -> u.Quantity:
+    """Get the declination of a given source from the TCU database."""
+    client = MongoClient(tcu_server)
+    collection = client["lst1_config"]["structure_configurations"]
+    source_dec = collection.find_one({"name": source_name})["target"]["source_dec"]
+    return source_dec*u.deg
