@@ -23,7 +23,13 @@ from osa.paths import (
 )
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
-from osa.utils.utils import date_to_dir, time_to_seconds, stringify, date_to_iso
+from osa.utils.utils import (
+    date_to_dir,
+    time_to_seconds,
+    stringify,
+    date_to_iso,
+    get_RF_model,
+)
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -437,6 +443,9 @@ def data_sequence_job_template(sequence):
             f"--run-summary={get_summary_file(flat_date)}",
         )
     )
+
+    if not options.no_dl2:
+        commandargs.append(f"--rf-model-path={get_RF_model(str(sequence.run))}")
 
     content = job_header + "\n" + PYTHON_IMPORTS
 
