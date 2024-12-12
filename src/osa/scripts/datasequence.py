@@ -12,7 +12,6 @@ from osa.provenance.capture import trace
 from osa.utils.cliopts import data_sequence_cli_parsing
 from osa.utils.logging import myLogger
 from osa.utils.utils import date_to_dir
-from osa.paths import get_RF_model
 
 __all__ = ["data_sequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
 
@@ -28,6 +27,7 @@ def data_sequence(
     run_summary: Path,
     pedestal_ids_file: Path,
     run_str: str,
+    rf_model_path: Path=None,
 ):
     """
     Performs all the steps to process a whole run.
@@ -91,7 +91,7 @@ def data_sequence(
             level = 0
             log.info(f"No DL2 are going to be produced. Going to level {level}")
         else:
-            rc = dl1_to_dl2(run_str)
+            rc = dl1_to_dl2(run_str, rf_model_path)
             level -= 1
             log.info(f"Going to level {level}")
 
@@ -249,7 +249,7 @@ def dl1_datacheck(run_str: str) -> int:
 
 
 @trace
-def dl1_to_dl2(run_str: str) -> int:
+def dl1_to_dl2(run_str: str, rf_model_path: Path) -> int:
     """
     It prepares and execute the dl1 to dl2 lstchain scripts that applies
     the already trained RFs models to DL1 files. It identifies the
@@ -266,7 +266,6 @@ def dl1_to_dl2(run_str: str) -> int:
     dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
     dl2_subdirectory = Path(options.directory) / options.dl2_prod_id
     dl2_config = Path(cfg.get("lstchain", "dl2_config"))
-    rf_models_directory = get_RF_model(run_str[:5])
     dl1_file = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
 
     command = cfg.get("lstchain", "dl1_to_dl2")
@@ -274,7 +273,7 @@ def dl1_to_dl2(run_str: str) -> int:
         command,
         f"--input-file={dl1_file}",
         f"--output-dir={dl2_subdirectory}",
-        f"--path-models={rf_models_directory}",
+        f"--path-models={rf_model_path}",
         f"--config={dl2_config}",
     ]
 
@@ -297,6 +296,7 @@ def main():
         run_summary_file,
         pedestal_ids_file,
         run_number,
+        rf_model_path,
     ) = data_sequence_cli_parsing()
 
     if options.verbose:
@@ -314,6 +314,7 @@ def main():
         run_summary_file,
         pedestal_ids_file,
         run_number,
+        rf_model_path,
     )
     sys.exit(rc)
 
