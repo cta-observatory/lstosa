@@ -352,22 +352,26 @@ def get_corresponding_string(list1: list, list2: list) -> dict:
 def get_RF_model(run_str: str) -> Path:
     """Get the path of the RF model to be used in the DL2 production for a given run."""
     run_catalog_dir = Path(cfg.get(options.tel_id, "RUN_CATALOG"))
-    run_catalog_file = run_catalog_dir / f"RunCatalog_{utils.date_to_dir(options.date)}.ecsv"
+    run_catalog_file = run_catalog_dir / f"RunCatalog_{date_to_dir(options.date)}.ecsv"
     run_catalog = Table.read(run_catalog_file)
     run = run_catalog[run_catalog["run_id"]==int(run_str)]
     target_name = run["source_name"]
 
-    if options.test or options.simulate:
+    rf_models_dir = Path(cfg.get("LST1", "RF_MODELS"))
+    mc_prod = cfg.get("lstchain", "mc_prod")
+
+    if options.test:
+        rf_model_path = rf_models_dir / mc_prod / "dec_2276"
+        return rf_model_path.resolve()
+    elif options.simulate:
         source_coordinates = SkyCoord.from_name(target_name[0])
         source_dec = source_coordinates.dec
     else:
         tcu_server = cfg.get("database", "tcu_db")
         source_dec = get_source_dec_from_TCU(target_name[0], tcu_server)
-        
+     
     source_culmination = culmination_angle(source_dec)
-
-    rf_models_dir = Path(cfg.get("LST1", "RF_MODELS"))
-    mc_prod = cfg.get("lstchain", "mc_prod")
+  
     dec_list = os.listdir(rf_models_dir / mc_prod)
 
     # Convert each string in the list to numerical values
