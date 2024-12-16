@@ -8,6 +8,7 @@ import pytest
 import yaml
 
 from osa.configs import options
+from osa.configs.config import cfg
 from osa.scripts.closer import is_sequencer_successful, is_finished_check
 
 ALL_SCRIPTS = [
@@ -23,6 +24,7 @@ ALL_SCRIPTS = [
     "theta2_significance",
     "source_coordinates",
     "sequencer_webmaker",
+    "gainsel_webmaker",
 ]
 
 options.date = datetime.datetime.fromisoformat("2020-01-17")
@@ -310,9 +312,11 @@ def test_drs4_pedestal_cmd(base_test_dir):
 
     cmd = drs4_pedestal_command(drs4_pedestal_run_id="01804")
     expected_command = [
-        "onsite_create_drs4_pedestal_file",
-        "--run_number=01804",
-        f"--base_dir={base_test_dir}",
+        cfg.get("lstchain", "drs4_baseline"),
+        "-r",
+        "01804",
+        "-b",
+        base_test_dir,
         "--no-progress",
     ]
     assert cmd == expected_command
@@ -323,10 +327,13 @@ def test_calibration_file_cmd(base_test_dir):
 
     cmd = calibration_file_command(drs4_pedestal_run_id="01804", pedcal_run_id="01809")
     expected_command = [
-        "onsite_create_calibration_file",
-        "--pedestal_run=01804",
-        "--run_number=01809",
-        f"--base_dir={base_test_dir}",
+        cfg.get("lstchain", "charge_calibration"),
+        "-p",
+        "01804",
+        "-r",
+        "01809",
+        "-b",
+        base_test_dir,
     ]
     assert cmd == expected_command
 
@@ -336,10 +343,12 @@ def test_daily_longterm_cmd():
 
     job_ids = ["12345", "54321"]
     cmd = daily_longterm_cmd(parent_job_ids=job_ids)
+    slurm_account = cfg.get("SLURM", "ACCOUNT")
 
     expected_cmd = [
         "sbatch",
         "--parsable",
+        f"--account={slurm_account}",
         "-D",
         options.directory,
         "-o",
@@ -408,3 +417,29 @@ def test_sequencer_webmaker(
     # Running without test option will make the script fail
     output = sp.run(["sequencer_webmaker", "-d", "2020-01-17"])
     assert output.returncode != 0
+
+
+def test_gainsel_webmaker(
+    base_test_dir,
+):
+
+    output = sp.run(["gainsel_webmaker", "-d", "2020-01-17"])
+    assert output.returncode == 0
+    directory = base_test_dir / "OSA" / "GainSelWeb"
+    expected_file = directory / "osa_gainsel_status_2020-01-17.html"
+    assert expected_file.exists()
+
+    # Test a date with non-existing run summary
+    output = sp.run(["gainsel_webmaker", "-d", "2024-01-12"])
+    assert output.returncode == 0
+    directory = base_test_dir / "OSA" / "GainSelWeb"
+    expected_file = directory / "osa_gainsel_status_2024-01-12.html"
+    assert expected_file.exists()
+
+
+def test_gainsel_web_content():
+    from osa.scripts.gainsel_webmaker import check_failed_jobs
+
+    table = check_failed_jobs(options.date)
+    assert table["GainSelStatus"][0] == "NOT STARTED"
+    assert table["GainSel%"][0] == 0.0

@@ -72,6 +72,7 @@ def test_scheduler_env_variables(sequence_list, running_analysis_dir):
         "#SBATCH --error=log/Run01809.%4a_jobid_%A.err",
         f'#SBATCH --partition={cfg.get("SLURM", "PARTITION_PEDCALIB")}',
         "#SBATCH --mem-per-cpu=3GB",
+        "#SBATCH --account=dpps",
     ]
     # Extract the second sequence
     second_sequence = sequence_list[1]
@@ -84,7 +85,8 @@ def test_scheduler_env_variables(sequence_list, running_analysis_dir):
         "#SBATCH --error=log/Run01807.%4a_jobid_%A.err",
         "#SBATCH --array=0-10",
         f'#SBATCH --partition={cfg.get("SLURM", "PARTITION_DATA")}',
-        "#SBATCH --mem-per-cpu=16GB",
+        "#SBATCH --mem-per-cpu=6GB",
+        "#SBATCH --account=dpps",
     ]
 
 
@@ -106,7 +108,8 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     #SBATCH --output=log/Run01809.%4a_jobid_%A.out
     #SBATCH --error=log/Run01809.%4a_jobid_%A.err
     #SBATCH --partition={cfg.get('SLURM', 'PARTITION_PEDCALIB')}
-    #SBATCH --mem-per-cpu=3GB"""
+    #SBATCH --mem-per-cpu=3GB
+    #SBATCH --account=dpps"""
     )
     assert header == output_string1
 
@@ -124,7 +127,8 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     #SBATCH --error=log/Run01807.%4a_jobid_%A.err
     #SBATCH --array=0-10
     #SBATCH --partition={cfg.get('SLURM', 'PARTITION_DATA')}
-    #SBATCH --mem-per-cpu=16GB"""
+    #SBATCH --mem-per-cpu=6GB
+    #SBATCH --account=dpps"""
     )
     assert header == output_string2
 
@@ -160,6 +164,7 @@ def test_create_job_template_scheduler(
     #SBATCH --array=0-10
     #SBATCH --partition={cfg.get('SLURM', 'PARTITION_DATA')}
     #SBATCH --mem-per-cpu={cfg.get('SLURM', 'MEMSIZE_DATA')}
+    #SBATCH --account={cfg.get('SLURM', 'ACCOUNT')}
 
     import os
     import subprocess
@@ -206,6 +211,7 @@ def test_create_job_template_scheduler(
         #SBATCH --array=0-8
         #SBATCH --partition={cfg.get('SLURM', 'PARTITION_DATA')}
         #SBATCH --mem-per-cpu={cfg.get('SLURM', 'MEMSIZE_DATA')}
+        #SBATCH --account={cfg.get('SLURM', 'ACCOUNT')}
 
         import os
         import subprocess
@@ -402,7 +408,7 @@ def test_set_cache_dirs():
 def test_calibration_history_level():
     from osa.job import check_history_level
 
-    levels = {"onsite_create_drs4_pedestal_file": 1, "onsite_create_calibration_file": 0}
+    levels = {cfg.get("lstchain", "drs4_baseline"): 1, cfg.get("lstchain", "charge_calibration"): 0}
     level, exit_status = check_history_level(calibration_history_file, levels)
     assert level == 0
     assert exit_status == 0
