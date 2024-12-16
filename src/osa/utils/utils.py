@@ -363,9 +363,6 @@ def get_RF_model(run_str: str) -> Path:
     if options.test:
         rf_model_path = rf_models_dir / mc_prod / "dec_2276"
         return rf_model_path.resolve()
-    elif options.simulate:
-        source_coordinates = SkyCoord.from_name(target_name[0])
-        source_dec = source_coordinates.dec
     else:
         tcu_server = cfg.get("database", "tcu_db")
         source_dec = get_source_dec_from_TCU(target_name[0], tcu_server)
