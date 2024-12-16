@@ -210,6 +210,12 @@ def data_sequence_argparser():
         type=Path,
         help="Path to a file containing the ids of the interleaved pedestal events",
     )
+    parser.add_argument(
+        "--rf-model-path",
+        type=Path,
+        default=None,
+        help="Path to a the RF models to be used for the DL2 production",
+    )
     parser.add_argument("run_number", help="Number of the run to be processed")
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
     return parser
@@ -228,6 +234,7 @@ def data_sequence_cli_parsing():
     options.prod_id = opts.prod_id
     options.no_dl2 = opts.no_dl2
     options.tel_id = opts.tel_id
+    options.rf_model_path = opts.rf_model_path
 
     log.debug(f"The options and arguments are {opts}")
 
@@ -246,6 +253,7 @@ def data_sequence_cli_parsing():
         opts.run_summary,
         opts.pedestal_ids_file,
         opts.run_number,
+        opts.rf_model_path,
     )
 
 

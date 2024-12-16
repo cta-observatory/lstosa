@@ -4,16 +4,22 @@
 import inspect
 import logging
 import os
+import re
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from socket import gethostname
+from gammapy.data import observatory_locations
+from astropy import units as u
+from astropy.table import Table
+from pymongo import MongoClient
 
 import osa.paths
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
+
 
 __all__ = [
     "get_lstchain_version",
@@ -285,3 +291,118 @@ def wait_for_daytime(start=8, end=18):
     while time.localtime().tm_hour <= start or time.localtime().tm_hour >= end:
         log.info("Waiting for sunrise to not interfere with the data-taking. Sleeping.")
         time.sleep(3600)
+
+
+def culmination_angle(dec: u.Quantity) -> u.Quantity:  
+    """
+    Calculate culmination angle for a given declination.
+
+    Parameters
+    ----------
+    dec: Quantity
+        declination coordinate in degrees
+
+    Returns
+    -------
+    Culmination angle in degrees
+    """
+    location = observatory_locations["cta_north"]
+    Lat = location.lat  # latitude of the LST1 site    
+    return abs(Lat - dec)
+
+
+def get_source_dec_from_TCU(source_name: str, tcu_server: str) -> u.Quantity:
+    """Get the declination of a given source from the TCU database."""
+    client = MongoClient(tcu_server)
+    collection = client["lst1_config"]["structure_configurations"]
+    source_dec = collection.find_one({"name": source_name})["target"]["source_dec"]
+    return source_dec*u.deg
+
+
+def convert_dec_string(dec_str: str) -> u.Quantity:
+    """Return the declination angle in degrees corresponding to a 
+    given string of the form "dec_XXXX" or "dec_min_XXXX"."""
+    
+    # Check if dec_str has a valid format
+    pattern = r'^dec_(\d{3,4})$|^dec_min_(\d{3,4})$'
+    if re.match(pattern, dec_str):
+        
+        # Split the string into parts
+        parts = dec_str.split('_')
+
+        # Extract the sign, degrees, and minutes
+        sign = 1 if 'min' not in parts else -1
+        degrees = int(parts[-1])
+
+        # Calculate the numerical value
+        dec_value = sign * (degrees / 100)
+
+        return dec_value*u.deg
+
+
+def get_corresponding_string(list1: list, list2: list) -> dict:
+    """Return a dictionary created from two given lists."""
+    corresponding_dict = {}
+    for index, element in enumerate(list2):
+        corresponding_dict[element] = list1[index]
+    return corresponding_dict
+        
+
+def get_RF_model(run_str: str) -> Path:
+    """Get the path of the RF model to be used in the DL2 production for a given run."""
+    run_catalog_dir = Path(cfg.get(options.tel_id, "RUN_CATALOG"))
+    run_catalog_file = run_catalog_dir / f"RunCatalog_{date_to_dir(options.date)}.ecsv"
+    run_catalog = Table.read(run_catalog_file)
+    run = run_catalog[run_catalog["run_id"]==int(run_str)]
+    target_name = run["source_name"]
+
+    rf_models_dir = Path(cfg.get("LST1", "RF_MODELS"))
+    mc_prod = cfg.get("lstchain", "mc_prod")
+
+    if options.test:
+        rf_model_path = rf_models_dir / mc_prod / "dec_2276"
+        return rf_model_path.resolve()
+    else:
+        tcu_server = cfg.get("database", "tcu_db")
+        source_dec = get_source_dec_from_TCU(target_name[0], tcu_server)
+     
+    source_culmination = culmination_angle(source_dec)
+  
+    dec_list = os.listdir(rf_models_dir / mc_prod)
+
+    # Convert each string in the list to numerical values
+    dec_values = [convert_dec_string(dec) for dec in dec_list]
+    dec_values = [dec for dec in dec_values if dec is not None]
+    
+    closest_declination = min(dec_values, key=lambda x: abs(x - source_dec))
+    closest_dec_culmination = culmination_angle(closest_declination)
+    
+    location = observatory_locations["cta_north"]
+    Lat = location.lat  # latitude of the LST1 site    
+    closest_lines = sorted(sorted(dec_values, key=lambda x: abs(x - Lat))[:2])
+
+    if source_dec < closest_lines[0] or source_dec > closest_lines[1]:
+        # If the source declination is between the two MC lines closest to the latitude of 
+        # the LST1 site, this check is not necessary.
+        log.debug(
+            f"The declination closest to {source_dec} is: {closest_declination}."
+            "Checking if the culmination angle is larger than the one of the target source."
+        )
+        while closest_dec_culmination > source_culmination:
+            # If the culmination angle of the closest declination line is larger than for the source, 
+            # remove it from the declination lines list and look for the second closest declination line.
+            corresponding_dict = get_corresponding_string(dec_list, dec_values)
+            declination_str = corresponding_dict[closest_declination]
+            dec_values.remove(closest_declination)
+            dec_list.remove(declination_str)
+            closest_declination = min(dec_values, key=lambda x: abs(x - source_dec))
+            closest_dec_culmination = culmination_angle(closest_declination)
+    
+    log.debug(f"The declination line to use for the DL2 production is: {closest_declination}")
+    
+    corresponding_dict = get_corresponding_string(dec_list, dec_values)
+    declination_str = corresponding_dict[closest_declination]
+
+    rf_model_path = rf_models_dir / mc_prod / declination_str
+
+    return rf_model_path
