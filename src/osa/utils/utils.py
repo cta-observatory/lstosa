@@ -11,7 +11,6 @@ from pathlib import Path
 from socket import gethostname
 from gammapy.data import observatory_locations
 from astropy import units as u
-from astropy.coordinates import SkyCoord
 from astropy.table import Table
 from pymongo import MongoClient
 
