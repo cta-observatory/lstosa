@@ -4,7 +4,6 @@ import argparse
 from pathlib import Path
 from astropy.table import Table
 import subprocess as sp
-from datetime import datetime
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -30,13 +29,14 @@ parser.add_argument(
         default=None,
 )
 
-def are_all_history_files_created(date: datetime, run_id: int) -> bool:
+def are_all_history_files_created(run_id: int) -> bool:
     run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
-    run_summary_file = run_summary_dir / f"RunSummary_{date}.ecsv"
+    run_summary_file = run_summary_dir / f"RunSummary_{date_to_dir(options.date)}.ecsv"
     run_summary = Table.read(run_summary_file)
     n_subruns = run_summary[run_summary["run_id"] == run_id]["n_subruns"]
     prod_id = str(cfg.get("LST1", "PROD_ID"))
-    analysis_dir = base_dir / "running_analysis" / date / prod_id
+    night_dir = date_to_dir(options.date)
+    analysis_dir = base_dir / "running_analysis" / night_dir / prod_id
     history_files = glob.glob(f"{str(analysis_dir)}/sequence_LST1_{run_id:05d}.????.history")
     if len(history_files) == n_subruns:
         return True
@@ -44,12 +44,13 @@ def are_all_history_files_created(date: datetime, run_id: int) -> bool:
         return False
 
 
-def r0_to_dl1_step_finished_for_run(date: datetime, run_id: int) -> bool:
-    if not are_all_history_files_created(date, run_id):
+def r0_to_dl1_step_finished_for_run(run_id: int) -> bool:
+    if not are_all_history_files_created(run_id):
         print(f"All history files for run {run_id:05d} were not created yet.")
         return False
-    prod_id = str(cfg.get("LST1", "PROD_ID"))                                                                           
-    analysis_dir = base_dir / "running_analysis" / date / prod_id
+    prod_id = str(cfg.get("LST1", "PROD_ID"))
+    night_dir = date_to_dir(options.date)
+    analysis_dir = base_dir / "running_analysis" / night_dir / prod_id
     history_files = glob.glob(f"{str(analysis_dir)}/sequence_LST1_{run_id:05d}.????.history")
     for file in history_files:
         rc = Path(file).read_text().splitlines()[-1][-1]
@@ -69,7 +70,7 @@ def get_catB_last_job_id(run_id: int) -> int:
         return job_id
 
 
-def launch_catB_calibration(date: datetime, run_id: int):
+def launch_catB_calibration(run_id: int):
 
     job_id = get_catB_last_job_id(run_id)
     if job_id:
@@ -89,33 +90,30 @@ def launch_catB_calibration(date: datetime, run_id: int):
             log.warning(f"Cat-B job {job_id} (corresponding to run {run_id:05d}) failed.")
 
     else:
-        command = "onsite_create_cat_B_calibration_file"
-        filters = get_calib_filters(run_id) 
+        command = cfg.get("lstchain", "catB_calibration")
+        options.filters = get_calib_filters(run_id) 
         base_dir = Path(cfg.get("LST1", "BASE")).resolve()
         r0_dir = Path(cfg.get("LST1", "R0_DIR")).resolve()
         prod_id = str(cfg.get("LST1", "PROD_ID"))
         night_dir = date_to_dir(date)
         interleaved_dir = Path(options.directory) / night_dir / prod_id / "interleaved"
         log_dir = Path(options.directory) / "log"
-        catA_calib_run = get_last_pedcalib(date)
+        catA_calib_run = get_last_pedcalib(options.date)
         slurm_account = cfg.get("SLURM", "ACCOUNT")
         cmd = ["sbatch", f"--account={slurm_account}", "--parsable",
-            "-o",
-            f"{log_dir}/catB_calibration_{run_id:05d}_%j.out",
-            "-e",
-            f"{log_dir}/catB_calibration_{run_id:05d}_%j.err",
+            "-o", f"{log_dir}/catB_calibration_{run_id:05d}_%j.out",
+            "-e", f"{log_dir}/catB_calibration_{run_id:05d}_%j.err",
             command,
             f"--run_number={run_id}",
             f"--catA_calibration_run={catA_calib_run}",
             f"--base_dir={base_dir}",
             f"--r0-dir={r0_dir}",
             f"--interleaved-dir={interleaved_dir}",
-            f"--filters={filters}",
+            f"--filters={options.filters}",
         ]
         job = sp.run(cmd, encoding="utf-8", capture_output=True, text=True, check=True)
         job_id = job.stdout.strip()
         log.debug(f"Launched Cat-B calibration job {job_id}!")
-
 
 
 def catB_closed_file_exists(run_id: int) -> bool:
@@ -148,20 +146,23 @@ def tailcuts_config_file_exists(run_id: int) -> bool:
         
 def main():
 
-    args = parser.parse_args()
-    
-    date = date_to_dir(args.date)
+    opts = parser.parse_args()
+    options.tel_id = opts.tel_id
+    options.date = set_default_date_if_needed()
+    options.configfile = opts.config.resolve()
+    options.directory = analysis_path(options.tel_id)
+
     run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
-    run_summary = Table.read(run_summary_dir / f"RunSummary_{date}.ecsv")
+    run_summary = Table.read(run_summary_dir / f"RunSummary_{date_to_dir(options.date)}.ecsv")
     data_runs = run_summary[run_summary["run_type"]=="DATA"]
     for run_id in data_runs["run_id"]:
         # first check if the dl1a files are produced
-        if not r0_to_dl1_step_finished_for_run(args.date, run_id):
+        if not r0_to_dl1_step_finished_for_run(run_id):
             log.info(f"The r0_to_dl1 step did not finish yet for run {run_id:05d}. Please try again later.")
         else:
             # launch catB calibration and tailcut finder in parallel
             if not catB_closed_file_exists(run_id):
-                launch_catB_calibration(args.date, run_id)
+                launch_catB_calibration(run_id)
             if not tailcuts_config_file_exists(run_id):
                 launch_tailcuts_finder(run_id)
 
