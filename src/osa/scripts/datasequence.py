@@ -13,8 +13,7 @@ from osa.provenance.capture import trace
 from osa.paths import get_catB_calibration_filename
 from osa.utils.cliopts import data_sequence_cli_parsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import date_to_dir, get_calib_filters
-from osa.nightsummary.extract import get_last_pedcalib
+from osa.utils.utils import date_to_dir
 
 
 __all__ = ["data_sequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
@@ -169,55 +168,6 @@ def r0_to_dl1(
         return 0
 
     analysis_step = AnalysisStage(run=run_str, command_args=cmd, config_file=dl1a_config.name)
-    analysis_step.execute()
-    return analysis_step.rc
-
-
-@trace
-def catB_calibration(run_str: str) -> int:
-    """
-    Prepare and launch the lstchain script that creates the 
-    Category B calibration files. It should be executed runwise,
-    so it is only launched for the first subrun of each run.
-
-    Parameters
-    ----------
-    run_str: str
-
-    Returns
-    -------
-    rc: int
-        Return code of the executed command.
-    """
-    if run_str[-4:] != "0000":
-        log.debug(f"{run_str} is not the first subrun of the run, so the script "
-            "onsite_create_cat_B_calibration_file will not be launched for this subrun.")
-
-        catB_calibration_file = get_catB_calibration_filename(int(run_str[:5]))
-        n = 0
-        n_max = 10
-        while not catB_calibration_file.exists() and n<=n_max:
-            time.sleep(120)
-            n += 1
-        return 0
-
-    command = cfg.get("lstchain", "catB_calibration")
-    options.filters = get_calib_filters(int(run_str[:5])) 
-    base_dir = Path(cfg.get("LST1", "BASE")).resolve()
-    r0_dir = Path(cfg.get("LST1", "R0_DIR")).resolve()
-    catA_calib_run = get_last_pedcalib(options.date)
-    cmd = [
-        command,
-        f"--run_number={run_str[:5]}",
-        f"--catA_calibration_run={catA_calib_run}",
-        f"--base_dir={base_dir}",
-        f"--r0-dir={r0_dir}",
-        f"--filters={options.filters}",
-    ]
-    if options.simulate:
-        return 0
-
-    analysis_step = AnalysisStage(run=run_str, command_args=cmd)
     analysis_step.execute()
     return analysis_step.rc
 
