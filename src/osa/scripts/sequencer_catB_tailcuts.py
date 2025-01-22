@@ -16,17 +16,22 @@ log = myLogger(logging.getLogger())
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-        "-c",                                                                                            
-        "--config",                                                                                      
-        action="store",
-        type=Path,
-        help="Configuration file",
+    "-c",                                                                                            
+    "--config",                                                                                      
+    action="store",
+    type=Path,
+    help="Configuration file",
 )
 parser.add_argument(                                                                                     
-        "-d",                                                                                            
-        "--date",
-        type=valid_date,
-        default=None,
+    "-d",                                                                                            
+    "--date",
+    type=valid_date,
+    default=None,
+)
+parser.add_argument(
+    "tel_id",
+    choices=["ST", "LST1", "LST2", "all"],
+    help="telescope identifier LST1, LST2, ST or all.",
 )
 
 def are_all_history_files_created(run_id: int) -> bool:
@@ -34,9 +39,7 @@ def are_all_history_files_created(run_id: int) -> bool:
     run_summary_file = run_summary_dir / f"RunSummary_{date_to_dir(options.date)}.ecsv"
     run_summary = Table.read(run_summary_file)
     n_subruns = run_summary[run_summary["run_id"] == run_id]["n_subruns"]
-    prod_id = str(cfg.get("LST1", "PROD_ID"))
-    night_dir = date_to_dir(options.date)
-    analysis_dir = base_dir / "running_analysis" / night_dir / prod_id
+    analysis_dir = Path(options.directory)
     history_files = glob.glob(f"{str(analysis_dir)}/sequence_LST1_{run_id:05d}.????.history")
     if len(history_files) == n_subruns:
         return True
@@ -46,11 +49,9 @@ def are_all_history_files_created(run_id: int) -> bool:
 
 def r0_to_dl1_step_finished_for_run(run_id: int) -> bool:
     if not are_all_history_files_created(run_id):
-        print(f"All history files for run {run_id:05d} were not created yet.")
+        log.debug(f"All history files for run {run_id:05d} were not created yet.")
         return False
-    prod_id = str(cfg.get("LST1", "PROD_ID"))
-    night_dir = date_to_dir(options.date)
-    analysis_dir = base_dir / "running_analysis" / night_dir / prod_id
+    analysis_dir = Path(options.directory)
     history_files = glob.glob(f"{str(analysis_dir)}/sequence_LST1_{run_id:05d}.????.history")
     for file in history_files:
         rc = Path(file).read_text().splitlines()[-1][-1]
@@ -94,9 +95,7 @@ def launch_catB_calibration(run_id: int):
         options.filters = get_calib_filters(run_id) 
         base_dir = Path(cfg.get("LST1", "BASE")).resolve()
         r0_dir = Path(cfg.get("LST1", "R0_DIR")).resolve()
-        prod_id = str(cfg.get("LST1", "PROD_ID"))
-        night_dir = date_to_dir(date)
-        interleaved_dir = Path(options.directory) / night_dir / prod_id / "interleaved"
+        interleaved_dir = Path(options.directory) / "interleaved"
         log_dir = Path(options.directory) / "log"
         catA_calib_run = get_last_pedcalib(options.date)
         slurm_account = cfg.get("SLURM", "ACCOUNT")
@@ -151,6 +150,7 @@ def main():
     options.date = set_default_date_if_needed()
     options.configfile = opts.config.resolve()
     options.directory = analysis_path(options.tel_id)
+    options.dl1_prod_id = get_dl1_prod_id()
 
     run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
     run_summary = Table.read(run_summary_dir / f"RunSummary_{date_to_dir(options.date)}.ecsv")
