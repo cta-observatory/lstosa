@@ -3,7 +3,6 @@
 import logging
 import sys
 from pathlib import Path
-import time
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -234,7 +233,7 @@ def dl1ab(run_str: str) -> int:
     if options.simulate:
         return 0
 
-    analysis_step = AnalysisStage(run=run_str, command_args=cmd, config_file=dl1b_config.name)
+    analysis_step = AnalysisStage(run=run_str, command_args=cmd, config_file=config_file.name)
     analysis_step.execute()
     return analysis_step.rc
 

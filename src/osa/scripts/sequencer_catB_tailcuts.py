@@ -1,6 +1,7 @@
 import glob
-import sys
+import re
 import argparse
+import logging
 from pathlib import Path
 from astropy.table import Table
 import subprocess as sp
@@ -8,10 +9,11 @@ import subprocess as sp
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.nightsummary.extract import get_last_pedcalib
-from osa.utils.cliopts import valid_date
+from osa.utils.cliopts import valid_date, set_default_date_if_needed
+from osa.utils.logging import myLogger
 from osa.job import run_sacct, get_sacct_output
-from osa.utils.utils import date_to_dir, get_calib_filters
-from osa.paths import catB_closed_file_exists
+from osa.utils.utils import date_to_dir, get_calib_filters, get_dl1_prod_id
+from osa.paths import catB_closed_file_exists, analysis_path
 
 log = myLogger(logging.getLogger())
 
@@ -118,6 +120,7 @@ def launch_catB_calibration(run_id: int):
 
 def launch_tailcuts_finder(run_id: int):
     command = "lstchain_find_tailcuts"  #cfg.get("lstchain", "tailcuts_finder")
+    slurm_account = cfg.get("SLURM", "ACCOUNT")
     dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
     output_dir = Path(options.directory)
     log_dir = Path(options.directory) / "log"
