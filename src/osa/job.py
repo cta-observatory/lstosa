@@ -350,6 +350,7 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
 
     sbatch_parameters.append(f"--partition={cfg.get('SLURM', f'PARTITION_{sequence.type}')}")
     sbatch_parameters.append(f"--mem-per-cpu={cfg.get('SLURM', f'MEMSIZE_{sequence.type}')}")
+    sbatch_parameters.append(f"--account={cfg.get('SLURM', 'ACCOUNT')}")
 
     return ["#SBATCH " + line for line in sbatch_parameters]
 
@@ -662,7 +663,7 @@ def get_squeue_output(squeue_output: StringIO) -> pd.DataFrame:
     return df
 
 
-def run_sacct() -> StringIO:
+def run_sacct(job_id: str = None) -> StringIO:
     """Run sacct to obtain the job information."""
     if shutil.which("sacct") is None:
         log.warning("No job info available since sacct command is not available")
@@ -677,13 +678,18 @@ def run_sacct() -> StringIO:
         "-o",
         ",".join(FORMAT_SLURM),
     ]
+
+    if job_id:
+        sacct_cmd.append("--jobs")
+        sacct_cmd.append(job_id)
+
     if cfg.get("SLURM", "STARTTIME_DAYS_SACCT"):
         days = int(cfg.get("SLURM", "STARTTIME_DAYS_SACCT"))
         start_date = (datetime.date.today() - datetime.timedelta(days=days)).isoformat()
         sacct_cmd.extend(["--starttime", start_date])
 
     return StringIO(sp.check_output(sacct_cmd).decode())
-
+    
 
 def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
     """
@@ -818,3 +824,12 @@ def update_sequence_state(sequence, filtered_job_info: pd.DataFrame) -> None:
         sequence.exit = "0:15"
     elif any("RUNNING" in job for job in filtered_job_info.State):
         sequence.state = "RUNNING"
+
+
+def job_finished_in_timeout(job_id: str) -> bool:
+    """Return True if the input job_id finished in TIMEOUT state."""
+    job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
+    if job_id and job_status.item() == "TIMEOUT":
+        return True
+    else:
+        return False

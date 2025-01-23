@@ -45,24 +45,25 @@ def drs4_pedestal_command(drs4_pedestal_run_id: int) -> list:
     """Build the create_drs4_pedestal command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     r0_dir = Path(cfg.get("LST1", "R0_DIR")).resolve()
+    command = cfg.get("lstchain", "drs4_baseline")
     return [
-        "onsite_create_drs4_pedestal_file",
-        f"--run_number={drs4_pedestal_run_id}",
-        f"--base_dir={base_dir}",
+        command,
+        "-r", str(drs4_pedestal_run_id),
+        "-b", base_dir,
         f"--r0-dir={r0_dir}",
         "--no-progress",
     ]
-
 
 def calibration_file_command(drs4_pedestal_run_id: int, pedcal_run_id: int) -> list:
     """Build the create_calibration_file command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     r0_dir = Path(cfg.get("LST1", "R0_DIR")).resolve()
+    command = cfg.get("lstchain", "charge_calibration")
     cmd = [
-        "onsite_create_calibration_file",
-        f"--pedestal_run={drs4_pedestal_run_id}",
-        f"--run_number={pedcal_run_id}",
-        f"--base_dir={base_dir}",
+        command,
+        "-p", str(drs4_pedestal_run_id),
+        "-r", str(pedcal_run_id),
+        "-b", base_dir,
         f"--r0-dir={r0_dir}",
     ]
     # In case of problems with trigger tagging:

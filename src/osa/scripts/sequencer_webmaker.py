@@ -20,7 +20,7 @@ from osa.utils.utils import is_day_closed, date_to_iso, date_to_dir
 log = myLogger(logging.getLogger())
 
 
-def html_content(body: str, date: str) -> str:
+def html_content(body: str, date: str, title: str) -> str:
     """Build the HTML content.
 
     Parameters
@@ -43,11 +43,11 @@ def html_content(body: str, date: str) -> str:
         <html xmlns="http://www.w3.org/1999/xhtml">
          <head>
           <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-          <title>OSA Sequencer status</title><link href="osa.css" rel="stylesheet"
+          <title>{title} status</title><link href="osa.css" rel="stylesheet"
           type="text/css" /><style>table{{width:152ex;}}</style>
          </head>
          <body>
-         <h1>OSA processing status</h1>
+         <h1>{title} processing status</h1>
          <p>Processing data from: {date}. Last updated: {time_update} UTC</p>
          {body}
          </body>
@@ -159,7 +159,7 @@ def main():
     directory.mkdir(parents=True, exist_ok=True)
 
     html_file = directory / Path(f"osa_status_{flat_date}.html")
-    html_file.write_text(html_content(html_table, date), encoding="utf-8")
+    html_file.write_text(html_content(html_table, date, "OSA Sequencer"), encoding="utf-8")
 
     log.info("Done")
 

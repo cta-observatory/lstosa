@@ -75,15 +75,15 @@ class AnalysisStage:
         reproduced in subsequent trials.
         """
 
-        if self.command == "lstchain_data_r0_to_dl1":
+        if self.command == cfg.get("lstchain", "r0_to_dl1"):
             self._remove_dl1a_output()
-        elif self.command == "lstchain_dl1ab":
+        elif self.command == cfg.get("lstchain", "dl1ab"):
             self._remove_dl1b_output('dl1_LST-1.Run')
-        elif self.command == "lstchain_check_dl1":
+        elif self.command == cfg.get("lstchain", "check_dl1"):
             self._remove_dl1b_output('datacheck_dl1_LST-1.Run')
-        elif self.command == "onsite_create_calibration_file":
+        elif self.command == cfg.get("lstchain", "charge_calibration"):
             self._remove_calibration()
-        elif self.command == "onsite_create_drs4_pedestal_file":
+        elif self.command == cfg.get("lstchain", "drs4_baseline"):
             self._remove_drs4_baseline()
 
     def _remove_drs4_baseline(self):
@@ -121,9 +121,16 @@ class AnalysisStage:
 
     def _write_checkpoint(self):
         """Write the checkpoint in the history file."""
+        command_to_prod_id = {
+            cfg.get("lstchain", "r0_to_dl1"): options.prod_id,
+            cfg.get("lstchain", "dl1ab"): options.dl1_prod_id,
+            cfg.get("lstchain", "check_dl1"): options.dl1_prod_id,
+            cfg.get("lstchain", "dl1_to_dl2"): options.dl2_prod_id
+        }
+        prod_id = command_to_prod_id.get(self.command)
         history(
             run=self.run,
-            prod_id=options.prod_id,
+            prod_id=prod_id,
             stage=self.command,
             return_code=self.rc,
             history_file=self.history_file,
