@@ -11,6 +11,7 @@ from osa.nightsummary.extract import get_last_pedcalib
 from osa.utils.cliopts import valid_date
 from osa.job import run_sacct, get_sacct_output
 from osa.utils.utils import date_to_dir, get_calib_filters
+from osa.paths import catB_closed_file_exists
 
 log = myLogger(logging.getLogger())
 
@@ -113,11 +114,6 @@ def launch_catB_calibration(run_id: int):
         job = sp.run(cmd, encoding="utf-8", capture_output=True, text=True, check=True)
         job_id = job.stdout.strip()
         log.debug(f"Launched Cat-B calibration job {job_id}!")
-
-
-def catB_closed_file_exists(run_id: int) -> bool:
-    catB_closed_file = Path(options.directory) / f"catB_{run_id:05d}.closed"
-    return catB_closed_file.exists()
 
 
 def launch_tailcuts_finder(run_id: int):

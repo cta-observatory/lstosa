@@ -14,6 +14,7 @@ from osa.paths import get_catB_calibration_filename
 from osa.utils.cliopts import data_sequence_cli_parsing
 from osa.utils.logging import myLogger
 from osa.utils.utils import date_to_dir
+from osa.paths import catB_closed_file_exists
 
 
 __all__ = ["data_sequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]

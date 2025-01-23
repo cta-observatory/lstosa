@@ -394,10 +394,16 @@ def create_longterm_symlink(cherenkov_job_id: str = None):
     else:
         log.warning(f"Job {cherenkov_job_id} (lstchain_cherenkov_transparency) did not finish successfully.")
 
+
 def dl1_datacheck_longterm_file_exits() -> bool:
     """Return true if the longterm DL1 datacheck file was already produced."""
     nightdir = utils.date_to_dir(options.date)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR"))
     longterm_file = longterm_dir / options.prod_id / nightdir / f"DL1_datacheck_{nightdir}.h5"
     return longterm_file.exists()
+
+
+def catB_closed_file_exists(run_id: int) -> bool:
+    catB_closed_file = Path(options.directory) / f"catB_{run_id:05d}.closed"
+    return catB_closed_file.exists()
 
