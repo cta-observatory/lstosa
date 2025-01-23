@@ -74,7 +74,7 @@ def data_sequence(
         if options.no_dl1ab:
             level = 0
             log.info(f"No DL1B are going to be produced. Going to level {level}")
-        else: 
+        else:
             rc = dl1ab(run_str)
             if cfg.getboolean("lstchain", "store_image_dl1ab"):
                 level -= 1
@@ -191,7 +191,6 @@ def dl1ab(run_str: str) -> int:
     # Create a new subdirectory for the dl1ab output
     dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
     dl1ab_subdirectory.mkdir(parents=True, exist_ok=True)
-    dl1b_config = Path(cfg.get("lstchain", "dl1b_config"))
     # DL1a input file from base running_analysis directory
     input_dl1_datafile = Path(options.directory) / f"dl1_LST-1.Run{run_str}.h5"
     # DL1b output file to be stored in the dl1ab subdirectory
@@ -199,11 +198,12 @@ def dl1ab(run_str: str) -> int:
     
     # Prepare and launch the actual lstchain script
     command = cfg.get("lstchain", "dl1ab")
+    config_file = Path(options.directory) / f"dl1ab_Run{run_str[:5]}.json"
     cmd = [
         command,
         f"--input-file={input_dl1_datafile}",
         f"--output-file={output_dl1_datafile}",
-        f"--config={dl1b_config}",
+        f"--config={config_file}",
     ]
     
     if not cfg.getboolean("lstchain", "store_image_dl1ab"):
