@@ -198,14 +198,16 @@ def dl1ab(run_str: str) -> int:
     
     # Prepare and launch the actual lstchain script
     command = cfg.get("lstchain", "dl1ab")
-    config_file = Path(options.directory) / f"dl1ab_Run{run_str[:5]}.json"
-    
-    if not config_file.exists():
-        log.info(
-            f"The dl1b config file was not created yet for run {run_str[:5]}. "
-            "Please try again later."
-        )
-        sys.exit(0)
+    if not cfg.getboolean("lstchain", "apply_standard_dl1b_config"):
+        config_file = Path(options.directory) / f"dl1ab_Run{run_str[:5]}.json"
+        if not config_file.exists():
+            log.info(
+                f"The dl1b config file was not created yet for run {run_str[:5]}. "
+                "Please try again later."
+            )
+            sys.exit(0)
+    else:
+        config_file = Path(cfg.get("lstchain", "dl1b_config"))
 
     cmd = [
         command,
