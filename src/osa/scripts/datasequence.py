@@ -199,6 +199,14 @@ def dl1ab(run_str: str) -> int:
     # Prepare and launch the actual lstchain script
     command = cfg.get("lstchain", "dl1ab")
     config_file = Path(options.directory) / f"dl1ab_Run{run_str[:5]}.json"
+    
+    if not config_file.exists():
+        log.info(
+            f"The dl1b config file was not created yet for run {run_str[:5]}. "
+            "Please try again later."
+        )
+        sys.exit(0)
+
     cmd = [
         command,
         f"--input-file={input_dl1_datafile}",
@@ -210,8 +218,15 @@ def dl1ab(run_str: str) -> int:
         cmd.append("--no-image=True")
 
     if cfg.getboolean("lstchain", "apply_catB_calibration"):
-        catB_calibration_file = get_catB_calibration_filename(int(run_str[:5]))
-        cmd.append(f"--catB-calibration-file={catB_calibration_file}")
+        if catB_closed_file_exists(int(run_str[:5])):
+            catB_calibration_file = get_catB_calibration_filename(int(run_str[:5]))
+            cmd.append(f"--catB-calibration-file={catB_calibration_file}")
+        else:
+            log.info(
+                f"Cat-B calibration did not finish yet for run {run_str[:5]}. "
+                "Please try again later."
+            )
+            sys.exit(0)
 
     if options.simulate:
         return 0
