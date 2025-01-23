@@ -294,6 +294,13 @@ def sequencer_argparser():
         help="Do not check if the gain selection finished correctly (default False)",
     )
     parser.add_argument(
+        "-f",
+        "--force-submit",
+        action="store_true",
+        default=False,
+        help="Force sequencer to submit jobs"
+    )
+    parser.add_argument(
         "tel_id",
         choices=["ST", "LST1", "LST2", "all"],
         help="telescope identifier LST1, LST2, ST or all.",
@@ -313,6 +320,7 @@ def sequencer_cli_parsing():
     options.no_dl2 = opts.no_dl2
     options.no_dl1ab = opts.no_dl1ab
     options.no_gainsel = opts.no_gainsel
+    options.force_submit = opts.force_submit
 
     log.debug(f"the options are {opts}")
 
