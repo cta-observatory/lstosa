@@ -126,7 +126,7 @@ def launch_catB_calibration(run_id: int):
 
 
 def launch_tailcuts_finder(run_id: int):
-    command = "lstchain_find_tailcuts"  #cfg.get("lstchain", "tailcuts_finder")
+    command = cfg.get("lstchain", "tailcuts_finder")
     slurm_account = cfg.get("SLURM", "ACCOUNT")
     input_dir = Path(options.directory)
     output_dir = Path(options.directory)
