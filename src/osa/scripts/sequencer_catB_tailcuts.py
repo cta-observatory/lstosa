@@ -153,6 +153,7 @@ def main():
 
     opts = parser.parse_args()
     options.tel_id = opts.tel_id
+    options.date = opts.date
     options.date = set_default_date_if_needed()
     options.configfile = opts.config.resolve()
     options.directory = analysis_path(options.tel_id)
