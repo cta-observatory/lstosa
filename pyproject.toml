@@ -76,6 +76,7 @@ reprocess_longterm = "osa.scripts.reprocess_longterm:main"
 gain_selection = "osa.scripts.gain_selection:main"
 update_source_catalog = "osa.scripts.update_source_catalog:main"
 gainsel_webmaker = "osa.scripts.gainsel_webmaker:main"
+sequencer_catB_tailcuts = "osa.scripts.sequencer_catB_tailcuts:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
