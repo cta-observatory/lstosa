@@ -12,7 +12,7 @@ from osa.nightsummary.extract import get_last_pedcalib
 from osa.utils.cliopts import valid_date, set_default_date_if_needed
 from osa.utils.logging import myLogger
 from osa.job import run_sacct, get_sacct_output
-from osa.utils.utils import date_to_dir, get_calib_filters, get_dl1_prod_id
+from osa.utils.utils import date_to_dir, get_calib_filters
 from osa.paths import catB_closed_file_exists, analysis_path
 
 log = myLogger(logging.getLogger())
@@ -128,7 +128,7 @@ def launch_catB_calibration(run_id: int):
 def launch_tailcuts_finder(run_id: int):
     command = "lstchain_find_tailcuts"  #cfg.get("lstchain", "tailcuts_finder")
     slurm_account = cfg.get("SLURM", "ACCOUNT")
-    dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
+    input_dir = Path(options.directory)
     output_dir = Path(options.directory)
     log_dir = Path(options.directory) / "log"
     log_file = log_dir / f"tailcuts_finder_{run_id:05d}_%j.log"
@@ -136,7 +136,7 @@ def launch_tailcuts_finder(run_id: int):
         "sbatch", 
         f"--account={slurm_account}",
         command,
-        f"--input-dir={dl1ab_subdirectory}",
+        f"--input-dir={input_dir}",
         f"--run={run_id}",
         f"--output-dir={output_dir}",
         f"--log={log_file}",
@@ -157,7 +157,6 @@ def main():
     options.date = set_default_date_if_needed()
     options.configfile = opts.config.resolve()
     options.directory = analysis_path(options.tel_id)
-    options.dl1_prod_id = get_dl1_prod_id()
 
     if opts.verbose:
         log.setLevel(logging.DEBUG)
