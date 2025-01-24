@@ -122,7 +122,7 @@ def launch_catB_calibration(run_id: int):
         ]
         job = sp.run(cmd, encoding="utf-8", capture_output=True, text=True, check=True)
         job_id = job.stdout.strip()
-        log.debug(f"Launched Cat-B calibration job {job_id}!")
+        log.debug(f"Launched Cat-B calibration job {job_id} for run {run_id}!")
 
 
 def launch_tailcuts_finder(run_id: int):
@@ -133,15 +133,18 @@ def launch_tailcuts_finder(run_id: int):
     log_dir = Path(options.directory) / "log"
     log_file = log_dir / f"tailcuts_finder_{run_id:05d}_%j.log"
     cmd = [
-        "sbatch", 
+        "sbatch", "--parsable",
         f"--account={slurm_account}",
+        "-o", log_file,
         command,
         f"--input-dir={input_dir}",
         f"--run={run_id}",
         f"--output-dir={output_dir}",
-        f"--log={log_file}",
     ]
-    sp.run(cmd, check=True)
+    job = sp.run(cmd, encoding="utf-8", capture_output=True, text=True, check=True)
+    job_id = job.stdout.strip()
+    log.debug(f"Launched lstchain_find_tailcuts job {job_id} for run {run_id}!")
+
 
 
 def tailcuts_config_file_exists(run_id: int) -> bool:
