@@ -32,6 +32,13 @@ parser.add_argument(
     default=None,
 )
 parser.add_argument(
+    "-v",                                                                                      
+    "--verbose",
+    action="store_true",
+    default=False,
+    help="Activate debugging mode.",
+)
+parser.add_argument(
     "tel_id",
     choices=["ST", "LST1", "LST2", "all"],
     help="telescope identifier LST1, LST2, ST or all.",
@@ -150,6 +157,11 @@ def main():
     options.configfile = opts.config.resolve()
     options.directory = analysis_path(options.tel_id)
     options.dl1_prod_id = get_dl1_prod_id()
+
+    if opts.verbose:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
 
     run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
     run_summary = Table.read(run_summary_dir / f"RunSummary_{date_to_dir(options.date)}.ecsv")
