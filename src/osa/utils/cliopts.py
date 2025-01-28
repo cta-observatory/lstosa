@@ -214,7 +214,7 @@ def data_sequence_argparser():
         "--rf-model-path",
         type=Path,
         default=None,
-        help="Path to a the RF models to be used for the DL2 production",
+        help="Path to the RF models for the DL2 production",
     )
     parser.add_argument("run_number", help="Number of the run to be processed")
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
