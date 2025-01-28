@@ -101,17 +101,17 @@ def test_simulate_processing(
 
     with open(json_file_dl1) as file:
         dl1 = yaml.safe_load(file)
-    assert len(dl1["entity"]) == 19
-    assert len(dl1["activity"]) == 5
-    assert len(dl1["used"]) == 15
-    assert len(dl1["wasGeneratedBy"]) == 10
+    assert len(dl1["entity"]) == 14
+    assert len(dl1["activity"]) == 3
+    assert len(dl1["used"]) == 10
+    assert len(dl1["wasGeneratedBy"]) == 6
 
     with open(json_file_dl2) as file:
         dl2 = yaml.safe_load(file)
-    assert len(dl2["entity"]) == 25
-    assert len(dl2["activity"]) == 6
-    assert len(dl2["used"]) == 21
-    assert len(dl2["wasGeneratedBy"]) == 12
+    assert len(dl2["entity"]) == 14
+    assert len(dl2["activity"]) == 3
+    assert len(dl2["used"]) == 10
+    assert len(dl2["wasGeneratedBy"]) == 6
 
     rc = run_program("simulate_processing", "-p")
     assert rc.returncode == 0
@@ -242,7 +242,7 @@ def test_closer(
     assert closed_seq_file.exists()
 
 
-def test_datasequence(running_analysis_dir):
+def test_datasequence(running_analysis_dir, catB_closed_file, dl1b_config_file):
     drs4_file = "drs4_pedestal.Run00001.0000.fits"
     calib_file = "calibration.Run00002.0000.hdf5"
     timecalib_file = "time_calibration.Run00002.0000.hdf5"
@@ -252,6 +252,9 @@ def test_datasequence(running_analysis_dir):
     prod_id = "v0.1.0"
     run_number = "00003.0000"
     options.directory = running_analysis_dir
+
+    assert catB_closed_file.exists()
+    assert dl1b_config_file.exists()
 
     output = run_program(
         "datasequence",

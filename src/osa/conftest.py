@@ -581,3 +581,37 @@ def gain_selection_flag_file(osa_dir):
     file = GainSel_dir / "GainSelFinished.txt"
     file.touch()
     return file
+
+
+@pytest.fixture(scope="session")
+def catB_closed_file(running_analysis_dir):
+
+    catB_closed_file = running_analysis_dir / "catB_00003.closed"
+    catB_closed_file.touch()
+    return catB_closed_file
+
+
+@pytest.fixture(scope="session")
+def catB_calib_base_dir(monitoring_dir):
+
+    catB_calib_base_dir = monitoring_dir / "PixelCalibration" / "Cat-B"
+    catB_calib_base_dir.mkdir(parents=True, exist_ok=True)
+    return catB_calib_base_dir
+
+
+@pytest.fixture(scope="session")
+def catB_calibration_file(catB_calib_dir):
+
+    catB_calib_dir = catB_calib_base_dir / "calibration" / night_dir / prod_id
+    catB_calib_file = catB_calib_dir / f"cat_B_calibration_filters_52.Run00003.h5"
+    catB_calib_file.touch()
+    return catB_calib_file
+
+
+@pytest.fixture(scope="session")
+def dl1b_config_file(running_analysis_dir):
+
+    config_file = running_analysis_dir / f"dl1ab_Run00003.json"
+    config_file.touch()
+    return config_file
+

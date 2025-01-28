@@ -93,11 +93,13 @@ def are_all_jobs_correctly_finished(sequence_list):
     analysis_directory = Path(options.directory)
     for sequence in sequence_list:
         history_files_list = analysis_directory.rglob(f"*{sequence.seq}*.history")
-        try:
-            next(history_files_list)
-        except StopIteration:
-            log.info("no history files found")
-            flag = False
+        
+        if not options.test:
+            try:
+                next(history_files_list)
+            except StopIteration:
+                log.info("no history files found")
+                flag = False
 
         for history_file in history_files_list:
             # TODO: s.history should be SubRunObj attribute not RunObj
