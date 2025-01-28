@@ -45,6 +45,7 @@ parser.add_argument(
 )
 
 def are_all_history_files_created(run_id: int) -> bool:
+    """Check if all the history files (one per subrun) were created for a given run."""
     run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
     run_summary_file = run_summary_dir / f"RunSummary_{date_to_dir(options.date)}.ecsv"
     run_summary = Table.read(run_summary_file)
@@ -58,6 +59,10 @@ def are_all_history_files_created(run_id: int) -> bool:
 
 
 def r0_to_dl1_step_finished_for_run(run_id: int) -> bool:
+    """
+    Check if the step r0_to_dl1 finished successfully 
+    for a given run by looking the history files.
+    """
     if not are_all_history_files_created(run_id):
         log.debug(f"All history files for run {run_id:05d} were not created yet.")
         return False
@@ -82,7 +87,11 @@ def get_catB_last_job_id(run_id: int) -> int:
 
 
 def launch_catB_calibration(run_id: int):
-
+    """
+    Launch the Cat-B calibration script for a given run if the Cat-B calibration 
+    file has not been created yet. If the Cat-B calibration script was launched
+    before and it finished successfully, it creates a catB_{run}.closed file.
+    """
     job_id = get_catB_last_job_id(run_id)
     if job_id:
         job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
@@ -130,6 +139,10 @@ def launch_catB_calibration(run_id: int):
 
 
 def launch_tailcuts_finder(run_id: int):
+    """
+    Launch the lstchain script to calculate the correct
+    tailcuts to use for a given run. 
+    """
     command = cfg.get("lstchain", "tailcuts_finder")
     slurm_account = cfg.get("SLURM", "ACCOUNT")
     input_dir = Path(options.directory)
@@ -152,12 +165,17 @@ def launch_tailcuts_finder(run_id: int):
 
 
 def tailcuts_config_file_exists(run_id: int) -> bool:
+    """Check if the config file created by the tailcuts finder script already exists."""
     tailcuts_config_file = Path(options.directory) / f"dl1ab_Run{run_id:05d}.json"
     return tailcuts_config_file.exists()
     
         
 def main():
-
+    """
+    Main script to be called as cron job. It launches the Cat-B calibration script 
+    and the tailcuts finder script for each run of the corresponding date, and creates
+    the catB_{run}.closed files if Cat-B calibration has finished successfully.
+    """ 
     opts = parser.parse_args()
     options.tel_id = opts.tel_id
     options.date = opts.date
