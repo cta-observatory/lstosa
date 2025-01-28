@@ -22,8 +22,13 @@ from osa.job import (
     get_squeue_output,
     run_sacct,
     run_squeue,
+    are_all_jobs_correctly_finished,
 )
-from osa.nightsummary.extract import build_sequences
+from osa.nightsummary.extract import (
+    build_sequences,
+    extract_runs,
+    extract_sequences
+)
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import analysis_path
 from osa.report import start
@@ -115,7 +120,7 @@ def single_process(telescope):
             log.info(f"Sequencer is still running for date {date_to_iso(options.date)}. Try again later.")
             sys.exit(0)
 
-        elif is_sequencer_completed(options.date) and not options.force_submit:
+        if is_sequencer_completed(options.date) and not options.force_submit:
             log.info(f"Sequencer already finished for date {date_to_iso(options.date)}. Exiting")
             sys.exit(0)
 
@@ -340,20 +345,14 @@ def is_sequencer_completed(date: datetime.datetime) -> bool:
     """Check if the jobs launched by sequencer are already completed."""
     summary_table = run_summary_table(date)
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
-    sacct_output = run_sacct()
-    sacct_info = get_sacct_output(sacct_output)
+    run_list = extract_runs(data_runs)
+    sequence_list = extract_sequences(options.date, run_list)
 
-    for run in data_runs["run_id"]:
-        jobs_run = sacct_info[sacct_info["JobName"]==f"LST1_{run:05d}"]
-        if len(jobs_run["JobID"].unique())>1:
-            last_job_id = sorted(jobs_run["JobID"].unique())[-1]
-            jobs_run = sacct_info[sacct_info["JobID"]==last_job_id]
-        incomplete_jobs = jobs_run[(jobs_run["State"] != "COMPLETED")]
-        if len(jobs_run) == 0 or len(incomplete_jobs) != 0:
-            return False
-
-    return True
-
+    if are_all_jobs_correctly_finished(sequence_list):
+        return True
+    else:
+        log.info("Jobs did not correctly/yet finish")
+        return False
 
 def timeout_in_sequencer(date: datetime.datetime) -> bool:
     """Check if any of the jobs launched by sequencer finished in timeout."""
