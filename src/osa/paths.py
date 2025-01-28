@@ -407,3 +407,12 @@ def catB_closed_file_exists(run_id: int) -> bool:
     catB_closed_file = Path(options.directory) / f"catB_{run_id:05d}.closed"
     return catB_closed_file.exists()
 
+
+def catB_calibration_file_exists(run_id: int) -> bool:
+    catB_calib_base_dir = Path(cfg.get("LST1","CAT_B_CALIB_BASE"))
+    prod_id = utils.get_lstchain_version()
+    night_dir = utils.date_to_dir(options.date)
+    filters = utils.get_calib_filters(run_id)
+    catB_calib_dir = catB_calib_base_dir / "calibration" / night_dir / prod_id 
+    catB_calib_file = catB_calib_dir / f"cat_B_calibration_filters_{filters}.Run{run_id:05d}.h5"
+    return catB_calib_file.exists()

@@ -13,7 +13,7 @@ from osa.utils.cliopts import valid_date, set_default_date_if_needed
 from osa.utils.logging import myLogger
 from osa.job import run_sacct, get_sacct_output
 from osa.utils.utils import date_to_dir, get_calib_filters
-from osa.paths import catB_closed_file_exists, analysis_path
+from osa.paths import catB_closed_file_exists, catB_calibration_file_exists, analysis_path
 
 log = myLogger(logging.getLogger())
 
@@ -101,6 +101,10 @@ def launch_catB_calibration(run_id: int):
             log.warning(f"Cat-B job {job_id} (corresponding to run {run_id:05d}) failed.")
 
     else:
+        if catB_calibration_file_exists(run_id):
+            log.info(f"Cat-B calibration file already produced for run {run_id:05d}.")
+            sys.exit(0)
+
         command = cfg.get("lstchain", "catB_calibration")
         options.filters = get_calib_filters(run_id) 
         base_dir = Path(cfg.get("LST1", "BASE")).resolve()
