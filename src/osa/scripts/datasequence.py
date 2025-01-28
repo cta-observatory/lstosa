@@ -205,7 +205,7 @@ def dl1ab(run_str: str) -> int:
                 f"The dl1b config file was not created yet for run {run_str[:5]}. "
                 "Please try again later."
             )
-            sys.exit(0)
+            sys.exit(1)
     else:
         config_file = Path(cfg.get("lstchain", "dl1b_config"))
 
@@ -228,7 +228,7 @@ def dl1ab(run_str: str) -> int:
                 f"Cat-B calibration did not finish yet for run {run_str[:5]}. "
                 "Please try again later."
             )
-            sys.exit(0)
+            sys.exit(1)
 
     if options.simulate:
         return 0
