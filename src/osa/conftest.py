@@ -603,7 +603,7 @@ def catB_calib_base_dir(monitoring_dir):
 def catB_calibration_file(catB_calib_dir):
 
     catB_calib_dir = catB_calib_base_dir / "calibration" / nightdir / prod_id
-    catB_calib_file = catB_calib_dir / f"cat_B_calibration_filters_52.Run00003.h5"
+    catB_calib_file = catB_calib_dir / "cat_B_calibration_filters_52.Run00003.h5"
     catB_calib_file.touch()
     return catB_calib_file
 
@@ -611,7 +611,7 @@ def catB_calibration_file(catB_calib_dir):
 @pytest.fixture(scope="session")
 def dl1b_config_file(running_analysis_dir):
 
-    config_file = running_analysis_dir / f"dl1ab_Run00003.json"
+    config_file = running_analysis_dir / "dl1ab_Run00003.json"
     config_file.touch()
     return config_file
 
