@@ -340,7 +340,7 @@ def convert_dec_string(dec_str: str) -> u.Quantity:
         return dec_value*u.deg
 
 
-def get_corresponding_string(list1: list, list2: list) -> dict:
+def get_declinations_dict(list1: list, list2: list) -> dict:
     """Return a dictionary created from two given lists."""
     corresponding_dict = {}
     for index, element in enumerate(list2):
@@ -391,8 +391,8 @@ def get_RF_model(run_str: str) -> Path:
         while closest_dec_culmination > source_culmination:
             # If the culmination angle of the closest declination line is larger than for the source, 
             # remove it from the declination lines list and look for the second closest declination line.
-            corresponding_dict = get_corresponding_string(dec_list, dec_values)
-            declination_str = corresponding_dict[closest_declination]
+            declinations_dict = get_declinations_dict(dec_list, dec_values)
+            declination_str = declinations_dict[closest_declination]
             dec_values.remove(closest_declination)
             dec_list.remove(declination_str)
             closest_declination = min(dec_values, key=lambda x: abs(x - source_dec))
@@ -400,8 +400,8 @@ def get_RF_model(run_str: str) -> Path:
     
     log.debug(f"The declination line to use for the DL2 production is: {closest_declination}")
     
-    corresponding_dict = get_corresponding_string(dec_list, dec_values)
-    declination_str = corresponding_dict[closest_declination]
+    declinations_dict = get_declinations_dict(dec_list, dec_values)
+    declination_str = declinations_dict[closest_declination]
 
     rf_model_path = rf_models_dir / mc_prod / declination_str
 
