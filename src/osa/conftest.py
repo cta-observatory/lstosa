@@ -602,7 +602,7 @@ def catB_calib_base_dir(monitoring_dir):
 @pytest.fixture(scope="session")
 def catB_calibration_file(catB_calib_dir):
 
-    catB_calib_dir = catB_calib_base_dir / "calibration" / night_dir / prod_id
+    catB_calib_dir = catB_calib_base_dir / "calibration" / nightdir / prod_id
     catB_calib_file = catB_calib_dir / f"cat_B_calibration_filters_52.Run00003.h5"
     catB_calib_file.touch()
     return catB_calib_file
