@@ -13,6 +13,7 @@ from gammapy.data import observatory_locations
 from astropy import units as u
 from astropy.table import Table
 from pymongo import MongoClient
+from lstchain.image.cleaning import find_tailcuts
 
 import osa.paths
 from osa.configs import options
@@ -348,6 +349,27 @@ def get_declinations_dict(list1: list, list2: list) -> dict:
     return corresponding_dict
         
 
+def get_nsb_dict(rf_models_dir: Path, rf_models_prefix: str) -> dict:
+    rf_models = sorted(rf_models_dir.glob(f"{rf_models_prefix}*"))
+    pattern = r"nsb_tuning_([\d.]+)"
+    nsb_dict = {
+        float(re.search(pattern, str(rf_model)).group(1)): rf_model
+        for rf_model in rf_models if re.search(pattern, str(rf_model))
+    }
+    return nsb_dict
+
+
+def get_mc_nsb_dir(run_str: str, rf_models_dir: Path) -> Path:
+    input_dir = Path(options.directory)
+    _, additional_nsb, _ = find_tailcuts(input_dir, int(run_str))
+
+    rf_models_prefix = cfg.get("lstchain", "mc_prod") #"20240918_v0.10.12"
+    nsb_dict = get_nsb_dict(rf_models_dir, rf_models_prefix)
+    closest_nsb_value = min(nsb_dict.keys(), key=lambda x: abs(float(x) - additional_nsb))
+
+    return nsb_dict[closest_nsb_value]
+
+
 def get_RF_model(run_str: str) -> Path:
     """Get the path of the RF model to be used in the DL2 production for a given run."""
     run_catalog_dir = Path(cfg.get(options.tel_id, "RUN_CATALOG"))
@@ -356,11 +378,11 @@ def get_RF_model(run_str: str) -> Path:
     run = run_catalog[run_catalog["run_id"]==int(run_str)]
     target_name = run["source_name"]
 
-    rf_models_dir = Path(cfg.get("LST1", "RF_MODELS"))
-    mc_prod = cfg.get("lstchain", "mc_prod")
-
+    rf_models_base_dir = Path(cfg.get("LST1", "RF_MODELS"))
+    rf_models_dir = get_mc_nsb_dir(run_str, rf_models_base_dir)
+    
     if options.test:
-        rf_model_path = rf_models_dir / mc_prod / "dec_2276"
+        rf_model_path = rf_models_dir / "dec_2276"
         return rf_model_path.resolve()
     else:
         tcu_server = cfg.get("database", "tcu_db")
@@ -368,7 +390,7 @@ def get_RF_model(run_str: str) -> Path:
      
     source_culmination = culmination_angle(source_dec)
   
-    dec_list = os.listdir(rf_models_dir / mc_prod)
+    dec_list = os.listdir(rf_models_dir)
 
     # Convert each string in the list to numerical values
     dec_values = [convert_dec_string(dec) for dec in dec_list]
@@ -403,6 +425,6 @@ def get_RF_model(run_str: str) -> Path:
     declinations_dict = get_declinations_dict(dec_list, dec_values)
     declination_str = declinations_dict[closest_declination]
 
-    rf_model_path = rf_models_dir / mc_prod / declination_str
+    rf_model_path = rf_models_dir / declination_str
 
     return rf_model_path
