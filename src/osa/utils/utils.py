@@ -350,6 +350,7 @@ def get_declinations_dict(list1: list, list2: list) -> dict:
         
 
 def get_nsb_dict(rf_models_dir: Path, rf_models_prefix: str) -> dict:
+    """Return a dictionary with the NSB level of the RF models and the path to each model."""
     rf_models = sorted(rf_models_dir.glob(f"{rf_models_prefix}*"))
     pattern = r"nsb_tuning_([\d.]+)"
     nsb_dict = {
@@ -360,6 +361,10 @@ def get_nsb_dict(rf_models_dir: Path, rf_models_prefix: str) -> dict:
 
 
 def get_mc_nsb_dir(run_str: str, rf_models_dir: Path) -> Path:
+    """
+    Return the path of the RF models directory with the NSB level 
+    closest to that of the data for a given run.
+    """
     input_dir = Path(options.directory)
     _, additional_nsb, _ = find_tailcuts(input_dir, int(run_str))
 
