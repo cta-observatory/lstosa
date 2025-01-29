@@ -368,7 +368,7 @@ def get_mc_nsb_dir(run_str: str, rf_models_dir: Path) -> Path:
     input_dir = Path(options.directory)
     _, additional_nsb, _ = find_tailcuts(input_dir, int(run_str))
 
-    rf_models_prefix = cfg.get("lstchain", "mc_prod") #"20240918_v0.10.12"
+    rf_models_prefix = cfg.get("lstchain", "mc_prod")
     nsb_dict = get_nsb_dict(rf_models_dir, rf_models_prefix)
     closest_nsb_value = min(nsb_dict.keys(), key=lambda x: abs(float(x) - additional_nsb))
 
