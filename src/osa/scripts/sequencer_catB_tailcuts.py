@@ -39,6 +39,12 @@ parser.add_argument(
     default=False,
     help="Activate debugging mode.",
 )
+parser.add_argument(                                                                                          
+    "--simulate",
+    action="store_true",
+    default=False,
+    help="Simulate launching of the sequencer_catB_tailcuts script.",
+)
 parser.add_argument(
     "tel_id",
     choices=["ST", "LST1", "LST2", "all"],
@@ -134,10 +140,14 @@ def launch_catB_calibration(run_id: int):
             f"--interleaved-dir={interleaved_dir}",
             f"--filters={options.filters}",
         ]
-        job = sp.run(cmd, encoding="utf-8", capture_output=True, text=True, check=True)
-        job_id = job.stdout.strip()
-        log.debug(f"Launched Cat-B calibration job {job_id} for run {run_id}!")
+        if not options.simulate:
+            job = sp.run(cmd, encoding="utf-8", capture_output=True, text=True, check=True)
+            job_id = job.stdout.strip()
+            log.debug(f"Launched Cat-B calibration job {job_id} for run {run_id}!")
 
+        else: 
+            log.info(f"Simulate launching of the {command} script.")
+            
 
 def launch_tailcuts_finder(run_id: int):
     """
@@ -159,9 +169,13 @@ def launch_tailcuts_finder(run_id: int):
         f"--run={run_id}",
         f"--output-dir={output_dir}",
     ]
-    job = sp.run(cmd, encoding="utf-8", capture_output=True, text=True, check=True)
-    job_id = job.stdout.strip()
-    log.debug(f"Launched lstchain_find_tailcuts job {job_id} for run {run_id}!")
+    if not options.simulate:
+        job = sp.run(cmd, encoding="utf-8", capture_output=True, text=True, check=True)
+        job_id = job.stdout.strip()
+        log.debug(f"Launched lstchain_find_tailcuts job {job_id} for run {run_id}!")
+
+    else: 
+        log.info(f"Simulate launching of the {command} script.")
 
 
 
@@ -179,6 +193,7 @@ def main():
     """ 
     opts = parser.parse_args()
     options.tel_id = opts.tel_id
+    options.simulate = opts.simulate
     options.date = opts.date
     options.date = set_default_date_if_needed()
     options.configfile = opts.config.resolve()
