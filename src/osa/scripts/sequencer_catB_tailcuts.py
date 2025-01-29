@@ -39,7 +39,8 @@ parser.add_argument(
     default=False,
     help="Activate debugging mode.",
 )
-parser.add_argument(                                                                                          
+parser.add_argument(
+    "-s",
     "--simulate",
     action="store_true",
     default=False,
