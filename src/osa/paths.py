@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List
 import subprocess
 import time
-
+import json
 import lstchain
 from astropy.table import Table
 from lstchain.onsite import (find_systematics_correction_file,
@@ -416,3 +416,13 @@ def catB_calibration_file_exists(run_id: int) -> bool:
     catB_calib_dir = catB_calib_base_dir / "calibration" / night_dir / prod_id 
     catB_calib_file = catB_calib_dir / f"cat_B_calibration_filters_{filters}.Run{run_id:05d}.h5"
     return catB_calib_file.exists()
+
+
+def get_dl1_prod_id(config_filename):
+    with open(config_filename) as json_file:
+        data = json.load(json_file)
+        
+    picture_thresh = data["tailcuts_clean_with_pedestal_threshold"]["picture_thresh"]
+    boundary_thresh = data["tailcuts_clean_with_pedestal_threshold"]["boundary_thresh"]
+    
+    return f"tailcut{picture_thresh}{boundary_thresh}"

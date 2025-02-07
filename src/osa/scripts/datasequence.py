@@ -13,7 +13,7 @@ from osa.paths import get_catB_calibration_filename
 from osa.utils.cliopts import data_sequence_cli_parsing
 from osa.utils.logging import myLogger
 from osa.utils.utils import date_to_dir
-from osa.paths import catB_closed_file_exists
+from osa.paths import catB_closed_file_exists, get_dl1_prod_id
 
 
 __all__ = ["data_sequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
@@ -188,13 +188,6 @@ def dl1ab(run_str: str) -> int:
     rc: int
         Return code of the executed command.
     """
-    # Create a new subdirectory for the dl1ab output
-    dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
-    dl1ab_subdirectory.mkdir(parents=True, exist_ok=True)
-    # DL1a input file from base running_analysis directory
-    input_dl1_datafile = Path(options.directory) / f"dl1_LST-1.Run{run_str}.h5"
-    # DL1b output file to be stored in the dl1ab subdirectory
-    output_dl1_datafile = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
     
     # Prepare and launch the actual lstchain script
     command = cfg.get("lstchain", "dl1ab")
@@ -206,8 +199,18 @@ def dl1ab(run_str: str) -> int:
                 "Please try again later."
             )
             sys.exit(1)
+        else: 
+            options.dl1_prod_id = get_dl1_prod_id(config_file)
     else:
         config_file = Path(cfg.get("lstchain", "dl1b_config"))
+    
+    # Create a new subdirectory for the dl1ab output
+    dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
+    dl1ab_subdirectory.mkdir(parents=True, exist_ok=True)
+    # DL1a input file from base running_analysis directory
+    input_dl1_datafile = Path(options.directory) / f"dl1_LST-1.Run{run_str}.h5"
+    # DL1b output file to be stored in the dl1ab subdirectory
+    output_dl1_datafile = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
 
     cmd = [
         command,
