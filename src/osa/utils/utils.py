@@ -6,6 +6,8 @@ import logging
 import os
 import re
 import time
+import tables
+import numpy as np
 from datetime import datetime, timedelta
 from pathlib import Path
 from socket import gethostname
@@ -320,6 +322,12 @@ def get_source_dec_from_TCU(source_name: str, tcu_server: str) -> u.Quantity:
     return source_dec*u.deg
 
 
+def get_median_dec(datacheck_file: Path) -> u.Quantity:
+    """Get the median pointing declination of a given run from the run-wise datacheck file."""
+    with tables.open_file(datacheck_file) as dcf:
+        return np.median(dcf.root.dl1datacheck.cosmics.col('tel_dec'))*u.deg
+
+
 def convert_dec_string(dec_str: str) -> u.Quantity:
     """Return the declination angle in degrees corresponding to a 
     given string of the form "dec_XXXX" or "dec_min_XXXX"."""
@@ -360,13 +368,13 @@ def get_nsb_dict(rf_models_dir: Path, rf_models_prefix: str) -> dict:
     return nsb_dict
 
 
-def get_mc_nsb_dir(run_str: str, rf_models_dir: Path) -> Path:
+def get_mc_nsb_dir(run_id: int, rf_models_dir: Path) -> Path:
     """
     Return the path of the RF models directory with the NSB level 
     closest to that of the data for a given run.
     """
     input_dir = Path(options.directory)
-    _, additional_nsb, _ = find_tailcuts(input_dir, int(run_str))
+    _, additional_nsb, _ = find_tailcuts(input_dir, run_id)
 
     rf_models_prefix = cfg.get("lstchain", "mc_prod")
     nsb_dict = get_nsb_dict(rf_models_dir, rf_models_prefix)
@@ -375,25 +383,20 @@ def get_mc_nsb_dir(run_str: str, rf_models_dir: Path) -> Path:
     return nsb_dict[closest_nsb_value]
 
 
-def get_RF_model(run_str: str) -> Path:
+def get_RF_model(run_id: int) -> Path:
     """Get the path of the RF model to be used in the DL2 production for a given run."""
-    run_catalog_dir = Path(cfg.get(options.tel_id, "RUN_CATALOG"))
-    run_catalog_file = run_catalog_dir / f"RunCatalog_{date_to_dir(options.date)}.ecsv"
-    run_catalog = Table.read(run_catalog_file)
-    run = run_catalog[run_catalog["run_id"]==int(run_str)]
-    target_name = run["source_name"]
+    datacheck_dir = options.directory / options.dl1_prod_id / "datacheck"
+    datacheck_file = datacheck_dir / f"datacheck_dl1_LST-1.Run{run_id:05d}.h5"
+
+    source_dec = get_median_dec(datacheck_file)
+    source_culmination = culmination_angle(source_dec)
 
     rf_models_base_dir = Path(cfg.get("LST1", "RF_MODELS"))
-    rf_models_dir = get_mc_nsb_dir(run_str, rf_models_base_dir)
+    rf_models_dir = get_mc_nsb_dir(run_id, rf_models_base_dir)
     
     if options.test:
         rf_model_path = rf_models_dir / "dec_2276"
         return rf_model_path.resolve()
-    else:
-        tcu_server = cfg.get("database", "tcu_db")
-        source_dec = get_source_dec_from_TCU(target_name[0], tcu_server)
-     
-    source_culmination = culmination_angle(source_dec)
   
     dec_list = os.listdir(rf_models_dir)
 
