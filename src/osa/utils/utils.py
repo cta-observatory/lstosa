@@ -13,8 +13,6 @@ from pathlib import Path
 from socket import gethostname
 from gammapy.data import observatory_locations
 from astropy import units as u
-from astropy.table import Table
-from pymongo import MongoClient
 from lstchain.image.cleaning import find_tailcuts
 
 import osa.paths
@@ -312,14 +310,6 @@ def culmination_angle(dec: u.Quantity) -> u.Quantity:
     location = observatory_locations["cta_north"]
     Lat = location.lat  # latitude of the LST1 site    
     return abs(Lat - dec)
-
-
-def get_source_dec_from_TCU(source_name: str, tcu_server: str) -> u.Quantity:
-    """Get the declination of a given source from the TCU database."""
-    client = MongoClient(tcu_server)
-    collection = client["lst1_config"]["structure_configurations"]
-    source_dec = collection.find_one({"name": source_name})["target"]["source_dec"]
-    return source_dec*u.deg
 
 
 def get_median_dec(datacheck_file: Path) -> u.Quantity:
