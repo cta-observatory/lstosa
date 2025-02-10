@@ -382,8 +382,8 @@ def get_RF_model(run_id: int) -> Path:
     datacheck_dir = options.directory / options.dl1_prod_id / "datacheck"
     datacheck_file = datacheck_dir / f"datacheck_dl1_LST-1.Run{run_id:05d}.h5"
 
-    source_dec = get_median_dec(datacheck_file)
-    source_culmination = culmination_angle(source_dec)
+    pointing_dec = get_median_dec(datacheck_file)
+    pointing_culmination = culmination_angle(pointing_dec)
 
     rf_models_base_dir = Path(cfg.get("LST1", "RF_MODELS"))
     rf_models_dir = get_mc_nsb_dir(run_id, rf_models_base_dir)
@@ -398,28 +398,29 @@ def get_RF_model(run_id: int) -> Path:
     dec_values = [convert_dec_string(dec) for dec in dec_list]
     dec_values = [dec for dec in dec_values if dec is not None]
     
-    closest_declination = min(dec_values, key=lambda x: abs(x - source_dec))
+    closest_declination = min(dec_values, key=lambda x: abs(x - pointing_dec))
     closest_dec_culmination = culmination_angle(closest_declination)
     
     lst_location = observatory_locations["cta_north"]
     lst_latitude = lst_location.lat  # latitude of the LST1 site    
     closest_lines = sorted(sorted(dec_values, key=lambda x: abs(x - lst_latitude))[:2])
 
-    if source_dec < closest_lines[0] or source_dec > closest_lines[1]:
-        # If the source declination is between the two MC lines closest to the latitude of 
+    if pointing_dec < closest_lines[0] or pointing_dec > closest_lines[1]:
+        # If the pointing declination is between the two MC lines closest to the latitude of 
         # the LST1 site, this check is not necessary.
         log.debug(
-            f"The declination closest to {source_dec} is: {closest_declination}."
-            "Checking if the culmination angle is larger than the one of the target source."
+            f"The declination closest to {pointing_dec} is: {closest_declination}."
+            "Checking if the culmination angle is larger than the one of the pointing."
         )
-        while closest_dec_culmination > source_culmination:
-            # If the culmination angle of the closest declination line is larger than for the source, 
-            # remove it from the declination lines list and look for the second closest declination line.
+        while closest_dec_culmination > pointing_culmination:
+            # If the culmination angle of the closest declination line is larger than for
+            # the pointing declination, remove it from the declination lines list and
+            # look for the second closest declination line.
             declinations_dict = get_declinations_dict(dec_list, dec_values)
             declination_str = declinations_dict[closest_declination]
             dec_values.remove(closest_declination)
             dec_list.remove(declination_str)
-            closest_declination = min(dec_values, key=lambda x: abs(x - source_dec))
+            closest_declination = min(dec_values, key=lambda x: abs(x - pointing_dec))
             closest_dec_culmination = culmination_angle(closest_declination)
     
     log.debug(f"The declination line to use for the DL2 production is: {closest_declination}")
