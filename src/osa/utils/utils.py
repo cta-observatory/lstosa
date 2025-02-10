@@ -363,8 +363,8 @@ def get_mc_nsb_dir(run_id: int, rf_models_dir: Path) -> Path:
     Return the path of the RF models directory with the NSB level 
     closest to that of the data for a given run.
     """
-    input_dir = Path(options.directory)
-    _, additional_nsb, _ = find_tailcuts(input_dir, run_id)
+    analysis_dir = options.directory
+    _, additional_nsb, _ = find_tailcuts(analysis_dir, run_id)
 
     rf_models_prefix = cfg.get("lstchain", "mc_prod")
     nsb_dict = get_nsb_dict(rf_models_dir, rf_models_prefix)
