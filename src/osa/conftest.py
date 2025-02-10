@@ -610,8 +610,27 @@ def catB_calibration_file(catB_calib_dir):
 
 @pytest.fixture(scope="session")
 def dl1b_config_file(running_analysis_dir):
-
+    config_information = dedent(
+        """\
+            {
+            "tailcuts_clean_with_pedestal_threshold": {
+                "picture_thresh": 8,
+                "boundary_thresh": 4,
+                "sigma": 2.5,
+                "keep_isolated_pixels": false,
+                "min_number_picture_neighbors": 2,
+                "use_only_main_island": false,
+                "delta_time": 2
+            },
+            "dynamic_cleaning": {
+                "apply": true,
+                "threshold": 267,
+                "fraction_cleaning_intensity": 0.03
+            }
+        }"""
+    )
     config_file = running_analysis_dir / "dl1ab_Run00003.json"
     config_file.touch()
+    config_file.write_text(config_information)
     return config_file
 
