@@ -374,7 +374,11 @@ def get_mc_nsb_dir(run_id: int, rf_models_dir: Path) -> Path:
 
 
 def get_RF_model(run_id: int) -> Path:
-    """Get the path of the RF model to be used in the DL2 production for a given run."""
+    """Get the path of the RF models to be used in the DL2 production for a given run.
+    
+    The choice of the models is based on the adequate additional NSB level
+    and the proper declination line of the MC used for the training.
+    """
     datacheck_dir = options.directory / options.dl1_prod_id / "datacheck"
     datacheck_file = datacheck_dir / f"datacheck_dl1_LST-1.Run{run_id:05d}.h5"
 
@@ -397,9 +401,9 @@ def get_RF_model(run_id: int) -> Path:
     closest_declination = min(dec_values, key=lambda x: abs(x - source_dec))
     closest_dec_culmination = culmination_angle(closest_declination)
     
-    location = observatory_locations["cta_north"]
-    Lat = location.lat  # latitude of the LST1 site    
-    closest_lines = sorted(sorted(dec_values, key=lambda x: abs(x - Lat))[:2])
+    lst_location = observatory_locations["cta_north"]
+    lst_latitude = lst_location.lat  # latitude of the LST1 site    
+    closest_lines = sorted(sorted(dec_values, key=lambda x: abs(x - lst_latitude))[:2])
 
     if source_dec < closest_lines[0] or source_dec > closest_lines[1]:
         # If the source declination is between the two MC lines closest to the latitude of 
