@@ -6,7 +6,6 @@ import logging
 import os
 import re
 import time
-import tables
 import numpy as np
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -328,12 +327,6 @@ def culmination_angle(dec: u.Quantity) -> u.Quantity:
     return abs(Lat - dec)
 
 
-def get_median_dec(datacheck_file: Path) -> u.Quantity:
-    """Get the median pointing declination of a given run from the run-wise datacheck file."""
-    with tables.open_file(datacheck_file) as dcf:
-        return np.median(dcf.root.dl1datacheck.cosmics.col('tel_dec'))*u.deg
-
-
 def convert_dec_string(dec_str: str) -> u.Quantity:
     """Return the declination angle in degrees corresponding to a 
     given string of the form "dec_XXXX" or "dec_min_XXXX"."""
@@ -409,10 +402,11 @@ def get_RF_model(run_id: int) -> Path:
     The choice of the models is based on the adequate additional NSB level
     and the proper declination line of the MC used for the training.
     """
-    datacheck_dir = options.directory / options.dl1_prod_id / "datacheck"
-    datacheck_file = datacheck_dir / f"datacheck_dl1_LST-1.Run{run_id:05d}.h5"
-
-    pointing_dec = get_median_dec(datacheck_file)
+    run_catalog_dir = Path(cfg.get(options.tel_id, "RUN_CATALOG"))
+    run_catalog_file = run_catalog_dir / f"RunCatalog_{date_to_dir(options.date)}.ecsv"
+    run_catalog = Table.read(run_catalog_file)
+    pointing_dec = run_catalog[run_catalog["run_id"]==int(run_str)]["source_dec"]  
+    # the "source_dec" given in the run catalogs is not actually the source declination, but the pointing declination
     pointing_culmination = culmination_angle(pointing_dec)
 
     rf_models_base_dir = Path(cfg.get("LST1", "RF_MODELS"))
