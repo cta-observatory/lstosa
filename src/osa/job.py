@@ -99,6 +99,14 @@ def are_all_jobs_correctly_finished(sequence_list):
     analysis_directory = Path(options.directory)
     for sequence in sequence_list:
         history_files_list = analysis_directory.rglob(f"*{sequence.seq}*.history")
+        
+        if not options.test:
+            try:
+                next(history_files_list)
+            except StopIteration:
+                log.info("no history files found")
+                flag = False
+
         for history_file in history_files_list:
             # TODO: s.history should be SubRunObj attribute not RunObj
             # s.history only working for CALIBRATION sequence (run-wise), since it is
@@ -113,6 +121,12 @@ def are_all_jobs_correctly_finished(sequence_list):
                 log.debug(
                     f"Job {sequence.seq} ({sequence.type}) correctly "
                     f"finished up to DL1ab, but --no-dl2 option selected"
+                )
+                continue
+            if out == 3 and options.no_dl1ab:
+                log.debug(
+                    f"Job {sequence.seq} ({sequence.type}) correctly "
+                    f"finished up to DL1A, but --no-dl1ab option selected"
                 )
                 continue
 
@@ -221,6 +235,8 @@ def historylevel(history_file: Path, data_type: str):
                 # Data sequence
                 elif program == cfg.get("lstchain", "r0_to_dl1"):
                     level = 3 if exit_status == 0 else 4
+                #elif program == cfg.get("lstchain", "catB_calibration"):
+                #    level = 3 if exit_status == 0 else 4
                 elif program == cfg.get("lstchain", "dl1ab"):
                     if (exit_status == 0) and (prod_id == options.dl1_prod_id):
                         log.debug(f"DL1ab prod ID: {options.dl1_prod_id} already produced")
@@ -431,6 +447,8 @@ def data_sequence_job_template(sequence):
         commandargs.extend(("--config", f"{Path(options.configfile).resolve()}"))
     if sequence.type == "DATA" and options.no_dl2:
         commandargs.append("--no-dl2")
+    if sequence.type == "DATA" and options.no_dl1ab:
+        commandargs.append("--no-dl1ab")
 
     commandargs.extend(
         (

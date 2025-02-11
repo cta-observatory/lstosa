@@ -44,23 +44,27 @@ def is_calibration_produced(drs4_pedestal_run_id: int, pedcal_run_id: int) -> bo
 def drs4_pedestal_command(drs4_pedestal_run_id: int) -> list:
     """Build the create_drs4_pedestal command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
+    r0_dir = Path(cfg.get("LST1", "R0_DIR")).resolve()
     command = cfg.get("lstchain", "drs4_baseline")
     return [
         command,
         "-r", str(drs4_pedestal_run_id),
         "-b", base_dir,
+        f"--r0-dir={r0_dir}",
         "--no-progress",
     ]
 
 def calibration_file_command(drs4_pedestal_run_id: int, pedcal_run_id: int) -> list:
     """Build the create_calibration_file command."""
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
+    r0_dir = Path(cfg.get("LST1", "R0_DIR")).resolve()
     command = cfg.get("lstchain", "charge_calibration")
     cmd = [
         command,
         "-p", str(drs4_pedestal_run_id),
         "-r", str(pedcal_run_id),
         "-b", base_dir,
+        f"--r0-dir={r0_dir}",
     ]
     # In case of problems with trigger tagging:
     if cfg.getboolean("lstchain", "use_ff_heuristic_id"):
