@@ -13,7 +13,7 @@ from osa.paths import get_catB_calibration_filename
 from osa.utils.cliopts import data_sequence_cli_parsing
 from osa.utils.logging import myLogger
 from osa.utils.utils import date_to_dir
-from osa.paths import catB_closed_file_exists, get_dl1_prod_id
+from osa.paths import catB_closed_file_exists, get_dl1_prod_id, get_dl2_nsb_prod_id
 
 
 __all__ = ["data_sequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
@@ -295,8 +295,9 @@ def dl1_to_dl2(run_str: str, rf_model_path: Path) -> int:
     -------
     rc: int
     """
+    options.dl2_prod_id = get_dl2_nsb_prod_id(rf_model_path)
     dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
-    dl2_subdirectory = Path(options.directory) / options.dl2_prod_id
+    dl2_subdirectory = Path(options.directory) / options.dl1_prod_id / options.dl2_prod_id
     dl2_config = Path(cfg.get("lstchain", "dl2_config"))
     dl1_file = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
 

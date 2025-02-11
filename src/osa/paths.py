@@ -2,6 +2,7 @@
 
 import logging
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import List
@@ -426,3 +427,12 @@ def get_dl1_prod_id(config_filename):
     boundary_thresh = data["tailcuts_clean_with_pedestal_threshold"]["boundary_thresh"]
     
     return f"tailcut{picture_thresh}{boundary_thresh}"
+
+
+def get_dl2_nsb_prod_id(rf_model: Path) -> str:
+    match = re.search(r'nsb_tuning_\d+\.\d+', str(rf_model))
+    if not match:
+        log.warning(f"No 'nsb_tuning_X.XX' pattern found in the path:\n{rf_model}")
+        sys.exit(1)
+    else:
+        return match.group(0)    
