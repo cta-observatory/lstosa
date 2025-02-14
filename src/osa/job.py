@@ -463,7 +463,7 @@ def data_sequence_job_template(sequence):
         )
     )
 
-    if not options.no_dl2:
+    if not options.no_dl2 and not options.no_dl1ab:
         commandargs.append(f"--rf-model-path={get_RF_model(sequence.run)}")
 
     content = job_header + "\n" + PYTHON_IMPORTS

@@ -120,7 +120,7 @@ def launch_catB_calibration(run_id: int):
     else:
         if catB_calibration_file_exists(run_id):
             log.info(f"Cat-B calibration file already produced for run {run_id:05d}.")
-            sys.exit(0)
+            return 
 
         command = cfg.get("lstchain", "catB_calibration")
         options.filters = get_calib_filters(run_id) 
