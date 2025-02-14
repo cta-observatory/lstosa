@@ -295,10 +295,11 @@ def dl1_to_dl2(run_str: str, rf_model_path: Path) -> int:
     -------
     rc: int
     """
-    options.dl2_prod_id = get_dl2_nsb_prod_id(rf_model_path)
-    dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
-    dl2_subdirectory = Path(options.directory) / options.dl1_prod_id / options.dl2_prod_id
+    nsb_prod_id = get_dl2_nsb_prod_id(rf_model_path)
+    options.dl2_prod_id = options.dl1_prod_id / nsb_prod_id
+    dl2_subdirectory = Path(options.directory) / options.dl2_prod_id
     dl2_config = Path(cfg.get("lstchain", "dl2_config"))
+    dl1ab_subdirectory = Path(options.directory) / options.dl1_prod_id
     dl1_file = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
 
     command = cfg.get("lstchain", "dl1_to_dl2")
