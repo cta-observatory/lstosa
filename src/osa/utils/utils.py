@@ -406,7 +406,7 @@ def get_RF_model(run_id: int) -> Path:
     run_catalog_dir = Path(cfg.get(options.tel_id, "RUN_CATALOG"))
     run_catalog_file = run_catalog_dir / f"RunCatalog_{date_to_dir(options.date)}.ecsv"
     run_catalog = Table.read(run_catalog_file)
-    pointing_dec = run_catalog[run_catalog["run_id"]==run_id]["source_dec"]  
+    pointing_dec = run_catalog[run_catalog["run_id"]==run_id]["source_dec"]*u.deg  
     # the "source_dec" given in the run catalogs is not actually the source declination, but the pointing declination
     pointing_culmination = culmination_angle(pointing_dec)
 
