@@ -5,6 +5,7 @@ import inspect
 import logging
 import os
 import re
+import json
 import time
 import numpy as np
 from datetime import datetime, timedelta
@@ -373,9 +374,7 @@ def get_mc_nsb_dir(run_id: int, rf_models_dir: Path) -> Path:
     Return the path of the RF models directory with the NSB level 
     closest to that of the data for a given run.
     """
-    analysis_dir = options.directory
-    additional_nsb = get_nsb_level(analysis_dir, run_id)
-
+    additional_nsb = get_nsb_level(run_id)
     rf_models_prefix = cfg.get("lstchain", "mc_prod")
     nsb_dict = get_nsb_dict(rf_models_dir, rf_models_prefix)
     closest_nsb_value = min(nsb_dict.keys(), key=lambda x: abs(float(x) - additional_nsb))
@@ -383,16 +382,24 @@ def get_mc_nsb_dir(run_id: int, rf_models_dir: Path) -> Path:
     return nsb_dict[closest_nsb_value]
 
 
-def get_nsb_level(analysis_dir, run_id):
+def get_nsb_level(run_id):
     """Choose the closest NSB among those that are processed with the same cleaning level."""
     analysis_dir = options.directory
-    _, nsb, config = find_tailcuts(analysis_dir, run_id)
-    picture_th = config["picture_thresh"]
+    log_file = analysis_dir / f"log_find_tailcuts_Run{run_id:05d}.log"
+    with open(log_file, "r") as file:
+        log_content = file.read()
+    match = re.search(r"Additional NSB rate \(over dark MC\): ([\d.]+)", log_content)
+    nsb = float(match.group(1))
+    
+    dl1b_config_filename = analysis_dir / f"dl1ab_Run{run_id:05d}.json"
+    with open(dl1b_config_filename) as json_file:
+        dl1b_config = json.load(json_file)
+    picture_th = dl1b_config["tailcuts_clean_with_pedestal_threshold"]["picture_thresh"]
 
     nsb_levels = np.array([0.00, 0.07, 0.14, 0.22, 0.38, 0.50, 0.81, 1.25, 1.76, 2.34])
     pth = np.array([8, 8, 8, 8, 10, 10, 12, 14, 16, 18])
     candidate_nsbs = nsb_levels[pth==picture_th]
-   
+
     diff = abs(candidate_nsbs - nsb)
     return candidate_nsbs[np.argsort(diff)][0]
 
