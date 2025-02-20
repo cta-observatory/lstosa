@@ -5,6 +5,7 @@ import logging
 import shutil
 import subprocess as sp
 import time
+import sys
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent
@@ -20,6 +21,8 @@ from osa.paths import (
     get_drive_file,
     get_summary_file,
     get_pedestal_ids_file,
+    get_dl1_prod_id,
+    get_dl2_nsb_prod_id,
 )
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
@@ -463,8 +466,31 @@ def data_sequence_job_template(sequence):
         )
     )
 
+    if not options.no_dl1ab:
+        if not cfg.getboolean("lstchain", "apply_standard_dl1b_config"):
+            config_file = Path(options.directory) / f"dl1ab_Run{sequence.run:05d}.json"
+            if not config_file.exists():
+                log.error(
+                    f"The dl1b config file was not created yet for run {sequence.run:05d}. "
+                    "Please try again later."
+                )
+                sys.exit(1) 
+            else: 
+                sequence.dl1b_config = config_file
+                sequence.dl1_prod_id = get_dl1_prod_id(config_file)
+        else:
+            sequence.dl1b_config = Path(cfg.get("lstchain", "dl1b_config"))
+            sequence.dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
+
+        commandargs.append(f"--dl1b-config={sequence.dl1b_config}")
+        commandargs.append(f"--dl1-prod-id={sequence.dl1_prod_id}")
+
     if not options.no_dl2 and not options.no_dl1ab:
-        commandargs.append(f"--rf-model-path={get_RF_model(sequence.run)}")
+        sequence.rf_model = get_RF_model(sequence.run)
+        nsb_prod_id = get_dl2_nsb_prod_id(sequence.rf_model)
+        sequence.dl2_prod_id = f"{sequence.dl1_prod_id}/{nsb_prod_id}"
+        commandargs.append(f"--rf-model-path={sequence.rf_model}")
+        commandargs.append(f"--dl2-prod-id={sequence.dl2_prod_id}")
 
     content = job_header + "\n" + PYTHON_IMPORTS
 

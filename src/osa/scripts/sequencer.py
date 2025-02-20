@@ -215,17 +215,26 @@ def get_status_for_sequence(sequence, data_level) -> int:
     number_of_files : int
     """
     if data_level == "DL1AB":
-        directory = options.directory / options.dl1_prod_id
-        files = list(directory.glob(f"dl1_LST-1*{sequence.run}*.h5"))
-
+        try:
+            directory = options.directory / sequence.dl1_prod_id
+            files = list(directory.glob(f"dl1_LST-1*{sequence.run}*.h5"))
+        except AttributeError:
+            return 0
+        
     elif data_level == "DL2":
-        directory = options.directory / options.dl2_prod_id
-        files = list(directory.glob(f"dl2_LST-1*{sequence.run}*.h5"))
-
+        try:
+            directory = options.directory / sequence.dl2_prod_id
+            files = list(directory.glob(f"dl2_LST-1*{sequence.run}*.h5"))
+        except AttributeError:
+            return 0
+        
     elif data_level == "DATACHECK":
-        directory = options.directory / options.dl1_prod_id
-        files = list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5"))
-
+        try:
+            directory = options.directory / sequence.dl1_prod_id
+            files = list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5"))
+        except AttributeError:
+            return 0
+        
     else:
         prefix = cfg.get("PATTERN", f"{data_level}PREFIX")
         suffix = cfg.get("PATTERN", f"{data_level}SUFFIX")

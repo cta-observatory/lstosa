@@ -222,6 +222,24 @@ def data_sequence_argparser():
         default=None,
         help="Path to the RF models for the DL2 production",
     )
+    parser.add_argument(
+        "--dl1b-config",
+        type=Path,
+        default=None,
+        help="Configuration file for the production of DL1b files"
+    )
+    parser.add_argument(
+        "--dl1-prod-id",
+        type=str,
+        default=None,
+        help="Production id of the DL1b files"
+    )
+    parser.add_argument(
+        "--dl2-prod-id",
+        type=str,
+        default=None,
+        help="Production id of the DL2 files"
+    )
     parser.add_argument("run_number", help="Number of the run to be processed")
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
     return parser
@@ -261,6 +279,9 @@ def data_sequence_cli_parsing():
         opts.pedestal_ids_file,
         opts.run_number,
         opts.rf_model_path,
+        opts.dl1b_config,
+        opts.dl1_prod_id,
+        opts.dl2_prod_id
     )
 
 
