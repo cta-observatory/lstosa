@@ -21,7 +21,7 @@ from osa.paths import (
     get_drive_file,
     get_summary_file,
     get_pedestal_ids_file,
-    get_dl1_prod_id,
+    get_dl1_prod_id_and_config,
     get_dl2_nsb_prod_id,
 )
 from osa.utils.iofile import write_to_file
@@ -467,20 +467,9 @@ def data_sequence_job_template(sequence):
     )
 
     if not options.no_dl1ab:
-        if not cfg.getboolean("lstchain", "apply_standard_dl1b_config"):
-            config_file = Path(options.directory) / f"dl1ab_Run{sequence.run:05d}.json"
-            if not config_file.exists():
-                log.error(
-                    f"The dl1b config file was not created yet for run {sequence.run:05d}. "
-                    "Please try again later."
-                )
-                sys.exit(1) 
-            else: 
-                sequence.dl1b_config = config_file
-                sequence.dl1_prod_id = get_dl1_prod_id(config_file)
-        else:
-            sequence.dl1b_config = Path(cfg.get("lstchain", "dl1b_config"))
-            sequence.dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
+        dl1_prod_id, dl1b_config = get_dl1_prod_id_and_config(sequence.run)
+        sequence.dl1_prod_id = dl1_prod_id
+        sequence.dl1b_config = dl1b_config
 
         commandargs.append(f"--dl1b-config={sequence.dl1b_config}")
         commandargs.append(f"--dl1-prod-id={sequence.dl1_prod_id}")

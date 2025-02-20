@@ -23,7 +23,7 @@ from osa.configs.datamodel import Sequence
 from osa.job import sequence_filenames
 from osa.nightsummary import database
 from osa.nightsummary.nightsummary import run_summary_table
-from osa.paths import sequence_calibration_files, get_run_date
+from osa.paths import sequence_calibration_files, get_run_date, get_dl1_prod_id_and_config, get_dl2_prod_id
 from osa.utils.logging import myLogger
 from osa.utils.utils import date_to_iso, date_to_dir
 
@@ -263,6 +263,14 @@ def extract_sequences(date: datetime, run_obj_list: List[RunObj]) -> List[Sequen
                 f"Data sequence {sequence.seq} from run {run.run} whose parent is "
                 f"{sequence.parent} (DRS4 {required_drs4_run} & Ped-Cal {required_pedcal_run})"
             )
+            if not options.no_dl1ab and sequence.type=="DATA":
+                dl1_prod_id, dl1b_config = get_dl1_prod_id_and_config(sequence.run)
+                sequence.dl1_prod_id = dl1_prod_id
+                sequence.dl1b_config = dl1b_config
+
+            if not options.no_dl2 and not options.no_dl1ab and sequence.type=="DATA":
+                sequence.dl2_prod_id = get_dl2_prod_id(sequence.run)
+
             sequence_list.append(sequence)
 
     # Add the calibration file names

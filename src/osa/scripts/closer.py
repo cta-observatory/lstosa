@@ -228,7 +228,7 @@ def post_process_files(seq_list: list):
 
     output_files_set = set(Path(options.directory).rglob("*Run*"))
 
-    DL1AB_RE = re.compile(rf"{options.dl1_prod_id}/dl1.*.(?:h5|hdf5|hdf)")
+    DL1AB_RE = re.compile(r"tailcut.*/dl1.*.(?:h5|hdf5|hdf)")
     MUONS_RE = re.compile(r"muons.*.fits")
     DATACHECK_RE = re.compile(r"datacheck_dl1.*.(?:h5|hdf5|hdf)")
     INTERLEAVED_RE = re.compile(r"interleaved.*.(?:h5|hdf5|hdf)")
@@ -243,27 +243,35 @@ def post_process_files(seq_list: list):
     )
 
     if not options.no_dl2:
-        DL2_RE = re.compile(f"{options.dl2_prod_id}/dl2.*.(?:h5|hdf5|hdf)")
+        DL2_RE = re.compile("tailcut.*/nsb_tuning_.*/dl2.*.(?:h5|hdf5|hdf)")
         pattern_files["DL2"] = DL2_RE
 
     for concept, pattern_re in pattern_files.items():
         log.info(f"Post processing {concept} files, {len(output_files_set)} files left")
 
-        dst_path = destination_dir(concept, create_dir=True)
+        for sequence in seq_list:
+            if sequence.type=="DATA":
+                dst_path = destination_dir(
+                    concept,
+                    create_dir=True,
+                    dl1_prod_id=sequence.dl1_prod_id,
+                    dl2_prod_id=sequence.dl2_prod_id
+                )
 
-        log.debug(f"Checking if {concept} files need to be moved to {dst_path}")
+                log.debug(f"Checking if {concept} files need to be moved to {dst_path}")
 
-        for file_path in output_files_set.copy():
+                for file_path in output_files_set.copy():
 
-            file = str(file_path)
-            # If seqtoclose is set, we only want to close that sequence
-            if options.seqtoclose is not None and options.seqtoclose not in file:
-                continue
+                    file = str(file_path)
 
-            if pattern_found := pattern_re.search(file):
-                log.debug(f"Pattern {concept} found, {pattern_found} in {file}")
-                registered_file = register_found_pattern(file_path, seq_list, concept, dst_path)
-                output_files_set.remove(registered_file)
+                    # If seqtoclose is set, we only want to close that sequence
+                    if options.seqtoclose is not None and options.seqtoclose not in file:
+                        continue
+
+                    if pattern_found := pattern_re.search(file):
+                        log.debug(f"Pattern {concept} found, {pattern_found} in {file}")
+                        registered_file = register_found_pattern(file_path, seq_list, concept, dst_path)
+                        output_files_set.remove(registered_file)
 
 
 def set_closed_with_file():
@@ -335,13 +343,13 @@ def merge_dl1_datacheck(seq_list) -> List[str]:
     log.debug("Merging dl1 datacheck files and producing PDFs")
 
     muons_dir = destination_dir("MUON", create_dir=False)
-    datacheck_dir = destination_dir("DATACHECK", create_dir=False)
     slurm_account = cfg.get("SLURM", "ACCOUNT")
 
     list_job_id = []
 
     for sequence in seq_list:
         if sequence.type == "DATA":
+            datacheck_dir = destination_dir("DATACHECK", create_dir=False, dl1_prod_id=sequence.dl1_prod_id)
             cmd = [
                 "sbatch",
                 "--parsable",
@@ -434,13 +442,17 @@ def get_pattern(data_level) -> Tuple[str, str]:
 def merge_files(sequence_list, data_level="DL2"):
     """Merge DL1b or DL2 h5 files run-wise."""
     log.info(f"Looping over the sequences and merging the {data_level} files")
-
-    data_dir = destination_dir(data_level, create_dir=False)
     pattern, prefix = get_pattern(data_level)
     slurm_account = cfg.get("SLURM", "ACCOUNT")
 
     for sequence in sequence_list:
         if sequence.type == "DATA":
+            data_dir = destination_dir(
+                data_level,
+                create_dir=False,
+                dl1_prod_id=sequence.dl1_prod_id,
+                dl2_prod_id=sequence.dl2_prod_id
+                )
             merged_file = Path(data_dir) / f"{prefix}_LST-1.Run{sequence.run:05d}.h5"
 
             cmd = [

@@ -270,7 +270,7 @@ def datacheck_directory(data_type: str, date: str) -> Path:
     return directory
 
 
-def destination_dir(concept: str, create_dir: bool = True) -> Path:
+def destination_dir(concept: str, create_dir: bool = True, dl1_prod_id: str = None, dl2_prod_id: str = None) -> Path:
     """
     Create final destination directory for each data level.
     See Also osa.utils.register_run_concept_files
@@ -301,7 +301,7 @@ def destination_dir(concept: str, create_dir: bool = True) -> Path:
             Path(cfg.get(options.tel_id, "DL1_DIR"))
             / nightdir
             / options.prod_id
-            / options.dl1_prod_id
+            / dl1_prod_id
             / "datacheck"
         )
     elif concept == "DL1AB":
@@ -309,13 +309,14 @@ def destination_dir(concept: str, create_dir: bool = True) -> Path:
             Path(cfg.get(options.tel_id, "DL1_DIR"))
             / nightdir
             / options.prod_id
-            / options.dl1_prod_id
+            / dl1_prod_id
         )
     elif concept in {"DL2", "DL3"}:
         directory = (
             (Path(cfg.get(options.tel_id, f"{concept}_DIR")) / nightdir)
             / options.prod_id
-        ) / options.dl2_prod_id
+            / dl2_prod_id
+        ) 
     elif concept in {"PEDESTAL", "CALIB", "TIMECALIB"}:
         directory = (
             Path(cfg.get(options.tel_id, f"{concept}_DIR"))
@@ -435,4 +436,28 @@ def get_dl2_nsb_prod_id(rf_model: Path) -> str:
         log.warning(f"No 'nsb_tuning_X.XX' pattern found in the path:\n{rf_model}")
         sys.exit(1)
     else:
-        return match.group(0)    
+        return match.group(0)
+    
+
+def get_dl1_prod_id_and_config(run_id: int) -> str:
+    if not cfg.getboolean("lstchain", "apply_standard_dl1b_config"):
+        dl1b_config_file = Path(options.directory) / f"dl1ab_Run{run_id:05d}.json"
+        if not dl1b_config_file.exists():
+            log.error(
+                f"The dl1b config file was not created yet for run {run_id:05d}. "
+                "Please try again later."
+            )
+            sys.exit(1) 
+        else: 
+            dl1_prod_id = get_dl1_prod_id(dl1b_config_file)
+            return dl1_prod_id, dl1b_config_file
+    else:
+        dl1b_config_file = Path(cfg.get("lstchain", "dl1b_config"))
+        dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
+        return dl1_prod_id, dl1b_config_file
+    
+def get_dl2_prod_id(run_id: int) -> str:
+    dl1_prod_id = get_dl1_prod_id_and_config(run_id)[0]
+    rf_model = utils.get_RF_model(run_id)
+    nsb_prod_id = get_dl2_nsb_prod_id(rf_model)
+    return f"{dl1_prod_id}/{nsb_prod_id}"
