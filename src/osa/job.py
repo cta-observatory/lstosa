@@ -5,7 +5,6 @@ import logging
 import shutil
 import subprocess as sp
 import time
-import sys
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent

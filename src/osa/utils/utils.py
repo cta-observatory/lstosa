@@ -14,7 +14,6 @@ from socket import gethostname
 from gammapy.data import observatory_locations
 from astropy import units as u
 from astropy.table import Table
-from lstchain.image.cleaning import find_tailcuts
 from lstchain.onsite import find_filter_wheels
 
 import osa.paths
