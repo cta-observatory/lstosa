@@ -107,7 +107,7 @@ def are_all_jobs_correctly_finished(sequence_list):
             try:
                 next(history_files_list)
             except StopIteration:
-                log.info("no history files found")
+                log.debug("No history files found.")
                 flag = False
 
         for history_file in history_files_list:
