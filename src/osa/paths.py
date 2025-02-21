@@ -254,7 +254,10 @@ def sequence_calibration_files(sequence_list: List[Sequence]) -> None:
 
 def get_datacheck_files(pattern: str, directory: Path) -> list:
     """Return a list of files matching the pattern."""
-    return sorted(directory.glob(pattern))
+    if pattern=="datacheck_dl1*.pdf":
+        return sorted(directory.glob("tailcut*/datacheck/"+pattern))
+    else:
+        return sorted(directory.glob(pattern))
 
 
 def datacheck_directory(data_type: str, date: str) -> Path:
@@ -262,7 +265,7 @@ def datacheck_directory(data_type: str, date: str) -> Path:
     if data_type in {"PEDESTAL", "CALIB"}:
         directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / date / "pro/log"
     elif data_type == "DL1AB":
-        directory = destination_dir("DATACHECK", create_dir=False)
+        directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / date / options.prod_id
     elif data_type == "LONGTERM":
         directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / options.prod_id / date
     else:
