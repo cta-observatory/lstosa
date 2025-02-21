@@ -18,7 +18,11 @@ from osa.configs.config import cfg
 from osa.report import history
 from osa.utils.logging import myLogger
 from osa.utils.utils import stringify, date_to_dir
-from osa.paths import get_run_date
+from osa.paths import (
+    get_run_date,
+    get_dl1_prod_id_and_config,
+    get_dl2_prod_id
+)
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -115,19 +119,24 @@ class AnalysisStage:
         interleaved_output_file.unlink(missing_ok=True)
 
     def _remove_dl1b_output(self, file_prefix):
-        dl1ab_subdirectory = options.directory / options.dl1_prod_id
+        dl1_prod_id = get_dl1_prod_id_and_config(int(self.run[:5]))[0]
+        dl1ab_subdirectory = options.directory / dl1_prod_id
         output_file = dl1ab_subdirectory / f"{file_prefix}{self.run}.h5"
         output_file.unlink(missing_ok=True)
 
     def _write_checkpoint(self):
         """Write the checkpoint in the history file."""
-        command_to_prod_id = {
-            cfg.get("lstchain", "r0_to_dl1"): options.prod_id,
-            cfg.get("lstchain", "dl1ab"): options.dl1_prod_id,
-            cfg.get("lstchain", "check_dl1"): options.dl1_prod_id,
-            cfg.get("lstchain", "dl1_to_dl2"): options.dl2_prod_id
-        }
-        prod_id = command_to_prod_id.get(self.command)
+        if self.command==cfg.get("lstchain", "r0_to_dl1"):
+            prod_id = options.prod_id
+        elif self.command==cfg.get("lstchain", "dl1ab"):
+            dl1_prod_id = get_dl1_prod_id_and_config(int(self.run[:5]))[0]
+            prod_id = dl1_prod_id
+        elif self.command==cfg.get("lstchain", "check_dl1"):
+            dl1_prod_id = get_dl1_prod_id_and_config(int(self.run[:5]))[0]
+            prod_id = dl1_prod_id
+        elif self.command==cfg.get("lstchain", "dl1_to_dl2"):
+            dl2_prod_id = get_dl2_prod_id(int(self.run[:5]))
+            prod_id = dl2_prod_id
         history(
             run=self.run,
             prod_id=prod_id,
