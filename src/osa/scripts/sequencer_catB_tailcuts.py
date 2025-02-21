@@ -213,9 +213,9 @@ def main():
             log.info(f"The r0_to_dl1 step did not finish yet for run {run_id:05d}. Please try again later.")
         else:
             # launch catB calibration and tailcut finder in parallel
-            if not catB_closed_file_exists(run_id):
+            if cfg.getboolean("lstchain", "apply_catB_calibration") and not catB_closed_file_exists(run_id):
                 launch_catB_calibration(run_id)
-            if not tailcuts_config_file_exists(run_id):
+            if not cfg.getboolean("lstchain", "apply_standard_dl1b_config") and not tailcuts_config_file_exists(run_id):
                 launch_tailcuts_finder(run_id)
 
 
