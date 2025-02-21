@@ -5,6 +5,7 @@ import logging
 import shutil
 import subprocess as sp
 import time
+import re
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent
@@ -21,7 +22,7 @@ from osa.paths import (
     get_summary_file,
     get_pedestal_ids_file,
     get_dl1_prod_id_and_config,
-    get_dl2_nsb_prod_id,
+    get_dl2_prod_id,
 )
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
@@ -219,6 +220,8 @@ def historylevel(history_file: Path, data_type: str):
     exit_status = 0
 
     if history_file.exists():
+        match = re.search(r"sequence_LST1_(\d+)\.\d+", str(history_file))
+        run_id = int(match.group(1)) 
         for line in history_file.read_text().splitlines():
             words = line.split()
             try:
@@ -237,25 +240,25 @@ def historylevel(history_file: Path, data_type: str):
                 # Data sequence
                 elif program == cfg.get("lstchain", "r0_to_dl1"):
                     level = 3 if exit_status == 0 else 4
-                #elif program == cfg.get("lstchain", "catB_calibration"):
-                #    level = 3 if exit_status == 0 else 4
                 elif program == cfg.get("lstchain", "dl1ab"):
-                    if (exit_status == 0) and (prod_id == options.dl1_prod_id):
-                        log.debug(f"DL1ab prod ID: {options.dl1_prod_id} already produced")
+                    dl1_prod_id = get_dl1_prod_id_and_config(run_id)[0]
+                    if (exit_status == 0) and (prod_id == dl1_prod_id):
+                        log.debug(f"DL1ab prod ID: {dl1_prod_id} already produced")
                         level = 2
                     else:
                         level = 3
-                        log.debug(f"DL1ab prod ID: {options.dl1_prod_id} not produced yet")
+                        log.debug(f"DL1ab prod ID: {dl1_prod_id} not produced yet")
                         break
                 elif program == cfg.get("lstchain", "check_dl1"):
                     level = 1 if exit_status == 0 else 2
                 elif program == cfg.get("lstchain", "dl1_to_dl2"):
-                    if (exit_status == 0) and (prod_id == options.dl2_prod_id):
-                        log.debug(f"DL2 prod ID: {options.dl2_prod_id} already produced")
+                    dl2_prod_id = get_dl2_prod_id(run_id)
+                    if (exit_status == 0) and (prod_id == dl2_prod_id):
+                        log.debug(f"DL2 prod ID: {dl2_prod_id} already produced")
                         level = 0
                     else:
                         level = 1
-                        log.debug(f"DL2 prod ID: {options.dl2_prod_id} not produced yet")
+                        log.debug(f"DL2 prod ID: {dl2_prod_id} not produced yet")
 
                 else:
                     log.warning(f"Program name not identified: {program}")
@@ -475,8 +478,7 @@ def data_sequence_job_template(sequence):
 
     if not options.no_dl2 and not options.no_dl1ab:
         sequence.rf_model = get_RF_model(sequence.run)
-        nsb_prod_id = get_dl2_nsb_prod_id(sequence.rf_model)
-        sequence.dl2_prod_id = f"{sequence.dl1_prod_id}/{nsb_prod_id}"
+        sequence.dl2_prod_id = get_dl2_prod_id(sequence.run)
         commandargs.append(f"--rf-model-path={sequence.rf_model}")
         commandargs.append(f"--dl2-prod-id={sequence.dl2_prod_id}")
 

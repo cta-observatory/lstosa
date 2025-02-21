@@ -93,44 +93,6 @@ def get_prod_id():
     return options.prod_id
 
 
-def get_dl1_prod_id():
-    """
-    Get the prod ID for the dl1 products provided
-    it is defined in the configuration file.
-
-    Returns
-    -------
-    dl1_prod_id: string
-    """
-    if not options.dl1_prod_id:
-        if cfg.get("LST1", "DL1_PROD_ID") is not None:
-            options.dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
-        else:
-            options.dl1_prod_id = get_lstchain_version()
-
-    log.debug(f"Getting prod ID for DL1 products: {options.dl1_prod_id}")
-
-    return options.dl1_prod_id
-
-
-def get_dl2_prod_id():
-    """
-
-    Returns
-    -------
-
-    """
-    if not options.dl2_prod_id:
-        if cfg.get("LST1", "DL2_PROD_ID") is not None:
-            options.dl2_prod_id = cfg.get("LST1", "DL2_PROD_ID")
-        else:
-            options.dl2_prod_id = get_lstchain_version()
-
-    log.debug(f"Getting prod ID for DL2 products: {options.dl2_prod_id}")
-
-    return options.dl2_prod_id
-
-
 def create_lock(lockfile) -> bool:
     """
     Create a lock file to prevent multiple instances of the same analysis.
@@ -250,21 +212,6 @@ def time_to_seconds(timestring):
     else:
         raise ValueError("Time format not recognized.")
     return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
-
-
-def set_prod_ids():
-    """Set the product IDs."""
-    options.prod_id = get_prod_id()
-
-    if cfg.get("LST1", "DL1_PROD_ID") is not None:
-        options.dl1_prod_id = get_dl1_prod_id()
-    else:
-        options.dl1_prod_id = options.prod_id
-
-    if cfg.get("LST1", "DL2_PROD_ID") is not None:
-        options.dl2_prod_id = get_dl2_prod_id()
-    else:
-        options.dl2_prod_id = options.prod_id
 
 
 def is_night_time(hour):

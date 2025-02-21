@@ -10,11 +10,8 @@ from osa.configs.config import cfg
 from osa.paths import analysis_path, DEFAULT_CFG
 from osa.utils.logging import myLogger
 from osa.utils.utils import (
-    get_dl1_prod_id,
-    get_dl2_prod_id,
     get_prod_id,
     is_defined,
-    set_prod_ids,
     YESTERDAY,
 )
 
@@ -32,8 +29,6 @@ __all__ = [
     "sequencer_webmaker_argparser",
     "valid_date",
     "get_prod_id",
-    "get_dl1_prod_id",
-    "get_dl2_prod_id",
     "calibration_pipeline_cliparsing",
     "calibration_pipeline_argparser",
     "autocloser_cli_parser",
@@ -130,7 +125,7 @@ def closercliparsing():
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
     options.directory = analysis_path(options.tel_id)
-    set_prod_ids()
+    options.prod_id = get_prod_id()
 
 
 def calibration_pipeline_argparser():
@@ -266,8 +261,7 @@ def data_sequence_cli_parsing():
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
     options.directory = analysis_path(options.tel_id)
-
-    set_prod_ids()
+    options.prod_id = get_prod_id()
 
     return (
         opts.pedcal_file,
@@ -353,7 +347,7 @@ def sequencer_cli_parsing():
 
     log.debug(f"the options are {opts}")
 
-    set_prod_ids()
+    options.prod_id = get_prod_id()
 
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
@@ -419,7 +413,7 @@ def provprocessparsing():
     options.filter = opts.filter
     options.quit = opts.quit
     options.no_dl2 = opts.no_dl2
-    set_prod_ids()
+    options.prod_id = get_prod_id()
 
 
 def simproc_argparser():
@@ -487,11 +481,6 @@ def copy_datacheck_parsing():
     options.date = set_default_date_if_needed()
     options.directory = analysis_path(options.tel_id)
     options.prod_id = get_prod_id()
-
-    if cfg.get("LST1", "DL1_PROD_ID") is not None:
-        options.dl1_prod_id = get_dl1_prod_id()
-    else:
-        options.dl1_prod_id = options.prod_id
 
 
 def sequencer_webmaker_argparser():
