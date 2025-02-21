@@ -51,9 +51,7 @@ def parse_variables(class_instance):
     class_instance.ObservationDate = flat_date
     if class_instance.__name__ in REDUCTION_TASKS:
         muon_dir = dl1_dir / flat_date / options.prod_id / "muons"
-        outdir_dl1 = dl1_dir / flat_date / options.prod_id / options.dl1_prod_id
-        outdir_dl2 = dl2_dir / flat_date / options.prod_id / options.dl2_prod_id
-
+        
     if class_instance.__name__ in ["drs4_pedestal", "calibrate_charge"]:
         # drs4_pedestal_run_id  [0] 1804
         # pedcal_run_id         [1] 1805
@@ -111,6 +109,7 @@ def parse_variables(class_instance):
         run = run_subrun.split(".")[0]
         class_instance.ObservationRun = run
 
+        outdir_dl1 = dl1_dir / flat_date / options.prod_id
         calibration_file = Path(class_instance.args[0]).resolve()
         pedestal_file = Path(class_instance.args[1]).resolve()
         timecalibration_file = Path(class_instance.args[2]).resolve()
@@ -139,7 +138,10 @@ def parse_variables(class_instance):
 
     if class_instance.__name__ == "dl1ab":
         # run_str       [0] 02006.0000
+        # dl1b_config   [1]
+        # dl1_prod_id   [2]
 
+        outdir_dl1 = dl1_dir / flat_date / options.prod_id / class_instance.args[2]
         class_instance.Analysisconfigfile_dl1 = str(Path(configfile_dl1b))
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
         class_instance.StoreImage = cfg.getboolean("lstchain", "store_image_dl1ab")
@@ -149,9 +151,12 @@ def parse_variables(class_instance):
 
     if class_instance.__name__ == "dl1_datacheck":
         # run_str       [0] 02006.0000
+        # dl1b_prod_id  [1]
+
         run_subrun = class_instance.args[0]
         run = run_subrun.split(".")[0]
 
+        outdir_dl1 = dl1_dir / flat_date / options.prod_id / class_instance.args[1]
         class_instance.ObservationRun = run
         class_instance.DL1SubrunDataset = str(
             (outdir_dl1 / f"dl1_LST-1.Run{run_subrun}.h5").resolve()
@@ -171,8 +176,15 @@ def parse_variables(class_instance):
 
     if class_instance.__name__ == "dl1_to_dl2":
         # run_str       [0] 02006.0000
+        # rf_model_path [1]
+        # dl1_prod_id   [2]
+        # dl2_prod_id   [3]
+
         run_subrun = class_instance.args[0]
         run = run_subrun.split(".")[0]
+
+        outdir_dl1 = dl1_dir / flat_date / options.prod_id / class_instance.args[2]
+        outdir_dl2 = dl2_dir / flat_date / options.prod_id / class_instance.args[3]
 
         class_instance.Analysisconfigfile_dl2 = configfile_dl2
         class_instance.ObservationRun = run
