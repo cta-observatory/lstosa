@@ -226,8 +226,6 @@ def post_process_files(seq_list: list):
         list of sequences
     """
 
-    output_files_set = set(Path(options.directory).rglob("*Run*"))
-
     DL1AB_RE = re.compile(r"tailcut.*/dl1.*.(?:h5|hdf5|hdf)")
     MUONS_RE = re.compile(r"muons.*.fits")
     DATACHECK_RE = re.compile(r"datacheck_dl1.*.(?:h5|hdf5|hdf)")
@@ -247,9 +245,10 @@ def post_process_files(seq_list: list):
         pattern_files["DL2"] = DL2_RE
 
     for concept, pattern_re in pattern_files.items():
-        log.info(f"Post processing {concept} files, {len(output_files_set)} files left")
-
         for sequence in seq_list:
+            output_files_set = set(Path(options.directory).rglob(f"*Run{sequence.run:05d}*"))
+            log.info(f"Post processing {concept} files, {len(output_files_set)} files left")
+            
             if sequence.type=="DATA":
                 dst_path = destination_dir(
                     concept,
