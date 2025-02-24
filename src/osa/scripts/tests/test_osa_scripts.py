@@ -65,7 +65,10 @@ def test_simulate_processing(
     run_summary_file,
     r0_data,
     merged_run_summary,
-    drive_log
+    drive_log,
+    dl1b_config_files,
+    tailcuts_log_files,
+    rf_models,
 ):
 
     for file in drs4_time_calibration_files:
@@ -80,6 +83,9 @@ def test_simulate_processing(
     assert run_summary_file.exists()
     assert merged_run_summary.exists()
     assert drive_log.exists()
+    assert rf_models[1].exists()
+    assert dl1b_config_files[0].exists()
+    assert tailcuts_log_files[1].exists()
 
     remove_provlog()
     rc = run_program("simulate_processing", "-p", "--force")
@@ -129,6 +135,9 @@ def test_simulated_sequencer(
     r0_data,
     merged_run_summary,
     gain_selection_flag_file,
+    dl1b_config_files,
+    tailcuts_log_files,
+    rf_models,
 ):
     assert run_summary_file.exists()
     assert run_catalog.exists()
@@ -186,6 +195,9 @@ def test_closer(
     longterm_dir,
     longterm_link_latest_dir,
     daily_datacheck_dl1_files,
+    dl1b_config_files,
+    tailcuts_log_files,
+    rf_models,
 ):
     # First assure that the end of night flag is not set and remove it otherwise
     night_finished_flag = Path(
@@ -246,10 +258,11 @@ def test_datasequence(
     running_analysis_dir,
     run_catalog,
     run_catalog_dir,
-    rf_models_allsky_basedir,
-    rf_model_path,
+    rf_models_base_dir,
+    rf_models,
     catB_closed_file,
-    dl1b_config_file
+    dl1b_config_files,
+    tailcuts_log_files,
 ):
     drs4_file = "drs4_pedestal.Run00001.0000.fits"
     calib_file = "calibration.Run00002.0000.hdf5"
@@ -263,10 +276,10 @@ def test_datasequence(
 
     assert run_catalog_dir.exists()
     assert run_catalog.exists()
-    assert rf_models_allsky_basedir.exists()
-    assert rf_model_path.exists()
+    assert rf_models_base_dir.exists()
+    assert rf_models[1].exists()
     assert catB_closed_file.exists()
-    assert dl1b_config_file.exists()
+    assert dl1b_config_files[0].exists()
 
     output = run_program(
         "datasequence",
@@ -279,6 +292,10 @@ def test_datasequence(
         f"--systematic-correction-file={systematic_correction_file}",
         f"--drive-file={drive_file}",
         f"--run-summary={runsummary_file}",
+        f"--rf-model-path={rf_models[1]}",
+        f"--dl1b-config={dl1b_config_files[0]}",
+        "--dl1-prod-id=tailcut84",
+        "--dl2-prod-id=tailcut84/nsb_tuning_0.14",
         run_number,
         "LST1",
     )
@@ -303,7 +320,15 @@ def test_calibration_pipeline(running_analysis_dir):
     assert output.returncode == 0
 
 
-def test_is_sequencer_successful(run_summary, running_analysis_dir):
+def test_is_sequencer_successful(
+        run_summary,
+        running_analysis_dir,
+        dl1b_config_files,
+        tailcuts_log_files,
+        rf_models,
+        merged_run_summary,
+    ):
+    assert merged_run_summary.exists()
     options.directory = running_analysis_dir
     options.test = True
     seq_tuple = is_finished_check(run_summary)

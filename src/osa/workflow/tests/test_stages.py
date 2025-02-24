@@ -4,7 +4,10 @@ import tenacity
 from osa.configs import options
 
 
-def test_analysis_stage(running_analysis_dir):
+def test_analysis_stage(
+        running_analysis_dir,
+        dl1b_config_files,
+    ):
     from osa.workflow.stages import AnalysisStage
 
     options.simulate = False
@@ -23,7 +26,7 @@ def test_analysis_stage(running_analysis_dir):
         f"--calibration-file={calibration_file}",
         f"--drive-file={drive_file}",
     ]
-    stage = AnalysisStage(run="01000.0001", command_args=cmd)
+    stage = AnalysisStage(run="01807.0001", command_args=cmd)
     assert stage.rc is None
     assert stage.show_command() == " ".join(cmd)
     with pytest.raises(tenacity.RetryError):
@@ -44,7 +47,7 @@ def test_analysis_stage(running_analysis_dir):
         "--input-file=dl1a_file.h5",
         "--output-file=dl1b_file.h5",
     ]
-    stage = AnalysisStage(run="01000.0001", command_args=cmd)
+    stage = AnalysisStage(run="01807.0001", command_args=cmd)
     assert stage.rc is None
     assert stage.show_command() == " ".join(cmd)
     with pytest.raises(tenacity.RetryError):
@@ -61,7 +64,7 @@ def test_analysis_stage(running_analysis_dir):
 
     # Third step
     cmd = ["lstchain_check_dl1", "--input-file=dl1_file.h5", "--batch"]
-    stage = AnalysisStage(run="01000.0001", command_args=cmd)
+    stage = AnalysisStage(run="01807.0001", command_args=cmd)
     assert stage.rc is None
     assert stage.show_command() == " ".join(cmd)
     with pytest.raises(tenacity.RetryError):

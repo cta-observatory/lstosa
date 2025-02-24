@@ -220,7 +220,10 @@ def historylevel(history_file: Path, data_type: str):
     exit_status = 0
 
     if history_file.exists():
-        match = re.search(r"sequence_LST1_(\d+)\.\d+", str(history_file))
+        if data_type == "DATA":
+            match = re.search(r"sequence_LST1_(\d+)\.\d+", str(history_file))
+        elif data_type == "PEDCALIB":
+            match = re.search(r"sequence_LST1_(\d+)\.history", str(history_file))
         run_id = int(match.group(1)) 
         for line in history_file.read_text().splitlines():
             words = line.split()

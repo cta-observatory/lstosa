@@ -327,7 +327,7 @@ def get_mc_nsb_dir(run_id: int, rf_models_dir: Path) -> Path:
 
 def get_nsb_level(run_id):
     """Choose the closest NSB among those that are processed with the same cleaning level."""
-    analysis_dir = options.directory
+    analysis_dir = Path(options.directory)
     log_file = analysis_dir / f"log_find_tailcuts_Run{run_id:05d}.log"
     with open(log_file, "r") as file:
         log_content = file.read()
@@ -362,11 +362,6 @@ def get_RF_model(run_id: int) -> Path:
 
     rf_models_base_dir = Path(cfg.get("LST1", "RF_MODELS"))
     rf_models_dir = get_mc_nsb_dir(run_id, rf_models_base_dir)
-    
-    if options.test:
-        rf_model_path = rf_models_dir / "dec_2276"
-        return rf_model_path.resolve()
-  
     dec_list = os.listdir(rf_models_dir)
 
     # Convert each string in the list to numerical values
@@ -405,4 +400,4 @@ def get_RF_model(run_id: int) -> Path:
 
     rf_model_path = rf_models_dir / declination_str
 
-    return rf_model_path
+    return rf_model_path.resolve()

@@ -10,6 +10,9 @@ def test_significance(
     systematic_correction_files,
     pedestal_ids_file,
     merged_run_summary,
+    dl1b_config_files,
+    tailcuts_log_files,
+    rf_models,
 ):
     output = sp.run(
         ["theta2_significance", "-d", "2020-01-17", "-s", "LST1"],

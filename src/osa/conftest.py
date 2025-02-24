@@ -412,6 +412,9 @@ def sequence_list(
     r0_data,
     pedestal_ids_file,
     merged_run_summary,
+    dl1b_config_files,
+    tailcuts_log_files,
+    rf_models,
 ):
     """Creates a sequence list from a run summary file."""
     options.directory = running_analysis_dir
@@ -624,7 +627,7 @@ def catB_calibration_file(catB_calib_dir):
 
 
 @pytest.fixture(scope="session")
-def dl1b_config_file(running_analysis_dir):
+def dl1b_config_files(running_analysis_dir):
     config_information = dedent(
         """\
             {
@@ -644,8 +647,54 @@ def dl1b_config_file(running_analysis_dir):
             }
         }"""
     )
-    config_file = running_analysis_dir / "dl1ab_Run00003.json"
-    config_file.touch()
-    config_file.write_text(config_information)
-    return config_file
+    config_file1 = running_analysis_dir / "dl1ab_Run01807.json"
+    config_file1.touch()
+    config_file1.write_text(config_information)
+    config_file2 = running_analysis_dir / "dl1ab_Run01808.json"
+    config_file2.touch()
+    config_file2.write_text(config_information)
+    config_file3 = running_analysis_dir / "dl1ab_Run04185.json"
+    config_file3.touch()
+    config_file3.write_text(config_information)
+    return config_file1, config_file2, config_file3
 
+
+@pytest.fixture(scope="session")
+def tailcuts_log_files(running_analysis_dir):
+    log_information = dedent(
+        """\
+    Median of 95% quantile of pedestal charge: 5.416 p.e.
+
+    Additional NSB rate (over dark MC): 0.2221 p.e./ns
+    lstchain_find_tailcuts finished successfully!
+    """
+    )
+    log_file1 = running_analysis_dir / "log_find_tailcuts_Run01807.log"
+    log_file1.touch()
+    log_file1.write_text(log_information)
+    log_file2 = running_analysis_dir / "log_find_tailcuts_Run01808.log"
+    log_file2.touch()
+    log_file2.write_text(log_information)
+    log_file3 = running_analysis_dir / "log_find_tailcuts_Run04185.log"
+    log_file3.touch()
+    log_file3.write_text(log_information)
+    return log_file1, log_file2, log_file3
+
+
+@pytest.fixture(scope="session")
+def rf_models_base_dir(base_test_dir):
+    directory = base_test_dir / "models/AllSky"
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
+@pytest.fixture(scope="session")
+def rf_models(rf_models_base_dir):
+    rf_models_prefix = cfg.get("lstchain", "mc_prod")
+    rf_models_path1 = rf_models_base_dir / f"{rf_models_prefix}nsb_tuning_0.00"
+    rf_models_path1.mkdir(parents=True, exist_ok=True)
+    rf_models_path2 = rf_models_base_dir / f"{rf_models_prefix}nsb_tuning_0.14/dec_2276"
+    rf_models_path2.mkdir(parents=True, exist_ok=True)
+    rf_models_path3 = rf_models_base_dir / f"{rf_models_prefix}nsb_tuning_0.14/dec_4822"
+    rf_models_path3.mkdir(parents=True, exist_ok=True)
+    return rf_models_path1, rf_models_path2, rf_models_path3

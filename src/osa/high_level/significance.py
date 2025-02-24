@@ -26,7 +26,8 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.nightsummary.extract import get_source_list
 from osa.paths import DEFAULT_CFG, destination_dir, analysis_path
-from osa.utils.cliopts import get_prod_id, get_dl2_prod_id
+from osa.utils.cliopts import get_prod_id
+from osa.paths import get_dl2_prod_id
 from osa.utils.logging import myLogger
 from osa.utils.utils import date_to_dir, YESTERDAY
 
@@ -209,7 +210,6 @@ def main(
     flat_date = date_to_dir(date)
     options.tel_id = telescope
     options.prod_id = get_prod_id()
-    options.dl2_prod_id = get_dl2_prod_id()
     options.directory = analysis_path(options.tel_id)
     dl2_directory = Path(cfg.get("LST1", "DL2_DIR"))
     highlevel_directory = destination_dir("HIGH_LEVEL", create_dir=True)
@@ -232,7 +232,7 @@ def main(
                 dl2_directory
                 / flat_date
                 / options.prod_id
-                / options.dl2_prod_id
+                / get_dl2_prod_id(run)
                 / f"dl2_LST-1.Run{run:05d}.h5"
             )
             df = pd.concat([df, pd.read_hdf(input_file, key=dl2_params_lstcam_key)])

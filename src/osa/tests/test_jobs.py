@@ -15,11 +15,13 @@ options.tel_id = "LST1"
 options.prod_id = "v0.1.0"
 
 
-def test_historylevel():
+def test_historylevel(
+        run_catalog,
+        dl1b_config_files,
+        tailcuts_log_files,
+        rf_models,
+):
     from osa.job import historylevel
-
-    options.dl1_prod_id = "tailcut84"
-    options.dl2_prod_id = "model1"
 
     level, rc = historylevel(datasequence_history_file, "DATA")
     assert level == 0
@@ -28,9 +30,6 @@ def test_historylevel():
     level, rc = historylevel(calibration_history_file, "PEDCALIB")
     assert level == 0
     assert rc == 0
-
-    options.dl1_prod_id = "tailcut84"
-    options.dl2_prod_id = "model2"
 
     level, rc = historylevel(datasequence_history_file, "DATA")
     assert level == 1
@@ -140,12 +139,13 @@ def test_create_job_template_scheduler(
     calibration_file,
     run_summary_file,
     pedestal_ids_file,
-    rf_model_path,
+    dl1b_config_files,
+    rf_models,
 ):
     from osa.job import data_sequence_job_template
 
     assert pedestal_ids_file.exists()
-    assert rf_model_path.exists()
+    assert rf_models[1].exists()
 
     options.test = False
     options.simulate = False
@@ -191,6 +191,8 @@ def test_create_job_template_scheduler(
             '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
             '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/DrivePosition_log_20200117.txt',
             '--run-summary={run_summary_file}',
+            '--dl1b-config={dl1b_config_files[0]}',
+            '--dl1-prod-id=tailcut84',
             f'01807.{{subruns:04d}}',
             'LST1'
         ])
@@ -238,6 +240,8 @@ def test_create_job_template_scheduler(
                 '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
                 '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/DrivePosition_log_20200117.txt',
                 '--run-summary={run_summary_file}',
+                '--dl1b-config={dl1b_config_files[1]}',
+                '--dl1-prod-id=tailcut84',
                 f'--pedestal-ids-file={Path.cwd()}/test_osa/test_files0/auxiliary/PedestalFinder/20200117/pedestal_ids_Run01808.{{subruns:04d}}.h5',
                 f'01808.{{subruns:04d}}',
                 'LST1'
@@ -260,7 +264,8 @@ def test_create_job_template_local(
     run_summary_file,
     pedestal_ids_file,
     r0_data,
-    rf_model_path,
+    dl1b_config_files,
+    rf_models,
 ):
     """Check the job file in local mode (assuming no scheduler)."""
     from osa.job import data_sequence_job_template
@@ -275,7 +280,7 @@ def test_create_job_template_local(
         assert file.exists()
 
     assert pedestal_ids_file.exists()
-    assert rf_model_path.exists()
+    assert rf_models[0].exists()
 
     options.test = True
     options.simulate = False
@@ -307,7 +312,10 @@ def test_create_job_template_local(
             '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
             '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/DrivePosition_log_20200117.txt',
             '--run-summary={run_summary_file}',
-            '--rf-model-path={rf_model_path}',
+            '--dl1b-config={dl1b_config_files[0]}',
+            '--dl1-prod-id=tailcut84',
+            '--rf-model-path={rf_models[1]}',
+            '--dl2-prod-id=tailcut84/nsb_tuning_0.14',
             f'01807.{{subruns:04d}}',
             'LST1'
         ])
@@ -341,7 +349,10 @@ def test_create_job_template_local(
                 '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
                 '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/DrivePosition_log_20200117.txt',
                 '--run-summary={run_summary_file}',
-                '--rf-model-path={rf_model_path}',
+                '--dl1b-config={dl1b_config_files[1]}',
+                '--dl1-prod-id=tailcut84',
+                '--rf-model-path={rf_models[1]}',
+                '--dl2-prod-id=tailcut84/nsb_tuning_0.14',
                 f'--pedestal-ids-file={Path.cwd()}/test_osa/test_files0/auxiliary/PedestalFinder/20200117/pedestal_ids_Run01808.{{subruns:04d}}.h5',
                 f'01808.{{subruns:04d}}',
                 'LST1'
