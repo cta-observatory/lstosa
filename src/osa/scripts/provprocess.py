@@ -17,6 +17,7 @@ from osa.provenance.io import provdoc2graph, provdoc2json, provlist2provdoc, rea
 from osa.provenance.utils import get_log_config
 from osa.utils.cliopts import provprocessparsing
 from osa.utils.logging import myLogger
+from osa.paths import get_dl1_prod_id_and_config, get_dl2_prod_id
 
 __all__ = ["copy_used_file", "parse_lines_log", "parse_lines_run", "produce_provenance"]
 
@@ -381,8 +382,9 @@ def produce_provenance(session_log_filename, base_filename):
     """
 
     if options.filter == "calibration" or not options.filter:
+        dl1_prod_id = get_dl1_prod_id_and_config(options.run)[0]
         paths_calibration = define_paths(
-            "calibration_to_dl1", PATH_DL1, options.dl1_prod_id, base_filename
+            "calibration_to_dl1", PATH_DL1, dl1_prod_id, base_filename
         )
         plines_drs4 = parse_lines_run(
             "drs4_pedestal",
@@ -402,7 +404,8 @@ def produce_provenance(session_log_filename, base_filename):
         pass
 
     if options.filter == "r0_to_dl1" or not options.filter:
-        paths_r0_dl1 = define_paths("r0_to_dl1", PATH_DL1, options.dl1_prod_id, base_filename)
+        dl1_prod_id = get_dl1_prod_id_and_config(options.run)[0]
+        paths_r0_dl1 = define_paths("r0_to_dl1", PATH_DL1, dl1_prod_id, base_filename)
         plines_r0 = parse_lines_run(
             "r0_to_dl1",
             read_prov(filename=session_log_filename),
@@ -425,8 +428,9 @@ def produce_provenance(session_log_filename, base_filename):
         produce_provenance_files(plines_r0 + plines_ab[1:] + plines_check[1:], paths_r0_dl1)
 
     if options.filter == "dl1_to_dl2" or not options.filter:
+        dl2_prod_id = get_dl2_prod_id(options.run)
         if not options.no_dl2:
-            paths_dl1_dl2 = define_paths("dl1_to_dl2", PATH_DL2, options.dl2_prod_id, base_filename)
+            paths_dl1_dl2 = define_paths("dl1_to_dl2", PATH_DL2, dl2_prod_id, base_filename)
             plines_dl2 = parse_lines_run(
                 "dl1_to_dl2",
                 read_prov(filename=session_log_filename),
@@ -441,16 +445,18 @@ def produce_provenance(session_log_filename, base_filename):
 
     # create calibration_to_dl1 and calibration_to_dl2 prov files
     if not options.filter:
+        dl1_prod_id = get_dl1_prod_id_and_config(options.run)[0]
         calibration_to_dl1 = define_paths(
-            "calibration_to_dl1", PATH_DL1, options.dl1_prod_id, base_filename
+            "calibration_to_dl1", PATH_DL1, dl1_prod_id, base_filename
         )
         calibration_to_dl1_lines = calibration_lines + dl1_lines[1:]
         lines_dl1 = copy.deepcopy(calibration_to_dl1_lines)
         produce_provenance_files(lines_dl1, calibration_to_dl1)
 
         if not options.no_dl2:
+            dl2_prod_id = get_dl2_prod_id(options.run)
             calibration_to_dl2 = define_paths(
-                "calibration_to_dl2", PATH_DL2, options.dl2_prod_id, base_filename
+                "calibration_to_dl2", PATH_DL2, dl2_prod_id, base_filename
             )
             calibration_to_dl2_lines = calibration_to_dl1_lines + dl1_dl2_lines[1:]
             lines_dl2 = copy.deepcopy(calibration_to_dl2_lines)
