@@ -6,7 +6,6 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from osa.configs import options
-from osa.configs.config import cfg
 from osa.paths import analysis_path, DEFAULT_CFG
 from osa.utils.logging import myLogger
 from osa.utils.utils import (

@@ -5,8 +5,10 @@ directories whenever they are needed.
 """
 
 import logging
+from pathlib import Path
 
 from osa.configs import options
+from osa.configs.config import cfg
 from osa.paths import (
     datacheck_directory,
     get_datacheck_files,
@@ -90,7 +92,7 @@ def get_number_of_runs():
     run-wise DL1 files.
     """
     nightdir = date_to_dir(options.date)
-    dl1_directory = Path(cfg.get("LST1", f"DL1_DIR")) / nightdir / options.prod_id
+    dl1_directory = Path(cfg.get("LST1", "DL1_DIR")) / nightdir / options.prod_id
     list_files = list(dl1_directory.glob("tailcut*/dl1_LST-1.Run?????.h5"))
     return len(list_files)
 
