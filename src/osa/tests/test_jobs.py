@@ -9,6 +9,7 @@ from osa.configs.config import cfg, DEFAULT_CFG
 
 extra_files = Path(os.getenv("OSA_TEST_DATA", "extra"))
 datasequence_history_file = extra_files / "history_files/sequence_LST1_04185.0010.history"
+datasequence_history_file2 = extra_files / "history_files/sequence_LST1_04185.0001.history"
 calibration_history_file = extra_files / "history_files/sequence_LST1_04183.history"
 options.date = "2020-01-17"
 options.tel_id = "LST1"
@@ -31,8 +32,8 @@ def test_historylevel(
     assert level == 0
     assert rc == 0
 
-    level, rc = historylevel(datasequence_history_file, "DATA")
-    assert level == 1
+    level, rc = historylevel(datasequence_history_file2, "DATA")
+    assert level == 3
     assert rc == 0
 
 
@@ -351,7 +352,7 @@ def test_create_job_template_local(
                 '--run-summary={run_summary_file}',
                 '--dl1b-config={dl1b_config_files[1]}',
                 '--dl1-prod-id=tailcut84',
-                '--rf-model-path={rf_models[1]}',
+                '--rf-model-path={rf_models[2]}',
                 '--dl2-prod-id=tailcut84/nsb_tuning_0.14',
                 f'--pedestal-ids-file={Path.cwd()}/test_osa/test_files0/auxiliary/PedestalFinder/20200117/pedestal_ids_Run01808.{{subruns:04d}}.h5',
                 f'01808.{{subruns:04d}}',

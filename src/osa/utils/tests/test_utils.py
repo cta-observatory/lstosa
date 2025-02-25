@@ -88,4 +88,4 @@ def test_get_RF_model(
     from pathlib import Path
 
     expected_model = Path("test_osa/test_files0/models/AllSky/20240918_v0.10.12_allsky_nsb_tuning_0.14/dec_2276")
-    assert get_RF_model(1807) == expected_model
+    assert get_RF_model(1807) == expected_model.resolve()

@@ -85,7 +85,7 @@ def test_simulate_processing(
     assert drive_log.exists()
     assert rf_models[1].exists()
     assert dl1b_config_files[0].exists()
-    assert tailcuts_log_files[1].exists()
+    assert tailcuts_log_files[0].exists()
 
     remove_provlog()
     rc = run_program("simulate_processing", "-p", "--force")
@@ -221,6 +221,7 @@ def test_closer(
     assert longterm_link_latest_dir.exists()
     for check_file in daily_datacheck_dl1_files:
         assert check_file.exists()
+    assert rf_models[2].exists()
 
     run_program("closer", "-y", "-v", "-t", "-d", "2020-01-17", "LST1")
     closed_seq_file = running_analysis_dir / "sequence_LST1_01809.closed"
@@ -240,7 +241,7 @@ def test_closer(
         "datacheck_dl1_LST-1.Run01808.0011.h5"
     )
     assert os.path.exists(
-        "./test_osa/test_files0/DL2/20200117/v0.1.0/model2/dl2_LST-1.Run01808.0011.h5"
+        "./test_osa/test_files0/DL2/20200117/v0.1.0/tailcut84/nsb_tuning_0.14/dl2_LST-1.Run01808.0011.h5"
     )
     # Assert that the link to dl1 and muons files have been created
     assert os.path.islink(
