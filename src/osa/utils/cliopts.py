@@ -388,7 +388,7 @@ def provprocess_argparser():
     )
     parser.add_argument("pedcal_run_id", help="Number of the used pedcal used in the calibration")
     parser.add_argument("run", help="Number of the run whose provenance is to be extracted")
-    parser.add_argument("date", action="store", type=str, help="Observation starting date YYYYMMDD")
+    parser.add_argument("date", action="store", type=valid_date, help="Date (YYYY-MM-DD) of the start of the night")
     parser.add_argument("prod_id", action="store", type=str, help="Production ID")
 
     return parser
@@ -413,6 +413,7 @@ def provprocessparsing():
     options.quit = opts.quit
     options.no_dl2 = opts.no_dl2
     options.prod_id = get_prod_id()
+    options.tel_id = "LST1"
 
 
 def simproc_argparser():
@@ -438,15 +439,15 @@ def simproc_argparser():
         dest="append",
         help="append provenance capture to existing prov.log file",
     )
-    # parser.add_argument(
-    #     "-d",
-    #     "--date",
-    #     action="store",
-    #     type=str,
-    #     dest="date",
-    #     help="observation ending date YYYY-MM-DD [default today]",
-    # )
-    # parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
+    parser.add_argument(
+         "-d",
+         "--date",
+         action="store",
+         type=valid_date,
+         dest="date",
+         help="observation ending date YYYY-MM-DD [default today]",
+    )
+    parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
 
     return parser
 
@@ -460,6 +461,8 @@ def simprocparsing():
     options.provenance = opts.provenance
     options.force = opts.force
     options.append = opts.append
+    options.date = opts.date
+    options.tel_id = opts.tel_id
 
 
 def copy_datacheck_argparser():

@@ -30,7 +30,6 @@ ALL_SCRIPTS = [
 options.date = datetime.datetime.fromisoformat("2020-01-17")
 options.tel_id = "LST1"
 options.prod_id = "v0.1.0"
-options.dl1_prod_id = "tailcut84"
 options.directory = "test_osa/test_files0/running_analysis/20200117/v0.1.0/"
 
 
@@ -69,6 +68,7 @@ def test_simulate_processing(
     dl1b_config_files,
     tailcuts_log_files,
     rf_models,
+    tailcuts_finder_dir,
 ):
 
     for file in drs4_time_calibration_files:
@@ -88,11 +88,11 @@ def test_simulate_processing(
     assert tailcuts_log_files[0].exists()
 
     remove_provlog()
-    rc = run_program("simulate_processing", "-p", "--force")
+    rc = run_program("simulate_processing", "-p", "--force", "-d", "2020-01-17", "LST1")
     assert rc.returncode == 0
 
     prov_dl1_path = Path("./test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84/log")
-    prov_dl2_path = Path("./test_osa/test_files0/DL2/20200117/v0.1.0/model2/log")
+    prov_dl2_path = Path("./test_osa/test_files0/DL2/20200117/v0.1.0/tailcut84/nsb_tuning_0.14/log")
     prov_file_dl1 = prov_dl1_path / "calibration_to_dl1_01807_prov.log"
     prov_file_dl2 = prov_dl2_path / "calibration_to_dl2_01807_prov.log"
     json_file_dl1 = prov_dl1_path / "calibration_to_dl1_01807_prov.json"
@@ -107,23 +107,23 @@ def test_simulate_processing(
 
     with open(json_file_dl1) as file:
         dl1 = yaml.safe_load(file)
-    assert len(dl1["entity"]) == 14
-    assert len(dl1["activity"]) == 3
-    assert len(dl1["used"]) == 10
-    assert len(dl1["wasGeneratedBy"]) == 6
+    assert len(dl1["entity"]) == 42
+    assert len(dl1["activity"]) == 5
+    assert len(dl1["used"]) == 15
+    assert len(dl1["wasGeneratedBy"]) == 10
 
     with open(json_file_dl2) as file:
         dl2 = yaml.safe_load(file)
-    assert len(dl2["entity"]) == 14
-    assert len(dl2["activity"]) == 3
-    assert len(dl2["used"]) == 10
-    assert len(dl2["wasGeneratedBy"]) == 6
+    assert len(dl2["entity"]) == 48
+    assert len(dl2["activity"]) == 6
+    assert len(dl2["used"]) == 21
+    assert len(dl2["wasGeneratedBy"]) == 12
 
-    rc = run_program("simulate_processing", "-p")
+    rc = run_program("simulate_processing", "-p", "-d", "2020-01-17", "LST1")
     assert rc.returncode == 0
 
     remove_provlog()
-    rc = run_program("simulate_processing", "-p")
+    rc = run_program("simulate_processing", "-p", "-d", "2020-01-17", "LST1")
     assert rc.returncode == 0
 
 
@@ -152,7 +152,7 @@ def test_simulated_sequencer(
     for file in systematic_correction_files:
         assert file.exists()
 
-    rc = run_program("sequencer", "-d", "2020-01-17", "-s", "-t", "LST1")
+    rc = run_program("sequencer", "-d", "2020-01-17", "--no-gainsel", "-s", "-t", "LST1")
 
     assert rc.returncode == 0
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M")

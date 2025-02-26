@@ -17,6 +17,7 @@ from osa.provenance.io import provdoc2graph, provdoc2json, provlist2provdoc, rea
 from osa.provenance.utils import get_log_config
 from osa.utils.cliopts import provprocessparsing
 from osa.utils.logging import myLogger
+from osa.utils.utils import date_to_dir
 from osa.paths import get_dl1_prod_id_and_config, get_dl2_prod_id
 
 __all__ = ["copy_used_file", "parse_lines_log", "parse_lines_run", "produce_provenance"]
@@ -111,7 +112,8 @@ def parse_lines_log(filter_cut, calib_runs, run_number):
                 keep = True
             # make session starts with calibration
             if session_id and filter_cut == "all" and not filtered:
-                prov_dict["session_id"] = f"{options.date}{run_number}"
+                nightdir = date_to_dir(options.date)
+                prov_dict["session_id"] = f"{nightdir}{run_number}"
                 prov_dict["name"] = run_number
                 prov_dict["observation_run"] = run_number
                 line = f"{ll[0]}{PROV_PREFIX}{ll[1]}{PROV_PREFIX}{prov_dict}\n"
@@ -337,7 +339,8 @@ def define_paths(grain, start_path, end_path, base_filename):
     paths = {}
 
     # check destination folder exists
-    step_path = Path(start_path) / options.date / options.prod_id / end_path
+    nightdir = date_to_dir(options.date)
+    step_path = Path(start_path) / nightdir / options.prod_id / end_path
     if not step_path.exists():
         log.error(f"Path {step_path} does not exist")
 
@@ -382,7 +385,7 @@ def produce_provenance(session_log_filename, base_filename):
     """
 
     if options.filter == "calibration" or not options.filter:
-        dl1_prod_id = get_dl1_prod_id_and_config(options.run)[0]
+        dl1_prod_id = get_dl1_prod_id_and_config(int(options.run))[0]
         paths_calibration = define_paths(
             "calibration_to_dl1", PATH_DL1, dl1_prod_id, base_filename
         )
@@ -404,7 +407,7 @@ def produce_provenance(session_log_filename, base_filename):
         pass
 
     if options.filter == "r0_to_dl1" or not options.filter:
-        dl1_prod_id = get_dl1_prod_id_and_config(options.run)[0]
+        dl1_prod_id = get_dl1_prod_id_and_config(int(options.run))[0]
         paths_r0_dl1 = define_paths("r0_to_dl1", PATH_DL1, dl1_prod_id, base_filename)
         plines_r0 = parse_lines_run(
             "r0_to_dl1",
@@ -428,7 +431,7 @@ def produce_provenance(session_log_filename, base_filename):
         produce_provenance_files(plines_r0 + plines_ab[1:] + plines_check[1:], paths_r0_dl1)
 
     if options.filter == "dl1_to_dl2" or not options.filter:
-        dl2_prod_id = get_dl2_prod_id(options.run)
+        dl2_prod_id = get_dl2_prod_id(int(options.run))
         if not options.no_dl2:
             paths_dl1_dl2 = define_paths("dl1_to_dl2", PATH_DL2, dl2_prod_id, base_filename)
             plines_dl2 = parse_lines_run(
@@ -445,7 +448,7 @@ def produce_provenance(session_log_filename, base_filename):
 
     # create calibration_to_dl1 and calibration_to_dl2 prov files
     if not options.filter:
-        dl1_prod_id = get_dl1_prod_id_and_config(options.run)[0]
+        dl1_prod_id = get_dl1_prod_id_and_config(int(options.run))[0]
         calibration_to_dl1 = define_paths(
             "calibration_to_dl1", PATH_DL1, dl1_prod_id, base_filename
         )
@@ -454,7 +457,7 @@ def produce_provenance(session_log_filename, base_filename):
         produce_provenance_files(lines_dl1, calibration_to_dl1)
 
         if not options.no_dl2:
-            dl2_prod_id = get_dl2_prod_id(options.run)
+            dl2_prod_id = get_dl2_prod_id(int(options.run))
             calibration_to_dl2 = define_paths(
                 "calibration_to_dl2", PATH_DL2, dl2_prod_id, base_filename
             )

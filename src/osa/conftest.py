@@ -31,8 +31,8 @@ import lstchain
 date = datetime.fromisoformat("2020-01-17")
 nightdir = date_to_dir(date)
 prod_id = "v0.1.0"
-dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
-dl2_prod_id = cfg.get("LST1", "DL2_PROD_ID")
+dl1_prod_id = "tailcut84"
+dl2_prod_id = "tailcut84/nsb_tuning_0.14"
 
 
 @pytest.fixture(scope="session")
@@ -627,7 +627,14 @@ def catB_calibration_file(catB_calib_dir):
 
 
 @pytest.fixture(scope="session")
-def dl1b_config_files(running_analysis_dir):
+def tailcuts_finder_dir(base_test_dir):
+    tailcuts_finder_dir = base_test_dir / "auxiliary" / "TailCuts"
+    tailcuts_finder_dir.mkdir(parents=True, exist_ok=True)
+    return tailcuts_finder_dir
+
+
+@pytest.fixture(scope="session")
+def dl1b_config_files(tailcuts_finder_dir):
     config_information = dedent(
         """\
             {
@@ -647,20 +654,20 @@ def dl1b_config_files(running_analysis_dir):
             }
         }"""
     )
-    config_file1 = running_analysis_dir / "dl1ab_Run01807.json"
+    config_file1 = tailcuts_finder_dir / "dl1ab_Run01807.json"
     config_file1.touch()
     config_file1.write_text(config_information)
-    config_file2 = running_analysis_dir / "dl1ab_Run01808.json"
+    config_file2 = tailcuts_finder_dir / "dl1ab_Run01808.json"
     config_file2.touch()
     config_file2.write_text(config_information)
-    config_file3 = running_analysis_dir / "dl1ab_Run04185.json"
+    config_file3 = tailcuts_finder_dir / "dl1ab_Run04185.json"
     config_file3.touch()
     config_file3.write_text(config_information)
     return config_file1, config_file2, config_file3
 
 
 @pytest.fixture(scope="session")
-def tailcuts_log_files(running_analysis_dir):
+def tailcuts_log_files(tailcuts_finder_dir):
     log_information = dedent(
         """\
     Median of 95% quantile of pedestal charge: 5.416 p.e.
@@ -669,13 +676,13 @@ def tailcuts_log_files(running_analysis_dir):
     lstchain_find_tailcuts finished successfully!
     """
     )
-    log_file1 = running_analysis_dir / "log_find_tailcuts_Run01807.log"
+    log_file1 = tailcuts_finder_dir / "log_find_tailcuts_Run01807.log"
     log_file1.touch()
     log_file1.write_text(log_information)
-    log_file2 = running_analysis_dir / "log_find_tailcuts_Run01808.log"
+    log_file2 = tailcuts_finder_dir / "log_find_tailcuts_Run01808.log"
     log_file2.touch()
     log_file2.write_text(log_information)
-    log_file3 = running_analysis_dir / "log_find_tailcuts_Run04185.log"
+    log_file3 = tailcuts_finder_dir / "log_find_tailcuts_Run04185.log"
     log_file3.touch()
     log_file3.write_text(log_information)
     return log_file1, log_file2, log_file3
