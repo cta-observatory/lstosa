@@ -454,11 +454,11 @@ def get_dl1_prod_id_and_config(run_id: int) -> str:
             sys.exit(1) 
         else: 
             dl1_prod_id = get_dl1_prod_id(dl1b_config_file)
-            return dl1_prod_id, dl1b_config_file
+            return dl1_prod_id, dl1b_config_file.resolve()
     else:
         dl1b_config_file = Path(cfg.get("lstchain", "dl1b_config"))
         dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
-        return dl1_prod_id, dl1b_config_file
+        return dl1_prod_id, dl1b_config_file.resolve()
     
 def get_dl2_prod_id(run_id: int) -> str:
     dl1_prod_id = get_dl1_prod_id_and_config(run_id)[0]
