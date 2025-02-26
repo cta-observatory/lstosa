@@ -101,7 +101,7 @@ def are_all_jobs_correctly_finished(sequence_list):
     flag = True
     analysis_directory = Path(options.directory)
     for sequence in sequence_list:
-        history_files_list = analysis_directory.rglob(f"*{sequence.seq}*.history")
+        history_files_list = analysis_directory.rglob(f"*{sequence.run}*.history")
         
         if not options.test:
             try:

@@ -53,7 +53,7 @@ parser.add_argument(
 
 def are_all_history_files_created(run_id: int) -> bool:
     """Check if all the history files (one per subrun) were created for a given run."""
-    run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
+    run_summary_dir = Path(cfg.get(options.tel_id, "RUN_SUMMARY_DIR"))
     run_summary_file = run_summary_dir / f"RunSummary_{date_to_dir(options.date)}.ecsv"
     run_summary = Table.read(run_summary_file)
     n_subruns = run_summary[run_summary["run_id"] == run_id]["n_subruns"]
@@ -123,8 +123,8 @@ def launch_catB_calibration(run_id: int):
 
         command = cfg.get("lstchain", "catB_calibration")
         options.filters = get_calib_filters(run_id) 
-        base_dir = Path(cfg.get("LST1", "BASE")).resolve()
-        r0_dir = Path(cfg.get("LST1", "R0_DIR")).resolve()
+        base_dir = Path(cfg.get(options.tel_id, "BASE")).resolve()
+        r0_dir = Path(cfg.get(options.tel_id, "R0_DIR")).resolve()
         interleaved_dir = Path(options.directory) / "interleaved"
         log_dir = Path(options.directory) / "log"
         catA_calib_run = get_last_pedcalib(options.date)
@@ -157,7 +157,7 @@ def launch_tailcuts_finder(run_id: int):
     command = cfg.get("lstchain", "tailcuts_finder")
     slurm_account = cfg.get("SLURM", "ACCOUNT")
     input_dir = Path(options.directory)
-    output_dir = Path(options.directory)
+    output_dir = Path(cfg.get(options.tel_id, "TAILCUTS_FINDER_DIR"))
     log_dir = Path(options.directory) / "log"
     log_file = log_dir / f"tailcuts_finder_{run_id:05d}_%j.log"
     cmd = [
@@ -181,7 +181,7 @@ def launch_tailcuts_finder(run_id: int):
 
 def tailcuts_config_file_exists(run_id: int) -> bool:
     """Check if the config file created by the tailcuts finder script already exists."""
-    tailcuts_config_file = Path(options.directory) / f"dl1ab_Run{run_id:05d}.json"
+    tailcuts_config_file = Path(cfg.get(options.tel_id, "TAILCUTS_FINDER_DIR")) / f"dl1ab_Run{run_id:05d}.json"
     return tailcuts_config_file.exists()
     
         
@@ -204,7 +204,7 @@ def main():
     else:
         log.setLevel(logging.INFO)
 
-    run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
+    run_summary_dir = Path(cfg.get(options.tel_id, "RUN_SUMMARY_DIR"))
     run_summary = Table.read(run_summary_dir / f"RunSummary_{date_to_dir(options.date)}.ecsv")
     data_runs = run_summary[run_summary["run_type"]=="DATA"]
     for run_id in data_runs["run_id"]:
