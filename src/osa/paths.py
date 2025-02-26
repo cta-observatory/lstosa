@@ -444,7 +444,8 @@ def get_dl2_nsb_prod_id(rf_model: Path) -> str:
 
 def get_dl1_prod_id_and_config(run_id: int) -> str:
     if not cfg.getboolean("lstchain", "apply_standard_dl1b_config"):
-        dl1b_config_file = Path(options.directory) / f"dl1ab_Run{run_id:05d}.json"
+        tailcuts_finder_dir = Path(cfg.get(options.tel_id, "TAILCUTS_FINDER_DIR"))
+        dl1b_config_file = tailcuts_finder_dir / f"dl1ab_Run{run_id:05d}.json"
         if not dl1b_config_file.exists():
             log.error(
                 f"The dl1b config file was not created yet for run {run_id:05d}. "
