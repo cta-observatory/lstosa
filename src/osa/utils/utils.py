@@ -327,14 +327,14 @@ def get_mc_nsb_dir(run_id: int, rf_models_dir: Path) -> Path:
 
 def get_nsb_level(run_id):
     """Choose the closest NSB among those that are processed with the same cleaning level."""
-    analysis_dir = Path(options.directory)
-    log_file = analysis_dir / f"log_find_tailcuts_Run{run_id:05d}.log"
+    tailcuts_finder_dir = Path(cfg.get(options.tel_id, "TAILCUTS_FINDER_DIR"))
+    log_file = tailcuts_finder_dir / f"log_find_tailcuts_Run{run_id:05d}.log"
     with open(log_file, "r") as file:
         log_content = file.read()
     match = re.search(r"Additional NSB rate \(over dark MC\): ([\d.]+)", log_content)
     nsb = float(match.group(1))
     
-    dl1b_config_filename = analysis_dir / f"dl1ab_Run{run_id:05d}.json"
+    dl1b_config_filename = tailcuts_finder_dir / f"dl1ab_Run{run_id:05d}.json"
     with open(dl1b_config_filename) as json_file:
         dl1b_config = json.load(json_file)
     picture_th = dl1b_config["tailcuts_clean_with_pedestal_threshold"]["picture_thresh"]
@@ -360,7 +360,7 @@ def get_RF_model(run_id: int) -> Path:
     # the "source_dec" given in the run catalogs is not actually the source declination, but the pointing declination
     pointing_culmination = culmination_angle(pointing_dec)
 
-    rf_models_base_dir = Path(cfg.get("LST1", "RF_MODELS"))
+    rf_models_base_dir = Path(cfg.get(options.tel_id, "RF_MODELS"))
     rf_models_dir = get_mc_nsb_dir(run_id, rf_models_base_dir)
     dec_list = os.listdir(rf_models_dir)
 
