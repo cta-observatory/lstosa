@@ -363,6 +363,7 @@ def get_RF_model(run_id: int) -> Path:
     rf_models_base_dir = Path(cfg.get(options.tel_id, "RF_MODELS"))
     rf_models_dir = get_mc_nsb_dir(run_id, rf_models_base_dir)
     dec_list = os.listdir(rf_models_dir)
+    dec_list = [i for i in dec_list if i.startswith("dec")]
 
     # Convert each string in the list to numerical values
     dec_values = [convert_dec_string(dec) for dec in dec_list]
