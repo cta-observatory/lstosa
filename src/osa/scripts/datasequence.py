@@ -286,9 +286,14 @@ def dl1_to_dl2(run_str: str, rf_model_path: Path, dl1_prod_id: str, dl2_prod_id:
     rc: int
     """
     dl2_subdirectory = Path(options.directory) / dl2_prod_id
+    dl2_file = dl2_subdirectory / f"dl2_LST-1.Run{run_str}.h5"
     dl2_config = Path(cfg.get("lstchain", "dl2_config"))
     dl1ab_subdirectory = Path(options.directory) / dl1_prod_id
     dl1_file = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
+
+    if dl2_file.exists():
+        log.debug(f"The dl2 file {dl2_file} already exists.")
+        return 0
 
     command = cfg.get("lstchain", "dl1_to_dl2")
     cmd = [
