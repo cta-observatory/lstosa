@@ -12,7 +12,7 @@ from astropy.time import Time
 from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.reco.utils import add_delta_t_key, get_effective_time
 
-from osa.paths import get_major_version
+from osa.paths import get_major_version, get_dl1_prod_id
 from osa.utils.utils import get_lstchain_version
 
 pd.set_option("display.float_format", "{:.1f}".format)
@@ -24,6 +24,7 @@ log = logging.getLogger(__name__)
 BASE_DL1 = Path("/fefs/aswg/data/real/DL1")
 BASE_MONITORING = Path("/fefs/aswg/data/real/monitoring")
 CATALOG_DIR = Path("/fefs/aswg/data/real/OSA/Catalog")
+TAILCUTS_DIR = Path("/fefs/aswg/data/real/auxiliary/TailCuts")
 
 
 def add_table_to_html(html_table):
@@ -125,7 +126,9 @@ def add_start_and_elapsed(table: Table, datedir: str, version: str) -> None:
 
     for run in table["run_id"]:
         major_version = get_major_version(version)
-        file = BASE_DL1 / datedir / major_version / f"tailcut84/dl1_LST-1.Run{run:05d}.h5"
+        dl1b_config_file = TAILCUTS_DIR / f"dl1ab_Run{run:05d}.json"
+        dl1_prod_id = get_dl1_prod_id(dl1b_config_file)
+        file = BASE_DL1 / datedir / major_version / dl1_prod_id / f"dl1_LST-1.Run{run:05d}.h5"
         df = pd.read_hdf(file, key=dl1_params_lstcam_key)
 
         # Timestamp of the first event
