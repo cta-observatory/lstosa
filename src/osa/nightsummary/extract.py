@@ -25,7 +25,7 @@ from osa.nightsummary import database
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import sequence_calibration_files, get_run_date, get_dl1_prod_id_and_config, get_dl2_prod_id
 from osa.utils.logging import myLogger
-from osa.utils.utils import date_to_iso, date_to_dir
+from osa.utils.utils import date_to_iso, date_to_dir, get_RF_model
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -270,6 +270,7 @@ def extract_sequences(date: datetime, run_obj_list: List[RunObj]) -> List[Sequen
 
             if not options.no_dl2 and not options.no_dl1ab and sequence.type=="DATA":
                 sequence.dl2_prod_id = get_dl2_prod_id(sequence.run)
+                sequence.rf_model = get_RF_model(sequence.run)
 
             sequence_list.append(sequence)
 

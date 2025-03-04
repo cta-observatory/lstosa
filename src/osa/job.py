@@ -22,7 +22,6 @@ from osa.paths import (
     get_summary_file,
     get_pedestal_ids_file,
     get_dl1_prod_id_and_config,
-    get_dl2_prod_id,
 )
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
@@ -31,7 +30,6 @@ from osa.utils.utils import (
     time_to_seconds,
     stringify,
     date_to_iso,
-    get_RF_model,
 )
 
 log = myLogger(logging.getLogger(__name__))
@@ -189,10 +187,9 @@ def historylevel(history_file: Path, data_type: str):
      - Sequence completed when reaching level 0
 
     Workflow for DATA sequences:
-     - R0->DL1, level 4->3
-     - DL1->DL1AB, level 3->2
-     - DATACHECK, level 2->1
-     - DL1->DL2, level 1->0
+     - R0->DL1, level 3->2
+     - DL1->DL1AB, level 2->1
+     - DATACHECK, level 1->0
      - Sequence completed when reaching level 0
 
     Parameters
@@ -211,7 +208,7 @@ def historylevel(history_file: Path, data_type: str):
     #  into account not only the last history line but also the others.
 
     if data_type == "DATA":
-        level = 4
+        level = 3
     elif data_type == "PEDCALIB":
         level = 2
     else:
@@ -242,26 +239,18 @@ def historylevel(history_file: Path, data_type: str):
                     level = 0 if exit_status == 0 else 1
                 # Data sequence
                 elif program == cfg.get("lstchain", "r0_to_dl1"):
-                    level = 3 if exit_status == 0 else 4
+                    level = 2 if exit_status == 0 else 3
                 elif program == cfg.get("lstchain", "dl1ab"):
                     dl1_prod_id = get_dl1_prod_id_and_config(run_id)[0]
                     if (exit_status == 0) and (prod_id == dl1_prod_id):
                         log.debug(f"DL1ab prod ID: {dl1_prod_id} already produced")
-                        level = 2
+                        level = 1
                     else:
-                        level = 3
+                        level = 2
                         log.debug(f"DL1ab prod ID: {dl1_prod_id} not produced yet")
                         break
                 elif program == cfg.get("lstchain", "check_dl1"):
-                    level = 1 if exit_status == 0 else 2
-                elif program == cfg.get("lstchain", "dl1_to_dl2"):
-                    dl2_prod_id = get_dl2_prod_id(run_id)
-                    if (exit_status == 0) and (prod_id == dl2_prod_id):
-                        log.debug(f"DL2 prod ID: {dl2_prod_id} already produced")
-                        level = 0
-                    else:
-                        level = 1
-                        log.debug(f"DL2 prod ID: {dl2_prod_id} not produced yet")
+                    level = 0 if exit_status == 0 else 1
 
                 else:
                     log.warning(f"Program name not identified: {program}")
@@ -478,12 +467,6 @@ def data_sequence_job_template(sequence):
 
         commandargs.append(f"--dl1b-config={sequence.dl1b_config}")
         commandargs.append(f"--dl1-prod-id={sequence.dl1_prod_id}")
-
-    if not options.no_dl2 and not options.no_dl1ab:
-        sequence.rf_model = get_RF_model(sequence.run)
-        sequence.dl2_prod_id = get_dl2_prod_id(sequence.run)
-        commandargs.append(f"--rf-model-path={sequence.rf_model}")
-        commandargs.append(f"--dl2-prod-id={sequence.dl2_prod_id}")
 
     content = job_header + "\n" + PYTHON_IMPORTS
 
@@ -773,6 +756,7 @@ def get_closer_sacct_output(sacct_output) -> pd.DataFrame:
         | (sacct_output["JobName"].str.contains("lstchain_longterm_dl1_check"))
         | (sacct_output["JobName"].str.contains("lstchain_cherenkov_transparency"))
         | (sacct_output["JobName"].str.contains("provproces"))
+        | (sacct_output["JobName"].str.contains("lstchain_dl1_to_dl2"))
     ]
 
     try:

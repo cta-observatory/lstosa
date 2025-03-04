@@ -169,14 +169,14 @@ def post_process(seq_tuple):
         # Extract the provenance info
         extract_provenance(seq_list)
 
-        # Merge DL1b files run-wise
-        merge_files(seq_list, data_level="DL1AB")
-
         merge_muon_files(seq_list)
 
-        # Merge DL2 files run-wise
-        if not options.no_dl2:
-            merge_files(seq_list, data_level="DL2")
+        # Merge DL1b files run-wise
+        for sequence in seq_list:
+            dl1_merge_job_id = merge_files(sequence, data_level="DL1AB")
+            # Produce DL2 files run-wise
+            if not options.no_dl2 and sequence.type=="DATA":
+                dl1_to_dl2(sequence, dl1_merge_job_id)
 
         # Merge DL1 datacheck files and produce PDFs. It also produces
         # the daily datacheck report using the longterm script, and updates
@@ -213,6 +213,66 @@ def post_process(seq_tuple):
         return set_closed_with_file()
 
     return False
+
+
+def dl1_to_dl2(sequence, dl1_merge_job_id) -> int:
+    """
+    It prepares and execute the dl1 to dl2 lstchain scripts that applies
+    the already trained RFs models to DL1 files. It identifies the
+    primary particle, reconstructs its energy and direction.
+
+    Parameters
+    ----------
+    run_str: str
+
+    Returns
+    -------
+    rc: int
+    """
+    nightdir = date_to_dir(options.date)
+    dl2_dir = Path(cfg.get("LST1", "DL2_DIR"))
+    dl2_subdirectory = dl2_dir / nightdir / options.prod_id / sequence.dl2_prod_id
+    dl2_file = dl2_subdirectory / f"dl2_LST-1.Run{sequence.run_str[:5]}.h5"
+    dl2_config = Path(cfg.get("lstchain", "dl2_config"))
+    dl1ab_subdirectory = Path(cfg.get("LST1", "DL1AB_DIR"))
+    dl1_file = dl1ab_subdirectory / nightdir / options.prod_id / sequence.dl1_prod_id / f"dl1_LST-1.Run{sequence.run_str[:5]}.h5"
+    log_dir = Path(options.directory) / "log"
+    slurm_account = cfg.get("SLURM", "ACCOUNT")
+
+    if dl2_file.exists():
+        log.debug(f"The dl2 file {dl2_file} already exists.")
+        return 0
+    
+    command = cfg.get("lstchain", "dl1_to_dl2")
+    cmd = [
+        "sbatch",
+        "--parsable",
+        "--mem-per-cpu=60GB",
+        f"--account={slurm_account}",
+        "-o", f"{log_dir}/Run{sequence.run_str[:5]}_dl2_%j.out",
+        "-e", f"{log_dir}/Run{sequence.run_str[:5]}_dl2_%j.err",
+        f"--dependency=afterok:{dl1_merge_job_id}",
+        command,
+        f"--input-file={dl1_file}",
+        f"--output-dir={dl2_subdirectory}",
+        f"--path-models={sequence.rf_model}",
+        f"--config={dl2_config}",
+    ]
+    log.info(f"executing {cmd}")
+
+    if options.simulate:
+        return 0
+    
+    if not options.test and shutil.which("sbatch") is not None:
+        job = subprocess.run(
+            cmd,
+            encoding="utf-8",
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        job_id = job.stdout.strip()
+        return job_id
 
 
 def post_process_files(seq_list: list):
@@ -438,44 +498,52 @@ def get_pattern(data_level) -> Tuple[str, str]:
     raise ValueError(f"Unknown data level {data_level}")
 
 
-def merge_files(sequence_list, data_level="DL2"):
+def merge_files(sequence, data_level="DL2"):
     """Merge DL1b or DL2 h5 files run-wise."""
     log.info(f"Looping over the sequences and merging the {data_level} files")
     pattern, prefix = get_pattern(data_level)
     slurm_account = cfg.get("SLURM", "ACCOUNT")
+    
+    if sequence.type == "DATA":
+        data_dir = destination_dir(
+            data_level,
+            create_dir=False,
+            dl1_prod_id=sequence.dl1_prod_id,
+            dl2_prod_id=sequence.dl2_prod_id
+            )
+        merged_file = Path(data_dir) / f"{prefix}_LST-1.Run{sequence.run:05d}.h5"
 
-    for sequence in sequence_list:
-        if sequence.type == "DATA":
-            data_dir = destination_dir(
-                data_level,
-                create_dir=False,
-                dl1_prod_id=sequence.dl1_prod_id,
-                dl2_prod_id=sequence.dl2_prod_id
-                )
-            merged_file = Path(data_dir) / f"{prefix}_LST-1.Run{sequence.run:05d}.h5"
+        cmd = [
+            "sbatch",
+            "--parsable",
+            f"--account={slurm_account}",
+            "-D",
+            options.directory,
+            "-o",
+            f"log/merge_{prefix}_{sequence.run:05d}_%j.log",
+            "lstchain_merge_hdf5_files",
+            f"--input-dir={data_dir}",
+            f"--output-file={merged_file}",
+            "--no-image",
+            "--no-progress",
+            f"--run-number={sequence.run}",
+            f"--pattern={pattern}",
+        ]
 
-            cmd = [
-                "sbatch",
-                f"--account={slurm_account}",
-                "-D",
-                options.directory,
-                "-o",
-                f"log/merge_{prefix}_{sequence.run:05d}_%j.log",
-                "lstchain_merge_hdf5_files",
-                f"--input-dir={data_dir}",
-                f"--output-file={merged_file}",
-                "--no-image",
-                "--no-progress",
-                f"--run-number={sequence.run}",
-                f"--pattern={pattern}",
-            ]
+        log.debug(f"Executing {stringify(cmd)}")
 
-            log.debug(f"Executing {stringify(cmd)}")
-
-            if not options.simulate and not options.test and shutil.which("sbatch") is not None:
-                subprocess.run(cmd, check=True)
-            else:
-                log.debug("Simulate launching scripts")
+        if not options.simulate and not options.test and shutil.which("sbatch") is not None:
+            job = subprocess.run(
+                cmd,
+                encoding="utf-8",
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            job_id = job.stdout.strip()
+            return job_id
+        else:
+            log.debug("Simulate launching scripts")
 
 
 def merge_muon_files(sequence_list):

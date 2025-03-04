@@ -56,10 +56,10 @@ def data_sequence(
     history_file = Path(options.directory) / f"sequence_{options.tel_id}_{run_str}.history"
     # Set the starting level and corresponding return code from last analysis step
     # registered in the history file.
-    level, rc = (4, 0) if options.simulate else historylevel(history_file, "DATA")
+    level, rc = (3, 0) if options.simulate else historylevel(history_file, "DATA")
     log.info(f"Going to level {level}")
 
-    if level == 4:
+    if level == 3:
         rc = r0_to_dl1(
             calibration_file,
             pedestal_file,
@@ -73,7 +73,7 @@ def data_sequence(
         level -= 1
         log.info(f"Going to level {level}")
 
-    if level == 3:
+    if level == 2:
         if options.no_dl1ab:
             level = 0
             log.info(f"No DL1B are going to be produced. Going to level {level}")
@@ -86,23 +86,10 @@ def data_sequence(
                 level -= 2
                 log.info(f"No images stored in dl1ab. Producing DL2. Going to level {level}")
 
-    if level == 2:
-        rc = dl1_datacheck(run_str, dl1_prod_id)
-        if options.no_dl2:
-            level = 0
-            log.info(f"No DL2 are going to be produced. Going to level {level}")
-        else:
-            level -= 1
-            log.info(f"Going to level {level}")
-
     if level == 1:
-        if options.no_dl2:
-            level = 0
-            log.info(f"No DL2 are going to be produced. Going to level {level}")
-        else:
-            rc = dl1_to_dl2(run_str, rf_model_path, dl1_prod_id, dl2_prod_id)
-            level -= 1
-            log.info(f"Going to level {level}")
+        rc = dl1_datacheck(run_str, dl1_prod_id)
+        level -= 1
+        log.info(f"Going to level {level}")
 
     if level == 0:
         log.info(f"Job for sequence {run_str} finished without fatal errors")
