@@ -18,11 +18,7 @@ from osa.configs.config import cfg
 from osa.report import history
 from osa.utils.logging import myLogger
 from osa.utils.utils import stringify, date_to_dir
-from osa.paths import (
-    get_run_date,
-    get_dl1_prod_id_and_config,
-    get_dl2_prod_id
-)
+from osa.paths import get_run_date, get_dl1_prod_id_and_config
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -134,9 +130,9 @@ class AnalysisStage:
         elif self.command==cfg.get("lstchain", "check_dl1"):
             dl1_prod_id = get_dl1_prod_id_and_config(int(self.run[:5]))[0]
             prod_id = dl1_prod_id
-        elif self.command==cfg.get("lstchain", "dl1_to_dl2"):
-            dl2_prod_id = get_dl2_prod_id(int(self.run[:5]))
-            prod_id = dl2_prod_id
+        #elif self.command==cfg.get("lstchain", "dl1_to_dl2"):
+        #    dl2_prod_id = get_dl2_prod_id(int(self.run[:5]))
+        #    prod_id = dl2_prod_id
         history(
             run=self.run,
             prod_id=prod_id,

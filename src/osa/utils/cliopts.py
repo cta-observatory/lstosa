@@ -178,12 +178,6 @@ def data_sequence_argparser():
         help="Set the prod ID to define data directories",
     )
     parser.add_argument(
-        "--no-dl2",
-        action="store_true",
-        default=False,
-        help="Do not produce DL2 files (default False)",
-    )
-    parser.add_argument(
         "--no-dl1ab",
         action="store_true",
         default=False,
@@ -211,12 +205,6 @@ def data_sequence_argparser():
         help="Path to a file containing the ids of the interleaved pedestal events",
     )
     parser.add_argument(
-        "--rf-model-path",
-        type=Path,
-        default=None,
-        help="Path to the RF models for the DL2 production",
-    )
-    parser.add_argument(
         "--dl1b-config",
         type=Path,
         default=None,
@@ -227,12 +215,6 @@ def data_sequence_argparser():
         type=str,
         default=None,
         help="Production id of the DL1b files"
-    )
-    parser.add_argument(
-        "--dl2-prod-id",
-        type=str,
-        default=None,
-        help="Production id of the DL2 files"
     )
     parser.add_argument("run_number", help="Number of the run to be processed")
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
@@ -250,7 +232,6 @@ def data_sequence_cli_parsing():
     options.verbose = opts.verbose
     options.simulate = opts.simulate
     options.prod_id = opts.prod_id
-    options.no_dl2 = opts.no_dl2
     options.no_dl1ab = opts.no_dl1ab
     options.tel_id = opts.tel_id
     options.rf_model_path = opts.rf_model_path
@@ -271,10 +252,8 @@ def data_sequence_cli_parsing():
         opts.run_summary,
         opts.pedestal_ids_file,
         opts.run_number,
-        opts.rf_model_path,
         opts.dl1b_config,
         opts.dl1_prod_id,
-        opts.dl2_prod_id
     )
 
 
@@ -296,12 +275,6 @@ def sequencer_argparser():
         default=False,
         help="Skip calibration sequence. Run data sequences assuming "
         "calibration products already produced (default False)",
-    )
-    parser.add_argument(
-        "--no-dl2",
-        action="store_true",
-        default=False,
-        help="Do not produce DL2 files (default False)",
     )
     parser.add_argument(
         "--no-dl1ab",
@@ -339,7 +312,6 @@ def sequencer_cli_parsing():
     set_common_globals(opts)
     options.no_submit = opts.no_submit
     options.no_calib = opts.no_calib
-    options.no_dl2 = opts.no_dl2
     options.no_dl1ab = opts.no_dl1ab
     options.no_gainsel = opts.no_gainsel
     options.force_submit = opts.force_submit

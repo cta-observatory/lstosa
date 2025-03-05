@@ -118,13 +118,8 @@ def are_all_jobs_correctly_finished(sequence_list):
             if out == 0:
                 log.debug(f"Job {sequence.seq} ({sequence.type}) correctly finished")
                 continue
-            if out == 1 and options.no_dl2:
-                log.debug(
-                    f"Job {sequence.seq} ({sequence.type}) correctly "
-                    f"finished up to DL1ab, but --no-dl2 option selected"
-                )
-                continue
-            if out == 3 and options.no_dl1ab:
+
+            if out == 2 and options.no_dl1ab:
                 log.debug(
                     f"Job {sequence.seq} ({sequence.type}) correctly "
                     f"finished up to DL1A, but --no-dl1ab option selected"
@@ -442,8 +437,6 @@ def data_sequence_job_template(sequence):
         commandargs.append("-s")
     if options.configfile:
         commandargs.extend(("--config", f"{Path(options.configfile).resolve()}"))
-    if sequence.type == "DATA" and options.no_dl2:
-        commandargs.append("--no-dl2")
     if sequence.type == "DATA" and options.no_dl1ab:
         commandargs.append("--no-dl1ab")
 
