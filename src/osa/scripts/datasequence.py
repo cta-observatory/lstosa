@@ -15,7 +15,7 @@ from osa.utils.logging import myLogger
 from osa.utils.utils import date_to_dir
 from osa.paths import catB_closed_file_exists
 
-__all__ = ["data_sequence", "r0_to_dl1", "dl1_to_dl2", "dl1ab", "dl1_datacheck"]
+__all__ = ["data_sequence", "r0_to_dl1", "dl1ab", "dl1_datacheck"]
 
 log = myLogger(logging.getLogger())
 
@@ -29,10 +29,8 @@ def data_sequence(
     run_summary: Path,
     pedestal_ids_file: Path,
     run_str: str,
-    rf_model_path: Path,
     dl1b_config: Path,
     dl1_prod_id: str,
-    dl2_prod_id: str,
 ):
     """
     Performs all the steps to process a whole run.
@@ -84,7 +82,7 @@ def data_sequence(
                 log.info(f"Going to level {level}")
             else:
                 level -= 2
-                log.info(f"No images stored in dl1ab. Producing DL2. Going to level {level}")
+                log.info(f"No images stored in dl1ab. Going to level {level}")
 
     if level == 1:
         rc = dl1_datacheck(run_str, dl1_prod_id)
@@ -257,50 +255,8 @@ def dl1_datacheck(run_str: str, dl1_prod_id: str) -> int:
     return analysis_step.rc
 
 
-@trace
-def dl1_to_dl2(run_str: str, rf_model_path: Path, dl1_prod_id: str, dl2_prod_id: str) -> int:
-    """
-    It prepares and execute the dl1 to dl2 lstchain scripts that applies
-    the already trained RFs models to DL1 files. It identifies the
-    primary particle, reconstructs its energy and direction.
-
-    Parameters
-    ----------
-    run_str: str
-
-    Returns
-    -------
-    rc: int
-    """
-    dl2_subdirectory = Path(options.directory) / dl2_prod_id
-    dl2_file = dl2_subdirectory / f"dl2_LST-1.Run{run_str}.h5"
-    dl2_config = Path(cfg.get("lstchain", "dl2_config"))
-    dl1ab_subdirectory = Path(options.directory) / dl1_prod_id
-    dl1_file = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
-
-    if dl2_file.exists():
-        log.debug(f"The dl2 file {dl2_file} already exists.")
-        return 0
-
-    command = cfg.get("lstchain", "dl1_to_dl2")
-    cmd = [
-        command,
-        f"--input-file={dl1_file}",
-        f"--output-dir={dl2_subdirectory}",
-        f"--path-models={rf_model_path}",
-        f"--config={dl2_config}",
-    ]
-
-    if options.simulate:
-        return 0
-
-    analysis_step = AnalysisStage(run=run_str, command_args=cmd, config_file=dl2_config.name)
-    analysis_step.execute()
-    return analysis_step.rc
-
-
 def main():
-    """Performs the analysis steps to convert raw data into DL2 files."""
+    """Performs the analysis steps to convert raw data into DL1b files."""
     (
         calibration_file,
         drs4_ped_file,
@@ -313,7 +269,6 @@ def main():
         rf_model_path,
         dl1b_config,
         dl1_prod_id,
-        dl2_prod_id,
     ) = data_sequence_cli_parsing()
 
     if options.verbose:
@@ -334,7 +289,6 @@ def main():
         rf_model_path,
         dl1b_config,
         dl1_prod_id,
-        dl2_prod_id,
     )
     sys.exit(rc)
 
