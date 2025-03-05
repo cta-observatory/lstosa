@@ -150,7 +150,6 @@ def test_create_job_template_scheduler(
 
     options.test = False
     options.simulate = False
-    options.no_dl2 = True
 
     content1 = data_sequence_job_template(sequence_list[1])
     expected_content1 = dedent(
@@ -183,7 +182,6 @@ def test_create_job_template_scheduler(
             'datasequence',
             '--config',
             '{DEFAULT_CFG}',
-            '--no-dl2',
             '--date=2020-01-17',
             '--prod-id=v0.1.0',
             '--drs4-pedestal-file={drs4_baseline_file}',
@@ -232,7 +230,6 @@ def test_create_job_template_scheduler(
                 'datasequence',
                 '--config',
                 '{DEFAULT_CFG}',
-                '--no-dl2',
                 '--date=2020-01-17',
                 '--prod-id=v0.1.0',
                 '--drs4-pedestal-file={drs4_baseline_file}',
@@ -285,7 +282,6 @@ def test_create_job_template_local(
 
     options.test = True
     options.simulate = False
-    options.no_dl2 = False
 
     content1 = data_sequence_job_template(sequence_list[1])
     expected_content1 = dedent(
