@@ -114,10 +114,10 @@ def test_simulate_processing(
 
     with open(json_file_dl2) as file:
         dl2 = yaml.safe_load(file)
-    assert len(dl2["entity"]) == 48
-    assert len(dl2["activity"]) == 6
-    assert len(dl2["used"]) == 21
-    assert len(dl2["wasGeneratedBy"]) == 12
+    assert len(dl2["entity"]) == 42
+    assert len(dl2["activity"]) == 5
+    assert len(dl2["used"]) == 15
+    assert len(dl2["wasGeneratedBy"]) == 10
 
     rc = run_program("simulate_processing", "-p", "-d", "2020-01-17", "LST1")
     assert rc.returncode == 0
