@@ -138,6 +138,7 @@ def test_simulated_sequencer(
     dl1b_config_files,
     tailcuts_log_files,
     rf_models,
+    dl2_merged,
 ):
     assert run_summary_file.exists()
     assert run_catalog.exists()
@@ -152,6 +153,9 @@ def test_simulated_sequencer(
     for file in systematic_correction_files:
         assert file.exists()
 
+    for file in dl2_merged:
+        assert file.exists()
+
     rc = run_program("sequencer", "-d", "2020-01-17", "--no-gainsel", "-s", "-t", "LST1")
 
     assert rc.returncode == 0
@@ -161,8 +165,8 @@ def test_simulated_sequencer(
         =================================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Date: 2020-01-17 ===================================
         Tel   Seq  Parent  Type      Run   Subruns  Source        Action  Tries  JobID  State  CPU_time  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%  
         LST1    1  None    PEDCALIB  1809  5        None          None    None   None   None   None      None  None  None    None    None        None  
-        LST1    2       1  DATA      1807  11       Crab          None    None   None   None   None      None     0       0       0           0     0  
-        LST1    3       1  DATA      1808  9        MadeUpSource  None    None   None   None   None      None     0       0       0           0     0  
+        LST1    2       1  DATA      1807  11       Crab          None    None   None   None   None      None     0       0       0           0     100  
+        LST1    3       1  DATA      1808  9        MadeUpSource  None    None   None   None   None      None     0       0       0           0     100  
         """  # noqa: E501
     )
 
