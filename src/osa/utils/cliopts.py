@@ -234,7 +234,6 @@ def data_sequence_cli_parsing():
     options.prod_id = opts.prod_id
     options.no_dl1ab = opts.no_dl1ab
     options.tel_id = opts.tel_id
-    options.rf_model_path = opts.rf_model_path
 
     log.debug(f"The options and arguments are {opts}")
 

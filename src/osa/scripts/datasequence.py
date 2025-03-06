@@ -266,7 +266,6 @@ def main():
         run_summary_file,
         pedestal_ids_file,
         run_number,
-        rf_model_path,
         dl1b_config,
         dl1_prod_id,
     ) = data_sequence_cli_parsing()
@@ -286,7 +285,6 @@ def main():
         run_summary_file,
         pedestal_ids_file,
         run_number,
-        rf_model_path,
         dl1b_config,
         dl1_prod_id,
     )

@@ -240,9 +240,6 @@ def test_closer(
         "./test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84/datacheck/"
         "datacheck_dl1_LST-1.Run01808.0011.h5"
     )
-    assert os.path.exists(
-        "./test_osa/test_files0/DL2/20200117/v0.1.0/tailcut84/nsb_tuning_0.14/dl2_LST-1.Run01808.0011.h5"
-    )
     # Assert that the link to dl1 and muons files have been created
     assert os.path.islink(
         "./test_osa/test_files0/running_analysis/20200117/v0.1.0/muons_LST-1.Run01808.0011.fits"
@@ -293,10 +290,8 @@ def test_datasequence(
         f"--systematic-correction-file={systematic_correction_file}",
         f"--drive-file={drive_file}",
         f"--run-summary={runsummary_file}",
-        f"--rf-model-path={rf_models[1]}",
         f"--dl1b-config={dl1b_config_files[0]}",
         "--dl1-prod-id=tailcut84",
-        "--dl2-prod-id=tailcut84/nsb_tuning_0.14",
         run_number,
         "LST1",
     )
