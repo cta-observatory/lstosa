@@ -454,7 +454,7 @@ def extract_provenance(seq_list):
     """
     log.info("Extract provenance run wise")
 
-    nightdir = date_to_dir(options.date)
+    nightdir = date_to_iso(options.date)
     slurm_account = cfg.get("SLURM", "ACCOUNT")
 
     for sequence in seq_list:

@@ -267,20 +267,10 @@ class Sequence:
     def is_100(self, no_dl2: bool):
         """Check that all analysis products are 100% complete."""
         if (
-            no_dl2
-            and self.dict_sequence["Tel"] != "ST"
-            and self.dict_sequence["DL1%"] == "100"
-            and self.dict_sequence["DL1AB%"] == "100"
-            and self.dict_sequence["MUONS%"] == "100"
-        ):
-            return True
-
-        if (
             self.dict_sequence["Tel"] != "ST"
             and self.dict_sequence["DL1%"] == "100"
             and self.dict_sequence["DL1AB%"] == "100"
             and self.dict_sequence["MUONS%"] == "100"
-            and self.dict_sequence["DL2%"] == "100"
         ):
             return True
 
