@@ -30,7 +30,7 @@ from osa.nightsummary.extract import (
     extract_sequences
 )
 from osa.nightsummary.nightsummary import run_summary_table
-from osa.paths import analysis_path
+from osa.paths import analysis_path, destination_dir
 from osa.report import start
 from osa.utils.cliopts import sequencer_cli_parsing
 from osa.utils.logging import myLogger
@@ -197,7 +197,7 @@ def update_sequence_status(seq_list):
                 Decimal(get_status_for_sequence(seq, "DATACHECK") * 100) / seq.subruns
             )
             seq.muonstatus = int(Decimal(get_status_for_sequence(seq, "MUON") * 100) / seq.subruns)
-            seq.dl2status = int(Decimal(get_status_for_sequence(seq, "DL2") * 100) / seq.subruns)
+            seq.dl2status = int(Decimal(get_status_for_sequence(seq, "DL2") * 100))
 
 
 def get_status_for_sequence(sequence, data_level) -> int:
@@ -223,7 +223,7 @@ def get_status_for_sequence(sequence, data_level) -> int:
         
     elif data_level == "DL2":
         try:
-            directory = options.directory / sequence.dl2_prod_id
+            directory = destination_dir(concept="DL2", create_dir=False, dl2_prod_id=sequence.dl2_prod_id)
             files = list(directory.glob(f"dl2_LST-1*{sequence.run}*.h5"))
         except AttributeError:
             return 0
