@@ -19,6 +19,7 @@ from osa.configs.config import DEFAULT_CFG, cfg
 from osa.configs.datamodel import Sequence
 from osa.utils import utils
 from osa.utils.logging import myLogger
+from osa.nightsummary.nightsummary import run_summary_table
 
 
 log = myLogger(logging.getLogger(__name__))
@@ -460,8 +461,20 @@ def get_dl1_prod_id_and_config(run_id: int) -> str:
         dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
         return dl1_prod_id, dl1b_config_file.resolve()
     
+
 def get_dl2_prod_id(run_id: int) -> str:
     dl1_prod_id = get_dl1_prod_id_and_config(run_id)[0]
     rf_model = utils.get_RF_model(run_id)
     nsb_prod_id = get_dl2_nsb_prod_id(rf_model)
     return f"{dl1_prod_id}/{nsb_prod_id}"
+
+
+def all_dl1ab_config_files_exist(date: datetime) -> bool:
+    summary_table = run_summary_table(date)
+    data_runs = summary_table[summary_table["run_type"] == "DATA"]
+    for run_id in data_runs["run_id"]:
+        tailcuts_finder_dir = Path(cfg.get(options.tel_id, "TAILCUTS_FINDER_DIR"))
+        dl1b_config_file = tailcuts_finder_dir / f"dl1ab_Run{run_id:05d}.json"
+        if not dl1b_config_file.exists():
+            return False
+    return True
