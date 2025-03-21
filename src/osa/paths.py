@@ -19,7 +19,6 @@ from osa.configs.config import DEFAULT_CFG, cfg
 from osa.configs.datamodel import Sequence
 from osa.utils import utils
 from osa.utils.logging import myLogger
-from osa.nightsummary.nightsummary import run_summary_table
 
 
 log = myLogger(logging.getLogger(__name__))
@@ -469,8 +468,11 @@ def get_dl2_prod_id(run_id: int) -> str:
     return f"{dl1_prod_id}/{nsb_prod_id}"
 
 
-def all_dl1ab_config_files_exist(date: datetime) -> bool:
-    summary_table = run_summary_table(date)
+def all_dl1ab_config_files_exist(date: str) -> bool:
+    nightdir = date.replace("-","")
+    run_summary_dir =  Path(cfg.get(options.tel_id, "RUN_SUMMARY_DIR"))
+    run_summary_file = run_summary_dir / f"RunSummary_{nightdir}.ecsv"
+    summary_table = Table.read(run_summary_file)
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
     for run_id in data_runs["run_id"]:
         tailcuts_finder_dir = Path(cfg.get(options.tel_id, "TAILCUTS_FINDER_DIR"))

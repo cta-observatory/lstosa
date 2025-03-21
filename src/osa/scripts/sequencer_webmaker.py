@@ -89,7 +89,7 @@ def get_sequencer_output(date: str, config: str, test=False, no_gainsel=False) -
     if test:
         commandargs.insert(-1, "-t")
 
-    if not all_dl1ab_config_files_exist(datetime.fromisoformat(date)):
+    if not all_dl1ab_config_files_exist(date):
         commandargs.insert(-1, "--no-dl1ab")
 
     try:
