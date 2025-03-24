@@ -429,8 +429,11 @@ def get_dl1_prod_id(config_filename):
         
     picture_thresh = data["tailcuts_clean_with_pedestal_threshold"]["picture_thresh"]
     boundary_thresh = data["tailcuts_clean_with_pedestal_threshold"]["boundary_thresh"]
-    
-    return f"tailcut{picture_thresh}{boundary_thresh}"
+
+    if boundary_thresh == 4:
+        return f"tailcut{picture_thresh}{boundary_thresh}"
+    else:
+        return f"tailcut{picture_thresh}{boundary_thresh:02d}"
 
 
 def get_dl2_nsb_prod_id(rf_model: Path) -> str:
