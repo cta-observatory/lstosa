@@ -30,7 +30,6 @@ ALL_SCRIPTS = [
 options.date = datetime.datetime.fromisoformat("2020-01-17")
 options.tel_id = "LST1"
 options.prod_id = "v0.1.0"
-options.dl1_prod_id = "tailcut84"
 options.directory = "test_osa/test_files0/running_analysis/20200117/v0.1.0/"
 
 
@@ -65,7 +64,11 @@ def test_simulate_processing(
     run_summary_file,
     r0_data,
     merged_run_summary,
-    drive_log
+    drive_log,
+    dl1b_config_files,
+    tailcuts_log_files,
+    rf_models,
+    tailcuts_finder_dir,
 ):
 
     for file in drs4_time_calibration_files:
@@ -80,13 +83,16 @@ def test_simulate_processing(
     assert run_summary_file.exists()
     assert merged_run_summary.exists()
     assert drive_log.exists()
+    assert rf_models[1].exists()
+    assert dl1b_config_files[0].exists()
+    assert tailcuts_log_files[0].exists()
 
     remove_provlog()
-    rc = run_program("simulate_processing", "-p", "--force")
+    rc = run_program("simulate_processing", "-p", "--force", "-d", "2020-01-17", "LST1")
     assert rc.returncode == 0
 
     prov_dl1_path = Path("./test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84/log")
-    prov_dl2_path = Path("./test_osa/test_files0/DL2/20200117/v0.1.0/model2/log")
+    prov_dl2_path = Path("./test_osa/test_files0/DL2/20200117/v0.1.0/tailcut84/nsb_tuning_0.14/log")
     prov_file_dl1 = prov_dl1_path / "calibration_to_dl1_01807_prov.log"
     prov_file_dl2 = prov_dl2_path / "calibration_to_dl2_01807_prov.log"
     json_file_dl1 = prov_dl1_path / "calibration_to_dl1_01807_prov.json"
@@ -101,23 +107,23 @@ def test_simulate_processing(
 
     with open(json_file_dl1) as file:
         dl1 = yaml.safe_load(file)
-    assert len(dl1["entity"]) == 19
+    assert len(dl1["entity"]) == 42
     assert len(dl1["activity"]) == 5
     assert len(dl1["used"]) == 15
     assert len(dl1["wasGeneratedBy"]) == 10
 
     with open(json_file_dl2) as file:
         dl2 = yaml.safe_load(file)
-    assert len(dl2["entity"]) == 25
-    assert len(dl2["activity"]) == 6
-    assert len(dl2["used"]) == 21
-    assert len(dl2["wasGeneratedBy"]) == 12
+    assert len(dl2["entity"]) == 42
+    assert len(dl2["activity"]) == 5
+    assert len(dl2["used"]) == 15
+    assert len(dl2["wasGeneratedBy"]) == 10
 
-    rc = run_program("simulate_processing", "-p")
+    rc = run_program("simulate_processing", "-p", "-d", "2020-01-17", "LST1")
     assert rc.returncode == 0
 
     remove_provlog()
-    rc = run_program("simulate_processing", "-p")
+    rc = run_program("simulate_processing", "-p", "-d", "2020-01-17", "LST1")
     assert rc.returncode == 0
 
 
@@ -129,6 +135,10 @@ def test_simulated_sequencer(
     r0_data,
     merged_run_summary,
     gain_selection_flag_file,
+    dl1b_config_files,
+    tailcuts_log_files,
+    rf_models,
+    dl2_merged,
 ):
     assert run_summary_file.exists()
     assert run_catalog.exists()
@@ -143,7 +153,10 @@ def test_simulated_sequencer(
     for file in systematic_correction_files:
         assert file.exists()
 
-    rc = run_program("sequencer", "-d", "2020-01-17", "-s", "-t", "LST1")
+    for file in dl2_merged:
+        assert file.exists()
+
+    rc = run_program("sequencer", "-d", "2020-01-17", "--no-gainsel", "-s", "-t", "LST1")
 
     assert rc.returncode == 0
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M")
@@ -152,8 +165,8 @@ def test_simulated_sequencer(
         =================================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Date: 2020-01-17 ===================================
         Tel   Seq  Parent  Type      Run   Subruns  Source        Action  Tries  JobID  State  CPU_time  Exit  DL1%  MUONS%  DL1AB%  DATACHECK%  DL2%  
         LST1    1  None    PEDCALIB  1809  5        None          None    None   None   None   None      None  None  None    None    None        None  
-        LST1    2       1  DATA      1807  11       Crab          None    None   None   None   None      None     0       0       0           0     0  
-        LST1    3       1  DATA      1808  9        MadeUpSource  None    None   None   None   None      None     0       0       0           0     0  
+        LST1    2       1  DATA      1807  11       Crab          None    None   None   None   None      None     0       0       0           0   100  
+        LST1    3       1  DATA      1808  9        MadeUpSource  None    None   None   None   None      None     0       0       0           0   100  
         """  # noqa: E501
     )
 
@@ -186,6 +199,9 @@ def test_closer(
     longterm_dir,
     longterm_link_latest_dir,
     daily_datacheck_dl1_files,
+    dl1b_config_files,
+    tailcuts_log_files,
+    rf_models,
 ):
     # First assure that the end of night flag is not set and remove it otherwise
     night_finished_flag = Path(
@@ -209,6 +225,7 @@ def test_closer(
     assert longterm_link_latest_dir.exists()
     for check_file in daily_datacheck_dl1_files:
         assert check_file.exists()
+    assert rf_models[2].exists()
 
     run_program("closer", "-y", "-v", "-t", "-d", "2020-01-17", "LST1")
     closed_seq_file = running_analysis_dir / "sequence_LST1_01809.closed"
@@ -227,9 +244,6 @@ def test_closer(
         "./test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84/datacheck/"
         "datacheck_dl1_LST-1.Run01808.0011.h5"
     )
-    assert os.path.exists(
-        "./test_osa/test_files0/DL2/20200117/v0.1.0/model2/dl2_LST-1.Run01808.0011.h5"
-    )
     # Assert that the link to dl1 and muons files have been created
     assert os.path.islink(
         "./test_osa/test_files0/running_analysis/20200117/v0.1.0/muons_LST-1.Run01808.0011.fits"
@@ -242,7 +256,16 @@ def test_closer(
     assert closed_seq_file.exists()
 
 
-def test_datasequence(running_analysis_dir):
+def test_datasequence(
+    running_analysis_dir,
+    run_catalog,
+    run_catalog_dir,
+    rf_models_base_dir,
+    rf_models,
+    catB_closed_file,
+    dl1b_config_files,
+    tailcuts_log_files,
+):
     drs4_file = "drs4_pedestal.Run00001.0000.fits"
     calib_file = "calibration.Run00002.0000.hdf5"
     timecalib_file = "time_calibration.Run00002.0000.hdf5"
@@ -250,8 +273,15 @@ def test_datasequence(running_analysis_dir):
     drive_file = "DrivePosition_20200117.txt"
     runsummary_file = "RunSummary_20200117.ecsv"
     prod_id = "v0.1.0"
-    run_number = "00003.0000"
+    run_number = "01807.0000"
     options.directory = running_analysis_dir
+
+    assert run_catalog_dir.exists()
+    assert run_catalog.exists()
+    assert rf_models_base_dir.exists()
+    assert rf_models[1].exists()
+    assert catB_closed_file.exists()
+    assert dl1b_config_files[0].exists()
 
     output = run_program(
         "datasequence",
@@ -264,6 +294,8 @@ def test_datasequence(running_analysis_dir):
         f"--systematic-correction-file={systematic_correction_file}",
         f"--drive-file={drive_file}",
         f"--run-summary={runsummary_file}",
+        f"--dl1b-config={dl1b_config_files[0]}",
+        "--dl1-prod-id=tailcut84",
         run_number,
         "LST1",
     )
@@ -288,7 +320,15 @@ def test_calibration_pipeline(running_analysis_dir):
     assert output.returncode == 0
 
 
-def test_is_sequencer_successful(run_summary, running_analysis_dir):
+def test_is_sequencer_successful(
+        run_summary,
+        running_analysis_dir,
+        dl1b_config_files,
+        tailcuts_log_files,
+        rf_models,
+        merged_run_summary,
+    ):
+    assert merged_run_summary.exists()
     options.directory = running_analysis_dir
     options.test = True
     seq_tuple = is_finished_check(run_summary)
@@ -300,12 +340,14 @@ def test_drs4_pedestal_cmd(base_test_dir):
     from osa.scripts.calibration_pipeline import drs4_pedestal_command
 
     cmd = drs4_pedestal_command(drs4_pedestal_run_id="01804")
+    r0_dir = base_test_dir / "R0"
     expected_command = [
         cfg.get("lstchain", "drs4_baseline"),
         "-r",
         "01804",
         "-b",
         base_test_dir,
+        f"--r0-dir={r0_dir}",
         "--no-progress",
     ]
     assert cmd == expected_command
@@ -315,6 +357,7 @@ def test_calibration_file_cmd(base_test_dir):
     from osa.scripts.calibration_pipeline import calibration_file_command
 
     cmd = calibration_file_command(drs4_pedestal_run_id="01804", pedcal_run_id="01809")
+    r0_dir = base_test_dir / "R0"
     expected_command = [
         cfg.get("lstchain", "charge_calibration"),
         "-p",
@@ -323,6 +366,7 @@ def test_calibration_file_cmd(base_test_dir):
         "01809",
         "-b",
         base_test_dir,
+        f"--r0-dir={r0_dir}",
     ]
     assert cmd == expected_command
 

@@ -11,6 +11,9 @@ def test_source_list(
     systematic_correction_files,
     pedestal_ids_file,
     merged_run_summary,
+    dl1b_config_files,
+    tailcuts_log_files,
+    rf_models,
 ):
     """Test that the list of name of sources is correct."""
     from osa.nightsummary.extract import get_source_list

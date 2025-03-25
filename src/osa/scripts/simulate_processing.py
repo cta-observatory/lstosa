@@ -8,7 +8,6 @@ python osa/scripts/simulate_processing.py"""
 import logging
 import multiprocessing as mp
 import subprocess
-from datetime import datetime
 from pathlib import Path
 
 import yaml
@@ -20,7 +19,8 @@ from osa.nightsummary.extract import build_sequences
 from osa.provenance.utils import get_log_config
 from osa.utils.cliopts import simprocparsing
 from osa.utils.logging import myLogger
-from osa.utils.utils import date_to_dir
+from osa.utils.utils import date_to_iso
+from osa.paths import analysis_path
 
 __all__ = [
     "parse_template",
@@ -174,7 +174,7 @@ def simulate_processing():
                 drs4_pedestal_run_id,
                 pedcal_run_id,
                 sequence.run_str,
-                options.directory,
+                date_to_iso(options.date),
                 options.prod_id,
             ]
             log.info(f"Processing provenance for run {sequence.run_str}")
@@ -187,10 +187,7 @@ def main():
 
     simprocparsing()
 
-    # date and tel_id hardcoded for the moment
-    options.date = datetime.fromisoformat("2020-01-17")
-    options.tel_id = "LST1"
-    options.directory = date_to_dir(options.date)
+    options.directory = analysis_path(options.tel_id)
 
     log.info("Running simulate processing")
 

@@ -5,12 +5,13 @@ directories whenever they are needed.
 """
 
 import logging
+from pathlib import Path
 
 from osa.configs import options
+from osa.configs.config import cfg
 from osa.paths import (
     datacheck_directory,
     get_datacheck_files,
-    destination_dir,
 )
 from osa.utils.cliopts import copy_datacheck_parsing
 from osa.utils.logging import myLogger
@@ -90,8 +91,9 @@ def get_number_of_runs():
     Get the run sequence processed list for the given date by globbing the
     run-wise DL1 files.
     """
-    dl1_directory = destination_dir("DL1AB", create_dir=False)
-    list_files = list(dl1_directory.glob("dl1_LST-1.Run?????.h5"))
+    nightdir = date_to_dir(options.date)
+    dl1_directory = Path(cfg.get("LST1", "DL1_DIR")) / nightdir / options.prod_id
+    list_files = list(dl1_directory.glob("tailcut*/dl1_LST-1.Run?????.h5"))
     return len(list_files)
 
 

@@ -21,10 +21,10 @@ dependencies:
   - click
   - pymongo
   - scikit-learn=1.2
-  - ctapipe_io_lst=0.24
+  - ctapipe_io_lst >=0.25.1,<0.26a0
   - ctaplot~=0.6.4
   - pyirf~=0.10
-  - lstchain>=0.10.13
+  - lstchain>=0.10.15
   - tenacity
   - pip:
       - lstcam_calib

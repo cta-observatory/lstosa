@@ -200,6 +200,13 @@ activities:
             #   filepath: /fefs/aswg/data/real/DL1/20200218/v0.4.3_v00/
             #   size: 128
 
+    catB_calibration:
+        description: 
+            "Create Cat-B calibration file for an observation run"
+        parameters:
+        usage:
+        generation:
+
     dl1ab:
         description:
             "Create DL1AB files for an observation run"

@@ -16,6 +16,7 @@ from osa.configs.config import cfg
 from osa.utils.cliopts import sequencer_webmaker_argparser
 from osa.utils.logging import myLogger
 from osa.utils.utils import is_day_closed, date_to_iso, date_to_dir
+from osa.paths import all_dl1ab_config_files_exist
 
 log = myLogger(logging.getLogger())
 
@@ -87,6 +88,9 @@ def get_sequencer_output(date: str, config: str, test=False, no_gainsel=False) -
         
     if test:
         commandargs.insert(-1, "-t")
+
+    if not all_dl1ab_config_files_exist(date):
+        commandargs.insert(-1, "--no-dl1ab")
 
     try:
         output = sp.run(commandargs, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8", check=True)

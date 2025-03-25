@@ -22,10 +22,15 @@ from osa.job import (
     get_squeue_output,
     run_sacct,
     run_squeue,
+    are_all_jobs_correctly_finished,
 )
-from osa.nightsummary.extract import build_sequences
+from osa.nightsummary.extract import (
+    build_sequences,
+    extract_runs,
+    extract_sequences
+)
 from osa.nightsummary.nightsummary import run_summary_table
-from osa.paths import analysis_path
+from osa.paths import analysis_path, destination_dir
 from osa.report import start
 from osa.utils.cliopts import sequencer_cli_parsing
 from osa.utils.logging import myLogger
@@ -115,7 +120,7 @@ def single_process(telescope):
             log.info(f"Sequencer is still running for date {date_to_iso(options.date)}. Try again later.")
             sys.exit(0)
 
-        elif is_sequencer_completed(options.date) and not options.force_submit:
+        if is_sequencer_completed(options.date) and not options.force_submit:
             log.info(f"Sequencer already finished for date {date_to_iso(options.date)}. Exiting")
             sys.exit(0)
 
@@ -192,7 +197,7 @@ def update_sequence_status(seq_list):
                 Decimal(get_status_for_sequence(seq, "DATACHECK") * 100) / seq.subruns
             )
             seq.muonstatus = int(Decimal(get_status_for_sequence(seq, "MUON") * 100) / seq.subruns)
-            seq.dl2status = int(Decimal(get_status_for_sequence(seq, "DL2") * 100) / seq.subruns)
+            seq.dl2status = int(Decimal(get_status_for_sequence(seq, "DL2") * 100))
 
 
 def get_status_for_sequence(sequence, data_level) -> int:
@@ -210,17 +215,26 @@ def get_status_for_sequence(sequence, data_level) -> int:
     number_of_files : int
     """
     if data_level == "DL1AB":
-        directory = options.directory / options.dl1_prod_id
-        files = list(directory.glob(f"dl1_LST-1*{sequence.run}*.h5"))
-
+        try:
+            directory = options.directory / sequence.dl1_prod_id
+            files = list(directory.glob(f"dl1_LST-1*{sequence.run}*.h5"))
+        except AttributeError:
+            return 0
+        
     elif data_level == "DL2":
-        directory = options.directory / options.dl2_prod_id
-        files = list(directory.glob(f"dl2_LST-1*{sequence.run}*.h5"))
-
+        try:
+            directory = destination_dir(concept="DL2", create_dir=False, dl2_prod_id=sequence.dl2_prod_id)
+            files = list(directory.glob(f"dl2_LST-1*{sequence.run}*.h5"))
+        except AttributeError:
+            return 0
+        
     elif data_level == "DATACHECK":
-        directory = options.directory / options.dl1_prod_id
-        files = list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5"))
-
+        try:
+            directory = options.directory / sequence.dl1_prod_id
+            files = list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5"))
+        except AttributeError:
+            return 0
+        
     else:
         prefix = cfg.get("PATTERN", f"{data_level}PREFIX")
         suffix = cfg.get("PATTERN", f"{data_level}SUFFIX")
@@ -340,20 +354,14 @@ def is_sequencer_completed(date: datetime.datetime) -> bool:
     """Check if the jobs launched by sequencer are already completed."""
     summary_table = run_summary_table(date)
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
-    sacct_output = run_sacct()
-    sacct_info = get_sacct_output(sacct_output)
+    run_list = extract_runs(data_runs)
+    sequence_list = extract_sequences(options.date, run_list)
 
-    for run in data_runs["run_id"]:
-        jobs_run = sacct_info[sacct_info["JobName"]==f"LST1_{run:05d}"]
-        if len(jobs_run["JobID"].unique())>1:
-            last_job_id = sorted(jobs_run["JobID"].unique())[-1]
-            jobs_run = sacct_info[sacct_info["JobID"]==last_job_id]
-        incomplete_jobs = jobs_run[(jobs_run["State"] != "COMPLETED")]
-        if len(jobs_run) == 0 or len(incomplete_jobs) != 0:
-            return False
-
-    return True
-
+    if are_all_jobs_correctly_finished(sequence_list):
+        return True
+    else:
+        log.info("Jobs did not correctly/yet finish")
+        return False
 
 def timeout_in_sequencer(date: datetime.datetime) -> bool:
     """Check if any of the jobs launched by sequencer finished in timeout."""

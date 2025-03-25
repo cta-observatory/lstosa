@@ -2,17 +2,17 @@
 
 import logging
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import List
 import subprocess
 import time
-
+import json
 import lstchain
 from astropy.table import Table
 from lstchain.onsite import (find_systematics_correction_file,
-                             find_time_calibration_file,
-                             find_filter_wheels)
+                             find_time_calibration_file)
 
 from osa.configs import options
 from osa.configs.config import DEFAULT_CFG, cfg
@@ -45,8 +45,8 @@ __all__ = [
 
 
 DATACHECK_WEB_BASEDIR = Path(cfg.get("WEBSERVER", "DATACHECK"))
-CALIB_BASEDIR = Path(cfg.get("LST1", "CALIB_DIR"))
-DRS4_PEDESTAL_BASEDIR = Path(cfg.get("LST1", "PEDESTAL_DIR"))
+CALIB_BASEDIR = Path(cfg.get("LST1", "CAT_A_CALIB_DIR"))
+DRS4_PEDESTAL_BASEDIR = Path(cfg.get("LST1", "CAT_A_PEDESTAL_DIR"))
 
 
 def analysis_path(tel) -> Path:
@@ -136,24 +136,22 @@ def get_calibration_filename(run_id: int, prod_id: str) -> Path:
         return files[-1]  # Get the latest production among the major lstchain version
 
     date = utils.date_to_dir(get_run_date(run_id))
-
-    if options.test:  # Run tests avoiding the access to the database
-        options.filters = 52
-
-    else:
-        mongodb = cfg.get("database", "caco_db")
-        try:
-            # Cast run_id to int to avoid problems with numpy int64 encoding in MongoDB
-            options.filters = find_filter_wheels(int(run_id), mongodb)
-        except IOError:
-            log.warning("No filter information found in database. Assuming positions 52.")
-            options.filters = 52
+    options.filters = utils.get_calib_filters(run_id)
 
     return (
         CALIB_BASEDIR
         / date
         / f"v{lstchain.__version__}/calibration_filters_{options.filters}.Run{run_id:05d}.0000.h5"
     ).resolve()
+
+
+def get_catB_calibration_filename(run_id: int) -> Path:
+    """Return the Category-B calibration filename of a given run."""
+    date = utils.date_to_dir(options.date)
+    calib_prod_id = utils.get_lstchain_version()
+    catB_calib_dir = Path(cfg.get("LST1", "CAT_B_CALIB_BASE")) / "calibration" / date / calib_prod_id
+    filters = utils.get_calib_filters(run_id)
+    return catB_calib_dir / f"cat_B_calibration_filters_{filters}.Run{run_id:05d}.h5"
 
 
 def pedestal_ids_file_exists(run_id: int) -> bool:
@@ -256,7 +254,10 @@ def sequence_calibration_files(sequence_list: List[Sequence]) -> None:
 
 def get_datacheck_files(pattern: str, directory: Path) -> list:
     """Return a list of files matching the pattern."""
-    return sorted(directory.glob(pattern))
+    if pattern=="datacheck_dl1*.pdf":
+        return sorted(directory.glob("tailcut*/datacheck/"+pattern))
+    else:
+        return sorted(directory.glob(pattern))
 
 
 def datacheck_directory(data_type: str, date: str) -> Path:
@@ -264,7 +265,7 @@ def datacheck_directory(data_type: str, date: str) -> Path:
     if data_type in {"PEDESTAL", "CALIB"}:
         directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / date / "pro/log"
     elif data_type == "DL1AB":
-        directory = destination_dir("DATACHECK", create_dir=False)
+        directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / date / options.prod_id
     elif data_type == "LONGTERM":
         directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / options.prod_id / date
     else:
@@ -272,7 +273,7 @@ def datacheck_directory(data_type: str, date: str) -> Path:
     return directory
 
 
-def destination_dir(concept: str, create_dir: bool = True) -> Path:
+def destination_dir(concept: str, create_dir: bool = True, dl1_prod_id: str = None, dl2_prod_id: str = None) -> Path:
     """
     Create final destination directory for each data level.
     See Also osa.utils.register_run_concept_files
@@ -303,7 +304,7 @@ def destination_dir(concept: str, create_dir: bool = True) -> Path:
             Path(cfg.get(options.tel_id, "DL1_DIR"))
             / nightdir
             / options.prod_id
-            / options.dl1_prod_id
+            / dl1_prod_id
             / "datacheck"
         )
     elif concept == "DL1AB":
@@ -311,13 +312,14 @@ def destination_dir(concept: str, create_dir: bool = True) -> Path:
             Path(cfg.get(options.tel_id, "DL1_DIR"))
             / nightdir
             / options.prod_id
-            / options.dl1_prod_id
+            / dl1_prod_id
         )
     elif concept in {"DL2", "DL3"}:
         directory = (
             (Path(cfg.get(options.tel_id, f"{concept}_DIR")) / nightdir)
             / options.prod_id
-        ) / options.dl2_prod_id
+            / dl2_prod_id
+        ) 
     elif concept in {"PEDESTAL", "CALIB", "TIMECALIB"}:
         directory = (
             Path(cfg.get(options.tel_id, f"{concept}_DIR"))
@@ -397,6 +399,7 @@ def create_longterm_symlink(cherenkov_job_id: str = None):
     else:
         log.warning(f"Job {cherenkov_job_id} (lstchain_cherenkov_transparency) did not finish successfully.")
 
+
 def dl1_datacheck_longterm_file_exits() -> bool:
     """Return true if the longterm DL1 datacheck file was already produced."""
     nightdir = utils.date_to_dir(options.date)
@@ -404,3 +407,79 @@ def dl1_datacheck_longterm_file_exits() -> bool:
     longterm_file = longterm_dir / options.prod_id / nightdir / f"DL1_datacheck_{nightdir}.h5"
     return longterm_file.exists()
 
+
+def catB_closed_file_exists(run_id: int) -> bool:
+    catB_closed_file = Path(options.directory) / f"catB_{run_id:05d}.closed"
+    return catB_closed_file.exists()
+
+
+def catB_calibration_file_exists(run_id: int) -> bool:
+    catB_calib_base_dir = Path(cfg.get("LST1","CAT_B_CALIB_BASE"))
+    prod_id = utils.get_lstchain_version()
+    night_dir = utils.date_to_dir(options.date)
+    filters = utils.get_calib_filters(run_id)
+    catB_calib_dir = catB_calib_base_dir / "calibration" / night_dir / prod_id 
+    catB_calib_file = catB_calib_dir / f"cat_B_calibration_filters_{filters}.Run{run_id:05d}.h5"
+    return catB_calib_file.exists()
+
+
+def get_dl1_prod_id(config_filename):
+    with open(config_filename) as json_file:
+        data = json.load(json_file)
+        
+    picture_thresh = data["tailcuts_clean_with_pedestal_threshold"]["picture_thresh"]
+    boundary_thresh = data["tailcuts_clean_with_pedestal_threshold"]["boundary_thresh"]
+
+    if boundary_thresh == 4:
+        return f"tailcut{picture_thresh}{boundary_thresh}"
+    else:
+        return f"tailcut{picture_thresh}{boundary_thresh:02d}"
+
+
+def get_dl2_nsb_prod_id(rf_model: Path) -> str:
+    match = re.search(r'nsb_tuning_\d+\.\d+', str(rf_model))
+    if not match:
+        log.warning(f"No 'nsb_tuning_X.XX' pattern found in the path:\n{rf_model}")
+        sys.exit(1)
+    else:
+        return match.group(0)
+    
+
+def get_dl1_prod_id_and_config(run_id: int) -> str:
+    if not cfg.getboolean("lstchain", "apply_standard_dl1b_config"):
+        tailcuts_finder_dir = Path(cfg.get(options.tel_id, "TAILCUTS_FINDER_DIR"))
+        dl1b_config_file = tailcuts_finder_dir / f"dl1ab_Run{run_id:05d}.json"
+        if not dl1b_config_file.exists()  and not options.simulate:
+            log.error(
+                f"The dl1b config file was not created yet for run {run_id:05d}. "
+                "Please try again later."
+            )
+            sys.exit(1) 
+        else: 
+            dl1_prod_id = get_dl1_prod_id(dl1b_config_file)
+            return dl1_prod_id, dl1b_config_file.resolve()
+    else:
+        dl1b_config_file = Path(cfg.get("lstchain", "dl1b_config"))
+        dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
+        return dl1_prod_id, dl1b_config_file.resolve()
+    
+
+def get_dl2_prod_id(run_id: int) -> str:
+    dl1_prod_id = get_dl1_prod_id_and_config(run_id)[0]
+    rf_model = utils.get_RF_model(run_id)
+    nsb_prod_id = get_dl2_nsb_prod_id(rf_model)
+    return f"{dl1_prod_id}/{nsb_prod_id}"
+
+
+def all_dl1ab_config_files_exist(date: str) -> bool:
+    nightdir = date.replace("-","")
+    run_summary_dir =  Path(cfg.get(options.tel_id, "RUN_SUMMARY_DIR"))
+    run_summary_file = run_summary_dir / f"RunSummary_{nightdir}.ecsv"
+    summary_table = Table.read(run_summary_file)
+    data_runs = summary_table[summary_table["run_type"] == "DATA"]
+    for run_id in data_runs["run_id"]:
+        tailcuts_finder_dir = Path(cfg.get(options.tel_id, "TAILCUTS_FINDER_DIR"))
+        dl1b_config_file = tailcuts_finder_dir / f"dl1ab_Run{run_id:05d}.json"
+        if not dl1b_config_file.exists():
+            return False
+    return True

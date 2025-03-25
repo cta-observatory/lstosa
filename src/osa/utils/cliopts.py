@@ -6,15 +6,11 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from osa.configs import options
-from osa.configs.config import cfg
 from osa.paths import analysis_path, DEFAULT_CFG
 from osa.utils.logging import myLogger
 from osa.utils.utils import (
-    get_dl1_prod_id,
-    get_dl2_prod_id,
     get_prod_id,
     is_defined,
-    set_prod_ids,
     YESTERDAY,
 )
 
@@ -32,8 +28,6 @@ __all__ = [
     "sequencer_webmaker_argparser",
     "valid_date",
     "get_prod_id",
-    "get_dl1_prod_id",
-    "get_dl2_prod_id",
     "calibration_pipeline_cliparsing",
     "calibration_pipeline_argparser",
     "autocloser_cli_parser",
@@ -130,7 +124,7 @@ def closercliparsing():
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
     options.directory = analysis_path(options.tel_id)
-    set_prod_ids()
+    options.prod_id = get_prod_id()
 
 
 def calibration_pipeline_argparser():
@@ -184,10 +178,10 @@ def data_sequence_argparser():
         help="Set the prod ID to define data directories",
     )
     parser.add_argument(
-        "--no-dl2",
+        "--no-dl1ab",
         action="store_true",
         default=False,
-        help="Do not produce DL2 files (default False)",
+        help="Do not launch the script lstchain_dl1ab (default False)",
     )
     parser.add_argument("--pedcal-file", type=Path, help="Path of the calibration file")
     parser.add_argument("--drs4-pedestal-file", type=Path, help="Path of the DRS4 pedestal file")
@@ -210,6 +204,18 @@ def data_sequence_argparser():
         type=Path,
         help="Path to a file containing the ids of the interleaved pedestal events",
     )
+    parser.add_argument(
+        "--dl1b-config",
+        type=Path,
+        default=None,
+        help="Configuration file for the production of DL1b files"
+    )
+    parser.add_argument(
+        "--dl1-prod-id",
+        type=str,
+        default=None,
+        help="Production id of the DL1b files"
+    )
     parser.add_argument("run_number", help="Number of the run to be processed")
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
     return parser
@@ -226,7 +232,7 @@ def data_sequence_cli_parsing():
     options.verbose = opts.verbose
     options.simulate = opts.simulate
     options.prod_id = opts.prod_id
-    options.no_dl2 = opts.no_dl2
+    options.no_dl1ab = opts.no_dl1ab
     options.tel_id = opts.tel_id
 
     log.debug(f"The options and arguments are {opts}")
@@ -234,8 +240,7 @@ def data_sequence_cli_parsing():
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
     options.directory = analysis_path(options.tel_id)
-
-    set_prod_ids()
+    options.prod_id = get_prod_id()
 
     return (
         opts.pedcal_file,
@@ -246,6 +251,8 @@ def data_sequence_cli_parsing():
         opts.run_summary,
         opts.pedestal_ids_file,
         opts.run_number,
+        opts.dl1b_config,
+        opts.dl1_prod_id,
     )
 
 
@@ -269,10 +276,10 @@ def sequencer_argparser():
         "calibration products already produced (default False)",
     )
     parser.add_argument(
-        "--no-dl2",
+        "--no-dl1ab",
         action="store_true",
         default=False,
-        help="Do not produce DL2 files (default False)",
+        help="Do not launch the script lstchain_dl1ab (default False)",
     )
     parser.add_argument(
         "--no-gainsel",
@@ -304,13 +311,13 @@ def sequencer_cli_parsing():
     set_common_globals(opts)
     options.no_submit = opts.no_submit
     options.no_calib = opts.no_calib
-    options.no_dl2 = opts.no_dl2
+    options.no_dl1ab = opts.no_dl1ab
     options.no_gainsel = opts.no_gainsel
     options.force_submit = opts.force_submit
 
     log.debug(f"the options are {opts}")
 
-    set_prod_ids()
+    options.prod_id = get_prod_id()
 
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
@@ -352,7 +359,7 @@ def provprocess_argparser():
     )
     parser.add_argument("pedcal_run_id", help="Number of the used pedcal used in the calibration")
     parser.add_argument("run", help="Number of the run whose provenance is to be extracted")
-    parser.add_argument("date", action="store", type=str, help="Observation starting date YYYYMMDD")
+    parser.add_argument("date", action="store", type=valid_date, help="Date (YYYY-MM-DD) of the start of the night")
     parser.add_argument("prod_id", action="store", type=str, help="Production ID")
 
     return parser
@@ -376,7 +383,8 @@ def provprocessparsing():
     options.filter = opts.filter
     options.quit = opts.quit
     options.no_dl2 = opts.no_dl2
-    set_prod_ids()
+    options.prod_id = get_prod_id()
+    options.tel_id = "LST1"
 
 
 def simproc_argparser():
@@ -402,15 +410,15 @@ def simproc_argparser():
         dest="append",
         help="append provenance capture to existing prov.log file",
     )
-    # parser.add_argument(
-    #     "-d",
-    #     "--date",
-    #     action="store",
-    #     type=str,
-    #     dest="date",
-    #     help="observation ending date YYYY-MM-DD [default today]",
-    # )
-    # parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
+    parser.add_argument(
+         "-d",
+         "--date",
+         action="store",
+         type=valid_date,
+         dest="date",
+         help="observation ending date YYYY-MM-DD [default today]",
+    )
+    parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
 
     return parser
 
@@ -424,6 +432,8 @@ def simprocparsing():
     options.provenance = opts.provenance
     options.force = opts.force
     options.append = opts.append
+    options.date = opts.date
+    options.tel_id = opts.tel_id
 
 
 def copy_datacheck_argparser():
@@ -444,11 +454,6 @@ def copy_datacheck_parsing():
     options.date = set_default_date_if_needed()
     options.directory = analysis_path(options.tel_id)
     options.prod_id = get_prod_id()
-
-    if cfg.get("LST1", "DL1_PROD_ID") is not None:
-        options.dl1_prod_id = get_dl1_prod_id()
-    else:
-        options.dl1_prod_id = options.prod_id
 
 
 def sequencer_webmaker_argparser():

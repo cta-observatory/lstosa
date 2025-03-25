@@ -75,3 +75,17 @@ def test_create_lock(base_test_dir):
     lock_path = base_test_dir / "test_lock.closed"
     is_closed = create_lock(lock_path)
     assert is_closed is False
+
+
+def test_get_RF_model(
+        run_catalog_dir,
+        run_catalog,
+        rf_models,
+        dl1b_config_files,
+        tailcuts_log_files,
+    ):
+    from osa.utils.utils import get_RF_model
+    from pathlib import Path
+
+    expected_model = Path("test_osa/test_files0/models/AllSky/20240918_v0.10.12_allsky_nsb_tuning_0.14/dec_2276")
+    assert get_RF_model(1807) == expected_model.resolve()

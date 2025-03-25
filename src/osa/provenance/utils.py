@@ -10,7 +10,7 @@ from osa.utils.utils import date_to_dir, get_lstchain_version
 
 __all__ = ["parse_variables", "get_log_config"]
 
-REDUCTION_TASKS = ["r0_to_dl1", "dl1ab", "dl1_datacheck", "dl1_to_dl2"]
+REDUCTION_TASKS = ["r0_to_dl1", "catB_calibration", "dl1ab", "dl1_datacheck", "dl1_to_dl2"]
 
 
 def parse_variables(class_instance):
@@ -40,20 +40,18 @@ def parse_variables(class_instance):
     configfile_dl1b = cfg.get("lstchain", "dl1b_config")
     configfile_dl2 = cfg.get("lstchain", "dl2_config")
     raw_dir = Path(cfg.get("LST1", "R0_DIR"))
-    rf_models_directory = Path(cfg.get("lstchain", "RF_MODELS"))
+    rf_models_directory = Path(cfg.get("LST1", "RF_MODELS"))
     dl1_dir = Path(cfg.get("LST1", "DL1_DIR"))
     dl2_dir = Path(cfg.get("LST1", "DL2_DIR"))
-    calib_dir = Path(cfg.get("LST1", "CALIB_DIR"))
-    pedestal_dir = Path(cfg.get("LST1", "PEDESTAL_DIR"))
+    calib_dir = Path(cfg.get("LST1", "CAT_A_CALIB_DIR"))
+    pedestal_dir = Path(cfg.get("LST1", "CAT_A_PEDESTAL_DIR"))
 
     class_instance.SoftwareVersion = get_lstchain_version()
     class_instance.ProcessingConfigFile = str(options.configfile)
     class_instance.ObservationDate = flat_date
     if class_instance.__name__ in REDUCTION_TASKS:
         muon_dir = dl1_dir / flat_date / options.prod_id / "muons"
-        outdir_dl1 = dl1_dir / flat_date / options.prod_id / options.dl1_prod_id
-        outdir_dl2 = dl2_dir / flat_date / options.prod_id / options.dl2_prod_id
-
+        
     if class_instance.__name__ in ["drs4_pedestal", "calibrate_charge"]:
         # drs4_pedestal_run_id  [0] 1804
         # pedcal_run_id         [1] 1805
@@ -111,6 +109,7 @@ def parse_variables(class_instance):
         run = run_subrun.split(".")[0]
         class_instance.ObservationRun = run
 
+        outdir_dl1 = dl1_dir / flat_date / options.prod_id
         calibration_file = Path(class_instance.args[0]).resolve()
         pedestal_file = Path(class_instance.args[1]).resolve()
         timecalibration_file = Path(class_instance.args[2]).resolve()
@@ -133,10 +132,16 @@ def parse_variables(class_instance):
         class_instance.InterleavedPedestalEventsFile = None
         if class_instance.args[6] is not None:
             class_instance.InterleavedPedestalEventsFile = str(Path(class_instance.args[6]))
+  
+    if class_instance.__name__ == "catB_calibration":
+        class_instance.ObservationRun = class_instance.args[0].split(".")[0]
 
     if class_instance.__name__ == "dl1ab":
         # run_str       [0] 02006.0000
+        # dl1b_config   [1]
+        # dl1_prod_id   [2]
 
+        outdir_dl1 = dl1_dir / flat_date / options.prod_id / class_instance.args[2]
         class_instance.Analysisconfigfile_dl1 = str(Path(configfile_dl1b))
         class_instance.ObservationRun = class_instance.args[0].split(".")[0]
         class_instance.StoreImage = cfg.getboolean("lstchain", "store_image_dl1ab")
@@ -146,9 +151,12 @@ def parse_variables(class_instance):
 
     if class_instance.__name__ == "dl1_datacheck":
         # run_str       [0] 02006.0000
+        # dl1b_prod_id  [1]
+
         run_subrun = class_instance.args[0]
         run = run_subrun.split(".")[0]
 
+        outdir_dl1 = dl1_dir / flat_date / options.prod_id / class_instance.args[1]
         class_instance.ObservationRun = run
         class_instance.DL1SubrunDataset = str(
             (outdir_dl1 / f"dl1_LST-1.Run{run_subrun}.h5").resolve()
@@ -168,8 +176,15 @@ def parse_variables(class_instance):
 
     if class_instance.__name__ == "dl1_to_dl2":
         # run_str       [0] 02006.0000
+        # rf_model_path [1]
+        # dl1_prod_id   [2]
+        # dl2_prod_id   [3]
+
         run_subrun = class_instance.args[0]
         run = run_subrun.split(".")[0]
+
+        outdir_dl1 = dl1_dir / flat_date / options.prod_id / class_instance.args[2]
+        outdir_dl2 = dl2_dir / flat_date / options.prod_id / class_instance.args[3]
 
         class_instance.Analysisconfigfile_dl2 = configfile_dl2
         class_instance.ObservationRun = run

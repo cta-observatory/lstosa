@@ -21,7 +21,7 @@ from osa.configs import options
 from osa.configs.config import cfg
 from osa.nightsummary.extract import build_sequences, get_source_list
 from osa.paths import destination_dir, DEFAULT_CFG, create_source_directories, analysis_path
-from osa.utils.cliopts import get_prod_id, get_dl2_prod_id
+from osa.utils.cliopts import get_prod_id
 from osa.utils.logging import myLogger
 from osa.utils.utils import stringify, YESTERDAY
 
@@ -250,7 +250,6 @@ def setup_global_options(date_obs, telescope):
     options.date = date_obs
     options.tel_id = telescope
     options.prod_id = get_prod_id()
-    options.dl2_prod_id = get_dl2_prod_id()
     options.directory = analysis_path(options.tel_id)
 
 

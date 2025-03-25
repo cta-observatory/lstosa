@@ -52,8 +52,8 @@ def test_destination_dir():
     from osa.paths import destination_dir
 
     datedir = date_to_dir(options.date)
-    options.dl1_prod_id = cfg.get("LST1", "DL1_PROD_ID")
-    options.dl2_prod_id = cfg.get("LST1", "DL2_PROD_ID")
+    dl1_prod_id = "tailcut84"
+    dl2_prod_id = "tailcut84/nsb_tuning_0.14"
     options.prod_id = cfg.get("LST1", "PROD_ID")
     base_directory = cfg.get("LST1", "BASE")
     base_path = Path(base_directory)
@@ -67,14 +67,14 @@ def test_destination_dir():
     }
 
     for concept, dst_dir in data_types.items():
-        directory = destination_dir(concept, create_dir=False)
+        directory = destination_dir(concept, create_dir=False, dl1_prod_id=dl1_prod_id, dl2_prod_id=dl2_prod_id)
         if concept == "DL1AB":
             expected_directory = (
-                base_path / dst_dir / datedir / options.prod_id / options.dl1_prod_id
+                base_path / dst_dir / datedir / options.prod_id / dl1_prod_id
             )
         elif concept == "DATACHECK":
             expected_directory = (
-                base_path / dst_dir / datedir / options.prod_id / options.dl1_prod_id / "datacheck"
+                base_path / dst_dir / datedir / options.prod_id / dl1_prod_id / "datacheck"
             )
         elif concept == "MUON":
             expected_directory = (
@@ -86,7 +86,7 @@ def test_destination_dir():
             )
         elif concept == "DL2":
             expected_directory = (
-                base_path / dst_dir / datedir / options.prod_id / options.dl2_prod_id
+                base_path / dst_dir / datedir / options.prod_id / dl2_prod_id
             )
 
         assert directory == expected_directory

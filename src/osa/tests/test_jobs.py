@@ -9,17 +9,20 @@ from osa.configs.config import cfg, DEFAULT_CFG
 
 extra_files = Path(os.getenv("OSA_TEST_DATA", "extra"))
 datasequence_history_file = extra_files / "history_files/sequence_LST1_04185.0010.history"
+datasequence_history_file2 = extra_files / "history_files/sequence_LST1_04185.0001.history"
 calibration_history_file = extra_files / "history_files/sequence_LST1_04183.history"
 options.date = "2020-01-17"
 options.tel_id = "LST1"
 options.prod_id = "v0.1.0"
 
 
-def test_historylevel():
+def test_historylevel(
+        run_catalog,
+        dl1b_config_files,
+        tailcuts_log_files,
+        rf_models,
+):
     from osa.job import historylevel
-
-    options.dl1_prod_id = "tailcut84"
-    options.dl2_prod_id = "model1"
 
     level, rc = historylevel(datasequence_history_file, "DATA")
     assert level == 0
@@ -29,11 +32,8 @@ def test_historylevel():
     assert level == 0
     assert rc == 0
 
-    options.dl1_prod_id = "tailcut84"
-    options.dl2_prod_id = "model2"
-
-    level, rc = historylevel(datasequence_history_file, "DATA")
-    assert level == 1
+    level, rc = historylevel(datasequence_history_file2, "DATA")
+    assert level == 2
     assert rc == 0
 
 
@@ -41,6 +41,7 @@ def test_preparejobs(running_analysis_dir, sequence_list):
     from osa.job import prepare_jobs
 
     options.simulate = False
+    options.test = True
     options.directory = running_analysis_dir
     prepare_jobs(sequence_list)
     expected_calib_script = os.path.join(running_analysis_dir, "sequence_LST1_01809.py")
@@ -94,6 +95,7 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     from osa.job import job_header_template
 
     # Extract the first sequence
+    options.test = False
     first_sequence = sequence_list[0]
     header = job_header_template(first_sequence)
     output_string1 = dedent(
@@ -138,13 +140,17 @@ def test_create_job_template_scheduler(
     calibration_file,
     run_summary_file,
     pedestal_ids_file,
+    dl1b_config_files,
+    rf_models,
 ):
     from osa.job import data_sequence_job_template
 
     assert pedestal_ids_file.exists()
+    assert rf_models[1].exists()
 
     options.test = False
     options.simulate = False
+
     content1 = data_sequence_job_template(sequence_list[1])
     expected_content1 = dedent(
         f"""\
@@ -184,6 +190,8 @@ def test_create_job_template_scheduler(
             '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
             '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/DrivePosition_log_20200117.txt',
             '--run-summary={run_summary_file}',
+            '--dl1b-config={dl1b_config_files[0]}',
+            '--dl1-prod-id=tailcut84',
             f'01807.{{subruns:04d}}',
             'LST1'
         ])
@@ -230,6 +238,8 @@ def test_create_job_template_scheduler(
                 '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
                 '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/DrivePosition_log_20200117.txt',
                 '--run-summary={run_summary_file}',
+                '--dl1b-config={dl1b_config_files[1]}',
+                '--dl1-prod-id=tailcut84',
                 f'--pedestal-ids-file={Path.cwd()}/test_osa/test_files0/auxiliary/PedestalFinder/20200117/pedestal_ids_Run01808.{{subruns:04d}}.h5',
                 f'01808.{{subruns:04d}}',
                 'LST1'
@@ -252,6 +262,8 @@ def test_create_job_template_local(
     run_summary_file,
     pedestal_ids_file,
     r0_data,
+    dl1b_config_files,
+    rf_models,
 ):
     """Check the job file in local mode (assuming no scheduler)."""
     from osa.job import data_sequence_job_template
@@ -266,6 +278,7 @@ def test_create_job_template_local(
         assert file.exists()
 
     assert pedestal_ids_file.exists()
+    assert rf_models[0].exists()
 
     options.test = True
     options.simulate = False
@@ -296,6 +309,8 @@ def test_create_job_template_local(
             '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
             '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/DrivePosition_log_20200117.txt',
             '--run-summary={run_summary_file}',
+            '--dl1b-config={dl1b_config_files[0]}',
+            '--dl1-prod-id=tailcut84',
             f'01807.{{subruns:04d}}',
             'LST1'
         ])
@@ -329,6 +344,8 @@ def test_create_job_template_local(
                 '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
                 '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/DrivePosition_log_20200117.txt',
                 '--run-summary={run_summary_file}',
+                '--dl1b-config={dl1b_config_files[1]}',
+                '--dl1-prod-id=tailcut84',
                 f'--pedestal-ids-file={Path.cwd()}/test_osa/test_files0/auxiliary/PedestalFinder/20200117/pedestal_ids_Run01808.{{subruns:04d}}.h5',
                 f'01808.{{subruns:04d}}',
                 'LST1'
@@ -337,10 +354,10 @@ def test_create_job_template_local(
         sys.exit(proc.returncode)"""
     )
 
-    options.simulate = True
-
     assert content1 == expected_content1
     assert content2 == expected_content2
+
+    options.simulate = True
 
 
 def test_create_job_scheduler_calibration(sequence_list):

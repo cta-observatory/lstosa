@@ -7,7 +7,11 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.paths import destination_dir
+from osa.paths import (
+    destination_dir,
+    get_dl1_prod_id_and_config,
+    get_dl2_prod_id
+)
 from osa.utils.logging import myLogger
 from osa.veto import set_closed_sequence
 
@@ -70,11 +74,9 @@ def create_symlinks(input_file, output_file, prefix, suffix):
     """
 
     analysis_dir = Path(options.directory)
-    dl1ab_dir = analysis_dir / options.dl1_prod_id
 
     if prefix == "dl1_LST-1" and suffix == ".h5":
         dl1_filepath_analysis_dir = analysis_dir / input_file.name
-        dl1_filepath_dl1_dir = dl1ab_dir / input_file.name
         # Remove the original DL1 files pre DL1ab stage and keep only symlinks
         if dl1_filepath_analysis_dir.is_file() and not dl1_filepath_analysis_dir.is_symlink():
             dl1_filepath_analysis_dir.unlink()
@@ -83,8 +85,8 @@ def create_symlinks(input_file, output_file, prefix, suffix):
             dl1_filepath_analysis_dir.symlink_to(output_file.resolve())
 
         # Also set the symlink in the DL1ab subdirectory
-        if not dl1_filepath_dl1_dir.is_symlink():
-            dl1_filepath_dl1_dir.symlink_to(output_file.resolve())
+        if not input_file.is_symlink():
+            input_file.symlink_to(output_file.resolve())
 
     if prefix == "muons_LST-1" and suffix == ".fits":
         input_file.symlink_to(output_file.resolve())
@@ -93,7 +95,7 @@ def create_symlinks(input_file, output_file, prefix, suffix):
         input_file.symlink_to(output_file.resolve())
 
 
-def register_run_concept_files(run_string, concept):
+def register_run_concept_files(run_string, sequence_type, concept):
     """
     Prepare files to be moved to final destination directories
     from the running_analysis original directory.
@@ -107,17 +109,20 @@ def register_run_concept_files(run_string, concept):
     initial_dir = Path(options.directory)  # running_analysis
 
     # For MUON and INTERLEAVED data products, the initial directory is running_analysis
+    if sequence_type=="DATA":
+        dl1_prod_id = get_dl1_prod_id_and_config(int(run_string))[0]
+        dl2_prod_id = get_dl2_prod_id(int(run_string))
 
     if concept == "DL2":
-        initial_dir = initial_dir / options.dl2_prod_id
+        initial_dir = initial_dir / dl2_prod_id
 
     elif concept == "DL1AB":
-        initial_dir = initial_dir / options.dl1_prod_id
+        initial_dir = initial_dir / dl1_prod_id
 
     elif concept == "DATACHECK":
-        initial_dir = initial_dir / options.dl1_prod_id
+        initial_dir = initial_dir / dl1_prod_id
 
-    output_dir = destination_dir(concept, create_dir=False)
+    output_dir = destination_dir(concept, create_dir=False, dl1_prod_id=dl1_prod_id, dl2_prod_id=dl2_prod_id)
     data_level = cfg.get("PATTERN", f"{concept}TYPE")
     prefix = cfg.get("PATTERN", f"{concept}PREFIX")
     suffix = cfg.get("PATTERN", f"{concept}SUFFIX")
@@ -167,7 +172,7 @@ def register_non_existing_file(file_path, concept, seq_list):
 
             if run_str_found is not None:
                 log.debug(f"Registering file {run_str_found}")
-                register_run_concept_files(sequence.run_str, concept)
+                register_run_concept_files(sequence.run_str, sequence.type, concept)
                 if options.seqtoclose is None and not file_path.exists():
                     log.debug("File does not exists")
 
@@ -177,13 +182,13 @@ def register_non_existing_file(file_path, concept, seq_list):
 
             if calib_run_str_found is not None:
                 log.debug(f"Registering file {calib_run_str_found}")
-                register_run_concept_files(str(sequence.run), concept)
+                register_run_concept_files(str(sequence.run), sequence.type, concept)
                 if options.seqtoclose is None and not file_path.exists():
                     log.debug("File does not exists")
 
             if drs4_run_str_found is not None:
                 log.debug(f"Registering file {drs4_run_str_found}")
-                register_run_concept_files(str(sequence.previousrun), concept)
+                register_run_concept_files(str(sequence.previousrun), sequence.type, concept)
                 if options.seqtoclose is None and not file_path.exists():
                     log.debug("File does not exists")
 
