@@ -160,7 +160,8 @@ def post_process(seq_tuple):
     seq_list = seq_tuple[1]
     
     if dl1_datacheck_longterm_file_exits() and not options.test:
-        create_longterm_symlink()
+        if cfg.getboolean("lstchain", "create_longterm_symlink"):
+            create_longterm_symlink()
 
     else:
         # Close the sequences
@@ -185,7 +186,8 @@ def post_process(seq_tuple):
             list_job_id = merge_dl1_datacheck(seq_list)
             longterm_job_id = daily_datacheck(daily_longterm_cmd(list_job_id))
             cherenkov_job_id = cherenkov_transparency(cherenkov_transparency_cmd(longterm_job_id))
-            create_longterm_symlink(cherenkov_job_id)
+            if cfg.getboolean("lstchain", "create_longterm_symlink"):
+                create_longterm_symlink(cherenkov_job_id)
 
         time.sleep(600)
 
