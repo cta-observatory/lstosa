@@ -126,7 +126,6 @@ def launch_catB_calibration(run_id: int):
         options.filters = get_calib_filters(run_id) 
         base_dir = Path(cfg.get(options.tel_id, "BASE")).resolve()
         r0_dir = Path(cfg.get(options.tel_id, "R0_DIR")).resolve()
-        interleaved_dir = Path(options.directory) / "interleaved"
         log_dir = Path(options.directory) / "log"
         catA_calib_run = get_last_pedcalib(options.date)
         slurm_account = cfg.get("SLURM", "ACCOUNT")
