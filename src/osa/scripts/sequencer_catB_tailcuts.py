@@ -1,5 +1,6 @@
 import glob
 import re
+import lstchain
 import argparse
 import logging
 from pathlib import Path
@@ -133,11 +134,12 @@ def launch_catB_calibration(run_id: int):
             "-o", f"{log_dir}/catB_calibration_{run_id:05d}_%j.out",
             "-e", f"{log_dir}/catB_calibration_{run_id:05d}_%j.err",
             command,
-            f"--run_number={run_id}",
+            f"-r {run_id:05d}",
             f"--catA_calibration_run={catA_calib_run}",
             f"--base_dir={base_dir}",
             f"--r0-dir={r0_dir}",
-            f"--interleaved-dir={interleaved_dir}",
+            f"--lstchain-version={lstchain.__version__}",
+            "--dl1-dir=/fefs/aswg/data/real/running_analysis/",
             f"--filters={options.filters}",
         ]
         if not options.simulate:
