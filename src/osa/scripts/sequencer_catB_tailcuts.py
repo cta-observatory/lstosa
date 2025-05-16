@@ -13,7 +13,7 @@ from osa.nightsummary.extract import get_last_pedcalib
 from osa.utils.cliopts import valid_date, set_default_date_if_needed
 from osa.utils.logging import myLogger
 from osa.job import run_sacct, get_sacct_output
-from osa.utils.utils import date_to_dir, get_calib_filters
+from osa.utils.utils import date_to_dir, get_calib_filters, get_lstchain_version
 from osa.paths import catB_closed_file_exists, catB_calibration_file_exists, analysis_path
 
 log = myLogger(logging.getLogger())
@@ -129,6 +129,7 @@ def launch_catB_calibration(run_id: int):
         log_dir = Path(options.directory) / "log"
         catA_calib_run = get_last_pedcalib(options.date)
         slurm_account = cfg.get("SLURM", "ACCOUNT")
+        lstchain_version = get_lstchain_version()
         cmd = ["sbatch", f"--account={slurm_account}", "--parsable",
             "-o", f"{log_dir}/catB_calibration_{run_id:05d}_%j.out",
             "-e", f"{log_dir}/catB_calibration_{run_id:05d}_%j.err",
@@ -137,7 +138,7 @@ def launch_catB_calibration(run_id: int):
             f"--catA_calibration_run={catA_calib_run}",
             f"--base_dir={base_dir}",
             f"--r0-dir={r0_dir}",
-            f"--lstchain-version={lstchain.__version__}",
+            f"--lstchain-version={lstchain_version[1:]}",
             "--dl1-dir=/fefs/aswg/data/real/running_analysis/",
             f"--filters={options.filters}",
         ]
