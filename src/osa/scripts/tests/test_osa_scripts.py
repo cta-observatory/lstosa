@@ -1,4 +1,3 @@
-/home/alexander.cervino/Test_node30
 import datetime
 import os
 import subprocess as sp
