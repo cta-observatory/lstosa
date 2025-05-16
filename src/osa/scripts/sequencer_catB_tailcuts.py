@@ -13,7 +13,12 @@ from osa.utils.cliopts import valid_date, set_default_date_if_needed
 from osa.utils.logging import myLogger
 from osa.job import run_sacct, get_sacct_output
 from osa.utils.utils import date_to_dir, get_calib_filters, get_lstchain_version
-from osa.paths import catB_closed_file_exists, catB_calibration_file_exists, analysis_path
+from osa.paths import (
+    catB_closed_file_exists,
+    catB_calibration_file_exists,
+    analysis_path,
+    get_major_version
+)
 
 log = myLogger(logging.getLogger())
 
@@ -128,7 +133,7 @@ def launch_catB_calibration(run_id: int):
         log_dir = Path(options.directory) / "log"
         catA_calib_run = get_last_pedcalib(options.date)
         slurm_account = cfg.get("SLURM", "ACCOUNT")
-        lstchain_version = get_lstchain_version()
+        lstchain_version = get_major_version(get_lstchain_version())
         analysis_dir = cfg.get("LST1", "ANALYSIS_DIR")
         cmd = ["sbatch", f"--account={slurm_account}", "--parsable",
             "-o", f"{log_dir}/catB_calibration_{run_id:05d}_%j.out",
