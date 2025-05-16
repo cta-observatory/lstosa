@@ -130,6 +130,7 @@ def launch_catB_calibration(run_id: int):
         catA_calib_run = get_last_pedcalib(options.date)
         slurm_account = cfg.get("SLURM", "ACCOUNT")
         lstchain_version = get_lstchain_version()
+        analysis_dir = cfg.get("LST1", "ANALYSIS_DIR")
         cmd = ["sbatch", f"--account={slurm_account}", "--parsable",
             "-o", f"{log_dir}/catB_calibration_{run_id:05d}_%j.out",
             "-e", f"{log_dir}/catB_calibration_{run_id:05d}_%j.err",
@@ -139,7 +140,7 @@ def launch_catB_calibration(run_id: int):
             f"--base_dir={base_dir}",
             f"--r0-dir={r0_dir}",
             f"--lstchain-version={lstchain_version[1:]}",
-            "--dl1-dir=/fefs/aswg/data/real/running_analysis/",
+            f"--dl1-dir={analysis_dir}",
             f"--filters={options.filters}",
         ]
         if not options.simulate:
