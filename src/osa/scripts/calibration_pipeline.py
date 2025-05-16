@@ -20,7 +20,7 @@ from osa.provenance.capture import trace
 from osa.utils.cliopts import calibration_pipeline_cliparsing
 from osa.utils.logging import myLogger
 from osa.workflow.stages import DRS4PedestalStage, ChargeCalibrationStage
-from osa.utils.utils import get_prod_id
+from osa.utils.utils import get_lstchain_version
 
 __all__ = [
     "calibration_sequence",
@@ -47,7 +47,7 @@ def drs4_pedestal_command(drs4_pedestal_run_id: int) -> list:
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     r0_dir = Path(cfg.get("LST1", "R0_DIR")).resolve()
     command = cfg.get("lstchain", "drs4_baseline")
-    prod_id = get_prod_id()
+    prod_id = get_lstchain_version()
     return [
         command,
         "-r", str(drs4_pedestal_run_id),
@@ -62,7 +62,7 @@ def calibration_file_command(drs4_pedestal_run_id: int, pedcal_run_id: int) -> l
     base_dir = Path(cfg.get("LST1", "BASE")).resolve()
     r0_dir = Path(cfg.get("LST1", "R0_DIR")).resolve()
     command = cfg.get("lstchain", "charge_calibration")
-    prod_id = get_prod_id()
+    prod_id = get_lstchain_version()
     cmd = [
         command,
         "-p", str(drs4_pedestal_run_id),
