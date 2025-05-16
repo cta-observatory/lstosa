@@ -349,6 +349,8 @@ def test_drs4_pedestal_cmd(base_test_dir):
         base_test_dir,
         f"--r0-dir={r0_dir}",
         "--no-progress",
+        "-v","v0.10.18"
+
     ]
     assert cmd == expected_command
 
@@ -367,6 +369,7 @@ def test_calibration_file_cmd(base_test_dir):
         "-b",
         base_test_dir,
         f"--r0-dir={r0_dir}",
+        "-v","v0.10.18"
     ]
     assert cmd == expected_command
 
