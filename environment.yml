@@ -24,7 +24,7 @@ dependencies:
   - ctapipe_io_lst >=0.25.1,<0.26a0
   - ctaplot~=0.6.4
   - pyirf~=0.10
-  - lstchain>=0.10.15
+  - lstchain>=0.11.0
   - tenacity
   - pip:
       - lstcam_calib
