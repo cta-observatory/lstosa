@@ -17,7 +17,7 @@ def test_get_raw_dir():
     assert get_raw_dir(options.date) == r0_dir
 
 
-def test_get_check_raw_dir(r0_dir):
+def test_get_check_raw_dir(r0g_dir):
     options.date = datetime.fromisoformat("2020-01-18")
     from osa.raw import get_check_raw_dir
 
@@ -26,13 +26,13 @@ def test_get_check_raw_dir(r0_dir):
 
     options.date = datetime.fromisoformat("2020-01-17")
     raw_dir = get_check_raw_dir(options.date)
-    assert raw_dir.resolve() == r0_dir
+    assert raw_dir.resolve() == r0g_dir
 
 
-def test_is_raw_data_available(r0_data):
+def test_is_raw_data_available(r0g_data):
     from osa.raw import is_raw_data_available
 
-    for file in r0_data:
+    for file in r0g_data:
         assert file.exists()
 
     options.date = datetime.fromisoformat("2020-01-17")
