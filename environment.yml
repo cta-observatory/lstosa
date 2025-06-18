@@ -6,7 +6,7 @@ dependencies:
   - python=3.11
   - numpy
   - pip
-  - astropy~=5.0
+  - astropy>=6.1,<8
   - ctapipe>=0.25.0
   - matplotlib
   - pyparsing
@@ -20,10 +20,10 @@ dependencies:
   - joblib~=1.2.0
   - click
   - pymongo
-  - scikit-learn=1.2
+  - scikit-learn=1.6
   - ctapipe_io_lst>=0.26.0,<0.28.0a0
   - ctaplot~=0.6.4
-  - pyirf~=0.10
+  - pyirf~=0.12.0
   - tenacity
   - pip:
       - lstchain>=0.11.0
