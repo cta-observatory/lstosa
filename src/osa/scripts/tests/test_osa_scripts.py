@@ -189,7 +189,8 @@ def test_autocloser(running_analysis_dir):
 
 
 def test_closer(
-    r0_data,
+    r0g_data,
+    run_catalog,
     running_analysis_dir,
     test_observed_data,
     run_summary_file,
@@ -210,7 +211,7 @@ def test_closer(
     if night_finished_flag.exists():
         night_finished_flag.unlink()
 
-    for r0_file in r0_data:
+    for r0_file in r0g_data:
         assert r0_file.exists()
     for file in drs4_time_calibration_files:
         assert file.exists()
