@@ -21,7 +21,7 @@ dependencies:
   - click
   - pymongo
   - scikit-learn=1.2
-  - ctapipe_io_lst >=0.25.1,<0.26a0
+  - ctapipe_io_lst>=0.26.0,<0.28.0a0
   - ctaplot~=0.6.4
   - pyirf~=0.10
   - tenacity
