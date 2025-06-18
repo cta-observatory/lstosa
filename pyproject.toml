@@ -45,7 +45,7 @@ dependencies = [
     "click",
     "toml",
     "pymongo",
-    "gammapy~=1.1",
+    "gammapy~=1.3",
     "tenacity",
 ]
 

@@ -15,7 +15,7 @@ dependencies:
   - pydot
   - pydotplus
   - psutil
-  - gammapy=1.1
+  - gammapy=1.3
   - h5py
   - joblib~=1.2.0
   - click
