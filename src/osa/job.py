@@ -515,7 +515,7 @@ def calibration_sequence_job_template(sequence):
     # Get the job header template.
     job_header = job_header_template(sequence)
 
-    commandargs = ["calibration_pipeline"]
+    commandargs = ["conda run -n lstcam-env", "calibration_pipeline"]
 
     if options.verbose:
         commandargs.append("-v")

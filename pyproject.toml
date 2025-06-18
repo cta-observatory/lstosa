@@ -47,7 +47,6 @@ dependencies = [
     "pymongo",
     "gammapy~=1.1",
     "tenacity",
-    "lstcam_calib",
 ]
 
 dynamic = ["version"]
