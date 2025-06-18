@@ -7,7 +7,7 @@ dependencies:
   - numpy
   - pip
   - astropy~=5.0
-  - ctapipe~=0.19.2
+  - ctapipe>=0.25.0
   - matplotlib
   - pyparsing
   - prov
