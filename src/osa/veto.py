@@ -81,7 +81,7 @@ def set_closed_sequence(sequence):
 def get_closed_list(sequence_list) -> list:
     """Get the list of closed sequences."""
     analysis_dir = Path(options.directory)
-    closed_ls = analysis_dir.glob("*.closed")
+    closed_ls = analysis_dir.glob("sequence_*.closed")
     closed_list = []
     for file in closed_ls:
         # Extract the job name: LST1_XXXXX

@@ -189,7 +189,8 @@ def test_autocloser(running_analysis_dir):
 
 
 def test_closer(
-    r0_data,
+    r0g_data,
+    run_catalog,
     running_analysis_dir,
     test_observed_data,
     run_summary_file,
@@ -210,7 +211,7 @@ def test_closer(
     if night_finished_flag.exists():
         night_finished_flag.unlink()
 
-    for r0_file in r0_data:
+    for r0_file in r0g_data:
         assert r0_file.exists()
     for file in drs4_time_calibration_files:
         assert file.exists()
@@ -340,7 +341,7 @@ def test_drs4_pedestal_cmd(base_test_dir):
     from osa.scripts.calibration_pipeline import drs4_pedestal_command
 
     cmd = drs4_pedestal_command(drs4_pedestal_run_id="01804")
-    r0_dir = base_test_dir / "R0"
+    r0_dir = base_test_dir / "R0G"
     expected_command = [
         cfg.get("lstchain", "drs4_baseline"),
         "-r",
@@ -359,7 +360,7 @@ def test_calibration_file_cmd(base_test_dir):
     from osa.scripts.calibration_pipeline import calibration_file_command
 
     cmd = calibration_file_command(drs4_pedestal_run_id="01804", pedcal_run_id="01809")
-    r0_dir = base_test_dir / "R0"
+    r0_dir = base_test_dir / "R0G"
     expected_command = [
         cfg.get("lstchain", "charge_calibration"),
         "-p",

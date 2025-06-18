@@ -147,6 +147,13 @@ def r0_dir(base_test_dir):
 
 
 @pytest.fixture(scope="session")
+def r0g_dir(base_test_dir):
+    r0_directory = base_test_dir / "R0G" / nightdir
+    r0_directory.mkdir(parents=True, exist_ok=True)
+    return r0_directory
+
+
+@pytest.fixture(scope="session")
 def r0_data(r0_dir):
     r0_files = []
     for i in range(4, 8):
@@ -154,6 +161,16 @@ def r0_data(r0_dir):
         r0_file.touch()
         r0_files.append(r0_file)
     return r0_files
+
+
+@pytest.fixture(scope="session")
+def r0g_data(r0g_dir):
+    r0g_files = []
+    for i in range(4, 8):
+        r0g_file = r0g_dir / f"LST-1.1.Run0180{i}.0000.fits.fz"
+        r0g_file.touch()
+        r0g_files.append(r0g_file)
+    return r0g_files
 
 
 @pytest.fixture(scope="session")

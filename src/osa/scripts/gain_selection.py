@@ -276,11 +276,10 @@ def apply_gain_selection(date: datetime, start: int, end: int, tool: str = None,
     data_runs = summary_table[summary_table["run_type"] == "DATA"]
     log.info(f"Found {len(data_runs)} DATA runs to which apply the gain selection")
 
-    base_dir = Path(cfg.get("LST1", "BASE"))
     date_str = date_to_dir(date)
-    r0_dir = base_dir / "R0" / date_str
-    output_dir = base_dir / f"R0G/{date_str}"
-    log_dir = base_dir / f"R0G/log/{date_str}"
+    r0_dir = Path(cfg.get("LST1", "RAW_R0_DIR")) / date_str
+    output_dir = Path(cfg.get("LST1", "R0_DIR")) / date_str
+    log_dir = Path(cfg.get("LST1", "R0_DIR")) / f"log/{date_str}"
     if not simulate:
         output_dir.mkdir(parents=True, exist_ok=True)
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -356,9 +355,10 @@ def update_history_file(run_id: str, subrun: str, log_dir: Path, history_file: P
 
 def is_run_already_copied(date: datetime, run_id: int) -> bool:
     """Check if the R0 files of a given run have already been copied to the R0G directory."""
-    base_dir = Path(cfg.get("LST1", "BASE"))
-    r0_files = glob.glob(f"{base_dir}/R0/{date_to_dir(date)}/LST-1.?.Run{run_id:05d}.????.fits.fz")
-    r0g_files = glob.glob(f"{base_dir}/R0G/{date_to_dir(date)}/LST-1.?.Run{run_id:05d}.????.fits.fz")
+    r0_dir = Path(cfg.get("LST1", "RAW_R0_DIR"))
+    r0g_dir = Path(cfg.get("LST1", "R0_DIR"))
+    r0_files = glob.glob(f"{r0_dir}/{date_to_dir(date)}/LST-1.?.Run{run_id:05d}.????.fits.fz")
+    r0g_files = glob.glob(f"{r0g_dir}/{date_to_dir(date)}/LST-1.?.Run{run_id:05d}.????.fits.fz")
     return len(r0_files)==len(r0g_files)
 
 
@@ -465,9 +465,10 @@ def check_failed_jobs(date: datetime):
     missing_runs = []
 
     date_str = date_to_dir(date)
-    base_dir = Path(cfg.get("LST1", "BASE"))
-    r0_files = glob.glob(f"{base_dir}/R0/{date_str}/LST-1.?.Run?????.????.fits.fz")
-    r0g_files = glob.glob(f"{base_dir}/R0G/{date_str}/LST-1.?.Run?????.????.fits.fz")
+    r0_dir = Path(cfg.get("LST1", "RAW_R0_DIR")) / date_str
+    r0g_dir = Path(cfg.get("LST1", "R0_DIR")) / date_str
+    r0_files = glob.glob(f"{r0_dir}/LST-1.?.Run?????.????.fits.fz")
+    r0g_files = glob.glob(f"{r0g_dir}/LST-1.?.Run?????.????.fits.fz")
     all_r0_runs = [parse_r0_filename(i).run for i in r0_files]
     all_r0g_runs = [parse_r0_filename(i).run for i in r0g_files]
 
@@ -478,17 +479,15 @@ def check_failed_jobs(date: datetime):
 
     missing_runs.sort()
     if missing_runs:
-        output_dir = base_dir / f"R0G/{date_str}/"
         log.info(
             f"Some runs are missing. Copying R0 files of runs {pd.Series(missing_runs).unique()} "
-            f"directly to {output_dir}"
+            f"directly to {r0g_dir}"
         )
 
         for run in missing_runs:
-            
-            files = base_dir.glob(f"R0/{date_str}/LST-1.?.Run{run:05d}.????.fits.fz")
+            files = r0_dir.glob(f"LST-1.?.Run{run:05d}.????.fits.fz")
             for file in files:
-                sp.run(["cp", file, output_dir])
+                sp.run(["cp", file, r0g_dir])
 
     GainSel_dir = Path(cfg.get("LST1", "GAIN_SELECTION_FLAG_DIR"))
     flagfile_dir = GainSel_dir / date_str
