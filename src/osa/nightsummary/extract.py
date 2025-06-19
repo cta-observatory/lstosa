@@ -309,7 +309,7 @@ def get_source_list(date: datetime) -> dict:
 
     # Create a dictionary of sources and their corresponding sequences
     source_dict = {
-        sequence.run: sequence.source_name
+        int(sequence.run): sequence.source_name
         for sequence in sequence_list
         if sequence.source_name is not None
     }

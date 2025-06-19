@@ -5,6 +5,13 @@ Orchestrator script that creates and execute the calibration sequence and
 prepares a SLURM job array which launches the data sequences for every subrun.
 """
 
+import warnings
+warnings.filterwarnings(
+    "ignore",
+    message="pkg_resources is deprecated as an API.*",
+    category=UserWarning
+)
+
 import logging
 import os
 import sys
