@@ -358,7 +358,8 @@ def get_latest_version_file(longterm_files: List[str]) -> Path:
     return max(
         longterm_files,
         key=lambda path: int(path.parents[1].name.split(".")[1])
-        if path.parents[1].name.startswith("v")
+        if path.parents[1].name.startswith("v") and 
+            re.match(r'^\d+\.\d+(\.\d+)?$', path.parents[1].name[1:])
         else "",
     )
 
