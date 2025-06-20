@@ -127,6 +127,7 @@ def launch_catB_calibration(run_id: int):
             return 
 
         command = cfg.get("lstchain", "catB_calibration")
+        env_command = f"conda run -n lstcam-env {command}"
         options.filters = get_calib_filters(run_id) 
         base_dir = Path(cfg.get(options.tel_id, "BASE")).resolve()
         r0_dir = Path(cfg.get(options.tel_id, "R0_DIR")).resolve()
@@ -138,7 +139,7 @@ def launch_catB_calibration(run_id: int):
         cmd = ["sbatch", f"--account={slurm_account}", "--parsable",
             "-o", f"{log_dir}/catB_calibration_{run_id:05d}_%j.out",
             "-e", f"{log_dir}/catB_calibration_{run_id:05d}_%j.err",
-            command,
+            env_command,
             f"-r {run_id:05d}",
             f"--catA_calibration_run={catA_calib_run}",
             f"--base_dir={base_dir}",

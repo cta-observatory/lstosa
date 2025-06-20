@@ -381,6 +381,10 @@ def test_create_job_scheduler_calibration(sequence_list):
     with tempfile.TemporaryDirectory() as tmpdirname:
         os.environ['NUMBA_CACHE_DIR'] = tmpdirname
         proc = subprocess.run([
+            'conda',
+            'run',
+            '-n',
+            'lstcam-env',
             'calibration_pipeline',
             '--config',
             '{DEFAULT_CFG}',

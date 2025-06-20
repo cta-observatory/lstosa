@@ -5,6 +5,7 @@ Orchestrator script that creates and execute the calibration sequence and
 prepares a SLURM job array which launches the data sequences for every subrun.
 """
 
+import warnings
 import logging
 import os
 import sys
@@ -14,7 +15,15 @@ import datetime
 from osa import osadb
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import (
+from osa.veto import get_closed_list, get_veto_list
+from osa.utils.logging import myLogger
+
+warnings.filterwarnings(
+    "ignore",
+    message="pkg_resources is deprecated as an API.*",
+    category=UserWarning
+)
+from osa.job import ( # noqa: E402
     set_queue_values,
     prepare_jobs,
     submit_jobs,
@@ -24,19 +33,17 @@ from osa.job import (
     run_squeue,
     are_all_jobs_correctly_finished,
 )
-from osa.nightsummary.extract import (
+from osa.nightsummary.extract import ( # noqa: E402
     build_sequences,
     extract_runs,
     extract_sequences
 )
-from osa.nightsummary.nightsummary import run_summary_table
-from osa.paths import analysis_path, destination_dir
-from osa.report import start
-from osa.utils.cliopts import sequencer_cli_parsing
-from osa.utils.logging import myLogger
-from osa.utils.utils import is_day_closed, gettag, date_to_iso
-from osa.veto import get_closed_list, get_veto_list
-from osa.scripts.gain_selection import GainSel_finished
+from osa.nightsummary.nightsummary import run_summary_table # noqa: E402
+from osa.paths import analysis_path, destination_dir # noqa: E402
+from osa.report import start # noqa: E402
+from osa.utils.cliopts import sequencer_cli_parsing # noqa: E402
+from osa.utils.utils import is_day_closed, gettag, date_to_iso # noqa: E402
+from osa.scripts.gain_selection import GainSel_finished # noqa: E402
 
 __all__ = [
     "single_process",
