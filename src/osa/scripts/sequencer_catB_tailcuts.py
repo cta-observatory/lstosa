@@ -142,12 +142,17 @@ def launch_catB_calibration(run_id: int):
             env_command,
             f"-r {run_id:05d}",
             f"--catA_calibration_run={catA_calib_run}",
-            f"--base_dir={base_dir}",
+            "-b", base_dir,
             f"--r0-dir={r0_dir}",
-            f"--lstchain-version={lstchain_version[1:]}",
-            f"--dl1-dir={analysis_dir}",
             f"--filters={options.filters}",
         ]
+        
+        if command=="onsite_create_cat_B_calibration_file":
+            cmd.append(f"--interleaved-dir={analysis_dir}")
+        elif command=="lstcam_calib_onsite_create_cat_B_calibration_file":
+            cmd.append(f"--dl1-dir={analysis_dir}")
+            cmd.append(f"--lstchain-version={lstchain_version[1:]}")
+
         if not options.simulate:
             job = sp.run(cmd, encoding="utf-8", capture_output=True, text=True, check=True)
             job_id = job.stdout.strip()
