@@ -26,8 +26,8 @@ parser.add_argument(
 parser.add_argument(
     "--r0-path",
     type=Path,
-    help="Path to the R0 files. Default is /fefs/aswg/data/real/R0",
-    default=Path("/fefs/aswg/data/real/R0"),
+    help="Path to the R0 files. Default is /fefs/onsite/data/R0/LSTN-01/lst-arraydaq/events",
+    default=Path("/fefs/onsite/data/R0/LSTN-01/lst-arraydaq/events"),
 )
 
 parser.add_argument(
