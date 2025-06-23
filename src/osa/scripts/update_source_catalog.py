@@ -1,31 +1,49 @@
 import logging
 import subprocess as sp
-from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
-
-import click
+import argparse
 import pandas as pd
+
 from astropy import units as u
 from astropy.table import Table, join, unique, vstack
 from astropy.time import Time
 from lstchain.io.io import dl1_params_lstcam_key
 from lstchain.reco.utils import add_delta_t_key, get_effective_time
 
-from osa.paths import get_major_version, get_dl1_prod_id
-from osa.utils.utils import get_lstchain_version
+from osa.configs.config import cfg
+from osa.utils.cliopts import valid_date
+from osa.paths import DEFAULT_CFG, get_major_version, get_dl1_prod_id
+from osa.utils.utils import get_lstchain_version, date_to_dir, date_to_iso
+
 
 pd.set_option("display.float_format", "{:.1f}".format)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s:%(levelname)s:%(message)s")
 log = logging.getLogger(__name__)
 
-
-BASE_DL1 = Path("/fefs/aswg/data/real/DL1")
-BASE_MONITORING = Path("/fefs/aswg/data/real/monitoring")
-CATALOG_DIR = Path("/fefs/aswg/data/real/OSA/Catalog")
-TAILCUTS_DIR = Path("/fefs/aswg/data/real/auxiliary/TailCuts")
-
+parser = argparse.ArgumentParser()
+parser.add_argument(
+        "-c",                                                                                            
+        "--config",                                                                                      
+        action="store",
+        type=Path,
+        default=DEFAULT_CFG,
+        help="Configuration file",
+)
+parser.add_argument(                                                                                     
+        "-d",                                                                                            
+        "--date",                                                                                        
+        default=None,
+        type=valid_date,
+        help="Night to apply the gain selection in YYYY-MM-DD format",
+)
+parser.add_argument(
+        "-v",
+        "--version",
+        type=str,
+        default=get_lstchain_version()
+)
 
 def add_table_to_html(html_table):
     return dedent(
@@ -126,9 +144,10 @@ def add_start_and_elapsed(table: Table, datedir: str, version: str) -> None:
 
     for run in table["run_id"]:
         major_version = get_major_version(version)
-        dl1b_config_file = TAILCUTS_DIR / f"dl1ab_Run{run:05d}.json"
+        dl1b_config_file = Path(cfg.get("LST1", "TAILCUTS_FINDER_DIR")) / f"dl1ab_Run{run:05d}.json"
         dl1_prod_id = get_dl1_prod_id(dl1b_config_file)
-        file = BASE_DL1 / datedir / major_version / dl1_prod_id / f"dl1_LST-1.Run{run:05d}.h5"
+        dl1_dir = Path(cfg.get("LST1", "DL1_DIR"))
+        file = dl1_dir / datedir / major_version / dl1_prod_id / f"dl1_LST-1.Run{run:05d}.h5"
         df = pd.read_hdf(file, key=dl1_params_lstcam_key)
 
         # Timestamp of the first event
@@ -150,32 +169,33 @@ def copy_to_webserver(html_file, csv_file):
     sp.run(["scp", str(csv_file), "datacheck:/home/www/html/datacheck/lstosa/."], check=True)
 
 
-@click.command()
-@click.argument("date", type=click.DateTime(formats=["%Y-%m-%d"]))
-@click.option("-v", "--version", type=str, default=get_lstchain_version())
-def main(date: datetime = None, version: str = get_lstchain_version()):
+def main():
     """Update source catalog with new run entries from a given date in format YYYY-MM-DD.
 
     Notes
     -----
     It needs to be run as lstanalyzer user.
     """
-    catalog_path = CATALOG_DIR / "LST_source_catalog.ecsv"
+    args = parser.parse_args()
+
+    catalog_path = Path(cfg.get("LST1", "SOURCE_CATALOG")) / "LST_source_catalog.ecsv"
     catalog_table = Table.read(catalog_path)
 
     # Open table for given date and append its content to the table with entire catalog
-    datedir = date.strftime("%Y%m%d")
-    today_catalog = Table.read(BASE_MONITORING / f"RunCatalog/RunCatalog_{datedir}.ecsv")
-    today_runsummary = Table.read(BASE_MONITORING / f"RunSummary/RunSummary_{datedir}.ecsv")
+    datedir = date_to_dir(args.date)
+    run_catalog_dir = Path(cfg.get("LST1", "RUN_CATALOG")) 
+    today_catalog = Table.read(run_catalog_dir / f"RunCatalog_{datedir}.ecsv")
+    run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY"))
+    today_runsummary = Table.read(run_summary_dir / f"RunSummary_{datedir}.ecsv")
     # Keep only astronomical data runs
     today_runsummary = today_runsummary[today_runsummary["run_type"] == "DATA"]
     todays_info = join(today_runsummary, today_catalog)
-    todays_info.add_column(date.strftime("%Y-%m-%d"), name="date_dir")
+    todays_info.add_column(date_to_iso(args.date), name="date_dir")
     todays_info.keep_columns(["run_id", "source_name", "date_dir"])
 
     # Add start of run in iso format and elapsed time for each run
     log.info("Getting run start and elapsed time")
-    add_start_and_elapsed(todays_info, datedir, version)
+    add_start_and_elapsed(todays_info, datedir, args.version)
 
     # Change column names
     todays_info.rename_column("run_id", "Run ID")
@@ -201,7 +221,7 @@ def main(date: datetime = None, version: str = get_lstchain_version()):
     html_content = add_query_table_to_html(html_table)
 
     # Save the HTML and ECSV files and copy them to the LST-1 webserver
-    html_file = CATALOG_DIR / "LST_source_catalog.html"
+    html_file = Path(cfg.get("LST1", "SOURCE_CATALOG")) / "LST_source_catalog.html"
     html_file.write_text(html_content)
     table_unique.write(catalog_path, delimiter=",", overwrite=True)
 
