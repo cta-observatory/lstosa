@@ -185,7 +185,7 @@ def main():
     datedir = date_to_dir(args.date)
     run_catalog_dir = Path(cfg.get("LST1", "RUN_CATALOG")) 
     today_catalog = Table.read(run_catalog_dir / f"RunCatalog_{datedir}.ecsv")
-    run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY"))
+    run_summary_dir = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
     today_runsummary = Table.read(run_summary_dir / f"RunSummary_{datedir}.ecsv")
     # Keep only astronomical data runs
     today_runsummary = today_runsummary[today_runsummary["run_type"] == "DATA"]
