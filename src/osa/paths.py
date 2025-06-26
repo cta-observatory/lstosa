@@ -9,7 +9,6 @@ from typing import List
 import subprocess
 import time
 import json
-import lstchain
 from astropy.table import Table
 from lstchain.onsite import (find_systematics_correction_file,
                              find_time_calibration_file)
