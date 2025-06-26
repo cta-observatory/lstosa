@@ -103,10 +103,12 @@ def get_drs4_pedestal_filename(run_id: int, prod_id: str) -> Path:
         return files[-1]  # Get the latest production among the major lstchain version
 
     date = utils.date_to_dir(get_run_date(run_id))
+    lstcam_env = Path(cfg.get("LST1", "CALIB_ENV"))
+    lstcam_calib_version = utils.get_lstcam_calib_version(lstcam_env)
     return (
         DRS4_PEDESTAL_BASEDIR
         / date
-        / f"v{lstchain.__version__}/drs4_pedestal.Run{run_id:05d}.0000.h5"
+        / f"v{lstcam_calib_version}/drs4_pedestal.Run{run_id:05d}.0000.h5"
     ).resolve()
 
 
@@ -138,10 +140,12 @@ def get_calibration_filename(run_id: int, prod_id: str) -> Path:
     date = utils.date_to_dir(get_run_date(run_id))
     options.filters = utils.get_calib_filters(run_id)
 
+    lstcam_env = Path(cfg.get("LST1", "CALIB_ENV"))
+    lstcam_calib_version = utils.get_lstcam_calib_version(lstcam_env)
     return (
         CALIB_BASEDIR
         / date
-        / f"v{lstchain.__version__}/calibration_filters_{options.filters}.Run{run_id:05d}.0000.h5"
+        / f"v{lstcam_calib_version}/calibration_filters_{options.filters}.Run{run_id:05d}.0000.h5"
     ).resolve()
 
 

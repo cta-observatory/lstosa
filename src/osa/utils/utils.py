@@ -11,6 +11,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from pathlib import Path
 from socket import gethostname
+import subprocess as sp
 from gammapy.data import observatory_locations
 from astropy import units as u
 from astropy.table import Table
@@ -402,3 +403,13 @@ def get_RF_model(run_id: int) -> Path:
     rf_model_path = rf_models_dir / declination_str
 
     return rf_model_path.resolve()
+
+
+def get_lstcam_calib_version(env_path: Path) -> str:
+    """Get the version of the lstcam_calib package installed in the given environment."""
+    python_exe = f"{str(env_path)}/bin/python"
+    cmd = [python_exe, "-m", "pip", "show", "lstcam_calib"]
+    result = sp.run(cmd, capture_output=True, text=True, check=True)
+    for line in result.stdout.split('\n'):
+        if line.startswith('Version:'):
+            return line.split(':', 1)[1].strip()
