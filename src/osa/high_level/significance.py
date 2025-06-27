@@ -206,6 +206,8 @@ def main(
     log.debug(f"Config: {config.resolve()}")
 
     # Initial setup of global parameters
+    if simulate:
+        options.simulate = True
     options.date = date
     flat_date = date_to_dir(date)
     options.tel_id = telescope
