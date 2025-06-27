@@ -86,14 +86,14 @@ def drive_log(monitoring_dir):
 
 @pytest.fixture(scope="session")
 def calibration_dir(calibration_base_dir):
-    directory = calibration_base_dir / "calibration" / nightdir / f"v0.1.1"
+    directory = calibration_base_dir / "calibration" / nightdir / "v0.1.1"
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 
 
 @pytest.fixture(scope="session")
 def drs4_baseline_dir(calibration_base_dir):
-    directory = calibration_base_dir / "drs4_baseline" / nightdir / f"v0.1.1"
+    directory = calibration_base_dir / "drs4_baseline" / nightdir / "v0.1.1"
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 
