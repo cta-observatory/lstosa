@@ -1,5 +1,7 @@
 from datetime import datetime
+from osa.configs import options
 
+options.test = True
 obs_date = datetime.fromisoformat("2020-01-17")
 
 

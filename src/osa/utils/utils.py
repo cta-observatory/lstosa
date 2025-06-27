@@ -407,6 +407,8 @@ def get_RF_model(run_id: int) -> Path:
 
 def get_lstcam_calib_version(env_path: Path) -> str:
     """Get the version of the lstcam_calib package installed in the given environment."""
+    if options.test or options.simulate:
+        return "0.1.1"
     python_exe = f"{str(env_path)}/bin/python"
     cmd = [python_exe, "-m", "pip", "show", "lstcam_calib"]
     result = sp.run(cmd, capture_output=True, text=True, check=True)
