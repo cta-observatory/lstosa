@@ -19,6 +19,7 @@ from osa.paths import drs4_pedestal_exists, calibration_file_exists
 from osa.provenance.capture import trace
 from osa.utils.cliopts import calibration_pipeline_cliparsing
 from osa.utils.logging import myLogger
+from osa.utils import utils
 from osa.workflow.stages import DRS4PedestalStage, ChargeCalibrationStage
 
 __all__ = [
@@ -37,8 +38,10 @@ def is_calibration_produced(drs4_pedestal_run_id: int, pedcal_run_id: int) -> bo
     Check if both daily calibration (DRS4 baseline and
     charge calibration) files are already produced.
     """
-    return drs4_pedestal_exists(drs4_pedestal_run_id, options.prod_id) \
-        and calibration_file_exists(pedcal_run_id, options.prod_id)
+    lstcam_env = Path(cfg.get("LST1", "CALIB_ENV"))
+    lstcam_calib_version = utils.get_lstcam_calib_version(lstcam_env)
+    return drs4_pedestal_exists(drs4_pedestal_run_id, f"v{lstcam_calib_version}") \
+        and calibration_file_exists(pedcal_run_id, f"v{lstcam_calib_version}")
 
 
 def drs4_pedestal_command(drs4_pedestal_run_id: int) -> list:
