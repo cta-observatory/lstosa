@@ -40,8 +40,8 @@ def is_calibration_produced(drs4_pedestal_run_id: int, pedcal_run_id: int) -> bo
     """
     lstcam_env = Path(cfg.get("LST1", "CALIB_ENV"))
     lstcam_calib_version = utils.get_lstcam_calib_version(lstcam_env)
-    return drs4_pedestal_exists(drs4_pedestal_run_id, lstcam_calib_version) \
-        and calibration_file_exists(pedcal_run_id, lstcam_calib_version)
+    return drs4_pedestal_exists(drs4_pedestal_run_id, f"v{lstcam_calib_version}") \
+        and calibration_file_exists(pedcal_run_id, f"v{lstcam_calib_version}")
 
 
 def drs4_pedestal_command(drs4_pedestal_run_id: int) -> list:
