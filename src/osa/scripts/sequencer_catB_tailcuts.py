@@ -127,7 +127,10 @@ def launch_catB_calibration(run_id: int):
             return 
 
         command = cfg.get("lstchain", "catB_calibration")
-        env_command = f"conda run -n lstcam-env {command}"
+        if cfg.getboolean("lstchain", "use_lstcam_env_for_CatB_calib"):
+            env_command = f"conda run -n lstcam-env {command}"
+        else:
+            env_command = command
         options.filters = get_calib_filters(run_id) 
         base_dir = Path(cfg.get(options.tel_id, "BASE")).resolve()
         r0_dir = Path(cfg.get(options.tel_id, "R0_DIR")).resolve()
