@@ -79,7 +79,6 @@ def test_analysis_stage(
     assert lines[-1].split(" ")[1] == cmd[0]
     assert lines[-1].split(" ")[-1] == "255\n"
 
-@pytest.mark.skip(reason="Currently not working with osa environment (needs lstcam-env environment)")
 def test_calibration_steps(running_analysis_dir):
     from osa.workflow.stages import DRS4PedestalStage, ChargeCalibrationStage
     from osa.scripts.calibration_pipeline import drs4_pedestal_command, calibration_file_command
