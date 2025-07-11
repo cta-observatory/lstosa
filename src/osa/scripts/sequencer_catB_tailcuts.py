@@ -51,6 +51,12 @@ parser.add_argument(
     help="Simulate launching of the sequencer_catB_tailcuts script.",
 )
 parser.add_argument(
+    "--overwrite-tailcuts",
+    action="store_true",
+    default=False,
+    help="Overwrite the tailcuts config file if it already exists.",
+)
+parser.add_argument(
     "tel_id",
     choices=["ST", "LST1", "LST2", "all"],
     help="telescope identifier LST1, LST2, ST or all.",
@@ -210,6 +216,7 @@ def main():
     opts = parser.parse_args()
     options.tel_id = opts.tel_id
     options.simulate = opts.simulate
+    options.overwrite_tailcuts = opts.overwrite_tailcuts
     options.date = opts.date
     options.date = set_default_date_if_needed()
     options.configfile = opts.config.resolve()
@@ -231,8 +238,13 @@ def main():
             # launch catB calibration and tailcut finder in parallel
             if cfg.getboolean("lstchain", "apply_catB_calibration") and not catB_closed_file_exists(run_id):
                 launch_catB_calibration(run_id)
-            if not cfg.getboolean("lstchain", "apply_standard_dl1b_config") and not tailcuts_config_file_exists(run_id):
-                launch_tailcuts_finder(run_id)
+            if not cfg.getboolean("lstchain", "apply_standard_dl1b_config"):
+                if tailcuts_config_file_exists(run_id) and not options.overwrite_tailcuts:
+                    log.debug(
+                        f"Tailcuts config file already exists for run {run_id:05d}. Use --overwrite-tailcuts to overwrite it."
+                    )
+                else:
+                    launch_tailcuts_finder(run_id)
 
 
 if __name__ == "__main__":
