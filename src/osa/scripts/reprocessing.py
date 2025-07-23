@@ -32,6 +32,7 @@ def run_script(
     simulate: bool, 
     force: bool,
     overwrite_tailcuts: bool,
+    overwrite_catB: bool,
 ):
     """Run the sequencer for a given date."""
     osa_config = Path(config).resolve()
@@ -58,6 +59,9 @@ def run_script(
 
     if overwrite_tailcuts:
         cmd.append("--overwrite-tailcuts")
+    
+    if overwrite_catB:
+        cmd.append("--overwrite-catB")
         
     # Append the telescope to the command in the last place
     cmd.append("LST1")
@@ -88,6 +92,7 @@ def get_list_of_dates(dates_file):
 @click.option("-s", "--simulate", is_flag=True, help="Activate simulation mode.")
 @click.option("-f", "--force", is_flag=True, help="Force the autocloser to close the day.")
 @click.option("--overwrite-tailcuts", is_flag=True, help="Overwrite the tailcuts config file if it already exists.")
+@click.option("--overwrite-catB", is_flag=True, help="Overwrite the Cat-B calibration files if they already exist.")
 @click.option(
     "-c",
     "--config",
@@ -110,6 +115,7 @@ def main(
     simulate: bool = False,
     force: bool = False,
     overwrite_tailcuts: bool = False,
+    overwrite_catB: bool = False,
     ):
     """
     Loop over the dates listed in the input file and launch the script for each of them.
@@ -126,7 +132,19 @@ def main(
         # Avoid running jobs while it is still night time
         wait_for_daytime()
 
-        run_script(script, date, config, no_dl2, no_gainsel, no_calib, no_dl1ab, simulate, force, overwrite_tailcuts)
+        run_script(
+            script,
+            date,
+            config,
+            no_dl2,
+            no_gainsel,
+            no_calib,
+            no_dl1ab,
+            simulate,
+            force,
+            overwrite_tailcuts,
+            overwrite_catB,
+        )
         log.info("Waiting 1 minute to launch the process for the next date...\n")
         time.sleep(60)
 
