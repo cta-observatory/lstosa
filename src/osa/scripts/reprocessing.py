@@ -22,7 +22,16 @@ def number_of_pending_jobs():
 
 
 def run_script(
-    script: str, date, config: Path, no_dl2: bool, no_gainsel: bool, no_calib: bool, simulate: bool, force: bool
+    script: str, 
+    date, 
+    config: Path, 
+    no_dl2: bool, 
+    no_gainsel: bool, 
+    no_calib: bool, 
+    no_dl1ab: bool, 
+    simulate: bool, 
+    force: bool,
+    overwrite_tailcuts: bool,
 ):
     """Run the sequencer for a given date."""
     osa_config = Path(config).resolve()
@@ -38,12 +47,18 @@ def run_script(
     if no_calib:
         cmd.append("--no-calib")
 
+    if no_dl1ab:
+        cmd.append("--no-dl1ab")
+
     if simulate:
         cmd.append("--simulate")
 
     if force:
         cmd.append("--force")
 
+    if overwrite_tailcuts:
+        cmd.append("--overwrite-tailcuts")
+        
     # Append the telescope to the command in the last place
     cmd.append("LST1")
 
@@ -69,8 +84,10 @@ def get_list_of_dates(dates_file):
 @click.option("--no-dl2", is_flag=True, help="Do not run the DL2 step.")
 @click.option("--no-gainsel", is_flag=True, help="Do not require gain selection to be finished.")
 @click.option("--no-calib", is_flag=True, help="Do not run the calibration step.")
+@click.option("--no-dl1ab", is_flag=True, help="Do not run the DL1AB step.")
 @click.option("-s", "--simulate", is_flag=True, help="Activate simulation mode.")
 @click.option("-f", "--force", is_flag=True, help="Force the autocloser to close the day.")
+@click.option("--overwrite-tailcuts", is_flag=True, help="Overwrite the tailcuts config file if it already exists.")
 @click.option(
     "-c",
     "--config",
@@ -79,7 +96,7 @@ def get_list_of_dates(dates_file):
     help="Path to the OSA config file.",
 )
 @click.argument(
-    "script", type=click.Choice(["sequencer", "closer", "copy_datacheck", "autocloser"])
+    "script", type=click.Choice(["sequencer", "closer", "copy_datacheck", "autocloser", "sequencer_catB_tailcuts"])
 )
 @click.argument("dates-file", type=click.Path(exists=True))
 def main(
@@ -89,9 +106,11 @@ def main(
     no_dl2: bool = False,
     no_gainsel: bool = False,
     no_calib: bool = False,
+    no_dl1ab: bool = False,
     simulate: bool = False,
     force: bool = False,
-):
+    overwrite_tailcuts: bool = False,
+    ):
     """
     Loop over the dates listed in the input file and launch the script for each of them.
     The input file should list the dates in the format YYYY-MM-DD one date per line.
@@ -107,7 +126,7 @@ def main(
         # Avoid running jobs while it is still night time
         wait_for_daytime()
 
-        run_script(script, date, config, no_dl2, no_gainsel, no_calib, simulate, force)
+        run_script(script, date, config, no_dl2, no_gainsel, no_calib, no_dl1ab, simulate, force, overwrite_tailcuts)
         log.info("Waiting 1 minute to launch the process for the next date...\n")
         time.sleep(60)
 
