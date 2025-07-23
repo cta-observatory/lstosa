@@ -57,6 +57,12 @@ parser.add_argument(
     help="Overwrite the tailcuts config file if it already exists.",
 )
 parser.add_argument(
+    "--overwrite-catB",
+    action="store_true",
+    default=False,
+    help="Overwrite the Cat-B calibration files if they already exist.",
+)
+parser.add_argument(
     "tel_id",
     choices=["ST", "LST1", "LST2", "all"],
     help="telescope identifier LST1, LST2, ST or all.",
@@ -111,7 +117,7 @@ def launch_catB_calibration(run_id: int):
     before and it finished successfully, it creates a catB_{run}.closed file.
     """
     job_id = get_catB_last_job_id(run_id)
-    if job_id:
+    if job_id and not options.overwrite_catB:
         job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
         if job_status.item() in ["RUNNING", "PENDING"]:
             log.debug(f"Job {job_id} (corresponding to run {run_id:05d}) is still running.")
@@ -129,8 +135,11 @@ def launch_catB_calibration(run_id: int):
 
     else:
         if catB_calibration_file_exists(run_id):
-            log.info(f"Cat-B calibration file already produced for run {run_id:05d}.")
-            return 
+            if not options.overwrite_catB:
+                log.info(f"Cat-B calibration file already produced for run {run_id:05d}.")
+                return 
+            else:
+                log.info(f"Cat-B calibration file already produced for run {run_id:05d}. Overwriting it.")
 
         command = cfg.get("lstchain", "catB_calibration")
         if cfg.getboolean("lstchain", "use_lstcam_env_for_CatB_calib"):
@@ -161,6 +170,9 @@ def launch_catB_calibration(run_id: int):
         elif command=="lstcam_calib_onsite_create_cat_B_calibration_file":
             cmd.append(f"--dl1-dir={analysis_dir}")
             cmd.append(f"--lstchain-version={lstchain_version[1:]}")
+
+        if options.overwrite_catB:
+            cmd.append("--yes")
 
         if not options.simulate:
             job = sp.run(cmd, encoding="utf-8", capture_output=True, text=True, check=True)
@@ -217,6 +229,7 @@ def main():
     options.tel_id = opts.tel_id
     options.simulate = opts.simulate
     options.overwrite_tailcuts = opts.overwrite_tailcuts
+    options.overwrite_catB = opts.overwrite_catB
     options.date = opts.date
     options.date = set_default_date_if_needed()
     options.configfile = opts.config.resolve()
