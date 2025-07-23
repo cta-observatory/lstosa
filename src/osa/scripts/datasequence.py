@@ -207,7 +207,7 @@ def dl1ab(run_str: str, dl1b_config: Path, dl1_prod_id: str) -> int:
                 f"Cat-B calibration did not finish yet for run {run_str[:5]}. "
                 "Please try again later."
             )
-            sys.exit(1)
+            sys.exit(0)
 
     if options.simulate:
         return 0
