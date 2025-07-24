@@ -88,7 +88,7 @@ class Telescope:
                 f"Simulation of the sequencer failed "
                 f"for {self.telescope}! Ignoring {self.telescope}"
             )
-            sys.exit(0)
+            return
 
         self.parse_sequencer()
 
