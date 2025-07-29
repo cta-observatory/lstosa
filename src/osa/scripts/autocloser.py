@@ -73,16 +73,16 @@ class Telescope:
 
         if self.is_closed():
             log.info(f"{self.telescope} is already closed! Ignoring {self.telescope}")
-            return
+            sys.exit(0)
         if not analysis_path(self.telescope).exists():
             log.warning(
                 f"Analysis directory does not exist for {self.telescope}! "
                 f"Ignoring {self.telescope}"
             )
-            return
+            sys.exit(0)
         if not self.lock_automatic_sequencer() and not ignore_cronlock:
             log.warning(f"{self.telescope} already locked! Ignoring {self.telescope}")
-            return
+            sys.exit(0)
         if not self.simulate_sequencer(date, config_file, test, no_gainsel):
             log.warning(
                 f"Simulation of the sequencer failed "
