@@ -32,7 +32,7 @@ def run_script(
     simulate: bool, 
     force: bool,
     overwrite_tailcuts: bool,
-    overwrite_catB: bool,
+    overwrite_catb: bool,
 ):
     """Run the sequencer for a given date."""
     osa_config = Path(config).resolve()
@@ -60,7 +60,7 @@ def run_script(
     if overwrite_tailcuts:
         cmd.append("--overwrite-tailcuts")
     
-    if overwrite_catB:
+    if overwrite_catb:
         cmd.append("--overwrite-catB")
         
     # Append the telescope to the command in the last place
@@ -115,7 +115,7 @@ def main(
     simulate: bool = False,
     force: bool = False,
     overwrite_tailcuts: bool = False,
-    overwrite_catB: bool = False,
+    overwrite_catb: bool = False,
     ):
     """
     Loop over the dates listed in the input file and launch the script for each of them.
@@ -143,7 +143,7 @@ def main(
             simulate,
             force,
             overwrite_tailcuts,
-            overwrite_catB,
+            overwrite_catb,
         )
         log.info("Waiting 1 minute to launch the process for the next date...\n")
         time.sleep(60)
