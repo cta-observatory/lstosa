@@ -1,0 +1,101 @@
+#SHELL=/usr/bin/bash
+#BASH_ENV="/local/home/lstanalyzer/.bashrc"
+#
+#-Datacheck jobs
+#
+#30 5 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Data_Check_daily_script_v2.sh
+#05 00-07 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Process_Run_incremental_script_v7.sh
+#05 00-07 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Process_Run_incremental_script_close_night_v7.sh
+#05 00-07 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Process_Run_incremental_script_v9.sh
+# EDIT Daniel Morcuende 2023-01-30: Running the data check during the night might be causing busy states of the camera during
+# data taking. I modified the cron above to launch only during the day.
+05 08-13 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Process_Run_incremental_script_v9.sh
+#00 08 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Process_Run_incremental_script_close_night_v7.sh
+#00 09 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Process_Run_incremental_script_close_night_v7.sh
+00 08 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Process_Run_incremental_script_close_night_v9.sh
+#05 12 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Process_Run_incremental_script_close_night_v7.sh
+#05 12 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Process_Run_incremental_script_close_night_no_nightsummary_v7.sh
+05 12 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Process_Run_incremental_script_close_night_no_nightsummary_v9.sh
+#05 12 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Process_Run_incremental_script_close_night_v9.sh
+#00 14,16,18,20,21,22,23 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Process_Run_incremental_script_v8.sh
+#00 14,16,18,20,21,22,23 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Process_Run_incremental_script_close_night_v8.sh
+#00 14,16,18,20,21,22,23 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Process_Run_incremental_script_v10.sh
+# EDIT Daniel Morcuende 2023-01-30: Running the data check during the night might be causing busy states of the camera during
+# data taking. I modified the cron above to launch only during the day up to 18:00 UTC.
+00 14,16,18 * * * /usr/bin/bash /fefs/onsite/pipeline/data-check/Process_Run_incremental_script_v10.sh
+#40 * * * *  /usr/bin/bash /fefs/onsite/pipeline/data-check/test_cron.sh
+
+
+SHELL=/usr/bin/bash
+BASH_ENV="/local/home/lstanalyzer/.bashrc"
+CRON_TZ=UTC
+# Update astropy auxiliary data (e.g. IERS) every week
+0 0 * * SUN source /fefs/aswg/lstosa/utils/osa-conda; python /fefs/aswg/data/aux/astropy/get_iers_data.py  > /dev/null 2>&1
+#
+# lstosa jobs
+#
+# [COPY OBS OVERVIEW] Copy observations overview and daily camera checks to lst1 datacheck webserver
+#
+00 09 * * * /usr/bin/bash /fefs/aswg/lstosa/misc/copy_camera_daily_check_to_www.sh >/dev/null 2>&1
+#
+# [RUN SUMMARY] Produce the run summary file at the end of the observations to make sure it contains all the runs taken
+#
+05 07 * * * obsdate=`date +\%Y\%m\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; lstchain_create_run_summary -d $obsdate --overwrite > /dev/null 2>&1
+#
+# [MERGED RUN SUMMARY] Produce the merged run summary file containing all the runs taken by the LST.
+#                      This only appends the runs of the given date.
+#
+15 07 * * * obsdate=`date +\%Y\%m\%d -d yesterday`; source /fefs/aswg/lstosa/utils/osa-conda; lstchain_merge_run_summaries -d $obsdate /fefs/aswg/data/real/OSA/Catalog/merged_RunSummary.ecsv > /dev/null 2>&1
+#
+# [GAIN SELECTION]
+#
+#50 07 * * * obsdate=`date +\%Y\%m\%d -d yesterday`; export obsdate; conda activate /fefs/aswg/software/conda/envs/osa-dev; gain_selection --no-queue-check -c /fefs/aswg/lstosa/cfg/sequencer_v0.10.cfg -d $obsdate -o /fefs/aswg/data/real/R0G -s 7 >> /fefs/aswg/data/real/OSA/GainSel_log/${obsdate}_LST1.log 2>&1
+#
+# [GAIN SELECTION CHECK]
+#
+#20 08 * * * obsdate=`date +\%Y\%m\%d -d yesterday`; export obsdate; conda activate /fefs/aswg/software/conda/envs/osa-dev; gain_selection --check -c /fefs/aswg/lstosa/cfg/sequencer_v0.10.cfg -d $obsdate -o /fefs/aswg/data/real/R0G -s 7 >> /fefs/aswg/data/real/OSA/GainSel_log/${obsdate}_check_LST1.log 2>&1
+#
+# [SIMULATED SEQUENCER] Launch sequencer once in the morning simulated. It also produces the run summary file if not found.
+#
+10 08 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; sequencer -c /fefs/aswg/lstosa/cfg/sequencer_v0.10.cfg -s -d $obsdate LST1 >> /fefs/aswg/data/real/OSA/Sequencer_log/${obsdate}_LST1.log 2>&1
+#
+# [SEQUENCER] Launch sequencer once in the morning
+#
+50 07 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; sequencer -c /fefs/aswg/lstosa/cfg/sequencer_v0.10.cfg -d $obsdate --no-gainsel --no-dl2 LST1 > /dev/null 2>&1
+#
+# [WEB SEQUENCER] Make sequencer xhtml table and copy it to the lst1 webserver
+#
+*/15 08-18 * * * obsdate=`date +\%Y\%m\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; sequencer_webmaker -c /fefs/aswg/lstosa/cfg/sequencer_v0.10.cfg; if [ $? = 0 ]; then scp /fefs/aswg/data/real/OSA/SequencerWeb/osa_status_$obsdate.html datacheck:/home/www/html/datacheck/lstosa/sequencer.xhtml; fi > /dev/null 2>&1
+#
+# [AUTOCLOSER] Launch the closer without forcing it (no -f option).
+#
+0 10-18/2 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; autocloser -c /fefs/aswg/lstosa/cfg/sequencer_v0.10.cfg -d $obsdate --no-gainsel --no-dl2 LST1 >> /fefs/aswg/data/real/OSA/Autocloser_log/${obsdate}_LST1.log 2>&1
+#
+# [COPY DATACHECK] Copy the available calibration and DL1 datacheck to the LST1 webserver.
+#
+05,20,40 08-18 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; copy_datacheck -c /fefs/aswg/lstosa/cfg/sequencer_v0.10.cfg -d $obsdate LST1 > /dev/null 2>&1
+#
+# [SOURCE CATALOG]
+#
+00 11-19 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; update_source_catalog $obsdate > /dev/null 2>&1
+#
+# [COPY CUMULATIVE LST-1 OBSERVATION TIME]
+# (added by Daniel Morcuende on 2024-04-05)
+#
+0 11 *  * FRI /usr/bin/bash /fefs/aswg/lstosa/misc/update_cumulative_obs_time.sh >/dev/null 2>&1
+
+
+# Daniel Morcuende (2023-11-08) periodically remove leftover jobs kept in the SLURM as pending after job dependency not satisfied because of failure (Reason in squeue: 'DependencyNeverSatisfied').
+# It does only look for lstosa jobs launched by sequencer with the prefix "LST1_" and also the merging jobs launched by autocloser like "longterm_dl1_datacheck".
+*/30 * * * * /local/home/lstanalyzer/remove_dependency_never_satisfied_jobs.sh > /dev/null 2>&1
+
+
+
+
+SHELL=/usr/bin/bash
+BASH_ENV="/local/home/lstanalyzer/.bashrc"
+CRON_TZ=UTC
+#
+# Restart camera processing of calibration runs in realtime in case it was killed for whatever reason
+#
+04 * * * * cd /local/home/lstanalyzer/camera/lst-camera-watchers;./lst1_watcher_restarter
