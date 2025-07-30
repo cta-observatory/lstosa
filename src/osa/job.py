@@ -115,7 +115,7 @@ def are_all_jobs_correctly_finished(sequence_list):
             # we need to check all the subrun wise history files
             # .../sequence_LST1_04180.XXXX.history
             out, _ = historylevel(history_file, sequence.type)
-            if out == 0:
+            if out == 1:
                 log.debug(f"Job {sequence.seq} ({sequence.type}) correctly finished")
                 continue
 
