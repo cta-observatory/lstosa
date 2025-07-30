@@ -99,7 +99,10 @@ def are_all_jobs_correctly_finished(sequence_list):
     flag = True
     analysis_directory = Path(options.directory)
     for sequence in sequence_list:
-        history_files_list = analysis_directory.rglob(f"*{sequence.run}*.history")
+        if sequence.type != "DATA":
+            continue
+        else:
+            history_files_list = analysis_directory.rglob(f"*{sequence.run}*.history")
         
         if not options.test:
             try:
@@ -115,7 +118,7 @@ def are_all_jobs_correctly_finished(sequence_list):
             # we need to check all the subrun wise history files
             # .../sequence_LST1_04180.XXXX.history
             out, _ = historylevel(history_file, sequence.type)
-            if out == 1:
+            if out == 0:
                 log.debug(f"Job {sequence.seq} ({sequence.type}) correctly finished")
                 continue
 
