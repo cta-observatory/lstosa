@@ -238,7 +238,10 @@ def get_status_for_sequence(sequence, data_level) -> int:
     elif data_level == "DATACHECK":
         try:
             directory = options.directory / sequence.dl1_prod_id
+            alternative_directory = destination_dir(concept="DATACHECk", create_dir=False, dl1_prod_id=sequence.dl1_prod_id)
             files = list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5"))
+            files += list(alternative_directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5"))
+            
         except AttributeError:
             return 0
         
