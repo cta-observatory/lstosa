@@ -224,10 +224,10 @@ def launch_gainsel_for_data_run(
                             else:
                                 log.warning(f"Gain selection failed for run {run_id:05d}.{subrun:04d}")
                         elif gainsel_rc == "0":
-                            log.debug(f"Gain selection finished successfully for run {run_id:05d}.{subrun:04d},"
+                            log.debug(f"Gain selection finished successfully for run {run_id:05d}.{subrun:04d}, "
                                         "no additional jobs will be submitted for this subrun.") 
                 else:
-                    log.debug("Creating and launching the gain selection sbatch script for subrun {run_id:05d}.{subrun:04d}")
+                    log.debug(f"Creating and launching the gain selection sbatch script for subrun {run_id:05d}.{subrun:04d}")
                     if not simulate:
                         log_file = log_dir / f"r0_to_r0g_{run_id:05d}.{subrun:04d}.log"
                         job_file = log_dir / f"gain_selection_{run_id:05d}.{subrun:04d}.sh"
