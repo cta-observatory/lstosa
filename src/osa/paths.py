@@ -433,11 +433,12 @@ def get_dl1_prod_id(config_filename):
         
     picture_thresh = data["tailcuts_clean_with_pedestal_threshold"]["picture_thresh"]
     boundary_thresh = data["tailcuts_clean_with_pedestal_threshold"]["boundary_thresh"]
+    dl1_prod_id_prefix = cfg.get("LST1", "DL1_PROD_ID_PREFIX")
 
     if boundary_thresh == 4:
-        return f"tailcut{picture_thresh}{boundary_thresh}"
+        return f"{dl1_prod_id_prefix}{picture_thresh}{boundary_thresh}"
     else:
-        return f"tailcut{picture_thresh}{boundary_thresh:02d}"
+        return f"{dl1_prod_id_prefix}{picture_thresh}{boundary_thresh:02d}"
 
 
 def get_dl2_nsb_prod_id(rf_model: Path) -> str:
