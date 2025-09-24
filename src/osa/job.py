@@ -722,7 +722,7 @@ def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
 
     # Keep only the jobs corresponding to OSA sequences
     sacct_output = sacct_output[
-        (sacct_output["JobName"].str.contains("batch"))
+        (~sacct_output["JobID"].str.contains(r"\."))
         | (sacct_output["JobName"].str.contains("LST1"))
     ]
 
