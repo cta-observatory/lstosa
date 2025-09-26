@@ -210,27 +210,18 @@ def update_sequence_status(seq_list):
 
 
 def check_catB_status(seq):
-    if seq.type == "PEDCALIB":
-        seq.catbstatus = 'None'
-    elif seq.type == "DATA":
-        
+    catbstatus = 'None'
+    if seq.type == "DATA":        
         directory = options.directory
-
         # Buscar archivos "closed"
         closed_files = list(directory.glob(f"catB*{seq.run}*.closed"))
         if any(f.exists() for f in closed_files):
             catbstatus = 'CLOSED'
-        else:
-            # Buscar archivos "log"
-            
+        else:            
             log_files = list(options.log_directory.glob(f"catB_calibration_{seq.run}_*.err"))
 
-            # Si no hay archivos o ninguno existe
-            if not log_files or not any(f.exists() for f in log_files):
-                catbstatus = 'None'
-            else:
+            if log_files and any(f.exists() for f in log_files):
                 status_set = False
-
                 for f in log_files:
                     if f.exists():
                         with f.open("r") as fh:
