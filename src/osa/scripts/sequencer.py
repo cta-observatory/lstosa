@@ -50,6 +50,7 @@ __all__ = [
     "update_sequence_status",
     "get_status_for_sequence",
     "output_matrix",
+    "check_catB_status",
     "report_sequences",
     "update_job_info",
 ]
@@ -205,6 +206,45 @@ def update_sequence_status(seq_list):
             )
             seq.muonstatus = int(Decimal(get_status_for_sequence(seq, "MUON") * 100) / seq.subruns)
             seq.dl2status = int(Decimal(get_status_for_sequence(seq, "DL2") * 100))
+            seq.catbstatus = check_catB_status(seq)
+
+
+def check_catB_status(seq):
+    if seq.type == "PEDCALIB":
+        seq.catbstatus = 'None'
+    elif seq.type == "DATA":
+        
+        directory = options.directory
+
+        # Buscar archivos "closed"
+        closed_files = list(directory.glob(f"catB*{seq.run}*.closed"))
+        if any(f.exists() for f in closed_files):
+            catbstatus = 'CLOSED'
+        else:
+            # Buscar archivos "log"
+            
+            log_files = list(options.log_directory.glob(f"catB_calibration_{seq.run}_*.err"))
+
+            # Si no hay archivos o ninguno existe
+            if not log_files or not any(f.exists() for f in log_files):
+                catbstatus = 'None'
+            else:
+                status_set = False
+
+                for f in log_files:
+                    if f.exists():
+                        with f.open("r") as fh:
+                            for line in fh:
+                                if "CRITICAL" in line:
+                                    seq.catbstatus = 'FAILED'
+                                    status_set = True
+
+
+                # Si ningún log tenía CRITICAL/ERROR pero existen archivos
+                if not status_set and any(f.exists() for f in log_files):
+                    catbstatus = 'RUNNING'
+
+    return catbstatus
 
 
 def get_status_for_sequence(sequence, data_level) -> int:
@@ -278,7 +318,7 @@ def report_sequences(sequence_list):
         "Exit",
     ]
     if options.tel_id in ["LST1", "LST2"]:
-        header.extend(("DL1%", "MUONS%", "DL1AB%", "DATACHECK%", "DL2%"))
+        header.extend(("DL1%", "MUONS%", "CAT-B","DL1AB%", "DATACHECK%", "DL2%"))
     matrix = [header]
     for sequence in sequence_list:
         row_list = [
@@ -297,12 +337,13 @@ def report_sequences(sequence_list):
             sequence.exit,
         ]
         if sequence.type in ["DRS4", "PEDCALIB"]:
-            row_list.extend((None, None, None, None, None))
+            row_list.extend((None, None, None, None, None, None))
         elif sequence.type == "DATA":
             row_list.extend(
                 (
                     sequence.dl1status,
                     sequence.muonstatus,
+                    sequence.catbstatus,
                     sequence.dl1abstatus,
                     sequence.datacheckstatus,
                     sequence.dl2status,
