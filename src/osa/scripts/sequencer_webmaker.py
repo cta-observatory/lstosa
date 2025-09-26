@@ -107,7 +107,7 @@ def lines_to_matrix(lines: Iterable) -> list:
     matrix = []
     for line in lines:
         l_fields = line.split()
-        if len(l_fields) == 18:
+        if len(l_fields) == 19:
             matrix.append(l_fields)
     return matrix
 
