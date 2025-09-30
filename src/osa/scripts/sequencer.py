@@ -11,7 +11,7 @@ import os
 import sys
 from decimal import Decimal
 import datetime
-
+import re
 from osa import osadb
 from osa.configs import options
 from osa.configs.config import cfg
@@ -210,32 +210,30 @@ def update_sequence_status(seq_list):
 
 
 def check_catB_status(seq):
-    catbstatus = 'None'
+    catbstatus = "None"
+
     if seq.type == "DATA":
         directory = options.directory
-        # Buscar archivos "closed"
+
         closed_files = list(directory.glob(f"catB*{seq.run}*.closed"))
-        if any(f.exists() for f in closed_files):
-            catbstatus = 'CLOSED'
+        if closed_files:
+            catbstatus = "CLOSED"
         else:
             log_files = list(options.log_directory.glob(f"catB_calibration_{seq.run}_*.err"))
+            if log_files:
+                filename = sorted(log_files)[-1].name
+                match = re.search(f"catB_calibration_{seq.run}_(\d+).err", filename)
+                if match:
+                    job_id = match.group(1)
 
-            if log_files and any(f.exists() for f in log_files):
-                status_set = False
-                for f in log_files:
-                    if f.exists():
-                        with f.open("r") as fh:
-                            for line in fh:
-                                if "CRITICAL" in line:
-                                    seq.catbstatus = 'FAILED'
-                                    status_set = True
+                    sacct_output = run_sacct(job_id)
+                    sacct_info = get_sacct_output(sacct_output)
 
-
-                # Si ningún log tenía CRITICAL/ERROR pero existen archivos
-                if not status_set and any(f.exists() for f in log_files):
-                    catbstatus = 'RUNNING'
+                    if not sacct_info.empty:
+                        catbstatus = sacct_info.iloc[0]["State"]
 
     return catbstatus
+
 
 
 def get_status_for_sequence(sequence, data_level) -> int:
