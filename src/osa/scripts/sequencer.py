@@ -11,7 +11,7 @@ import os
 import sys
 from decimal import Decimal
 import datetime
-
+import re
 from osa import osadb
 from osa.configs import options
 from osa.configs.config import cfg
@@ -50,6 +50,7 @@ __all__ = [
     "update_sequence_status",
     "get_status_for_sequence",
     "output_matrix",
+    "check_catB_status",
     "report_sequences",
     "update_job_info",
 ]
@@ -205,6 +206,34 @@ def update_sequence_status(seq_list):
             )
             seq.muonstatus = int(Decimal(get_status_for_sequence(seq, "MUON") * 100) / seq.subruns)
             seq.dl2status = int(Decimal(get_status_for_sequence(seq, "DL2") * 100))
+            seq.catbstatus = check_catB_status(seq)
+
+
+def check_catB_status(seq):
+    catbstatus = "None"
+
+    if seq.type == "DATA":
+        directory = options.directory
+
+        closed_files = list(directory.glob(f"catB*{seq.run}*.closed"))
+        if closed_files:
+            catbstatus = "CLOSED"
+        else:
+            log_files = list(options.log_directory.glob(f"catB_calibration_{seq.run}_*.err"))
+            if log_files:
+                filename = sorted(log_files)[-1].name
+                match = re.search(f"catB_calibration_{seq.run}_(\d+).err", filename)
+                if match:
+                    job_id = match.group(1)
+
+                    sacct_output = run_sacct(job_id)
+                    sacct_info = get_sacct_output(sacct_output)
+
+                    if not sacct_info.empty:
+                        catbstatus = sacct_info.iloc[0]["State"]
+
+    return catbstatus
+
 
 
 def get_status_for_sequence(sequence, data_level) -> int:
@@ -278,7 +307,7 @@ def report_sequences(sequence_list):
         "Exit",
     ]
     if options.tel_id in ["LST1", "LST2"]:
-        header.extend(("DL1%", "MUONS%", "DL1AB%", "DATACHECK%", "DL2%"))
+        header.extend(("DL1%", "MUONS%", "CAT-B","DL1AB%", "DATACHECK%", "DL2%"))
     matrix = [header]
     for sequence in sequence_list:
         row_list = [
@@ -297,12 +326,13 @@ def report_sequences(sequence_list):
             sequence.exit,
         ]
         if sequence.type in ["DRS4", "PEDCALIB"]:
-            row_list.extend((None, None, None, None, None))
+            row_list.extend((None, None, None, None, None, None))
         elif sequence.type == "DATA":
             row_list.extend(
                 (
                     sequence.dl1status,
                     sequence.muonstatus,
+                    sequence.catbstatus,
                     sequence.dl1abstatus,
                     sequence.datacheckstatus,
                     sequence.dl2status,
