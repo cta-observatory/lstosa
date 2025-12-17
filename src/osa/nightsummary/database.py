@@ -84,19 +84,15 @@ def query(obs_id: int):
 
                 config = tel_doc.get("data", {}).get("structure", [])[0]
                 target = config.get("target", {})
-                
                 source_name = target.get("name", "Desconocido")
                 ra = target.get("source_ra", "N/A")
                 dec = target.get("source_dec", "N/A")
-
                 return {"source_name": source_name, "ra": ra, "dec": dec}
             else:
                 print("\nNo information found for that time range in 'lst1_obs_summary.telescope'.")
 
     except Exception as e:
         print(f"ERROR: {e}")
-
-
 
 def get_run_info_from_TCU(run_id: int, tcu_server: str) -> Tuple:
     """
