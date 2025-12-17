@@ -2,7 +2,6 @@
 import logging
 from datetime import datetime
 from typing import Tuple
-from xmlrpc import client
 
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
@@ -93,7 +92,7 @@ def query(obs_id: int):
 
                 return {"source_name": source_name, "ra": ra, "dec": dec}
             else:
-                print("\n❌ No information found for that time range in 'lst1_obs_summary.telescope'.")
+                print("\nNo information found for that time range in 'lst1_obs_summary.telescope'.")
 
     except Exception as e:
         print(f"ERROR: {e}")
