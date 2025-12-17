@@ -73,7 +73,6 @@ def query(obs_id: int):
             print(f"Time: {tstart_iso} (Timestamp: {tstart})")
 
             telescope_col = db["telescope"]
-            
             query = {
                 "tstart": {"$lte": tstop},
                 "tstop": {"$gte": tstart}
