@@ -173,15 +173,16 @@ def extract_runs(summary_table):
             # Make sure we are looking at actual data runs. Avoid test runs.
             if run.run > 0 and run.type == "DATA":
                 log.debug(f"Looking info in TCU DB for run {run.run}")
-                run.source_name = database.query(
-                    obs_id=run.run, property_name="DriveControl_SourceName"
+
+                tcu_result = database.query(
+                    obs_id=run.run
                 )
-                run.source_ra = database.query(
-                    obs_id=run.run, property_name="DriveControl_RA_Target"
-                    )
-                run.source_dec = database.query(
-                    obs_id=run.run, property_name="DriveControl_Dec_Target"
-                    )
+
+                if tcu_result is not None:
+                    run.source_name = tcu_result.get("source_name")
+                    run.source_ra = tcu_result.get("ra")
+                    run.source_dec = tcu_result.get("dec")
+
                 # Store this source information (run_id, source_name, source_ra, source_dec)
                 # into an astropy Table and save to disk in RunCatalog files. In this way, the
                 # information can be dumped anytime later more easily than accessing the
