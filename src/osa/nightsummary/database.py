@@ -14,27 +14,21 @@ __all__ = ["query", "db_available", "get_run_info_from_TCU"]
 
 log = myLogger(logging.getLogger(__name__))
 
-
-CACO_DB = cfg.get("database", "caco_db")
 TCU_DB = cfg.get("database", "tcu_db")
-
 
 def db_available():
     """Check the connection to the TCU database."""
-    caco_client = MongoClient(CACO_DB, serverSelectionTimeoutMS=3000)
     tcu_client = MongoClient(TCU_DB, serverSelectionTimeoutMS=3000)
     try:
-        caco_client.server_info()
         tcu_client.server_info()
     except ConnectionFailure:
-        log.warning("TCU or CaCo database not available. No source info will be added.")
+        log.warning("TCU database not available. No source info will be added.")
         return False
     else:
-        log.debug("TCU and CaCo database are available. Source info will be added.")
+        log.debug("TCU database is available. Source info will be added.")
         return True
 
-
-def query(obs_id: int, property_name: str):
+def query(obs_id: int):
     """
     Query the source name and coordinates from TCU database.
 
@@ -42,13 +36,11 @@ def query(obs_id: int, property_name: str):
     ----------
     obs_id : int
         Run number
-    property_name : str
-        Properties from drive information e.g. `DriveControl_SourceName`,
-        `DriveControl_RA_Target`, `DriveControl_Dec_Target`
+
 
     Returns
     -------
-    query_result : str or None
+    query_result : Dict
         Query result from database. It can be either the source name or its coordinates.
 
     Raises
@@ -60,47 +52,47 @@ def query(obs_id: int, property_name: str):
     if not isinstance(obs_id, int):
         obs_id = int(obs_id)
 
-    caco_client = MongoClient(CACO_DB)
-    tcu_client = MongoClient(TCU_DB)
+    try:
+        tcu_client = MongoClient(TCU_DB, serverSelectionTimeoutMS=3000)
+        db = tcu_client["lst1_obs_summary"]
+        camera_col = db["camera"]
 
-    with caco_client, tcu_client:
-        run_info = caco_client["CACO"]["RUN_INFORMATION"]
-        run = run_info.find_one({"run_number": obs_id})
+        run_info = camera_col.find_one({"run_number": obs_id})
 
-        try:
-            start = datetime.fromisoformat(run["start_time"].replace("Z", ""))
-            end = datetime.fromisoformat(run["stop_time"].replace("Z", ""))
-        except TypeError:
-            return None
+        if not run_info:
+            log.info(f"Run {obs_id} not found 'lst1_obs_summary.camera'")
+        else:
 
-        bridges_monitoring = tcu_client["bridgesmonitoring"]
-        property_collection = bridges_monitoring["properties"]
-        chunk_collection = bridges_monitoring["chunks"]
-        descriptors = property_collection.find(
-            {"property_name": property_name},
-        )
+            tstart = run_info.get("tstart")
+            tstop = run_info.get("tstop")
+            run_type = run_info.get("kind")
 
-        entries = {"name": property_name, "time": [], "value": []}
+            tstart_iso = datetime.fromtimestamp(tstart).isoformat(sep=" ", timespec="seconds")
 
-        for descriptor in descriptors:
-            query_property = {"pid": descriptor["_id"]}
+            log.info(f"Run {obs_id} ({run_type}) found.")
+            log.info(f"Time: {tstart_iso} (Timestamp: {tstart})")
 
-            if start is not None:
-                query_property["begin"] = {"$gte": start}
+            telescope_col = db["telescope"]
+            query = {
+                "tstart": {"$lte": tstop},
+                "tstop": {"$gte": tstart}
+            }
 
-            if end is not None:
-                query_property["end"] = {"$lte": end}
+            tel_doc = telescope_col.find_one(query, sort=[("tstart", -1)])
 
-            chunks = chunk_collection.find(query_property)
+            if tel_doc:
 
-            for chunk in chunks:
-                for value in chunk["values"]:
-                    entries["time"].append(value["t"])
-                    entries["value"].append(value["val"])
+                config = tel_doc.get("data", {}).get("structure", [])[0]
+                target = config.get("target", {})
+                source_name = target.get("name", "Desconocido")
+                ra = target.get("source_ra", "N/A")
+                dec = target.get("source_dec", "N/A")
+                return {"source_name": source_name, "ra": ra, "dec": dec}
+            else:
+                log.info("\nNo information found for that time range in 'lst1_obs_summary.telescope'.")
 
-                    source_name = entries["value"][0]
-                    return source_name if source_name != "" else None
-
+    except Exception as e:
+        log.info(f"ERROR: {e}")
 
 def get_run_info_from_TCU(run_id: int, tcu_server: str) -> Tuple:
     """

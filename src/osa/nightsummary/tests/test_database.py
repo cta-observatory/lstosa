@@ -1,9 +1,8 @@
-import pytest
-from pymongo.errors import ConnectionFailure
-
+from osa.nightsummary import database
 
 def test_query():
-    from osa.nightsummary import database
+    result = database.query(obs_id=20038)
+    assert result is None
 
-    with pytest.raises(ConnectionFailure):
-        database.query(obs_id=1616, property_name="DriveControl_SourceName")
+
+
