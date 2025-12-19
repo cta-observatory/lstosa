@@ -57,20 +57,20 @@ def query(obs_id: int):
         db = tcu_client["lst1_obs_summary"]
         camera_col = db["camera"]
 
-        run_summary = camera_col.find_one({"run_number": obs_id})
+        run_info = camera_col.find_one({"run_number": obs_id})
 
-        if not run_summary:
-            print(f"Run {obs_id} not found 'lst1_obs_summary.camera'")
+        if not run_info:
+            log.info(f"Run {obs_id} not found 'lst1_obs_summary.camera'")
         else:
 
-            tstart = run_summary.get("tstart")
-            tstop = run_summary.get("tstop")
-            run_type = run_summary.get("kind")
+            tstart = run_info.get("tstart")
+            tstop = run_info.get("tstop")
+            run_type = run_info.get("kind")
 
             tstart_iso = datetime.fromtimestamp(tstart).isoformat(sep=" ", timespec="seconds")
 
-            print(f"Run {obs_id} ({run_type}) found.")
-            print(f"Time: {tstart_iso} (Timestamp: {tstart})")
+            log.info(f"Run {obs_id} ({run_type}) found.")
+            log.info(f"Time: {tstart_iso} (Timestamp: {tstart})")
 
             telescope_col = db["telescope"]
             query = {
@@ -89,10 +89,10 @@ def query(obs_id: int):
                 dec = target.get("source_dec", "N/A")
                 return {"source_name": source_name, "ra": ra, "dec": dec}
             else:
-                print("\nNo information found for that time range in 'lst1_obs_summary.telescope'.")
+                log.info("\nNo information found for that time range in 'lst1_obs_summary.telescope'.")
 
     except Exception as e:
-        print(f"ERROR: {e}")
+        log.info(f"ERROR: {e}")
 
 def get_run_info_from_TCU(run_id: int, tcu_server: str) -> Tuple:
     """
