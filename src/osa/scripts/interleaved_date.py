@@ -62,7 +62,7 @@ def find_interleaved(target_date_str):
             date_path = os.path.join(base_dir, date_dir) # given date path
             if not os.path.isdir(date_path):
                 continue
-            
+
             if not (len(date_dir) == 8 and date_dir.isdigit()):
                 continue
 
