@@ -80,7 +80,6 @@ def find_interleaved(target_date_str):
                     if d == "interleaved":
                         interleaved_paths.append(os.path.join(root, d))
                         interleaved_dates.append(date_dir)
- 
     return interleaved_paths, interleaved_dates
 
 def info_dates(date, catalog_dir, runs_id):
@@ -92,7 +91,7 @@ def info_dates(date, catalog_dir, runs_id):
     Returns:
         entry (dict): stores runs by source (Crab or other) and saves other sources' names.   
     """
- 
+
     entry = {"crab": [], "other_source": [], "others_names": []}
     filename = f"RunCatalog_{date}.ecsv"
     catalog_file = os.path.join(catalog_dir,filename)
@@ -155,7 +154,6 @@ if __name__ == "__main__":
 
     date_arg = sys.argv[1]
     found_paths, found_dates = find_interleaved(date_arg)
-    
     month = date_arg[:6]
     recordfile = f'/fefs/aswg/workspace/maria.rivero/remove_sh/entries_rm{month}.sh'
     with open(recordfile, 'w') as file:
@@ -171,7 +169,6 @@ if __name__ == "__main__":
         summary = summary_dates(date, summary_dir)
         if not summary['run_id']:
             summary = summary_dates(date, backup_summary_dir)
-        
         if not summary['run_id']:
             continue
 
@@ -180,7 +177,6 @@ if __name__ == "__main__":
             for run_id, run_type in zip(summary["run_id"], summary["run_type"])
             if run_type == "DATA"]
 
-        
         entry = info_dates(date, catalog_dir, data_runs)
         if entry["crab"] == [] and entry["other_source"] == []:
             entry = info_dates(date, backup_catalog_dir, data_runs)
@@ -194,7 +190,6 @@ if __name__ == "__main__":
         print(summary)
         print('Run info (Crab or not):')
         print(entry)
-        
 
         found_dataruns = sorted(entry["crab"] + entry["other_source"])
         if not entry["crab"] and len(found_dataruns) == len(data_runs):
@@ -214,7 +209,6 @@ if __name__ == "__main__":
                     print(f"rm {filepath}")
                     with open(recordfile, 'a') as file:
                         file.write(f"rm {filepath} \n")
-                        file.write(f"rm {link_filepath} \n")
-                        
+                        file.write(f"rm {link_filepath} \n")    
                 else:
                     continue
