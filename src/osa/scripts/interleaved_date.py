@@ -180,7 +180,6 @@ if __name__ == "__main__":
         entry = info_dates(date, catalog_dir, data_runs)
         if entry["crab"] == [] and entry["other_source"] == []:
             entry = info_dates(date, backup_catalog_dir, data_runs)
-        
         if not entry["other_source"]:
             continue
 
@@ -197,7 +196,6 @@ if __name__ == "__main__":
             with open(recordfile, 'a') as file:
                 file.write(f"rm -r {path} \n")
                 file.write(f"rm -r {link_path} \n")
- 
         else:
             for runid in entry["other_source"]:
                 run_str = f"{runid:05d}" # run_ids must be always five digits
@@ -209,6 +207,6 @@ if __name__ == "__main__":
                     print(f"rm {filepath}")
                     with open(recordfile, 'a') as file:
                         file.write(f"rm {filepath} \n")
-                        file.write(f"rm {link_filepath} \n")    
+                        file.write(f"rm {link_filepath} \n")
                 else:
                     continue
