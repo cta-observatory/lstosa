@@ -51,14 +51,14 @@ def find_interleaved(target_date_str):
         sys.exit(1)
 
     interleaved_paths = []
-    interleaved_dates = [] 
+    interleaved_dates = []
     
     # Let's look into both dirs and check if both exist
     for base_dir in base_dirs:
         if not os.path.isdir(base_dir):
             print(f"Path not found: {base_dir}")
             continue
-        # Look in each date directory 
+        # Look in each date directory
         for date_dir in sorted(os.listdir(base_dir)):
             date_path = os.path.join(base_dir, date_dir) # given date path
             if not os.path.isdir(date_path):
@@ -101,7 +101,7 @@ def info_dates(date, catalog_dir, runs_id):
         print(f"File not found: {catalog_file}")
         return entry
 
-    else: 
+    else:
         with open(catalog_file, "r") as f:
             reader = csv.reader(f)
             for row in reader:
@@ -173,7 +173,7 @@ if __name__ == "__main__":
         if not summary['run_id']:
             summary = summary_dates(date, backup_summary_dir)
         
-        if not summary['run_id']: 
+        if not summary['run_id']:
             continue
 
         data_runs = [
