@@ -52,7 +52,6 @@ def find_interleaved(target_date_str):
 
     interleaved_paths = []
     interleaved_dates = []
-    
     # Let's look into both dirs and check if both exist
     for base_dir in base_dirs:
         if not os.path.isdir(base_dir):
@@ -135,7 +134,7 @@ def summary_dates(date, summary_dir):
     if not os.path.isfile(summary_file):
          print(f"File not found: {summary_file}")
          return entry
-    else: 
+    else:
         with open(summary_file, "r") as f:
             reader = csv.reader(f)
             for row in reader:
