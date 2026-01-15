@@ -584,7 +584,7 @@ def merge_muon_files(sequence_list):
 def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
     """Build the daily longterm command."""
     nightdir = date_to_dir(options.date)
-    datacheck_dir = destination_dir("DATACHECK", create_dir=False, dl1_prod_id="tailcut84")
+    datacheck_dir = destination_dir("DATACHECK", create_dir=False, dl1_prod_id="tailcut*")
     muons_dir = destination_dir("MUON", create_dir=False)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
     longterm_output_file = longterm_dir / f"DL1_datacheck_{nightdir}.h5"
@@ -629,7 +629,7 @@ def daily_datacheck(cmd: List[str]):
 def cherenkov_transparency_cmd(longterm_job_id: str) -> List[str]:
     """Build the cherenkov transparency command."""
     nightdir = date_to_dir(options.date)
-    datacheck_dir = destination_dir("DATACHECK", create_dir=False, dl1_prod_id="tailcut84")
+    datacheck_dir = destination_dir("DATACHECK", create_dir=False, dl1_prod_id="tailcut*")
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
     longterm_datacheck_file = longterm_dir / f"DL1_datacheck_{nightdir}.h5"
     slurm_account = cfg.get("SLURM", "ACCOUNT")
