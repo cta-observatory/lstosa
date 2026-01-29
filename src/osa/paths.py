@@ -431,8 +431,8 @@ def create_muons_symlinks():
 
     for input_file in muons_file_list:
         output_file = output_dir / input_file.name
-		if not input_file.is_symlink():
-          	input_file.symlink_to(output_file.resolve())
+        if not input_file.is_symlink():
+            input_file.symlink_to(output_file.resolve())
 
 
 def create_datacheck_symlinks(cherenkov_job_id: str=None):
