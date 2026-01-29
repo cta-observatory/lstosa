@@ -391,13 +391,18 @@ def is_job_completed(job_id: str):
 def create_longterm_symlink():
     """If the created longterm DL1 datacheck file corresponds to the latest 
     version available, make symlink to it in the "all" common directory."""
+    
     nightdir = utils.date_to_dir(options.date)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR"))
-    linked_longterm_file = longterm_dir / f"night_wise/all/DL1_datacheck_{nightdir}.h5"
-    all_longterm_files = longterm_dir.rglob(f"v*/{nightdir}/DL1_datacheck_{nightdir}.h5")
-    latest_version_file = get_latest_version_file(all_longterm_files)
-    linked_longterm_file.unlink(missing_ok=True)
-    linked_longterm_file.symlink_to(latest_version_file)
+    
+    extensions = ["h5", "log", "html"]
+    
+    for ext in extensions:
+        linked_longterm_file = longterm_dir / f"night_wise/all/DL1_datacheck_{nightdir}.{ext}"
+        all_longterm_files = longterm_dir.rglob(f"v*/{nightdir}/DL1_datacheck_{nightdir}.{ext}")
+        latest_version_file = get_latest_version_file(all_longterm_files)
+        linked_longterm_file.unlink(missing_ok=True)
+        linked_longterm_file.symlink_to(latest_version_file)
 
 
 def create_runwise_datacheck_symlinks():
