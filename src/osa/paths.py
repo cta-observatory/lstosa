@@ -408,8 +408,9 @@ def create_longterm_symlink():
 
 def create_runwise_datacheck_symlinks():
     """Create symlinks of the run-wise datacheck files in the "datacheck" directory."""
-    dl1_dir = Path(cfg.get("LST1", "DL1_DIR")) / options.date / options.prod_id
-    output_dir = Path(cfg.get("LST1", "DATACHECK_DIR")) / options.date
+    nightdir = utils.date_to_dir(options.date)
+    dl1_dir = Path(cfg.get("LST1", "DL1_DIR")) / nightdir / options.prod_id
+    output_dir = Path(cfg.get("LST1", "DATACHECK_DIR")) / nightdir
 
     patterns = [
         "tailcut*/datacheck/datacheck_dl1_LST-1.Run?????.pdf",
@@ -425,9 +426,10 @@ def create_runwise_datacheck_symlinks():
 
 def create_muons_symlinks():
     """Create symlinks of the muon files in the "datacheck" directory."""
+    nightdir = utils.date_to_dir(options.date)
     muons_dir = destination_dir("MUON", create_dir=False)
     muons_file_list = muons_dir.rglob("muons_LST-1*.fits")
-    output_dir = Path(cfg.get("LST1", "DATACHECK_DIR")) / options.date / "muons"
+    output_dir = Path(cfg.get("LST1", "DATACHECK_DIR")) / nightdir / "muons"
 
     for input_file in muons_file_list:
         output_file = output_dir / input_file.name
