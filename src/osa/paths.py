@@ -420,8 +420,8 @@ def create_runwise_datacheck_symlinks():
     for pattern in patterns:
         for input_file in dl1_dir.rglob(pattern):
             output_file = output_dir / input_file.name
-            if not input_file.is_symlink():
-                input_file.symlink_to(output_file.resolve())
+            if not output_file.is_symlink():
+                output_file.symlink_to(input_file.resolve())
 
 
 def create_muons_symlinks():
@@ -433,8 +433,9 @@ def create_muons_symlinks():
 
     for input_file in muons_file_list:
         output_file = output_dir / input_file.name
-        if not input_file.is_symlink():
-            input_file.symlink_to(output_file.resolve())
+        if not output_file.is_symlink():
+            print(f"input file exists: {input_file.exists()}")
+            output_file.symlink_to(input_file.resolve())
 
 
 def create_datacheck_symlinks(cherenkov_job_id: str=None):
