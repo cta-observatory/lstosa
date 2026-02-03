@@ -12,68 +12,74 @@ CRON_TZ=UTC
 #
 # [RUN SUMMARY] Produce the run summary file at the end of the observations to make sure it contains all the runs taken
 #
-50 06 * * * obsdate=`date +\%Y\%m\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; lstchain_create_run_summary -d $obsdate -o /fefs/onsite/data/lst-pipe/LSTN-01/monitoring/RunSummary --r0-path=/fefs/onsite/data/R0/LSTN-01/lst-arraydaq/events --overwrite > /dev/null 2>&1
+55 06 * * * obsdate=`date +\%Y\%m\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; lstchain_create_run_summary -d $obsdate -o /fefs/onsite/data/lst-pipe/LSTN-01/monitoring/RunSummary --r0-path=/fefs/onsite/data/R0/LSTN-01/lst-arraydaq/events --overwrite > /dev/null 2>&1
 #
 # [MERGED RUN SUMMARY] Produce the merged run summary file containing all the runs taken by the LST.
 #                      This only appends the runs of the given date.
 #
-55 06 * * * obsdate=`date +\%Y\%m\%d -d yesterday`; source /fefs/aswg/lstosa/utils/osa-conda; lstchain_merge_run_summaries -d $obsdate /fefs/onsite/data/lst-pipe/LSTN-01/OSA/Catalog/merged_RunSummary.ecsv --monitoring-path=/fefs/onsite/data/lst-pipe/LSTN-01/monitoring > /dev/null 2>&1
+00 07 * * * obsdate=`date +\%Y\%m\%d -d yesterday`; source /fefs/aswg/lstosa/utils/osa-conda; lstchain_merge_run_summaries -d $obsdate /fefs/onsite/data/lst-pipe/LSTN-01/OSA/Catalog/merged_RunSummary.ecsv --monitoring-path=/fefs/onsite/data/lst-pipe/LSTN-01/monitoring > /dev/null 2>&1
 #
 # [GAIN SELECTION]
 #
-00 07-15 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; gain_selection --no-queue-check -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg -d $obsdate -s 6 >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/GainSel_log/${obsdate}_LST1.log 2>&1
+15 07-18 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; gain_selection --no-queue-check -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg -d $obsdate -s 6 >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/GainSel_log/${obsdate}_LST1.log 2>&1
 #
 # [GAIN SELECTION CHECK]
 #
-20,50 08-16 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; gain_selection --check -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg -d $obsdate >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/GainSel_log/${obsdate}_check_LST1.log 2>&1
+00,15,30,45 08-19 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; gain_selection --check -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg -d $obsdate >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/GainSel_log/${obsdate}_check_LST1.log 2>&1
 #
 # [SIMULATED SEQUENCER] Launch sequencer once in the morning simulated. It also produces the run summary file if not found.
 #
-05 09 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; sequencer -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg -s -d $obsdate LST1 > /dev/null 2>&1
+05 08 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; sequencer -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg -s -d $obsdate LST1 > /dev/null 2>&1
 #
 # [SEQUENCER 1] Run only up to DL1A
 #
-25,32 08-10 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; sequencer -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg --no-dl1ab -d $obsdate LST1 >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/Sequencer_log/${obsdate}_1_LST1.log 2>&1
+20,50 07-19 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; sequencer -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg --no-dl1ab -d $obsdate LST1 >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/Sequencer_log/${obsdate}_1_LST1.log 2>&1
 #
 # [SEQUENCER_CATB_TAILCUTS] Runs from DL1A, produces Cat-B calibration and tailcut files
 #
-00,30 08-18 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; sequencer_catB_tailcuts -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg -d $obsdate LST1 >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/Sequencer_log/${obsdate}_tailcuts_LST1.log 2>&1
+10,50 07-20 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; sequencer_catB_tailcuts -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg -d $obsdate LST1 -v >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/Sequencer_log/${obsdate}_tailcuts_LST1.log 2>&1
 #
 # [SEQUENCER 2] Finishes the processing producing DL1AB and DL2
 #
-04,40 09-19 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; sequencer -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg -d $obsdate LST1 >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/Sequencer_log/${obsdate}_2_LST1.log 2>&1
+59,30 08-20 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; sequencer -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg -d $obsdate LST1 >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/Sequencer_log/${obsdate}_2_LST1.log 2>&1
 #
 # [SEQUENCER WEB] Make sequencer xhtml table and copy it to the lst1 webserver
 #
-*/10 08-22 * * * obsdate=`date +\%Y\%m\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; sequencer_webmaker -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg > /fefs/onsite/data/lst-pipe/LSTN-01/OSA/Minor_logs/${obsdate}_sequencer-web.log 2>&1; if [ $? = 0 ]; then scp /fefs/onsite/data/lst-pipe/LSTN-01/OSA/SequencerWeb/osa_status_$obsdate.html datacheck:/home/www/html/datacheck/lstosa/sequencer.xhtml; fi > /dev/null 2>&1
+*/20 07-22 * * * obsdate=`date +\%Y\%m\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; sequencer_webmaker -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg > /fefs/onsite/data/lst-pipe/LSTN-01/OSA/Minor_logs/${obsdate}_sequencer-web.log 2>&1; if [ $? = 0 ]; then scp /fefs/onsite/data/lst-pipe/LSTN-01/OSA/SequencerWeb/osa_status_$obsdate.html datacheck:/home/www/html/datacheck/lstosa/sequencer.xhtml; fi > /dev/null 2>&1
 #
-# [GAIN SEL WEB SEQUENCER] Make gain selection xhtml table and copy it to the lst1 webserver
+# [SEQUENCER WEB] Make sequencer xhtml table and copy it to the lst1 webserver
 #
-*/10 07-18 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; gainsel_webmaker -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg > /dev/null 2>&1; if [ $? = 0 ]; then scp /fefs/onsite/data/lst-pipe/LSTN-01/OSA/GainSelWeb/osa_gainsel_status_$obsdate.html datacheck:/home/www/html/datacheck/lstosa/gainsel.xhtml; fi > /dev/null 2>&1
+*/20 07-22 * * * obsdate=`date +\%Y\%m\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; sequencer_webmaker_2 -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg >/fefs/onsite/data/lst-pipe/LSTN-01/OSA/Minor_logs/${obsdate}_sequencer-web_2.log 2>&1; if [ $? = 0 ]; then scp /fefs/onsite/data/lst-pipe/LSTN-01/OSA/SequencerWeb/osa_status_2_$obsdate.html datacheck:/home/www/html/datacheck/lstosa/sequencer_2.xhtml; fi > /dev/null 2>&1
+#
+# [GAIN SEL WEB MAKER] Make gain selection xhtml table and copy it to the lst1 webserver
+#
+*/20 07-18 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; gainsel_webmaker -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/GainSel_log/GainSelWeb_${obsdate}_LST1.log 2>&1 ; if [ $? = 0 ]; then scp /fefs/onsite/data/lst-pipe/LSTN-01/OSA/GainSelWeb/osa_gainsel_status_$obsdate.html datacheck:/home/www/html/datacheck/lstosa/gainsel.xhtml; fi >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/GainSel_log/GainSelWeb_${obsdate}_LST1.log 2>&1
 #
 # [AUTOCLOSER] Launch the closer without forcing it (no -f option).
 #
-25 10-23 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; autocloser -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg -d $obsdate LST1 >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/Autocloser_log/${obsdate}_LST1.log 2>&1
+25,55 9-23 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; autocloser -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg -d $obsdate LST1 >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/Autocloser_log/${obsdate}_LST1.log 2>&1
 #
 # [COPY DATACHECK] Copy the available calibration and DL1 datacheck to the LST1 webserver.
 #
-05,20,40 08-23 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; copy_datacheck -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg -d $obsdate LST1 > /dev/null 2>&1
+05,25,45 07-23 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; copy_datacheck -c /fefs/aswg/lstosa/cfg/sexquencer_v0.11.cfg -d $obsdate LST1 > /dev/null 2>&1
 #
 # [SOURCE CATALOG]
 #
-00 11-23 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; update_source_catalog -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg -d $obsdate > /dev/null 2>&1
+52 10-23 * * * obsdate=`date +\%Y-\%m-\%d -d yesterday`; export obsdate; source /fefs/aswg/lstosa/utils/osa-conda; update_source_catalog -c /fefs/aswg/lstosa/cfg/sequencer_v0.11.cfg -d $obsdate > /fefs/onsite/data/lst-pipe/LSTN-01/monitoring/RunCatalog/log/Source-catalog-$obsdate 2>&1
 #
 # [COPY CUMULATIVE LST-1 OBSERVATION TIME]
 # (added by Daniel Morcuende on 2024-04-05)
 #
 0 18 *  * FRI /usr/bin/bash /fefs/aswg/lstosa/misc/update_cumulative_obs_time.sh >/dev/null 2>&1
-
-
+#
+#TROUBLESHOOTING
+#*/20 7-22 * * * obsdate=`date +\%Y-\%m-\%d`; cd /fefs/aswg/lstosa/troubleshooting/ && /fefs/aswg/software/conda/bin/python troubleshooting.py >> /fefs/aswg/lstosa/troubleshooting/log/cron_log_${obsdate}.log 2>&1
+#
 # Daniel Morcuende (2023-11-08) periodically remove leftover jobs kept in the SLURM as pending after job dependency not satisfied because of failure (Reason in squeue: 'DependencyNeverSatisfied').
 # It does only look for lstosa jobs launched by sequencer with the prefix "LST1_" and also the merging jobs launched by autocloser like "longterm_dl1_datacheck".
 */30 * * * * /local/home/lstanalyzer/remove_dependency_never_satisfied_jobs.sh > /dev/null 2>&1
-
-
+#
+#
 SHELL=/usr/bin/bash
 BASH_ENV="/local/home/lstanalyzer/.bashrc"
 CRON_TZ=UTC
