@@ -8,7 +8,7 @@
 # and Gain Selection register is saved in {OBS_DATE}_LST1.log
 # --------------------------------------------------------------------
 
-obsdate=`date +\%Y\%m\%d -d yesterday`
+obsdate=$(date +\%Y\%m\%d -d yesterday)
 
 LOGDIR="${LSTN1}/OSA/GainSel_log"
 WORKDIR="${LSTN1}/OSA/GainSel/${obsdate}"
