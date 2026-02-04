@@ -138,11 +138,15 @@ def main():
     gain_selection_web_directory = Path(cfg.get("LST1", "GAIN_SELECTION_WEB_DIR"))
     gain_selection_web_directory.mkdir(parents=True, exist_ok=True)
     html_file = gain_selection_web_directory / f"osa_gainsel_status_{date}.html"
-
+    
     # Create and save the HTML file
     if not run_summary_file.is_file() or len(Table.read(run_summary_file)["run_id"]) == 0:
         content = "<p>No data found</p>"
         log.warning(f"No data found for date {date}, creating an empty HTML file.")
+
+    elif len(Table.read(run_summary_file)[Table.read(run_summary_file)["run_type"] == "DATA"]) == 0:
+        content = "<p>Only calibration events were taken</p>"
+        log.warning(f"No DATA runs for date {date}, creating an empty HTML file.")
 
     else:
         # Get the table with the gain selection check report in HTML format:
