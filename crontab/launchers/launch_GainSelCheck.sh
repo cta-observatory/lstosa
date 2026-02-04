@@ -10,7 +10,7 @@
 # Make gain selection xhtml table and copy it to the lst1 webserver.
 # --------------------------------------------------------------------
 
-obsdate=`date +\%Y\%m\%d -d yesterday`
+obsdate=$(date +\%Y\%m\%d -d yesterday)
 
 WORKDIR="${LSTN1}/OSA/GainSel/${obsdate}"
 FLAG_FILE="${WORKDIR}/GainSelFinished.txt"
