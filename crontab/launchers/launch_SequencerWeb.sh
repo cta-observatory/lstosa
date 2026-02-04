@@ -4,7 +4,7 @@
 # Make sequencer xhtml table and copy it to the lst1 webserver
 # --------------------------------------------------------------------
 
-obsdate=`date +\%Y\%m\%d -d yesterday`
+obsdate=$(date +\%Y\%m\%d -d yesterday)
 LOGDIR="${LSTN1}/OSA/Minor_logs/"
 LOGFILE="${LOGDIR}/${obsdate}_sequencer-web.log"
 LOGFILE2="${LOGDIR}/${obsdate}_sequencer-web_2.log"
