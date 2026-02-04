@@ -334,21 +334,23 @@ def update_history_file(run_id: str, subrun: str, log_dir: Path, history_file: P
         log.debug(f"Cannot find a job_id for the run {run_id:05d}.{subrun:04d}")
     else:
         job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         if job_status.item() in ["RUNNING", "PENDING"]:
             log.info(f"Job {job_id} is still running.")
             return
-            
+
         elif job_status.item() == "COMPLETED":
             log.debug(f"Job {job_id} finished successfully, updating history file.")
             string_to_write = (
-                f"{run_id:05d}.{subrun:04d} gain_selection 0\n"
+                f"{now} | {run_id:05d}.{subrun:04d} gain_selection 0\n"
             )
             append_to_file(history_file, string_to_write)
-        
+
         else:
             log.info(f"Job {job_id} failed, updating history file.")
             string_to_write = (
-                f"{run_id:05d}.{subrun:04d} gain_selection 1\n"
+                f"{now} | {run_id:05d}.{subrun:04d} gain_selection 1\n"
             )
             append_to_file(history_file, string_to_write)
 
