@@ -198,7 +198,7 @@ def test_closer(
     systematic_correction_files,
     merged_run_summary,
     longterm_dir,
-    longterm_link_latest_dir,
+    datacheck_dir,
     daily_datacheck_dl1_files,
     dl1b_config_files,
     tailcuts_log_files,
@@ -223,7 +223,7 @@ def test_closer(
         assert obs_file.exists()
     assert merged_run_summary.exists()
     assert longterm_dir.exists()
-    assert longterm_link_latest_dir.exists()
+    assert datacheck_dir.exists()
     for check_file in daily_datacheck_dl1_files:
         assert check_file.exists()
     assert rf_models[2].exists()
@@ -390,7 +390,7 @@ def test_daily_longterm_cmd():
         "--dependency=afterok:12345,54321",
         "lstchain_longterm_dl1_check",
         "--input-dir=test_osa/test_files0/DL1/20200117/v0.1.0/tailcut*/datacheck",
-        "--output-file=test_osa/test_files0/OSA/DL1DataCheck_LongTerm/v0.1.0/20200117/DL1_datacheck_20200117.h5",
+        "--output-file=test_osa/test_files0/DL1/datacheck_files/night_wise/v0.1.0/20200117/DL1_datacheck_20200117.h5",
         "--muons-dir=test_osa/test_files0/DL1/20200117/v0.1.0/muons",
         "--batch",
     ]
