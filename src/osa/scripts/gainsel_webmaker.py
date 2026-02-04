@@ -144,6 +144,10 @@ def main():
         content = "<p>No data found</p>"
         log.warning(f"No data found for date {date}, creating an empty HTML file.")
 
+    elif len(Table.read(run_summary_file)[Table.read(run_summary_file)["run_type"] == "DATA"]) == 0:
+        content = "<p>Only calibration events were taken</p>"
+        log.warning(f"No DATA runs for date {date}, creating an empty HTML file.")
+
     else:
         # Get the table with the gain selection check report in HTML format:
         table_gain_selection_jobs = check_failed_jobs(options.date)
