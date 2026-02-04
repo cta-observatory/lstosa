@@ -511,15 +511,15 @@ def datacheck_dl1_files(base_test_dir):
 
 
 @pytest.fixture(scope="session")
-def longterm_dir(base_test_dir):
-    directory = base_test_dir / "OSA" / "DL1DataCheck_LongTerm" / prod_id / date_to_dir(date)
+def longterm_dir(datacheck_dir):
+    directory = datacheck_dir / prod_id / date_to_dir(date)
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 
 
 @pytest.fixture(scope="session")
-def longterm_link_latest_dir(base_test_dir):
-    directory = base_test_dir / "OSA" / "DL1DataCheck_LongTerm" / "night_wise" / "all"
+def datacheck_dir(base_test_dir):
+    directory = base_test_dir / "DL1" / "datacheck_files" / "night_wise"
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 

@@ -26,7 +26,7 @@ from osa.nightsummary.extract import extract_runs, extract_sequences
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import (
     destination_dir,
-    create_longterm_symlink,
+    create_datacheck_symlinks,
     dl1_datacheck_longterm_file_exits
 )
 from osa.raw import is_raw_data_available
@@ -161,7 +161,7 @@ def post_process(seq_tuple):
     
     if dl1_datacheck_longterm_file_exits() and not options.test:
         if cfg.getboolean("lstchain", "create_longterm_symlink"):
-            create_longterm_symlink()
+            create_datacheck_symlinks()
 
     else:
         # Close the sequences
@@ -187,7 +187,7 @@ def post_process(seq_tuple):
             longterm_job_id = daily_datacheck(daily_longterm_cmd(list_job_id))
             cherenkov_job_id = cherenkov_transparency(cherenkov_transparency_cmd(longterm_job_id))
             if cfg.getboolean("lstchain", "create_longterm_symlink"):
-                create_longterm_symlink(cherenkov_job_id)
+                create_datacheck_symlinks(cherenkov_job_id)
 
         time.sleep(600)
 
