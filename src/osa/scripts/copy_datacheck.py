@@ -70,7 +70,7 @@ def main():
     for data_type, pattern in DATACHECK_FILE_PATTERNS.items():
         log.info(f"Looking for {pattern}")
         directory = datacheck_directory(data_type=data_type, date=nightdir)
-        files = get_datacheck_files(pattern, directory)
+        files = get_datacheck_files(pattern, directory, date=nightdir)
         if len(files) != 0:
             copy_to_webserver(files, data_type, nightdir, options.prod_id)
 

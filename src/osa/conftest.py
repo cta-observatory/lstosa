@@ -501,10 +501,10 @@ def txt_file_test(running_analysis_dir):
 
 @pytest.fixture(scope="session")
 def datacheck_dl1_files(base_test_dir):
-    dl1b_dir = base_test_dir / "DL1" / "20200117" / "v0.1.0" / "tailcut84"
-    dl1b_dir.mkdir(parents=True, exist_ok=True)
-    pdf_file_1 = dl1b_dir / "datacheck_dl1_LST-1.Run01807.pdf"
-    pdf_file_2 = dl1b_dir / "datacheck_dl1_LST-1.Run01808.pdf"
+    datacheck_dir = base_test_dir / "DL1" / "datacheck_files" / "20200117"
+    datacheck_dir.mkdir(parents=True, exist_ok=True)
+    pdf_file_1 = datacheck_dir / "datacheck_dl1_LST-1.Run01807.pdf"
+    pdf_file_2 = datacheck_dir / "datacheck_dl1_LST-1.Run01808.pdf"
     pdf_file_1.touch()
     pdf_file_2.touch()
     return pdf_file_1, pdf_file_2

@@ -51,7 +51,7 @@ DATACHECK_PRODUCTS = ["drs4", "enf_calibration", "dl1"]
 DATACHECK_FILE_PATTERNS = {
     "PEDESTAL": "drs4*.pdf",
     "CALIB": "calibration*.pdf",
-    "DL1AB": "datacheck_dl1*.pdf",
+    "DATACHECK": "datacheck_dl1*.pdf",
     "LONGTERM": "DL1_datacheck_*.*",
 }
 
