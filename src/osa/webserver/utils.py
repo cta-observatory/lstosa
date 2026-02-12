@@ -37,7 +37,7 @@ def directory_in_webserver(host: str, datacheck_type: str, date: str, prod_id: s
     DATACHECK_WEB_DIRS = {
         "PEDESTAL": f"drs4/{prod_id}/{date}",
         "CALIB": f"enf_calibration/{prod_id}/{date}",
-        "DL1AB": f"dl1/{date}/pdf",
+        "DATACHECK": f"dl1/{date}/pdf",
         "LONGTERM": f"dl1/{date}",
         "HIGH_LEVEL": f"high_level/{prod_id}/{date}",
     }
