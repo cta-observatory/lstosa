@@ -39,8 +39,9 @@ def test_get_datacheck_file(datacheck_dl1_files):
 
     for file in datacheck_dl1_files:
         assert file.exists()
-    dl1_path = Path("test_osa/test_files0/DL1/20200117/v0.1.0/tailcut84")
-    files = get_datacheck_files(pattern="datacheck*.pdf", directory=dl1_path)
+    dl1_path = Path("test_osa/test_files0/DL1/datacheck_files/20200117")
+    datedir = date_to_dir(options.date)
+    files = get_datacheck_files(pattern="datacheck*.pdf", directory=dl1_path, date=datedir)
     expected_files = [
         dl1_path / "datacheck_dl1_LST-1.Run01808.pdf",
         dl1_path / "datacheck_dl1_LST-1.Run01807.pdf",

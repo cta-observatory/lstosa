@@ -255,22 +255,21 @@ def sequence_calibration_files(sequence_list: List[Sequence]) -> None:
         )
 
 
-def get_datacheck_files(pattern: str, directory: Path) -> list:
+def get_datacheck_files(pattern: str, directory: Path, date: str) -> list:
     """Return a list of files matching the pattern."""
-    if pattern=="datacheck_dl1*.pdf":
-        return sorted(directory.glob("tailcut*/datacheck/"+pattern))
-    else:
-        return sorted(directory.glob(pattern))
+    if pattern=="DL1_datacheck_*.*":
+        pattern = f"DL1_datacheck_{date}.*"
+    return sorted(directory.glob(pattern))
 
 
 def datacheck_directory(data_type: str, date: str) -> Path:
     """Returns the path to the datacheck directory given the data type."""
     if data_type in {"PEDESTAL", "CALIB"}:
         directory = Path(cfg.get("LST1", f"CAT_A_{data_type}_DIR")) / date / "pro/log"
-    elif data_type == "DL1AB":
-        directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / date / options.prod_id
+    elif data_type == "DATACHECK":
+        directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / date
     elif data_type == "LONGTERM":
-        directory = Path(cfg.get("LST1", f"{data_type}_DIR")) / options.prod_id / date
+        directory = Path(cfg.get("LST1", f"{data_type}_DIR"))
     else:
         raise ValueError(f"Unknown data type: {data_type}")
     return directory
