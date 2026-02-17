@@ -226,7 +226,7 @@ def run_command(command_str):
     Note: This assumes arguments do not contain internal spaces.
     """
     try:
-        # 1. Remove shell-specific operators (like ; or &) 
+        # 1. Remove shell-specific operators (like ; or &)
         # that are incompatible with shell=False
         clean_command = command_str.replace("osa_env;", "").replace("osa_env &", "").strip()
         # 2. Convert string to list by splitting on whitespace
