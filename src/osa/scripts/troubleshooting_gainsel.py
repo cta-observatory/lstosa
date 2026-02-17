@@ -40,8 +40,8 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
     review_path = log_path
 
     if state == "TIMEOUT":
-        logger_func(f"   |__ ❌ DIAGNOSIS: TIMEOUT (Walltime exceeded).")
-        logger_func(f"   |__ 💡 ACTION: Increase --mem in sbatch.")
+        logger_func("   |__ ❌ DIAGNOSIS: TIMEOUT (Walltime exceeded).")
+        logger_func("   |__ 💡 ACTION: Increase --mem in sbatch.")
         try:
             if command in handler:
                 utils.save_skipped_job_id(job_id)
