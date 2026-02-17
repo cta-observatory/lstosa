@@ -28,7 +28,6 @@ KNOWN_ERRORS = {
         "id": 4
     },
     re.escape("No such file or directory: 'datasequence'"): {
-        
         "tag": "No such file or directory: 'datasequence'",
         "msg": "Command must be relaunched",
         "id": 5
