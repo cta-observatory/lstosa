@@ -121,91 +121,103 @@ def get_ecsv_column_value(file_path, target_id, target_col='n_subruns', id_col='
         return None
 
 # ==========================================
-# 3. CSV MANIPULATION
+# 3. CSV MANIPULATION (REFACTORED)
 # ==========================================
+
+def _get_header_indices(headers, id_col, target_col):
+    """Helper to find column indices and handle errors."""
+    try:
+        return (
+            headers.index(id_col),
+            headers.index(target_col),
+            headers.index('n_subruns')
+        )
+    except ValueError as e:
+        print(f"[UTILS ERROR] Column missing: {e}")
+        return None
+
+def _should_update_row(parts, id_idx, subruns_idx, target_id, subruns_limit):
+    """Helper to check if the current row matches the ID and satisfies subrun limits."""
+    if len(parts) <= id_idx or parts[id_idx].strip() != str(target_id):
+        return False
+        
+    if subruns_limit == 0:
+        return True
+
+    try:
+        current_subruns = int(parts[subruns_idx])
+        if current_subruns <= subruns_limit:
+            return True
+        print(f"[UTILS] Run {target_id} SKIPPED: Subruns {current_subruns} > Limit {subruns_limit}")
+    except (ValueError, IndexError):
+        print(f"[UTILS WARNING] Could not parse subruns for Run {target_id}")
+        
+    return False
+
+def _process_ecsv_lines(f_in, f_out, target_id, target_col, new_value, subruns_limit, id_col):
+    """Core loop to process lines and update target cell."""
+    header_parsed = False
+    modified = False
+    id_idx, target_idx, subruns_idx = -1, -1, -1
+
+    for line in f_in:
+        # Preserve Metadata
+        if line.strip().startswith('#'):
+            f_out.write(line)
+            continue
+
+        # Parse Header
+        if not header_parsed:
+            headers = line.strip().split(',')
+            indices = _get_header_indices(headers, id_col, target_col)
+            if not indices: return False # Exit if columns missing
+            id_idx, target_idx, subruns_idx = indices
+            header_parsed = True
+            f_out.write(line)
+            continue
+
+        # Process Row
+        parts = line.strip().split(',')
+        if _should_update_row(parts, id_idx, subruns_idx, target_id, subruns_limit):
+            parts[target_idx] = str(new_value)
+            modified = True
+            print(f"[UTILS] Run {target_id} updated '{target_col}' -> '{new_value}'")
+
+        f_out.write(','.join(parts) + '\n')
+    
+    return modified
 
 def update_ecsv_cell(file_path, target_id, target_col, new_value, subruns_limit=0, id_col='run_id'):
     """
     Updates a column in an ECSV only if the run has fewer or equal 'n_subruns' than the limit.
+    Refactored to meet MC0001 complexity standards.
     """
     if not os.path.exists(file_path):
         print(f"[UTILS ERROR] File not found: {file_path}")
         return False
 
     temp_path = file_path + ".tmp"
-    modified = False
+    success = False
+
     try:
         with open(file_path, 'r') as f_in, open(temp_path, 'w') as f_out:
-            header_parsed = False
-            id_idx = -1
-            target_idx = -1
-            subruns_idx = -1  # Index for the subruns column
+            success = _process_ecsv_lines(
+                f_in, f_out, target_id, target_col, new_value, subruns_limit, id_col
+            )
 
-            for line in f_in:
-                # 1. Preserve Metadata
-                if line.strip().startswith('#'):
-                    f_out.write(line)
-                    continue
-
-                # 2. Parse Header
-                if not header_parsed:
-                    headers = line.strip().split(',')
-                    try:
-                        id_idx = headers.index(id_col)
-                        target_idx = headers.index(target_col)
-                        # We look for the n_subruns column for the check
-                        subruns_idx = headers.index('n_subruns')
-                        header_parsed = True
-                        f_out.write(line)
-                    except ValueError as e:
-                        # If a critical column is missing, stop
-                        print(f"[UTILS ERROR] Column missing in {file_path}: {e}")
-                        f_out.close()
-                        os.remove(temp_path)
-                        return False
-                    continue
-
-                # 3. Process data rows
-                parts = line.strip().split(',')
-                # Verify if it is the correct row (ID matches)
-                if len(parts) > id_idx and parts[id_idx].strip() == str(target_id):
-
-                    try:
-                        if subruns_limit != 0:
-                            print(f"[UTILS] Found target run_id: {target_id}")
-                            # IMPORTANT: Convert to int to compare numbers
-                            current_subruns = int(parts[subruns_idx])
-                            if current_subruns <= subruns_limit:
-                                parts[target_idx] = str(new_value)
-                                modified = True
-                                print(f"[UTILS] Run {target_id} updated: '{target_col}' -> '{new_value}' (Subruns: {current_subruns})")
-                            else:
-                                print(f"[UTILS] Run {target_id} SKIPPED: Subruns {current_subruns} > Limit {subruns_limit}")
-                        else:
-                            parts[target_idx] = str(new_value)
-                            modified = True
-                            print(f"[UTILS] Run {target_id} updated: '{target_col}' -> '{new_value}' (No subruns limit)")
-                    except ValueError:
-                        print(f"[UTILS WARNING] Could not parse n_subruns for Run {target_id}")
-
-                # Reconstruct the line (modified or not)
-                f_out.write(','.join(parts) + '\n')
-
-        # 4. Finalize
-        if modified:
+        if success:
             shutil.move(temp_path, file_path)
-            return True
         else:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
-            # Return False if nothing was modified (due to run not found or limit exceeded)
-            return False
-
+                
     except Exception as e:
         print(f"[UTILS ERROR] Failed to update ECSV: {e}")
         if os.path.exists(temp_path):
             os.remove(temp_path)
         return False
+
+    return success
 
 # ==========================================
 # 4. SLURM & EXECUTION
