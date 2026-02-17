@@ -182,6 +182,7 @@ def process_jobs(start_date, end_date, args):
     else:
         log_msg(f"⚠️  INFO: {total_failures} failed jobs found. Generating grouped report...\n")
 
+        relaunched_commands = []
         # 2. Print report ordered by groups
         for category in REPORT_ORDER:
             job_list = grouped_jobs.get(category, [])
@@ -190,25 +191,28 @@ def process_jobs(start_date, end_date, args):
 
             print(f"\n>>> CATEGORY REPORT: {category} ({len(job_list)} failures) <<<")
             print("-" * 60)
+            handler = None
 
             for job in job_list:
                 # Routing to the appropriate handler
                 if category == "GAIN_SEL":
                     # Use external module (performs deep analysis)
-                    handlers_gainsel.handle_error(job['id'], job['name'], job['state'], job['log_path'], job['error_path'], job['command'], log_msg, start_date, end_date)
+                    handler = handlers_gainsel.handle_error(job['id'], job['name'], job['state'], job['log_path'], job['error_path'], job['command'], log_msg, start_date, end_date, relaunched_commands)
                 
                 elif category == "SEQUENCER":
-                    handlers_sequencer.handle_error(job['id'], job['name'], job['state'], job['log_path'], job['error_path'], job['command'], log_msg, start_date, end_date)
+                    handler = handlers_sequencer.handle_error(job['id'], job['name'], job['state'], job['log_path'], job['error_path'], job['command'], log_msg, start_date, end_date, relaunched_commands)
+
                 
                 elif category == "CAT_B":
-                    handlers_catB.handle_error(job['id'], job['name'], job['state'], job['log_path'], job['error_path'], job['command'],log_msg, start_date, end_date)
-
+                    handler = handlers_catB.handle_error(job['id'], job['name'], job['state'], job['log_path'], job['error_path'], job['command'],log_msg, start_date, end_date, relaunched_commands)
                 elif category == "CLOSER":
                     handle_closer_error(job, log_msg)
                 
                 else:
                     handle_generic_error(job, log_msg)
-                
+
+                if handler is not None:
+                    relaunched_commands.append(handler)
                 print("") # Space between jobs
 
     print("="*60)
