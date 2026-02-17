@@ -112,6 +112,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
         return perform_relaunch(job_id, command, logger_func, handler, "Timeout: memory increased")
 
     if not os.path.exists(log_path):
+        logger_func("Job skipped, can't find the log file")
         utils.save_skipped_job_id(job_id)
         return None
 
