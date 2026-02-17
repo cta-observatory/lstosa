@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 
 # ==========================================
 # 1. LOGS & TEXT ANALYSIS
@@ -217,7 +218,7 @@ def run_command(command_str):
     """Executes a shell command and returns (exit_code, stdout)."""
     try:
         result = subprocess.run(
-            command_str, 
+            "osa_env; " + command_str, 
             shell=True, 
             capture_output=True, 
             text=True
@@ -277,7 +278,7 @@ def increase_memory_and_relaunch(script_path, new_mem):
         if modified:
             print(f"[UTILS] Memory updated to {new_mem}G in {script_path}")
             # Relaunch the job
-            code, out = run_command(f"sbatch {script_path}")
+            code, out = run_command(f"osa_env & sbatch {script_path}")
             if code == 0:
                 print(f"[UTILS] Job relaunched successfully: {out}")
                 return True
@@ -424,3 +425,13 @@ def is_yesterday_path(path):
         # Returns False if the string is not a valid calendar date (e.g., 20261345)
         return False
     print("❌ This path does not belong to yesterday.")
+
+
+def file_exists(file_path: str) -> bool:
+    """Checks if a file exists at the given path."""
+    return Path(file_path).is_file()
+
+def is_link(path: str) -> bool:
+    # Comprueba si la ruta es un enlace simbólico
+    return Path(path).is_symlink()
+
