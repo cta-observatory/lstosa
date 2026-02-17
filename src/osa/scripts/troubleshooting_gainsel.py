@@ -43,7 +43,6 @@ def process_memory_relaunch(job_id, command, review_path, logger_func, handler):
         else:
             logger_func("   |__ ⚠️ ERROR: Could not write to job history.")
         return command
-    
     logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the command.")
     return None
 
@@ -86,12 +85,10 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                 if re.search(pattern, content, re.IGNORECASE):
                     logger_func(f"   |__ ❌ DETECTED: {details['tag']}")
                     logger_func(f"   |__ 💡 SOLUTION: {details['msg']}")
-                    
                     err_id = details['error_id']
                     if err_id == 1:
                         process_ecsv_update(job_id, review_path, logger_func)
                         return None
-                    
                     if err_id in [2, 3, 4]:
                         return process_memory_relaunch(job_id, command, review_path, logger_func, handler)
 
