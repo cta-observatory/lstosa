@@ -86,20 +86,17 @@ def handle_case_actions(error_id, job_id, run_id, subrun_id, command, logger_fun
             log_and_save(job_id, success, logger_func, "Subruns decremented", "ECSV update failed")
         else:
             logger_func(f"   |__ ⚠️ SKIP: {subrun_id} is not the last subrun ({last_sr})")
-    
     elif error_id == 4:  # Discard Run
         success = utils.update_ecsv_cell(ecsv_path, run_id, "run_type", "EDATA")
         log_and_save(job_id, success, logger_func, "Run marked as EDATA", "ECSV update failed")
-    
     elif error_id == 5:  # Relaunch only
         return perform_relaunch(job_id, command, logger_func, handler)
-    
     elif error_id == 6:  # Delete DRS4 and relaunch
         summary_date, _ = get_summary_info()
         drs4_glob = f"/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/PixelCalibration/Cat-A/drs4_baseline/{summary_date}/v0.1.1/drs4_pedestal*.h5"
         if utils.delete_path(drs4_glob):
             return perform_relaunch(job_id, command, logger_func, handler, "DRS4 deleted & relaunched")
-    
+
     return None
 
 # --- MAIN ENTRY POINT ---
@@ -107,7 +104,6 @@ def handle_case_actions(error_id, job_id, run_id, subrun_id, command, logger_fun
 def handle_error(job_id, job_name, state, log_path, error_path, command, logger_func, start_date, end_date, handler):
     """Main orchestrator for sequencer errors."""
     logger_func(f"   |__ Job {job_id} {job_name} {state}")
-    
     run_id, subrun_id, log_path, error_path = extract_ids_and_paths(job_id, job_name, log_path, error_path)
 
     if state == "TIMEOUT":
@@ -126,5 +122,4 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                     return handle_case_actions(details['error_id'], job_id, run_id, subrun_id, command, logger_func, handler)
     except Exception as e:
         logger_func(f"   |__ ❌ EXCEPTION: {str(e)}")
-        
-    return None
+        return None
