@@ -140,7 +140,6 @@ def _should_update_row(parts, id_idx, subruns_idx, target_id, subruns_limit):
     """Helper to check if the current row matches the ID and satisfies subrun limits."""
     if len(parts) <= id_idx or parts[id_idx].strip() != str(target_id):
         return False
-        
     if subruns_limit == 0:
         return True
 
@@ -151,7 +150,6 @@ def _should_update_row(parts, id_idx, subruns_idx, target_id, subruns_limit):
         print(f"[UTILS] Run {target_id} SKIPPED: Subruns {current_subruns} > Limit {subruns_limit}")
     except (ValueError, IndexError):
         print(f"[UTILS WARNING] Could not parse subruns for Run {target_id}")
-        
     return False
 
 def _process_ecsv_lines(f_in, f_out, target_id, target_col, new_value, subruns_limit, id_col):
@@ -184,7 +182,6 @@ def _process_ecsv_lines(f_in, f_out, target_id, target_col, new_value, subruns_l
             print(f"[UTILS] Run {target_id} updated '{target_col}' -> '{new_value}'")
 
         f_out.write(','.join(parts) + '\n')
-    
     return modified
 
 def update_ecsv_cell(file_path, target_id, target_col, new_value, subruns_limit=0, id_col='run_id'):
@@ -210,7 +207,7 @@ def update_ecsv_cell(file_path, target_id, target_col, new_value, subruns_limit=
         else:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
-                
+
     except Exception as e:
         print(f"[UTILS ERROR] Failed to update ECSV: {e}")
         if os.path.exists(temp_path):
@@ -232,11 +229,9 @@ def run_command(command_str):
         # 1. Remove shell-specific operators (like ; or &) 
         # that are incompatible with shell=False
         clean_command = command_str.replace("osa_env;", "").replace("osa_env &", "").strip()
-        
         # 2. Convert string to list by splitting on whitespace
         # "sbatch --mem=20G script.sh" -> ["sbatch", "--mem=20G", "script.sh"]
         command_args = [arg for arg in clean_command.split(" ") if arg]
-        
         # 3. Execute safely
         result = subprocess.run(
             command_args,
