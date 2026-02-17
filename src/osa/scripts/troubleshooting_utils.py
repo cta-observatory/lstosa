@@ -16,7 +16,6 @@ def log_contains_pattern(log_path, pattern):
     """
     if not log_path or not os.path.exists(log_path):
         return False
-    
     try:
         with open(log_path, 'r', errors='ignore') as f:
             content = f.read()
@@ -157,7 +156,7 @@ def update_ecsv_cell(file_path, target_id, target_col, new_value, subruns_limit=
                         id_idx = headers.index(id_col)
                         target_idx = headers.index(target_col)
                         # We look for the n_subruns column for the check
-                        subruns_idx = headers.index('n_subruns') 
+                        subruns_idx = headers.index('n_subruns')
                         header_parsed = True
                         f_out.write(line)
                     except ValueError as e:
@@ -219,8 +218,8 @@ def run_command(command_str):
     try:
         result = subprocess.run(
             "osa_env; " + command_str, 
-            shell=True, 
-            capture_output=True, 
+            shell=True,
+            capture_output=True,
             text=True
         )
         return result.returncode, result.stdout.strip()
@@ -298,10 +297,10 @@ def get_run_id_from_path(path):
     Extracts the Run ID from a log file with the format '..._RUNID_JOBID.log'
     Example: /.../tailcuts_finder_23342_51712367.log -> Returns '23342'
     """
-    if not path: 
+    if not path:
         return None
     # 1. Keep only the filename (ignore folders)
-    filename = os.path.basename(path) 
+    filename = os.path.basename(path)
     
     # 2. Use Regex to find the final pattern: _(Digits)_(Digits).log
     # (\d+) captures the Run ID
@@ -360,7 +359,7 @@ def is_job_already_processed_or_skipped(job_id):
     yesterday = datetime.now() - timedelta(days=1)
     main_date = yesterday.strftime('%Y%m%d')
     file_path_processed ='/fefs/aswg/lstosa/troubleshooting/'+main_date+'/'+main_date+'_processed.txt'
-    file_path_skipped ='/fefs/aswg/lstosa/troubleshooting/'+main_date+'/'+main_date+'_skipped.txt' 
+    file_path_skipped ='/fefs/aswg/lstosa/troubleshooting/'+main_date+'/'+main_date+'_skipped.txt'
 
     if not os.path.exists(file_path_processed):
         # Optional: Print informational message if file doesn't exist yet (first run)
