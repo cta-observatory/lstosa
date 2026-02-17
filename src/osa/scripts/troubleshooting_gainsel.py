@@ -1,5 +1,6 @@
 import os
 import re
+from xml.sax import handler
 import troubleshooting_utils as utils
 from datetime import datetime, timedelta
 
@@ -29,7 +30,7 @@ KNOWN_ERRORS = {
     }
 }
 
-def handle_error(job_id, job_name, state, log_path, error_path, command, logger_func, start_date, end_date):
+def handle_error(job_id, job_name, state, log_path, error_path, command, logger_func, start_date, end_date, handler):
     """
     Checks if a specific pattern (string or regex) exists in a log file.
     Returns: True if found, False otherwise.
@@ -44,6 +45,9 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
         logger_func(f"   |__ ❌ DIAGNOSIS: TIMEOUT (Walltime exceeded).")
         logger_func(f"   |__ 💡 ACTION: Increase --mem in sbatch.")
         try:    
+            if command in handler:
+                utils.save_skipped_job_id(job_id)
+                return
             run_id = utils.get_run_id_from_path(review_path) # Ensure review_path is correct
 
             success = utils.increase_memory_and_relaunch(command, 20)
@@ -62,6 +66,8 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
             else:
                 # If function returns False
                 logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the command.")
+            
+            return command
 
         except Exception as e:
             # --- ERROR MANAGEMENT (Code Exception) ---
@@ -128,7 +134,9 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                     if id == 2 or id == 3 or id == 4:
 
                         try:
-
+                            if command in handler:
+                                utils.save_skipped_job_id(job_id)
+                                return
                             run_id = utils.get_run_id_from_path(review_path) # Ensure review_path is correct
 
                             success = utils.increase_memory_and_relaunch(command, 20)
@@ -147,6 +155,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                             else:
                                 # If function returns False
                                 logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the command.")
+                            return command
 
                         except Exception as e:
                             # --- ERROR MANAGEMENT (Code Exception) ---
