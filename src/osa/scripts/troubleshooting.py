@@ -5,6 +5,7 @@ import re
 import argparse
 from datetime import datetime, timedelta
 from collections import defaultdict
+
 import troubleshooting_gainsel as handlers_gainsel
 import troubleshooting_catB as handlers_catB
 import troubleshooting_sequencer as handlers_sequencer
@@ -15,7 +16,6 @@ SACCT_CMD = "sacct"
 SCONTROL_CMD = "scontrol"
 SLURM_USER = "lstanalyzer"
 
-# Category Map
 JOB_CATEGORIES_MAP = {
     "gain_selection": "GAIN_SEL",
     "CatB": "CAT_B",
@@ -26,45 +26,14 @@ JOB_CATEGORIES_MAP = {
     "closer": "CLOSER"
 }
 
-# Report print order
 REPORT_ORDER = ["GAIN_SEL", "SEQUENCER", "CAT_B", "CLOSER", "UNKNOWN"]
 
 def log_msg(message):
-    """Prints message with timestamp."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{timestamp}] {message}", flush=True)
 
 # ---------------------------------------------------------
-#       INTERNAL HANDLERS (For those not GainSel)
-# ---------------------------------------------------------
-
-def handle_closer_error(job, log_msg_func):
-    log_msg_func(f"   |__ 🚨 [CLOSER] WARNING! Job {job['id']} has failed.")
-    log_msg_func("   |__ 🛠  ACTION: Manual review required.")
-    log_msg_func(f"   |__ 📂 Log: {job['log_path']}")
-
-def handle_generic_error(job, log_msg_func):
-    log_msg_func(f"   |__ ❌ [UNKNOWN] Job {job['id']} ({job['name']}) -> {job['state']}")
-    log_msg_func(f"   |__ 📂 Log: {job['log_path']}")
-
-def display_processed_jobs(jobs, log_msg_func):
-
-    print(f"\n>>> CATEGORY REPORT: PROCESSED JOBS ({len(jobs)} failures) <<<")
-    for job in jobs:
-        log_msg_func(f"   |__ ✅ Job {job['id']} ({job['name']}) already processed.")
-        log_msg_func(f"   |__ 📂 Log: {job['log_path']}")
-        log_msg_func(f"   |__ 📂 Error: {job['log_error']}")
-
-def display_skipped_jobs(jobs, log_msg_func):
-
-    print(f"\n>>> CATEGORY REPORT: SKIPPED JOBS ({len(jobs)} failures) <<<")
-    for job in jobs:
-        log_msg_func(f"   |__ ❌ Job {job['id']} ({job['name']}) already processed.")
-        log_msg_func(f"   |__ 📂 Log: {job['log_path']}")
-        log_msg_func(f"   |__ 📂 Error: {job['log_error']}")
-
-# ---------------------------------------------------------
-#       DATA COLLECTION LOGIC
+#       HELPER UTILITIES
 # ---------------------------------------------------------
 
 def get_job_category(job_name):
@@ -74,173 +43,149 @@ def get_job_category(job_name):
     return "UNKNOWN"
 
 def get_scontrol_details(job_id):
+    """Retrieves StdOut, StdErr, and Command for a specific JobID."""
     cmd = [SCONTROL_CMD, "show", "job", job_id]
     try:
         output = subprocess.check_output(cmd, stderr=subprocess.STDOUT, text=True)
     except subprocess.CalledProcessError:
-        return {'stdout': 'Unknown (Purged)', 'command': 'Unknown', 'stderr': 'Unknown'}
+        return {'stdout': 'Unknown', 'command': 'Unknown', 'stderr': 'Unknown'}
 
-    details = {'stdout': 'Unknown', 'command': 'Unknown', 'stderr': 'Unknown'}
-    stdout_match = re.search(r'StdOut=([^\s]+)', output)
-    if stdout_match:
-        details['stdout'] = stdout_match.group(1)
-
-    stderr_match = re.search(r'StdErr=([^\s]+)', output)
-    if stderr_match:
-        details['stderr'] = stderr_match.group(1)
-
-    cmd_match = re.search(r'Command=(.+)', output)
-    if cmd_match:
-        details['command'] = cmd_match.group(1).split()[0]
+    details = {
+        'stdout': (re.search(r'StdOut=([^\s]+)', output) or [None, "No Log"])[1],
+        'stderr': (re.search(r'StdErr=([^\s]+)', output) or [None, "No Error Path"])[1],
+        'command': (re.search(r'Command=(.+)', output) or [None, "Unknown"])[1].split()[0]
+    }
     return details
 
-def get_slurm_jobs(start_date, end_date):
+def display_job_batch(title, jobs, icon="✅"):
+    """Generic display for processed or skipped job lists."""
+    if not jobs:
+        return
+    print(f"\n>>> {title} ({len(jobs)} jobs) <<<")
+    for job in jobs:
+        log_msg(f"   |__ {icon} Job {job['id']} ({job['name']})")
+        log_msg(f"   |__ 📂 Log: {job['log_path']} | Error: {job['log_error']}")
+
+# ---------------------------------------------------------
+#       CORE PROCESSING LOGIC
+# ---------------------------------------------------------
+
+def get_failed_slurm_jobs(start_date, end_date):
+    """Fetches jobs from sacct and filters for non-success states."""
     cmd = [
         SACCT_CMD, '-X', f'--user={SLURM_USER}',
         f'--starttime={start_date}', f'--endtime={end_date}',
-        '--format=JobID,JobName,State,ExitCode', '--noconvert', '-n', '-P'
+        '--format=JobID,JobName,State', '--noconvert', '-n', '-P'
     ]
     try:
         result = subprocess.check_output(cmd, stderr=subprocess.STDOUT, text=True)
     except subprocess.CalledProcessError:
         return []
 
-    jobs = []
-    if not result:
-        return jobs
+    failures = []
+    ignored_states = ['COMPLETED', 'RUNNING', 'PENDING', 'RESIZING', 'SUSPENDED', 'CANCELLED']
+    
     for line in result.strip().split('\n'):
-        if not line:
-            continue
+        if not line: continue
         parts = line.split('|')
-        if len(parts) < 3:
-            continue
-        jobs.append({'id': parts[0], 'name': parts[1], 'state_raw': parts[2]})
-    return jobs
+        state = parts[2].split()[0].replace('+', '').upper()
+        
+        if state not in ignored_states:
+            failures.append({'id': parts[0], 'name': parts[1], 'state': state})
+    return failures
 
-# ---------------------------------------------------------
-#       PROCESSING AND REPORTING
-# ---------------------------------------------------------
+def run_handler_routing(category, job, start_date, end_date, relaunched_commands):
+    """Routes a single job to its specific troubleshooting module."""
+    args = (job['id'], job['name'], job['state'], job['log_path'], 
+            job['error_path'], job['command'], log_msg, start_date, end_date, relaunched_commands)
+    
+    if category == "GAIN_SEL":
+        return handlers_gainsel.handle_error(*args)
+    elif category == "SEQUENCER":
+        return handlers_sequencer.handle_error(*args)
+    elif category == "CAT_B":
+        return handlers_catB.handle_error(*args)
+    elif category == "CLOSER":
+        log_msg(f"   |__ 🚨 [CLOSER] Manual review required for Job {job['id']}")
+        return None
+    else:
+        log_msg(f"   |__ ❌ [UNKNOWN] No handler for {job['name']}")
+        return None
 
 def process_jobs(start_date, end_date, more_days, no_show_processed):
-    log_msg(f"INFO: Searching failures for {SLURM_USER} from {start_date} to {end_date}")
+    log_msg(f"INFO: Searching failures for {SLURM_USER} ({start_date} to {end_date})")
     
-    raw_jobs = get_slurm_jobs(start_date, end_date)
-    
-    # Structure to group jobs
+    raw_failures = get_failed_slurm_jobs(start_date, end_date)
     grouped_jobs = defaultdict(list)
-    total_failures = 0
-    processed_jobs = []
-    skipped_jobs = []
+    processed_history = []
+    skipped_history = []
+    relaunched_commands = []
     
-    # 1. Collect data
-    for job in raw_jobs:
-        state = job['state_raw'].split()[0].replace('+', '').upper()
-        skipped = False
-        # Filter out what is NOT a failure
-        if state in ['COMPLETED', 'RUNNING', 'PENDING', 'RESIZING', 'SUSPENDED','CANCELLED']:
-            continue
+    utils.run_command('osa-env')
+
+    for job in raw_failures:
+        # Check history first
+        history_status = utils.is_job_already_processed_or_skipped(job['id'])
+        details = get_scontrol_details(job['id'])
         
-        if utils.is_job_already_processed_or_skipped(job['id']) == 'PROCESSED':
-            processed_jobs.append({'id': job['id'],
-                                  'name': job['name'],
-                                  'log_path': get_scontrol_details(job['id'])['stdout'],
-                                  'log_error': get_scontrol_details(job['id'])['stderr']})
-            skipped = True
+        summary_info = {
+            'id': job['id'], 'name': job['name'], 
+            'log_path': details['stdout'], 'log_error': details['stderr']
+        }
 
-        if utils.is_job_already_processed_or_skipped(job['id']) == 'SKIPPED':
-            skipped_jobs.append({'id': job['id'],
-                                 'name': job['name'],
-                                 'log_path': get_scontrol_details(job['id'])['stdout'],
-                                 'log_error': get_scontrol_details(job['id'])['stderr']})
-            skipped = True
+        if history_status == 'PROCESSED':
+            processed_history.append(summary_info)
+            continue
+        elif history_status == 'SKIPPED':
+            skipped_history.append(summary_info)
+            continue
 
-        if not skipped:
-            details = get_scontrol_details(job['id'])
+        # Filter by path (Yesterday logic)
+        if not more_days and not utils.is_yesterday_path(details['stdout']):
+            continue
 
-            if not more_days:
-                if not utils.is_yesterday_path(details['stdout']):
-                    continue
+        # Add to processing queue
+        category = get_job_category(job['name'])
+        job.update({
+            'log_path': details['stdout'],
+            'error_path': details['stderr'],
+            'command': details['command']
+        })
+        grouped_jobs[category].append(job)
 
-            # It is a failure
-            total_failures += 1
-            category = get_job_category(job['name'])
-            
-            job_data = {
-                'id': job['id'],
-                'name': job['name'],
-                'state': state,
-                'log_path': details['stdout'] if details['stdout'] != "/dev/null" else "No Log",
-                'error_path': details['stderr'] if details['stderr'] != "/dev/null" else "No Error Path",
-                'command': details['command']
-            }
-            
-            grouped_jobs[category].append(job_data)
-    # Debug print
-    print(grouped_jobs)
-    if total_failures == 0:
-        log_msg("✅ INFO: No jobs found.")
-    else:
-        log_msg(f"⚠️  INFO: {total_failures} failed jobs found. Generating grouped report...\n")
+    # Execution Phase
+    for category in REPORT_ORDER:
+        job_list = grouped_jobs.get(category, [])
+        if not job_list: continue
 
-        relaunched_commands = []
-        # 2. Print report ordered by groups
-        for category in REPORT_ORDER:
-            job_list = grouped_jobs.get(category, [])
-            if not job_list:
-                continue # If no failures of this type, skip
+        print(f"\n>>> CATEGORY REPORT: {category} ({len(job_list)} failures) <<<" + "\n" + "-"*60)
+        for job in job_list:
+            cmd = run_handler_routing(category, job, start_date, end_date, relaunched_commands)
+            if cmd: 
+                relaunched_commands.append(cmd)
+            print("") 
 
-            print(f"\n>>> CATEGORY REPORT: {category} ({len(job_list)} failures) <<<")
-            print("-" * 60)
-            handler = None
-
-            for job in job_list:
-                # Routing to the appropriate handler
-                if category == "GAIN_SEL":
-                    # Use external module (performs deep analysis)
-                    handler = handlers_gainsel.handle_error(job['id'], job['name'], job['state'], job['log_path'], job['error_path'], job['command'], log_msg, start_date, end_date, relaunched_commands)
-                
-                elif category == "SEQUENCER":
-                    handler = handlers_sequencer.handle_error(job['id'], job['name'], job['state'], job['log_path'], job['error_path'], job['command'], log_msg, start_date, end_date, relaunched_commands)
-
-                
-                elif category == "CAT_B":
-                    handler = handlers_catB.handle_error(job['id'], job['name'], job['state'], job['log_path'], job['error_path'], job['command'],log_msg, start_date, end_date, relaunched_commands)
-                elif category == "CLOSER":
-                    handle_closer_error(job, log_msg)
-                
-                else:
-                    handle_generic_error(job, log_msg)
-
-                if handler is not None:
-                    relaunched_commands.append(handler)
-                print("") # Space between jobs
-
-    print("="*60)
+    # Final Summary
     if not no_show_processed:
-        display_processed_jobs(processed_jobs, log_msg)
-        display_skipped_jobs(skipped_jobs, log_msg)
+        display_job_batch("PROCESSED JOBS", processed_history, "✅")
+        display_job_batch("SKIPPED JOBS", skipped_history, "❌")
 
-        print("="*60)
     log_msg("🏁 INFO: End of report.")
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("date", nargs="?", help="YYYY-MM-DD")
-    parser.add_argument("--no-show-processed", action="store_true", help="Do not show processed jobs in the report")
-    parser.add_argument("--more-days", action="store_true", help="Only process today's jobs (default behavior)")
-
+    parser.add_argument("--no-show-processed", action="store_true")
+    parser.add_argument("--more-days", action="store_true")
     args = parser.parse_args()
 
+    target_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     if args.date:
         try:
             target_date = datetime.strptime(args.date, '%Y-%m-%d')
         except ValueError:
             print("Date format error.")
             sys.exit(1)
-    else:
-        # --- IMPORTANT CHANGE: TODAY BY DEFAULT ---
-        # Get current date, at 00:00:00
-        target_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
     start_str = target_date.strftime('%Y-%m-%d')
     end_str = (target_date + timedelta(days=1)).strftime('%Y-%m-%d')
