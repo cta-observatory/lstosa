@@ -92,7 +92,6 @@ def get_scontrol_details(job_id):
     cmd_match = re.search(r'Command=(.+)', output)
     if cmd_match:
         details['command'] = cmd_match.group(1).split()[0]
-    
     return details
 
 def get_slurm_jobs(start_date, end_date):
