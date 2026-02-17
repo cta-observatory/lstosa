@@ -34,7 +34,7 @@ KNOWN_ERRORS = {
     }
 }
 
-def handle_error(job_id, job_name, state, log_path, error_path, command, logger_func, start_date, end_date):
+def handle_error(job_id, job_name, state, log_path, error_path, command, logger_func, start_date, end_date, handler):
     """
     Checks if a specific pattern (string or regex) exists in a log file.
     Returns: True if found, False otherwise.
@@ -51,6 +51,10 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
         try:    
             run_id = utils.get_run_id_from_path(review_path) # Ensure review_path is correct
 
+            if command in handler:
+                utils.save_skipped_job_id(job_id)
+                return
+            
             success = utils.increase_memory_and_relaunch(command, 30)
 
             # --- SUCCESS MANAGEMENT ---
@@ -67,6 +71,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
             else:
                 # If update function returns False
                 logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the command.")
+            return command
 
         except Exception as e:
             # --- ERROR MANAGEMENT (Code Exception) ---
@@ -136,7 +141,28 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                         return
                     
                     if id == 3:
-                        # Pro link must be created
+                        try:
+                            success= utils.delete_path(error_path) 
+                            success= utils.delete_path(log_path) 
+                            # --- SUCCESS MANAGEMENT ---
+                            if success:
+                                logger_func(f"   |__ ✅ SUCCESS: Removed logs.")
+                                
+                                # Save Job ID
+                                saved = utils.save_processed_job_id(job_id)
+                                if saved:
+                                    logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
+                                else:
+                                    logger_func(f"   |__ ⚠️ ERROR: Could not write to job history.")
+                            
+                            else:
+                                # If update returns False
+                                logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Could not remove logs")
+
+                        except Exception as e:
+                            # --- ERROR MANAGEMENT ---
+                            logger_func(f"   |__ ❌ EXCEPTION: An unexpected error occurred managing Job {job_id}.")
+                            logger_func(f"   |__ 🔍 Detail: {str(e)}")
                         return
                     
                     if id == 4:
@@ -165,6 +191,39 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                                 logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Could not update ECSV (check paths or columns).")
 
                         except Exception as e:
+                            logger_func(f"   |__ ❌ EXCEPTION: An unexpected error occurred managing Job {job_id}.")
+                            logger_func(f"   |__ 🔍 Detail: {str(e)}")
+                        return
+
+                    if id == 5:
+                        try:
+                            yesterday = datetime.now() - timedelta(days=1)
+                            summary_date = yesterday.strftime('%Y%m%d')
+                            
+                            path = f'/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/PixelCalibration/Cat-A/calibration/{summary_date}/'
+
+                            if utils.is_link(path+"pro") == False:
+                                success = utils.run_command(f'ln -s {path+"v0.1.1"} {path+"pro"}')
+                                # --- SUCCESS MANAGEMENT ---
+                                if success:
+                                    utils.delete_path(error_path) 
+                                    utils.delete_path(log_path) 
+                                    logger_func(f"   |__ ✅ SUCCESS: Removed logs.")
+                                    # Save Job ID
+                                    saved = utils.save_processed_job_id(job_id)
+                                    if saved:
+                                        logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
+                                    else:
+                                        logger_func(f"   |__ ⚠️ ERROR: Could not write to job history.")
+                                
+                                else:
+                                    # If update returns False
+                                    logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Could not. remove logs")
+                            else:
+                                logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Pro link already exists.")
+
+                        except Exception as e:
+                            # --- ERROR MANAGEMENT ---
                             logger_func(f"   |__ ❌ EXCEPTION: An unexpected error occurred managing Job {job_id}.")
                             logger_func(f"   |__ 🔍 Detail: {str(e)}")
                         return
