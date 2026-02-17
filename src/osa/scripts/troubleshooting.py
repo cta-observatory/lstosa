@@ -81,7 +81,6 @@ def get_scontrol_details(job_id):
         return {'stdout': 'Unknown (Purged)', 'command': 'Unknown', 'stderr': 'Unknown'}
 
     details = {'stdout': 'Unknown', 'command': 'Unknown', 'stderr': 'Unknown'}
-    
     stdout_match = re.search(r'StdOut=([^\s]+)', output)
     if stdout_match:
         details['stdout'] = stdout_match.group(1)
@@ -115,7 +114,7 @@ def get_slurm_jobs(start_date, end_date):
         if not line:
             continue
         parts = line.split('|')
-        if len(parts) < 3: 
+        if len(parts) < 3:
             continue
         jobs.append({'id': parts[0], 'name': parts[1], 'state_raw': parts[2]})
     return jobs
@@ -124,7 +123,7 @@ def get_slurm_jobs(start_date, end_date):
 #       PROCESSING AND REPORTING
 # ---------------------------------------------------------
 
-def process_jobs(start_date, end_date, args):
+def process_jobs(start_date, end_date, more_days, no_show_processed):
     log_msg(f"INFO: Searching failures for {SLURM_USER} from {start_date} to {end_date}")
     
     raw_jobs = get_slurm_jobs(start_date, end_date)
@@ -144,14 +143,14 @@ def process_jobs(start_date, end_date, args):
             continue
         
         if utils.is_job_already_processed_or_skipped(job['id']) == 'PROCESSED':
-            processed_jobs.append({'id': job['id'],    
+            processed_jobs.append({'id': job['id'],
                                   'name': job['name'],
                                   'log_path': get_scontrol_details(job['id'])['stdout'],
                                   'log_error': get_scontrol_details(job['id'])['stderr']})
             skipped = True
 
         if utils.is_job_already_processed_or_skipped(job['id']) == 'SKIPPED':
-            skipped_jobs.append({'id': job['id'],    
+            skipped_jobs.append({'id': job['id'],
                                  'name': job['name'],
                                  'log_path': get_scontrol_details(job['id'])['stdout'],
                                  'log_error': get_scontrol_details(job['id'])['stderr']})
@@ -160,7 +159,7 @@ def process_jobs(start_date, end_date, args):
         if not skipped:
             details = get_scontrol_details(job['id'])
 
-            if not args.more_days:
+            if not more_days:
                 if not utils.is_yesterday_path(details['stdout']):
                     continue
 
@@ -219,7 +218,7 @@ def process_jobs(start_date, end_date, args):
                 print("") # Space between jobs
 
     print("="*60)
-    if not args.no_show_processed:
+    if not no_show_processed:
         display_processed_jobs(processed_jobs, log_msg)
         display_skipped_jobs(skipped_jobs, log_msg)
 
@@ -248,7 +247,7 @@ def main():
     start_str = target_date.strftime('%Y-%m-%d')
     end_str = (target_date + timedelta(days=1)).strftime('%Y-%m-%d')
 
-    process_jobs(start_str, end_str, args)
+    process_jobs(start_str, end_str, args.more_days, args.no_show_processed)
 
 if __name__ == "__main__":
     main()
