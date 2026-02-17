@@ -40,10 +40,9 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
     review_path = log_path
 
     if state == "TIMEOUT":
-        
         logger_func(f"   |__ ❌ DIAGNOSIS: TIMEOUT (Walltime exceeded).")
         logger_func(f"   |__ 💡 ACTION: Increase --mem in sbatch.")
-        try:    
+        try:
             if command in handler:
                 utils.save_skipped_job_id(job_id)
                 return
@@ -77,9 +76,6 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
 
     if not review_path or not os.path.exists(review_path):
         print(f"[UTILS ERROR] {review_path} not found, This job will be skipped")
-        # Ensure review_path is correct (might be error_path or log_path)
-        # run_id = utils.get_run_id_from_path(review_path) 
-
         utils.save_skipped_job_id(job_id)
         return False
     
@@ -101,7 +97,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
 
                     if id == 1:
                         try:
-                            run_id = utils.get_run_id_from_path(review_path) 
+                            run_id = utils.get_run_id_from_path(review_path)
                             yesterday = datetime.now() - timedelta(days=1)
                             summary_date = yesterday.strftime('%Y%m%d')
                             
