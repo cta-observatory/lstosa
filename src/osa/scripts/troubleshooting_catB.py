@@ -63,7 +63,6 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                     logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
                 else:
                     logger_func("   |__ ⚠️ ERROR: Could not write to job history.")
-            
             else:
                 # If update function returns False
                 logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the command.")
