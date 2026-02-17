@@ -3,223 +3,113 @@ import re
 import troubleshooting_utils as utils
 from datetime import datetime, timedelta
 
-# --- KNOWN ERROR DICTIONARY (CASE-BY-CASE) ---
-# Add new cases here as they appear in logs.
-
+# --- KNOWN ERROR DICTIONARY ---
 KNOWN_ERRORS = {
     re.escape("Could not find compatible EventSource for input_url"): {
-        "tag": "ERROR [lstchain.CatBCalibrationHDF5Writer] (tool.run): Caught unexpected exception: Could not find compatible EventSource for input_url",
+        "tag": "ERROR: Could not find compatible EventSource",
         "msg": "Remove all logs from Cat-B and relaunch the job.",
-        "id": 1
+        "error_id": 1
     },
     re.escape("!!! No calibration events in the output file !!!"): {
-        "tag": "CRITICAL [lstchain.CatBCalibrationHDF5Writer] (lstchain_create_cat_B_calibration_file.finish): !!! No calibration events in the output file !!! ",
-        "msg": "No calibration events were found. Check the number of subruns; if it is less than 20, they can be discarded",
-        "id": 2
+        "tag": "CRITICAL: No calibration events in output",
+        "msg": "Discard if subruns < 20.",
+        "error_id": 2
     },
     re.escape("os.symlink(target, self, target_is_directory)"): {
-        "tag": "os.symlink(target, self, target_is_directory)",
+        "tag": "Symlink Error",
         "msg": "Pro link is not created",
-        "id": 3
+        "error_id": 3
     },
     re.escape("Number of subruns with low statistics: 1 - removed from pedestal median calculation"): {
-        "tag": "Number of subruns with low statistics: 1 - removed from pedestal median calculation",
-        "msg": "The run must be discarded if number of subruns < 20",
-        "id": 4
+        "tag": "Low statistics warning",
+        "msg": "Discard if subruns < 20",
+        "error_id": 4
     },
     re.escape("Calibration file from run {calibration_run} not found"): {
-        "tag": "Calibration file from run {calibration_run} not found", 
-        "msg": "The calibration file is missing, it must be checked that the Cat-A calibration file exists and its pro link",
-        "id": 5
+        "tag": "Missing Calibration file",
+        "msg": "Check Cat-A calibration and pro link",
+        "error_id": 5
     }
 }
 
+def get_summary_path():
+    """Helper to generate standard RunSummary path."""
+    yesterday = datetime.now() - timedelta(days=1)
+    date_str = yesterday.strftime('%Y%m%d')
+    return date_str, f'/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/RunSummary/RunSummary_{date_str}.ecsv'
+
+def finalize_action(job_id, success, logger_func, success_msg, fail_msg):
+    """Logs results and saves job ID on success."""
+    if success:
+        logger_func(f"   |__ ✅ SUCCESS: {success_msg}")
+        if utils.save_processed_job_id(job_id):
+            logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
+        return True
+    logger_func(f"   |__ ⚠️ FAILURE: {fail_msg}")
+    return False
+
+def handle_ecsv_type_update(job_id, review_path, logger_func, subruns_limit=None):
+    """Updates run_type to EDATA in ECSV."""
+    run_id = utils.get_run_id_from_path(review_path)
+    _, ecsv_path = get_summary_path()
+    success = utils.update_ecsv_cell(ecsv_path, run_id, "run_type", "EDATA", subruns_limit=subruns_limit)
+    finalize_action(job_id, success, logger_func, f"Run {run_id} set to EDATA.", "Could not update ECSV.")
+
+def handle_log_cleanup(job_id, log_path, error_path, logger_func):
+    """Deletes log and error files."""
+    s1 = utils.delete_path(error_path)
+    s2 = utils.delete_path(log_path)
+    finalize_action(job_id, (s1 and s2), logger_func, "Logs removed.", "Failed to remove some logs.")
+
+def handle_pro_link(job_id, log_path, error_path, logger_func):
+    """Creates pro link if missing and cleans logs."""
+    date_str, _ = get_summary_path()
+    base_path = f'/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/PixelCalibration/Cat-A/calibration/{date_str}/'
+    if not utils.is_link(base_path + "pro"):
+        success = utils.run_command(f'ln -s {base_path}v0.1.1 {base_path}pro')
+        if success:
+            handle_log_cleanup(job_id, log_path, error_path, logger_func)
+        else:
+            logger_func("   |__ ⚠️ FAILURE: Could not create pro link.")
+    else:
+        logger_func("   |__ ⚠️ SKIP: Pro link already exists.")
+
 def handle_error(job_id, job_name, state, log_path, error_path, command, logger_func, start_date, end_date, handler):
-    """
-    Checks if a specific pattern (string or regex) exists in a log file.
-    Returns: True if found, False otherwise.
-    """
     logger_func(f"   |__ Job {job_id} {job_name} {state}")
-    logger_func(f"   |__ Log {log_path}")
-    logger_func(f"   |__ Error {error_path}")
+    review_path = log_path if job_name == "lstchain_find_tailcuts" else error_path
 
-    review_path = error_path if job_name != "lstchain_find_tailcuts" else log_path
+    # --- Timeout Handling ---
     if state == "TIMEOUT":
-        logger_func("   |__ ❌ DIAGNOSIS: TIMEOUT (Walltime exceeded).")
-        logger_func("   |__ 💡 ACTION: Increase --mem in sbatch.")
-        try:
-            run_id = utils.get_run_id_from_path(review_path) # Ensure review_path is correct
+        if command in handler:
+            utils.save_skipped_job_id(job_id)
+            return None
+        success = utils.increase_memory_and_relaunch(command, 30)
+        return command if finalize_action(job_id, success, logger_func, "Memory increased & relaunched.", "Relaunch failed.") else None
 
-            if command in handler:
-                utils.save_skipped_job_id(job_id)
-                return
-            success = utils.increase_memory_and_relaunch(command, 30)
-            # --- SUCCESS MANAGEMENT ---
-            if success:
-                logger_func(f"   |__ ✅ SUCCESS: Run {run_id} memory updated.")
-                # Save the Job ID to avoid reprocessing
-                saved = utils.save_processed_job_id(job_id)
-                if saved:
-                    logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
-                else:
-                    logger_func("   |__ ⚠️ ERROR: Could not write to job history.")
-            else:
-                # If update function returns False
-                logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the command.")
-            return command
-
-        except Exception as e:
-            # --- ERROR MANAGEMENT (Code Exception) ---
-            logger_func(f"   |__ ❌ EXCEPTION: An unexpected error occurred managing Job {job_id}.")
-            logger_func(f"   |__ 🔍 Detail: {str(e)}")
-        return
-    
     if not review_path or not os.path.exists(review_path):
-        print(f"[UTILS ERROR] {review_path} not found, This job will be skipped")
         utils.save_skipped_job_id(job_id)
         return False
-    
+
+    # --- Pattern Matching ---
     try:
         with open(review_path, 'r', errors='ignore') as f:
             content = f.read()
             for pattern, details in KNOWN_ERRORS.items():
                 if re.search(pattern, content, re.IGNORECASE):
-                    tag = details['tag']
-                    msg = details['msg']
-                    id = details['id']
-                
-                    if tag:
-                        logger_func(f"   |__ ❌ DETECTED CAUSE: {tag}")
-                        logger_func(f"   |__ 💡 SOLUTION: {msg}")
-                    else:
-                        logger_func("   |__ ❓ UNKNOWN CAUSE: No matching patterns found.")
-                        logger_func(f"   |__ 👁  Check manually: {review_path}")
+                    logger_func(f"   |__ ❌ DETECTED: {details['tag']}")
+                    eid = details['error_id']
 
-                    if id == 1:
-                        # The run must be discarded
-                        #utils.update_csv_cell(csv_path, search_col, search_val, target_col, new_val, delimiter=',')
-                        return
+                    if eid == 2:
+                        handle_ecsv_type_update(job_id, review_path, logger_func, subruns_limit=20)
+                    elif eid == 3:
+                        handle_log_cleanup(job_id, log_path, error_path, logger_func)
+                    elif eid == 4:
+                        handle_ecsv_type_update(job_id, review_path, logger_func)
+                    elif eid == 5:
+                        handle_pro_link(job_id, log_path, error_path, logger_func)
                     
-                    if id == 2:
-                        try:
-                            run_id = utils.get_run_id_from_path(review_path)
-                            yesterday = datetime.now() - timedelta(days=1)
-                            summary_date = yesterday.strftime('%Y%m%d')
-                            
-                            ecsv_path = f'/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/RunSummary/RunSummary_{summary_date}.ecsv'
-
-                            # Attempt to update the ECSV
-                            success = utils.update_ecsv_cell(ecsv_path, run_id, "run_type", "EDATA", subruns_limit=20)
-
-                            # --- SUCCESS MANAGEMENT ---
-                            if success:
-                                logger_func(f"   |__ ✅ SUCCESS: Run {run_id} updated to EDATA in ECSV.")
-                                
-                                # Save Job ID
-                                saved = utils.save_processed_job_id(job_id)
-                                if saved:
-                                    logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
-                                else:
-                                    logger_func("   |__ ⚠️ ERROR: Could not write to job history.")
-                            
-                            else:
-                                # If update returns False
-                                logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not update ECSV (check paths or columns).")
-
-                        except Exception:
-                            # --- ERROR MANAGEMENT ---
-                            logger_func(f"   |__ ❌ EXCEPTION: An unexpected error occurred managing Job {job_id}.")
-                            logger_func("   |__ 🔍 Detail: {str(e)}")
-                        return
-                    
-                    if id == 3:
-                        try:
-                            success= utils.delete_path(error_path)
-                            success= utils.delete_path(log_path)
-                            # --- SUCCESS MANAGEMENT ---
-                            if success:
-                                logger_func("   |__ ✅ SUCCESS: Removed logs.")
-                                
-                                # Save Job ID
-                                saved = utils.save_processed_job_id(job_id)
-                                if saved:
-                                    logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
-                                else:
-                                    logger_func("   |__ ⚠️ ERROR: Could not write to job history.")
-                            
-                            else:
-                                # If update returns False
-                                logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not remove logs")
-
-                        except Exception as e:
-                            # --- ERROR MANAGEMENT ---
-                            logger_func(f"   |__ ❌ EXCEPTION: An unexpected error occurred managing Job {job_id}.")
-                            logger_func(f"   |__ 🔍 Detail: {str(e)}")
-                        return
-                    
-                    if id == 4:
-                        try:
-                            run_id = utils.get_run_id_from_path(review_path)
-                            yesterday = datetime.now() - timedelta(days=1)
-                            summary_date = yesterday.strftime('%Y%m%d')
-                            
-                            ecsv_path = f'/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/RunSummary/RunSummary_{summary_date}.ecsv'
-
-                            # Attempt to update the ECSV
-                            success = utils.update_ecsv_cell(ecsv_path, run_id, "run_type", "EDATA")
-
-                            # --- SUCCESS MANAGEMENT ---
-                            if success:
-                                logger_func(f"   |__ ✅ SUCCESS: Run {run_id} updated to EDATA in ECSV.")
-                                
-                                # Save Job ID
-                                saved = utils.save_processed_job_id(job_id)
-                                if saved:
-                                    logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
-                                else:
-                                    logger_func("   |__ ⚠️ ERROR: Could not write to job history.")
-                            
-                            else:
-                                logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not update ECSV (check paths or columns).")
-
-                        except Exception as e:
-                            logger_func(f"   |__ ❌ EXCEPTION: An unexpected error occurred managing Job {job_id}.")
-                            logger_func(f"   |__ 🔍 Detail: {str(e)}")
-                        return
-
-                    if id == 5:
-                        try:
-                            yesterday = datetime.now() - timedelta(days=1)
-                            summary_date = yesterday.strftime('%Y%m%d')
-                            
-                            path = f'/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/PixelCalibration/Cat-A/calibration/{summary_date}/'
-
-                            if not utils.is_link(path+"pro"):
-                                success = utils.run_command(f'ln -s {path+"v0.1.1"} {path+"pro"}')
-                                # --- SUCCESS MANAGEMENT ---
-                                if success:
-                                    utils.delete_path(error_path)
-                                    utils.delete_path(log_path)
-                                    logger_func("   |__ ✅ SUCCESS: Removed logs.")
-                                    # Save Job ID
-                                    saved = utils.save_processed_job_id(job_id)
-                                    if saved:
-                                        logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
-                                    else:
-                                        logger_func("   |__ ⚠️ ERROR: Could not write to job history.")
-                                
-                                else:
-                                    # If update returns False
-                                    logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not. remove logs")
-                            else:
-                                logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Pro link already exists.")
-
-                        except Exception as e:
-                            # --- ERROR MANAGEMENT ---
-                            logger_func(f"   |__ ❌ EXCEPTION: An unexpected error occurred managing Job {job_id}.")
-                            logger_func(f"   |__ 🔍 Detail: {str(e)}")
-                        return
-
+                    return None # Action taken
     except Exception as e:
-        print(f"[UTILS ERROR] Failed to read log {error_path}: {e}")
+        logger_func(f"   |__ ❌ EXCEPTION: {str(e)}")
+
     return None, None
