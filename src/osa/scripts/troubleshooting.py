@@ -84,21 +84,21 @@ def get_failed_slurm_jobs(start_date, end_date):
 
     failures = []
     ignored_states = ['COMPLETED', 'RUNNING', 'PENDING', 'RESIZING', 'SUSPENDED', 'CANCELLED']
-    
+
     for line in result.strip().split('\n'):
         if not line: continue
         parts = line.split('|')
         state = parts[2].split()[0].replace('+', '').upper()
-        
+
         if state not in ignored_states:
             failures.append({'id': parts[0], 'name': parts[1], 'state': state})
     return failures
 
 def run_handler_routing(category, job, start_date, end_date, relaunched_commands):
     """Routes a single job to its specific troubleshooting module."""
-    args = (job['id'], job['name'], job['state'], job['log_path'], 
+    args = (job['id'], job['name'], job['state'], job['log_path'],
             job['error_path'], job['command'], log_msg, start_date, end_date, relaunched_commands)
-    
+
     if category == "GAIN_SEL":
         return handlers_gainsel.handle_error(*args)
     elif category == "SEQUENCER":
@@ -114,22 +114,22 @@ def run_handler_routing(category, job, start_date, end_date, relaunched_commands
 
 def process_jobs(start_date, end_date, more_days, no_show_processed):
     log_msg(f"INFO: Searching failures for {SLURM_USER} ({start_date} to {end_date})")
-    
+
     raw_failures = get_failed_slurm_jobs(start_date, end_date)
     grouped_jobs = defaultdict(list)
     processed_history = []
     skipped_history = []
     relaunched_commands = []
-    
+
     utils.run_command('osa-env')
 
     for job in raw_failures:
         # Check history first
         history_status = utils.is_job_already_processed_or_skipped(job['id'])
         details = get_scontrol_details(job['id'])
-        
+
         summary_info = {
-            'id': job['id'], 'name': job['name'], 
+            'id': job['id'], 'name': job['name'],
             'log_path': details['stdout'], 'log_error': details['stderr']
         }
 
@@ -161,9 +161,9 @@ def process_jobs(start_date, end_date, more_days, no_show_processed):
         print(f"\n>>> CATEGORY REPORT: {category} ({len(job_list)} failures) <<<" + "\n" + "-"*60)
         for job in job_list:
             cmd = run_handler_routing(category, job, start_date, end_date, relaunched_commands)
-            if cmd: 
+            if cmd:
                 relaunched_commands.append(cmd)
-            print("") 
+            print("")
 
     # Final Summary
     if not no_show_processed:
