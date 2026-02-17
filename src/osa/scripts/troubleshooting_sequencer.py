@@ -78,8 +78,8 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
 
     if state == "TIMEOUT":
         
-        logger_func(f"   |__ ❌ DIAGNOSIS: TIMEOUT (Walltime exceeded).")
-        logger_func(f"   |__ 💡 ACTION: Increase --mem in sbatch.")
+        logger_func("   |__ ❌ DIAGNOSIS: TIMEOUT (Walltime exceeded).")
+        logger_func("   |__ 💡 ACTION: Increase --mem in sbatch.")
         try:    
             if command in handler:
                 utils.save_skipped_job_id(job_id)
@@ -89,7 +89,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
 
             # --- SUCCESS MANAGEMENT ---
             if success:
-                logger_func(f"   |__ ✅ SUCCESS: Job relaunched")
+                logger_func("   |__ ✅ SUCCESS: Job relaunched")
                 
                 # Save the Job ID to avoid reprocessing
                 saved = utils.save_processed_job_id(job_id)
@@ -127,7 +127,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                         logger_func(f"   |__ ❌ DETECTED CAUSE: {tag}")
                         logger_func(f"   |__ 💡 SOLUTION: {msg}")
                     else:
-                        logger_func(f"   |__ ❓ UNKNOWN CAUSE: No matching patterns found.")
+                        logger_func("   |__ ❓ UNKNOWN CAUSE: No matching patterns found.")
                         logger_func(f"   |__ 👁  Check manually: {review_path}")
 
                     if id == 1:
@@ -158,11 +158,11 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                                     if saved:
                                         logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
                                     else:
-                                        logger_func(f"   |__ ⚠️ ERROR: Could not write to job history.")
+                                        logger_func("   |__ ⚠️ ERROR: Could not write to job history.")
                                 
                                 else:
                                     # If update_ecsv_cell returns False (file not found, column doesn't exist, etc.)
-                                    logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the ECSV (check paths or columns).")
+                                    logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the ECSV (check paths or columns).")
 
                             else:
                                 logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Subrun {subrun_id} is not the last subrun of Run {run_id}. Run Summary not updated.")
@@ -190,11 +190,11 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                                 if saved:
                                     logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
                                 else:
-                                    logger_func(f"   |__ ⚠️ ERROR: Could not write to job history.")
+                                    logger_func("   |__ ⚠️ ERROR: Could not write to job history.")
                             
                             else:
                                 # If update returns False
-                                logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Could not update ECSV (check paths or columns).")
+                                logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not update ECSV (check paths or columns).")
 
                         except Exception as e:
                             # --- ERROR MANAGEMENT ---
@@ -218,12 +218,12 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                                 if saved:
                                     logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
                                 else:
-                                    logger_func(f"   |__ ⚠️ ERROR: Could not write to job history.")
+                                    logger_func("   |__ ⚠️ ERROR: Could not write to job history.")
 
                             
                             else:
                                 # If function returns False
-                                logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the command.")
+                                logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the command.")
                             return command
 
                         except Exception as e:
@@ -252,13 +252,13 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                                     if saved:
                                         logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
                                     else:
-                                        logger_func(f"   |__ ⚠️ ERROR: Could not write to job history.")
+                                        logger_func("   |__ ⚠️ ERROR: Could not write to job history.")
                                 else:
                                     # If function returns False
-                                    logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Could not relaunch the command.")
+                                    logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not relaunch the command.")
                             else:
                                 # If function returns False
-                                logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Could not remove the DRS4 file.")
+                                logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not remove the DRS4 file.")
                             return command
 
                         except Exception as e:
