@@ -59,20 +59,19 @@ def create_file(path, content=""):
         parent_dir = os.path.dirname(path)
         if parent_dir and not os.path.exists(parent_dir):
             os.makedirs(parent_dir, exist_ok=True)
-            
+
         with open(path, 'w') as f:
             f.write(content)
         return True
     except Exception as e:
         print(f"[UTILS ERROR] Could not create file {path}: {e}")
         return False
-    
 
 def get_ecsv_column_value(file_path, target_id, target_col='n_subruns', id_col='run_id'):
     """
     Searches for a Run ID in the ECSV and returns the value of the specified column.
     Defaults to looking for 'n_subruns'.
-    
+
     Returns:
         str: The found value (as a string).
         None: If the file, column, or Run ID is not found.
@@ -86,12 +85,12 @@ def get_ecsv_column_value(file_path, target_id, target_col='n_subruns', id_col='
             header_parsed = False
             id_idx = -1
             target_idx = -1
-            
+
             for line in f_in:
                 # 1. Ignore Metadata
                 if line.strip().startswith('#'):
                     continue
-                
+
                 # 2. Parse Header (first valid line)
                 if not header_parsed:
                     headers = line.strip().split(',')
@@ -106,7 +105,7 @@ def get_ecsv_column_value(file_path, target_id, target_col='n_subruns', id_col='
 
                 # 3. Find the row
                 parts = line.strip().split(',')
-                
+
                 # Check if it is the correct row
                 if len(parts) > id_idx and parts[id_idx].strip() == str(target_id):
                     value = parts[target_idx].strip()
@@ -141,13 +140,13 @@ def update_ecsv_cell(file_path, target_id, target_col, new_value, subruns_limit=
             id_idx = -1
             target_idx = -1
             subruns_idx = -1  # Index for the subruns column
-            
+
             for line in f_in:
                 # 1. Preserve Metadata
                 if line.strip().startswith('#'):
                     f_out.write(line)
                     continue
-                
+
                 # 2. Parse Header
                 if not header_parsed:
                     headers = line.strip().split(',')
@@ -170,7 +169,7 @@ def update_ecsv_cell(file_path, target_id, target_col, new_value, subruns_limit=
                 parts = line.strip().split(',')
                 # Verify if it is the correct row (ID matches)
                 if len(parts) > id_idx and parts[id_idx].strip() == str(target_id):
-                    
+
                     try:
                         if subruns_limit != 0:
                             print(f"[UTILS] Found target run_id: {target_id}")
@@ -213,11 +212,23 @@ def update_ecsv_cell(file_path, target_id, target_col, new_value, subruns_limit=
 # ==========================================
 
 def run_command(command_str):
-    """Executes a shell command and returns (exit_code, stdout)."""
+    """
+    Executes a command without shell=True by manually splitting the string.
+    Note: This assumes arguments do not contain internal spaces.
+    """
     try:
+        # 1. Remove shell-specific operators (like ; or &) 
+        # that are incompatible with shell=False
+        clean_command = command_str.replace("osa_env;", "").replace("osa_env &", "").strip()
+        
+        # 2. Convert string to list by splitting on whitespace
+        # "sbatch --mem=20G script.sh" -> ["sbatch", "--mem=20G", "script.sh"]
+        command_args = [arg for arg in clean_command.split(" ") if arg]
+        
+        # 3. Execute safely
         result = subprocess.run(
-            "osa_env; " + command_str, 
-            shell=True,
+            command_args,
+            shell=False,
             capture_output=True,
             text=True
         )
@@ -240,7 +251,6 @@ def increase_memory_and_relaunch(script_path, new_mem):
     modified = False
 
     # Regex to find --mem=20G or --mem=20 (assuming G)
-    # This matches format: #SBATCH --mem=20G
     mem_pattern_1 = re.compile(r'(#SBATCH\s+--mem=)(\d+)(G?)')
     mem_pattern_2 = re.compile(r'(#SBATCH\s+--mem-per-cpu=)(\d+)(G?)')
     try:
@@ -252,27 +262,19 @@ def increase_memory_and_relaunch(script_path, new_mem):
                 match = mem_pattern_1.search(line)
                 if match:
                     prefix = match.group(1) # "#SBATCH --mem="
-                    # old_val = match.group(2)
-                    # suffix = match.group(3) # "G"
-                    
-                    # Force "G" unit format
                     new_line = f"{prefix}{new_mem}G\n"
                     f.write(new_line)
                     modified = True
                 else:
                     match = mem_pattern_2.search(line)
                     if match:
-                        prefix = match.group(1) # "#SBATCH --mem=-per-cpu"
-                        # old_val = match.group(2)
-                        # suffix = match.group(3) # "G"
-
-                        # Force "G" unit format
+                        prefix = match.group(1) # "#SBATCH --mem-per-cpu="
                         new_line = f"{prefix}{new_mem}G\n"
                         f.write(new_line)
                         modified = True
                     else:
                         f.write(line)
-        
+
         if modified:
             print(f"[UTILS] Memory updated to {new_mem}G in {script_path}")
             # Relaunch the job
@@ -290,7 +292,7 @@ def increase_memory_and_relaunch(script_path, new_mem):
     except Exception as e:
         print(f"[UTILS ERROR] Failed to modify/relaunch job: {e}")
         return False
-    
+
 def get_run_id_from_path(path):
     """
     Extracts the Run ID from a log file with the format '..._RUNID_JOBID.log'
@@ -300,16 +302,13 @@ def get_run_id_from_path(path):
         return None
     # 1. Keep only the filename (ignore folders)
     filename = os.path.basename(path)
-    
+
     # 2. Use Regex to find the final pattern: _(Digits)_(Digits).log
-    # (\d+) captures the Run ID
-    # \d+   matches the Job ID (but we don't capture it)
     match = re.search(r'(\d+)_(?:\d+_)?\d+\.[a-zA-Z]{3}$', filename)
     if match:
-        return match.group(1) # Returns what is inside the first parenthesis (the Run ID)
-    
-    return None
+        return match.group(1)
 
+    return None
 
 def save_processed_job_id(job_id):
     """
@@ -350,7 +349,7 @@ def save_skipped_job_id(job_id):
     except Exception as e:
         print(f"[UTILS ERROR] Could not save Job ID {job_id}: {e}")
         return False
-    
+
 def is_job_already_processed_or_skipped(job_id):
     """
     Checks if a job_id is already in the record files.
@@ -360,74 +359,48 @@ def is_job_already_processed_or_skipped(job_id):
     file_path_processed ='/fefs/aswg/lstosa/troubleshooting/'+main_date+'/'+main_date+'_processed.txt'
     file_path_skipped ='/fefs/aswg/lstosa/troubleshooting/'+main_date+'/'+main_date+'_skipped.txt'
 
-    if not os.path.exists(file_path_processed):
-        # Optional: Print informational message if file doesn't exist yet (first run)
-        # print(f'{file_path_processed} folder or file not found')
-        pass # Allow logic to continue to check the other file, or return False at end
-    
-    if not os.path.exists(file_path_skipped):
-        # print(f'{file_path_skipped} folder or file not found')
-        pass
-
     try:
         if os.path.exists(file_path_processed):
             with open(file_path_processed, 'r') as f:
-                # Read all lines and strip whitespace
                 processed_jobs = set(line.strip() for line in f)
                 if str(job_id) in processed_jobs:
                     return 'PROCESSED'
-        
+
         if os.path.exists(file_path_skipped):
             with open(file_path_skipped, 'r') as f:
-                # Read all lines and strip whitespace
                 skipped_jobs = set(line.strip() for line in f)
                 if str(job_id) in skipped_jobs:
                     return 'SKIPPED'
-                    
+
     except Exception:
         return False
-        
-    return False
 
+    return False
 
 def is_yesterday_path(path):
     """
-    Checks if a directory in the path represents 'yesterday's date' 
+    Checks if a directory in the path represents 'yesterday's date'
     in YYYYMMDD format, specifically looking for years starting with '20'.
     """
-    # Regex breakdown:
-    # /           -> Starts with a forward slash
-    # (20\d{6})   -> Captures 8 digits starting with '20'
-    # /           -> Ends with a forward slash
     pattern = r'/(20\d{6})/'
-    
     match = re.search(pattern, path)
-    
+
     if not match:
         return False
-    
-    date_str = match.group(1)
-    
-    try:
-        # Convert string to date object
-        path_date = datetime.strptime(date_str, "%Y%m%d").date()
-        
-        # Get yesterday's date
-        yesterday = datetime.now().date() - timedelta(days=1)
-        
-        return path_date == yesterday
-        
-    except ValueError:
-        # Returns False if the string is not a valid calendar date (e.g., 20261345)
-        return False
-    print("❌ This path does not belong to yesterday.")
 
+    date_str = match.group(1)
+
+    try:
+        path_date = datetime.strptime(date_str, "%Y%m%d").date()
+        yesterday = datetime.now().date() - timedelta(days=1)
+        return path_date == yesterday
+    except ValueError:
+        return False
 
 def file_exists(file_path: str) -> bool:
     """Checks if a file exists at the given path."""
     return Path(file_path).is_file()
 
 def is_link(path: str) -> bool:
-    # Comprueba si la ruta es un enlace simbólico
+    """Checks if the path is a symbolic link."""
     return Path(path).is_symlink()
-
