@@ -53,7 +53,6 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
             if command in handler:
                 utils.save_skipped_job_id(job_id)
                 return
-            
             success = utils.increase_memory_and_relaunch(command, 30)
 
             # --- SUCCESS MANAGEMENT ---
@@ -80,9 +79,6 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
     
     if not review_path or not os.path.exists(review_path):
         print(f"[UTILS ERROR] {review_path} not found, This job will be skipped")
-        # Ensure review_path is correct (might be error_path or log_path)
-        # run_id = utils.get_run_id_from_path(review_path) 
-
         utils.save_skipped_job_id(job_id)
         return False
     
@@ -133,7 +129,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                                 # If update returns False
                                 logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not update ECSV (check paths or columns).")
 
-                        except Exception as e:
+                        except Exception:
                             # --- ERROR MANAGEMENT ---
                             logger_func(f"   |__ ❌ EXCEPTION: An unexpected error occurred managing Job {job_id}.")
                             logger_func("   |__ 🔍 Detail: {str(e)}")
@@ -141,7 +137,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                     
                     if id == 3:
                         try:
-                            success= utils.delete_path(error_path) 
+                            success= utils.delete_path(error_path)
                             success= utils.delete_path(log_path)
                             # --- SUCCESS MANAGEMENT ---
                             if success:
@@ -166,7 +162,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                     
                     if id == 4:
                         try:
-                            run_id = utils.get_run_id_from_path(review_path) 
+                            run_id = utils.get_run_id_from_path(review_path)
                             yesterday = datetime.now() - timedelta(days=1)
                             summary_date = yesterday.strftime('%Y%m%d')
                             
