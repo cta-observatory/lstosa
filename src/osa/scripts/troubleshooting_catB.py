@@ -107,7 +107,6 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                         handle_ecsv_type_update(job_id, review_path, logger_func)
                     elif eid == 5:
                         handle_pro_link(job_id, log_path, error_path, logger_func)
-                    
                     return None # Action taken
     except Exception as e:
         logger_func(f"   |__ ❌ EXCEPTION: {str(e)}")
