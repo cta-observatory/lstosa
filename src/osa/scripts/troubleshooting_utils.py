@@ -33,7 +33,6 @@ def delete_path(path):
     """Safely deletes a file or an entire directory."""
     if not os.path.exists(path):
         return False
-    
     try:
         if os.path.isfile(path) or os.path.islink(path):
             os.remove(path)
