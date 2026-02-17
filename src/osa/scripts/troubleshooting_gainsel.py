@@ -68,6 +68,8 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
     """Refactored handle_error to reduce cyclomatic complexity."""
     logger_func(f"   |__ Job {job_id} {job_name} {state}")
     review_path = log_path
+    logger_func(f"   |__ Log {log_path}")
+    logger_func(f"   |__ Error {error_path}")
 
     # Handle Timeouts immediately
     if state == "TIMEOUT":
@@ -75,6 +77,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
         return process_memory_relaunch(job_id, command, review_path, logger_func, handler)
 
     if not review_path or not os.path.exists(review_path):
+        logger_func("Job skipped, can't find the log file")
         utils.save_skipped_job_id(job_id)
         return None
 
