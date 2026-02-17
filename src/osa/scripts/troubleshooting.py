@@ -86,7 +86,7 @@ def get_failed_slurm_jobs(start_date, end_date):
     ignored_states = ['COMPLETED', 'RUNNING', 'PENDING', 'RESIZING', 'SUSPENDED', 'CANCELLED']
 
     for line in result.strip().split('\n'):
-        if not line: 
+        if not line:
             continue
         parts = line.split('|')
         state = parts[2].split()[0].replace('+', '').upper()
@@ -157,7 +157,7 @@ def process_jobs(start_date, end_date, more_days, no_show_processed):
     # Execution Phase
     for category in REPORT_ORDER:
         job_list = grouped_jobs.get(category, [])
-        if not job_list: 
+        if not job_list:
             continue
 
         print(f"\n>>> CATEGORY REPORT: {category} ({len(job_list)} failures) <<<" + "\n" + "-"*60)
