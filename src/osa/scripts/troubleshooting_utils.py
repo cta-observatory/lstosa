@@ -168,7 +168,8 @@ def _process_ecsv_lines(f_in, f_out, target_id, target_col, new_value, subruns_l
         if not header_parsed:
             headers = line.strip().split(',')
             indices = _get_header_indices(headers, id_col, target_col)
-            if not indices: return False # Exit if columns missing
+            if not indices: 
+                return False # Exit if columns missing
             id_idx, target_idx, subruns_idx = indices
             header_parsed = True
             f_out.write(line)
