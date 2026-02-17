@@ -1,6 +1,5 @@
 import os
 import re
-from xml.sax import handler
 import troubleshooting_utils as utils
 from datetime import datetime, timedelta
 
@@ -61,11 +60,11 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                 if saved:
                     logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
                 else:
-                    logger_func(f"   |__ ⚠️ ERROR: Could not write to job history.")
+                    logger_func("   |__ ⚠️ ERROR: Could not write to job history.")
             
             else:
                 # If function returns False
-                logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the command.")
+                logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the command.")
             
             return command
 
@@ -97,7 +96,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                         logger_func(f"   |__ ❌ DETECTED CAUSE: {tag}")
                         logger_func(f"   |__ 💡 SOLUTION: {msg}")
                     else:
-                        logger_func(f"   |__ ❓ UNKNOWN CAUSE: No matching patterns found.")
+                        logger_func("   |__ ❓ UNKNOWN CAUSE: No matching patterns found.")
                         logger_func(f"   |__ 👁  Check manually: {review_path}")
 
                     if id == 1:
@@ -120,11 +119,11 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                                 if saved:
                                     logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
                                 else:
-                                    logger_func(f"   |__ ⚠️ ERROR: Could not write to job history.")
+                                    logger_func("   |__ ⚠️ ERROR: Could not write to job history.")
                             
                             else:
                                 # If update returns False
-                                logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Could not update ECSV (check paths or columns).")
+                                logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not update ECSV (check paths or columns).")
 
                         except Exception as e:
                             # --- ERROR MANAGEMENT ---
@@ -150,11 +149,11 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                                 if saved:
                                     logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
                                 else:
-                                    logger_func(f"   |__ ⚠️ ERROR: Could not write to job history.")
+                                    logger_func("   |__ ⚠️ ERROR: Could not write to job history.")
                             
                             else:
                                 # If function returns False
-                                logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the command.")
+                                logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the command.")
                             return command
 
                         except Exception as e:
