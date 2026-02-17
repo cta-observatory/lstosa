@@ -17,13 +17,12 @@ KNOWN_ERRORS = {
         "msg": "Pending",
         "id": 2
     },
-    re.escape("tables.exceptions.NoSuchNodeError: group ``/`` does not have a child named ``/dl1/event/telescope/monitoring/pedestal``"): { 
+    re.escape("tables.exceptions.NoSuchNodeError: group ``/`` does not have a child named ``/dl1/event/telescope/monitoring/pedestal``"): {
         "tag": "tables.exceptions.NoSuchNodeError: group ``/`` does not have a child named ``/dl1/event/telescope/monitoring/pedestal``",
         "msg": "Check if the last subrun is failing, if so, discard it.",
         "id": 3
     },
     re.escape("x_new is above the interpolation range's maximum value"): {
-        
         "tag": "ValueError: x_new is above the interpolation range's maximum value",
         "msg": "Run must be discarded.",
         "id": 4
@@ -80,7 +79,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
         
         logger_func("   |__ ❌ DIAGNOSIS: TIMEOUT (Walltime exceeded).")
         logger_func("   |__ 💡 ACTION: Increase --mem in sbatch.")
-        try:    
+        try:
             if command in handler:
                 utils.save_skipped_job_id(job_id)
                 return
