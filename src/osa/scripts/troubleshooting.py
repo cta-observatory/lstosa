@@ -108,7 +108,6 @@ def get_slurm_jobs(start_date, end_date):
     jobs = []
     if not result:
         return jobs
-    
     for line in result.strip().split('\n'):
         if not line:
             continue
