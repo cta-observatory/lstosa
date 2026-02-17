@@ -95,11 +95,11 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                 if saved:
                     logger_func(f"   |__ 💾 SAVED: Job {job_id} registered in history.")
                 else:
-                    logger_func(f"   |__ ⚠️ ERROR: Could not write to job history.")
+                    logger_func("   |__ ⚠️ ERROR: Could not write to job history.")
             
             else:
                 # If update_ecsv_cell returns False (file not found, column doesn't exist, etc.)
-                logger_func(f"   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the command")
+                logger_func("   |__ ⚠️ FUNCTIONAL FAILURE: Could not update the command")
 
             return command
 
@@ -209,7 +209,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
 
                             # --- SUCCESS MANAGEMENT ---
                             if success:
-                                logger_func(f"   |__ ✅ SUCCESS: Job relaunched")
+                                logger_func("   |__ ✅ SUCCESS: Job relaunched")
                                 
                                 
                                 # Save the Job ID to avoid reprocessing
@@ -242,7 +242,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
 
                             # --- SUCCESS MANAGEMENT ---
                             if success:
-                                logger_func(f"   |__ ✅ SUCCESS: Job relaunched")
+                                logger_func("   |__ ✅ SUCCESS: Job relaunched")
                                 
                                 success = utils.increase_memory_and_relaunch(command, 30)
                                 if success:
