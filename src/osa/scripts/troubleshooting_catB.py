@@ -44,11 +44,10 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
     logger_func(f"   |__ Error {error_path}")
 
     review_path = error_path if job_name != "lstchain_find_tailcuts" else log_path
-    
     if state == "TIMEOUT":
         logger_func("   |__ ❌ DIAGNOSIS: TIMEOUT (Walltime exceeded).")
         logger_func("   |__ 💡 ACTION: Increase --mem in sbatch.")
-        try:    
+        try:
             run_id = utils.get_run_id_from_path(review_path) # Ensure review_path is correct
 
             if command in handler:
@@ -110,7 +109,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                     
                     if id == 2:
                         try:
-                            run_id = utils.get_run_id_from_path(review_path) 
+                            run_id = utils.get_run_id_from_path(review_path)
                             yesterday = datetime.now() - timedelta(days=1)
                             summary_date = yesterday.strftime('%Y%m%d')
                             
@@ -143,7 +142,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                     if id == 3:
                         try:
                             success= utils.delete_path(error_path) 
-                            success= utils.delete_path(log_path) 
+                            success= utils.delete_path(log_path)
                             # --- SUCCESS MANAGEMENT ---
                             if success:
                                 logger_func("   |__ ✅ SUCCESS: Removed logs.")
@@ -206,9 +205,9 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                                 success = utils.run_command(f'ln -s {path+"v0.1.1"} {path+"pro"}')
                                 # --- SUCCESS MANAGEMENT ---
                                 if success:
-                                    utils.delete_path(error_path) 
-                                    utils.delete_path(log_path) 
-                                    logger_func(f"   |__ ✅ SUCCESS: Removed logs.")
+                                    utils.delete_path(error_path)
+                                    utils.delete_path(log_path)
+                                    logger_func("   |__ ✅ SUCCESS: Removed logs.")
                                     # Save Job ID
                                     saved = utils.save_processed_job_id(job_id)
                                     if saved:
