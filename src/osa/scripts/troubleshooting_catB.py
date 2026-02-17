@@ -54,7 +54,6 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                 utils.save_skipped_job_id(job_id)
                 return
             success = utils.increase_memory_and_relaunch(command, 30)
-
             # --- SUCCESS MANAGEMENT ---
             if success:
                 logger_func(f"   |__ ✅ SUCCESS: Run {run_id} memory updated.")
