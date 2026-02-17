@@ -77,7 +77,8 @@ def handle_pro_link(job_id, log_path, error_path, logger_func):
 def handle_error(job_id, job_name, state, log_path, error_path, command, logger_func, start_date, end_date, handler):
     logger_func(f"   |__ Job {job_id} {job_name} {state}")
     review_path = log_path if job_name == "lstchain_find_tailcuts" else error_path
-
+    logger_func(f"   |__ Log {log_path}")
+    logger_func(f"   |__ Error {error_path}")
     # --- Timeout Handling ---
     if state == "TIMEOUT":
         if command in handler:
@@ -87,6 +88,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
         return command if finalize_action(job_id, success, logger_func, "Memory increased & relaunched.", "Relaunch failed.") else None
 
     if not review_path or not os.path.exists(review_path):
+        logger_func("Job skipped, can't find the log file")
         utils.save_skipped_job_id(job_id)
         return False
 
