@@ -58,7 +58,6 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
             # --- SUCCESS MANAGEMENT ---
             if success:
                 logger_func(f"   |__ ✅ SUCCESS: Run {run_id} memory updated.")
-                
                 # Save the Job ID to avoid reprocessing
                 saved = utils.save_processed_job_id(job_id)
                 if saved:
