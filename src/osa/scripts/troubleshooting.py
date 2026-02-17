@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import subprocess
-import os
 import sys
 import re
 import argparse
@@ -9,8 +8,6 @@ from collections import defaultdict
 import troubleshooting_gainsel as handlers_gainsel
 import troubleshooting_catB as handlers_catB
 import troubleshooting_sequencer as handlers_sequencer
-import troubleshooting_closer as handlers_closer
-
 import troubleshooting_utils as utils
 
 # --- CONFIGURATION ---
@@ -43,7 +40,7 @@ def log_msg(message):
 
 def handle_closer_error(job, log_msg_func):
     log_msg_func(f"   |__ 🚨 [CLOSER] WARNING! Job {job['id']} has failed.")
-    log_msg_func(f"   |__ 🛠  ACTION: Manual review required.")
+    log_msg_func("   |__ 🛠  ACTION: Manual review required.")
     log_msg_func(f"   |__ 📂 Log: {job['log_path']}")
 
 def handle_generic_error(job, log_msg_func):
@@ -86,13 +83,16 @@ def get_scontrol_details(job_id):
     details = {'stdout': 'Unknown', 'command': 'Unknown', 'stderr': 'Unknown'}
     
     stdout_match = re.search(r'StdOut=([^\s]+)', output)
-    if stdout_match: details['stdout'] = stdout_match.group(1)
+    if stdout_match:
+        details['stdout'] = stdout_match.group(1)
 
     stderr_match = re.search(r'StdErr=([^\s]+)', output)
-    if stderr_match: details['stderr'] = stderr_match.group(1)
+    if stderr_match:
+        details['stderr'] = stderr_match.group(1)
 
     cmd_match = re.search(r'Command=(.+)', output)
-    if cmd_match: details['command'] = cmd_match.group(1).split()[0]
+    if cmd_match:
+        details['command'] = cmd_match.group(1).split()[0]
     
     return details
 
@@ -108,12 +108,15 @@ def get_slurm_jobs(start_date, end_date):
         return []
 
     jobs = []
-    if not result: return jobs
+    if not result:
+        return jobs
     
     for line in result.strip().split('\n'):
-        if not line: continue
+        if not line:
+            continue
         parts = line.split('|')
-        if len(parts) < 3: continue
+        if len(parts) < 3: 
+            continue
         jobs.append({'id': parts[0], 'name': parts[1], 'state_raw': parts[2]})
     return jobs
 
@@ -154,11 +157,11 @@ def process_jobs(start_date, end_date, args):
                                  'log_error': get_scontrol_details(job['id'])['stderr']})
             skipped = True
 
-        if skipped == False:
+        if not skipped:
             details = get_scontrol_details(job['id'])
 
-            if args.more_days == False:
-                if utils.is_yesterday_path(details['stdout']) == False:
+            if not args.more_days:
+                if not utils.is_yesterday_path(details['stdout']):
                     continue
 
             # It is a failure
@@ -216,7 +219,7 @@ def process_jobs(start_date, end_date, args):
                 print("") # Space between jobs
 
     print("="*60)
-    if args.no_show_processed == False:
+    if not args.no_show_processed:
         display_processed_jobs(processed_jobs, log_msg)
         display_skipped_jobs(skipped_jobs, log_msg)
 
