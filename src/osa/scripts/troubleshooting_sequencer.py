@@ -105,6 +105,8 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
     """Main orchestrator for sequencer errors."""
     logger_func(f"   |__ Job {job_id} {job_name} {state}")
     run_id, subrun_id, log_path, error_path = extract_ids_and_paths(job_id, job_name, log_path, error_path)
+    logger_func(f"   |__ Log {log_path}")
+    logger_func(f"   |__ Error {error_path}")
 
     if state == "TIMEOUT":
         return perform_relaunch(job_id, command, logger_func, handler, "Timeout: memory increased")
