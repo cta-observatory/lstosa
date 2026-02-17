@@ -1,9 +1,7 @@
 import os
 import shutil
-import csv
 import re
 import subprocess
-import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -201,13 +199,15 @@ def update_ecsv_cell(file_path, target_id, target_col, new_value, subruns_limit=
             shutil.move(temp_path, file_path)
             return True
         else:
-            if os.path.exists(temp_path): os.remove(temp_path)
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
             # Return False if nothing was modified (due to run not found or limit exceeded)
             return False
 
     except Exception as e:
         print(f"[UTILS ERROR] Failed to update ECSV: {e}")
-        if os.path.exists(temp_path): os.remove(temp_path)
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
         return False
 
 # ==========================================
@@ -391,8 +391,6 @@ def is_job_already_processed_or_skipped(job_id):
         
     return False
 
-import re
-from datetime import datetime, timedelta
 
 def is_yesterday_path(path):
     """
