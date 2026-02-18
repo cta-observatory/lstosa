@@ -26,7 +26,18 @@ KNOWN_ERRORS = {
         "error_id": 4
     }
 }
-
+def extract_ids_and_paths(job_id, job_name, log_path, error_path):
+    """Normalize run/subrun IDs and update log paths."""
+    run_id, subrun_id = 0, 0
+    match = re.search(r'LST1_(\d{5,6})(?:_(\d+))?', job_name) or re.search(r'^(\d{8,9})_(\d{1,3})$', job_id)
+    if match:
+        run_id, subrun_id = match.groups()
+        if subrun_id:
+            subrun_fmt = f"{int(subrun_id):04d}"
+            error_path = error_path.replace("%4a", subrun_fmt)
+            log_path = log_path.replace("%4a", subrun_fmt)
+    return run_id, subrun_id, log_path, error_path
+    
 def process_memory_relaunch(job_id, command, review_path, logger_func, handler):
     """Helper to handle memory increases and job relaunches."""
     if command in handler:
@@ -92,7 +103,13 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                     if err_id == 1:
                         process_ecsv_update(job_id, review_path, logger_func)
                         return None
-                    if err_id in [2, 3, 4]:
+                    if err_id in [2, 3]:
+                        return process_memory_relaunch(job_id, command, review_path, logger_func, handler)
+                    if err_id == 4:
+                        run_id, subrun_id, log_path, error_path = extract_ids_and_paths(job_id, job_name, log_path, error_path)
+                        yesterday = datetime.now() - timedelta(days=1)
+                        summary_date = yesterday.strftime('%Y%m%d')
+                        utils.delete_path(f'/fefs/onsite/data/lst-pipe/LSTN-01/R0G/{summary_date}/LST-1.1.Run{run_id}.{subrun_id}.fits.fz')
                         return process_memory_relaunch(job_id, command, review_path, logger_func, handler)
 
     except Exception as e:
