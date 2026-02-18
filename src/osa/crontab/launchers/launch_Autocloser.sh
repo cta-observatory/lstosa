@@ -19,7 +19,8 @@ not_exists()
   [ ! -e "$1" ]
 }
 
-if not_exists ${LSTN1}/running_analysis/${obsdate}/v*/tailcut* ; then
+TARGET_DIR="${LSTN1}/running_analysis/${obsdate}/v*/tailcut*"
+if not_exists $TARGET_DIR ; then
     echo "No tailcut directory for ${OBS_DATE} yet" >> "$LOGFILE"
     exit
 fi
