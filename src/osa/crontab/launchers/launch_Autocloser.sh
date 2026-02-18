@@ -14,13 +14,11 @@ LOGFILE="${LOGDIR}/${OBS_DATE}_LST1.log"
 # -------------------------
 # Check tailcuts directory
 # -------------------------
-not_exists()
-{
-  [ ! -e "$1" ]
+not_exists() {
+    ! compgen -G "$1" > /dev/null
 }
 
-TARGET_DIR="${LSTN1}/running_analysis/${obsdate}/v*/tailcut*"
-if not_exists $TARGET_DIR ; then
+if not_exists "${LSTN1}/running_analysis/${obsdate}/v*/tailcut*" ; then
     echo "No tailcut directory for ${OBS_DATE} yet" >> "$LOGFILE"
     exit
 fi
