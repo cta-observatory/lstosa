@@ -255,7 +255,7 @@ def increase_memory_and_relaunch(script_path, new_mem):
     if not os.path.exists(script_path):
         print(f"[UTILS] Script not found: {script_path}")
         return False
-
+        
     modified = False
 
     # Regex to find --mem=20G or --mem=20 (assuming G)
@@ -286,7 +286,8 @@ def increase_memory_and_relaunch(script_path, new_mem):
         if modified:
             print(f"[UTILS] Memory updated to {new_mem}G in {script_path}")
             # Relaunch the job
-            code, out = run_command(f"osa_env & sbatch {script_path}")
+            run_command('osa-env')
+            code, out = run_command(f"sbatch {script_path}")
             if code == 0:
                 print(f"[UTILS] Job relaunched successfully: {out}")
                 return True
