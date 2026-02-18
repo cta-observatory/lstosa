@@ -255,7 +255,6 @@ def increase_memory_and_relaunch(script_path, new_mem):
     if not os.path.exists(script_path):
         print(f"[UTILS] Script not found: {script_path}")
         return False
-        
     modified = False
 
     # Regex to find --mem=20G or --mem=20 (assuming G)
