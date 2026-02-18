@@ -27,15 +27,23 @@ KNOWN_ERRORS = {
     }
 }
 def extract_ids_and_paths(job_id, job_name, log_path, error_path):
-    """Normalize run/subrun IDs and update log paths."""
+    # Priorizamos el ID específico si existe, si no, buscamos en el nombre
+    match = re.search(r'^(\d{8,9})_(\d{1,3})$', job_id) or \
+            re.search(r'LST1_(\d{5,6})(?:_(\d+))?', job_name)
+    
     run_id, subrun_id = 0, 0
-    match = re.search(r'LST1_(\d{5,6})(?:_(\d+))?', job_name) or re.search(r'^(\d{8,9})_(\d{1,3})$', job_id)
+    
     if match:
-        run_id, subrun_id = match.groups()
-        if subrun_id:
-            subrun_fmt = f"{int(subrun_id):04d}"
-            error_path = error_path.replace("%4a", subrun_fmt)
-            log_path = log_path.replace("%4a", subrun_fmt)
+        # Extraemos los grupos y limpiamos posibles None
+        groups = match.groups()
+        run_id = groups[0]
+        subrun_id = groups[1] if groups[1] else "0"
+        
+        # Formateo de paths (solo si existe subrun)
+        subrun_fmt = f"{int(subrun_id):04d}"
+        error_path = error_path.replace("%4a", subrun_fmt)
+        log_path = log_path.replace("%4a", subrun_fmt)
+            
     return run_id, subrun_id, log_path, error_path
     
 def process_memory_relaunch(job_id, command, review_path, logger_func, handler):
