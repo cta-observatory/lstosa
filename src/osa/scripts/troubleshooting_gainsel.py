@@ -30,7 +30,6 @@ def extract_ids_and_paths(job_id, job_name, log_path, error_path):
     # Priorizamos el ID específico si existe, si no, buscamos en el nombre
     match = re.search(r'^(\d{8,9})_(\d{1,3})$', job_id) or \
             re.search(r'LST1_(\d{5,6})(?:_(\d+))?', job_name)
-    
     run_id, subrun_id = 0, 0
     
     if match:
