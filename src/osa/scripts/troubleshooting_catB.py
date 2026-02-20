@@ -84,7 +84,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
         if command in handler:
             utils.save_skipped_job_id(job_id)
             return None
-        success = utils.increase_memory_and_relaunch(command, 30)
+        success = utils.run_command(command)
         return command if finalize_action(job_id, success, logger_func, "Memory increased & relaunched.", "Relaunch failed.") else None
 
     if not review_path or not os.path.exists(review_path):
