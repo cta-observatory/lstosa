@@ -240,8 +240,10 @@ def run_command(command_str):
             capture_output=True,
             text=True
         )
+        print(f"Command {command_str} relaunched")
         return result.returncode, result.stdout.strip()
     except Exception as e:
+        print(f"Command relaunch failed")
         return -1, str(e)
 
 def increase_memory_and_relaunch(script_path, new_mem):
