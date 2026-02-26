@@ -24,6 +24,18 @@ if not_exists "${LSTN1}/running_analysis/${obsdate}/v*/tailcut*" ; then
 fi
 
 # -------------------------
+# Check NightFinished.txt
+# -------------------------
+exists() {
+    compgen -G "$1" > /dev/null
+}
+
+if exists "${LSTN1}/OSA/Closer/${obsdate}/v*/NightFinished.txt" ; then
+    echo "Date ${obsdate} is already closed for LST1" >> "$LOGFILE"
+    exit
+fi
+
+# -------------------------
 # Environment
 # -------------------------
 source "$CONDA_ENV"
