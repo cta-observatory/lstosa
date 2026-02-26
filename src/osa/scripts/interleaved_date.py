@@ -4,12 +4,18 @@ Remove interleaved directories for data runs that have already been processed.
 Given an input date (<YYYYMMDD>), the script searches for interleaved directories
 within the last month. For each date in that period, it retrieves the runs taken
 and identifies the corresponding observed sources. 
-It creates a shell file to remove all of the interleaved files identified
-(those that do not correspond to Crab observations). Then, it have to be removed
-using SLURM command sbatch. 
 
-At the moment, this shell files to be removed are saved in my workspace:
-fefs/aswg/workspace/maria.rivero/remove_sh
+E.g. -> python3 interleaved_date.py 20250401
+This will print runs taken from 20250301 to 20250401. It will group them by the 
+runs' source (Crab or other source), and will save interleaved files of the other
+source runs (paths to DL1 and running_analysis, which correspond to data files and links, respectively). 
+
+It creates a shell file to remove all of the interleaved files identified
+(those that do not correspond to Crab observations). Then, it has to be removed
+using SLURM command <sbatch>. 
+
+At the moment, shell files are saved in:
+/fefs/aswg/lstosa/maria.rivero/interleaved
 """
 
 import os
@@ -155,7 +161,7 @@ if __name__ == "__main__":
     date_arg = sys.argv[1]
     found_paths, found_dates = find_interleaved(date_arg)
     month = date_arg[:6]
-    recordfile = f'/fefs/aswg/workspace/maria.rivero/remove_sh/entries_rm{month}.sh'
+    recordfile = f'/fefs/aswg/lstosa/maria.rivero/interleaved/entries_rm{month}.sh'
     with open(recordfile, 'w') as file:
         file.write('#!/bin/bash \n')
 
