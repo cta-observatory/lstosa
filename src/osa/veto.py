@@ -15,6 +15,7 @@ __all__ = [
     "set_closed_action",
     "update_vetoes",
     "set_closed_sequence",
+    "set_waiting_action",
 ]
 
 log = myLogger(logging.getLogger(__name__))
@@ -97,3 +98,16 @@ def set_closed_action(name: str, sequence_list):
         if sequence.jobname == name:
             sequence.action = "Closed"
             log.debug(f"Attributes of sequence {sequence.seq} updated")
+
+def set_waiting_action(ready_sequences_list: list, sequence_list: list):
+    """Set the action of DATA sequences to WAITING if they are in ready_sequences_list."""
+    
+    ready_names = {seq.jobname for seq in ready_sequences_list}
+
+    for sequence in sequence_list:
+        if (
+            sequence.jobname not in ready_names
+            and sequence.type == "DATA"
+        ):
+            sequence.action = "Waiting"
+            log.debug(f"Attributes of sequence {sequence.seq} updated to Waiting")

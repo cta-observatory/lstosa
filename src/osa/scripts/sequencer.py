@@ -15,7 +15,7 @@ import re
 from osa import osadb
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.veto import get_closed_list, get_veto_list
+from osa.veto import get_closed_list, get_veto_list, set_waiting_action
 from osa.utils.logging import myLogger
 
 warnings.filterwarnings(
@@ -53,6 +53,7 @@ __all__ = [
     "check_catB_status",
     "report_sequences",
     "update_job_info",
+    "closed_sequences_by_gainsel",
 ]
 
 log = myLogger(logging.getLogger())
@@ -112,12 +113,17 @@ def single_process(telescope):
         log.warning("No runs found for this date. Nothing to do. Exiting.")
         sys.exit(0)
 
-    if not options.no_gainsel and not GainSel_finished(options.date):
+#    if not options.no_gainsel and not GainSel_finished(options.date):
+#        log.info(
+#            f"Gain selection did not finish successfully for date {date_to_iso(options.date)}. "
+#            "Try again later, once gain selection has finished."
+#        )
+#        sys.exit()
+
+    if not options.no_gainsel:
         log.info(
-            f"Gain selection did not finish successfully for date {date_to_iso(options.date)}. "
-            "Try again later, once gain selection has finished."
+            f"Gain selection check enabled - will process runs as they complete"
         )
-        sys.exit()
 
     if is_day_closed():
         log.info(f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}")
@@ -142,6 +148,16 @@ def single_process(telescope):
 
     # Create job pilot scripts
     prepare_jobs(sequence_list)
+
+    # READY SEQUENCES LIST - only contains runs closed by gain selection
+    if not options.no_gainsel:
+        ready_sequences_list = closed_sequences_by_gainsel(
+            options.date, 
+            sequence_list, 
+            options.tel_id
+        )
+        # Change run's action to WAITING when no R0G   
+        set_waiting_action(ready_sequences_list, sequence_list)
 
     # Update sequences objects with information from SLURM
     update_job_info(sequence_list)
@@ -421,6 +437,58 @@ def timeout_in_sequencer(date: datetime.datetime) -> bool:
 
     return False
 
+def closed_sequences_by_gainsel(date: datetime, sequence_list: list, telescope: str) -> list:
+    """
+    Filter sequences to only include runs with completed gain selection.
+    
+    Checks for the existence of .closed files in R0G/log/{date}/ directory.
+    These are created by gain_selection.py when a run's gain selection finishes.
+    
+    Parameters
+    ----------
+    date : datetime
+        The observation date
+    sequence_list : list
+        List of all sequences for the date
+    telescope : str
+        Telescope identifier (e.g., 'LST1')
+    
+    Returns
+    -------
+    ready_sequences : list
+        Sequences with completed gain selection
+    """
+    from pathlib import Path
+    from osa.utils.utils import date_to_dir
+    
+    base_dir = Path(cfg.get("LST1", "BASE"))
+    log_dir = base_dir / f"R0G/log/{date_to_dir(date)}"
+    
+    ready_sequences = []
+    skipped_count = 0
+    
+    for sequence in sequence_list:
+        # Calibration sequences (PEDCAL/DRS4) don't need gain selection
+        if sequence.type != "DATA":
+            ready_sequences.append(sequence)
+        else:
+            run_id = sequence.run
+            closed_file = log_dir / f"gain_selection_{run_id:05d}.closed"
+            
+            if closed_file.exists():
+                ready_sequences.append(sequence)
+                log.debug(f"Run {run_id:05d}: Gain selection finished, including in sequences")
+            else:
+                skipped_count += 1
+                log.info(f"Run {run_id:05d}: Gain selection not finished, skipping")
+    
+    if skipped_count > 0:
+        log.warning(
+            f"Skipped {skipped_count} DATA sequences - gain selection not yet finished. "
+            f"Processing {len(ready_sequences)} sequences with completed gain selection."
+        )
+    
+    return ready_sequences
 
 if __name__ == "__main__":
     main()

@@ -589,6 +589,9 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     no_display_backend = "--export=ALL,MPLBACKEND=Agg"
 
     for sequence in sequence_list:
+        if sequence.action == "Waiting":
+            continue
+
         commandargs = [batch_command, "--parsable", no_display_backend]
         if sequence.type == "PEDCALIB":
             commandargs.append(str(sequence.script))
@@ -799,7 +802,10 @@ def set_queue_values(
     for sequence in sequence_list:
         df_jobname = job_info_filtered[job_info_filtered["JobName"] == sequence.jobname]
         sequence.tries = df_jobname["JobID"].nunique()
-        sequence.action = "Check"
+
+        # Only set to "Check" if no action is already set
+        if sequence.action is None:
+            sequence.action = "Check"
 
         if not df_jobname.empty:
             sequence.jobid = df_jobname["JobID"].max()  # Get latest JobID
