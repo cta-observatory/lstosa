@@ -130,9 +130,9 @@ def single_process(telescope):
         return sequence_list
 
     if not options.test and not options.simulate:
-        if is_sequencer_running(options.date):
-            log.info(f"Sequencer is still running for date {date_to_iso(options.date)}. Try again later.")
-            sys.exit(0)
+#        if is_sequencer_running(options.date):
+#            log.info(f"Sequencer is still running for date {date_to_iso(options.date)}. Try again later.")
+#            sys.exit(0)
 
         if is_sequencer_completed(options.date) and not options.force_submit:
             log.info(f"Sequencer already finished for date {date_to_iso(options.date)}. Exiting")
