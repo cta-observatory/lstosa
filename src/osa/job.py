@@ -589,8 +589,20 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     no_display_backend = "--export=ALL,MPLBACKEND=Agg"
 
     for sequence in sequence_list:
-        if sequence.action == "Waiting":
-            continue
+        # Sequencer 1
+        if options.no_dl1ab:
+            if (
+                sequence.action == "Waiting"
+                or sequence.state in {"PENDING", "RUNNING", "COMPLETED"}
+            ):
+                continue
+        # Sequencer 2
+        else:
+            if (
+                (sequence.type == "DATA" and sequence.catbstatus != "CLOSED")
+                or sequence.state in {"PENDING", "RUNNING", "COMPLETED"}
+            ):
+                continue
 
         commandargs = [batch_command, "--parsable", no_display_backend]
         if sequence.type == "PEDCALIB":
