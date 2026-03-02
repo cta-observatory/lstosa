@@ -592,7 +592,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
         # Sequencer 1
         if options.no_dl1ab:
             if (
-                sequence.action == "Waiting"
+                sequence.action == "NoGSel"
                 or sequence.state in {"PENDING", "RUNNING", "COMPLETED"}
             ):
                 continue

@@ -156,7 +156,7 @@ def single_process(telescope):
             sequence_list, 
             options.tel_id
         )
-        # Change run's action to WAITING when no R0G   
+        # Change run's action to NoGSel when no R0G   
         set_waiting_action(ready_sequences_list, sequence_list)
 
     # Update sequences objects with information from SLURM
