@@ -586,7 +586,7 @@ def merge_muon_files(sequence_list):
 def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
     """Build the daily longterm command."""
     nightdir = date_to_dir(options.date)
-    datacheck_dir = destination_dir("DATACHECK", create_dir=False, dl1_prod_id="tailcut*")
+    datacheck_dir = Path(cfg.get("LST1", "DATACHECK_DIR")) / nightdir
     muons_dir = destination_dir("MUON", create_dir=False)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
     longterm_output_file = longterm_dir / f"DL1_datacheck_{nightdir}.h5"
