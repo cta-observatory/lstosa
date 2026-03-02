@@ -101,7 +101,7 @@ def set_closed_action(name: str, sequence_list):
 
 def set_waiting_action(ready_sequences_list: list, sequence_list: list):
     """Set the action of DATA sequences to NoGSel if they are in ready_sequences_list."""
-    
+
     ready_names = {seq.jobname for seq in ready_sequences_list}
 
     for sequence in sequence_list:

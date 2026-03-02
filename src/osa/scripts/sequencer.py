@@ -43,7 +43,7 @@ from osa.paths import analysis_path, destination_dir # noqa: E402
 from osa.report import start # noqa: E402
 from osa.utils.cliopts import sequencer_cli_parsing # noqa: E402
 from osa.utils.utils import is_day_closed, gettag, date_to_iso # noqa: E402
-from osa.scripts.gain_selection import GainSel_finished # noqa: E402
+#from osa.scripts.gain_selection import GainSel_finished # noqa: E402
 
 __all__ = [
     "single_process",
@@ -122,7 +122,7 @@ def single_process(telescope):
 
     if not options.no_gainsel:
         log.info(
-            f"Gain selection check enabled - will process runs as they complete"
+            "Gain selection check enabled - will process runs as they complete"
         )
 
     if is_day_closed():
@@ -152,11 +152,11 @@ def single_process(telescope):
     # READY SEQUENCES LIST - only contains runs closed by gain selection
     if not options.no_gainsel:
         ready_sequences_list = closed_sequences_by_gainsel(
-            options.date, 
-            sequence_list, 
+            options.date,
+            sequence_list,
             options.tel_id
         )
-        # Change run's action to NoGSel when no R0G   
+        # Change run's action to NoGSel when no R0G
         set_waiting_action(ready_sequences_list, sequence_list)
 
     # Update sequences objects with information from SLURM
