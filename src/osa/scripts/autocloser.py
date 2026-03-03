@@ -191,6 +191,7 @@ class Telescope:
         no_dl2: bool,
         simulate: bool = False,
         test: bool = False,
+        verbose: bool = False,
     ):
         """Launch the closer command."""
         log.info("Closing...")
@@ -210,6 +211,9 @@ class Telescope:
 
         if no_dl2:
             closer_cmd.insert(1, "--no-dl2")
+
+        if verbose:
+            closer_cmd.insert(1, "-v")
 
         if test:
             self.closed = True
@@ -312,7 +316,13 @@ class Sequence:
         return bool(subrun_nrs and len(subrun_nrs) == int(self.dict_sequence["Subruns"]))
 
     def close(
-        self, date: str, config: Path, no_dl2: bool, simulate: bool = False, test: bool = False
+        self,
+        date: str,
+        config: Path,
+        no_dl2: bool,
+        simulate: bool = False,
+        test: bool = False,
+        verbose: bool = False,
     ):
         """Close the sequence by calling the 'closer' script for a given sequence."""
         log.info("Closing sequence...")
@@ -333,6 +343,9 @@ class Sequence:
 
         if no_dl2:
             closer_cmd.insert(1, "--no-dl2")
+
+        if verbose:
+            closer_cmd.insert(1, "-v")
 
         if test:
             self.closed = True
@@ -458,6 +471,7 @@ def main():
                 no_dl2=args.no_dl2,
                 simulate=args.simulate,
                 test=args.test,
+                verbose=args.verbose,
             )
 
     # skip these checks if closing is forced
@@ -467,7 +481,12 @@ def main():
     log.info(f"Closing {args.tel_id}...")
 
     if not telescope.close(
-        date=date, config=args.config, no_dl2=args.no_dl2, simulate=args.simulate, test=args.test
+        date=date,
+        config=args.config,
+        no_dl2=args.no_dl2,
+        simulate=args.simulate,
+        test=args.test,
+        verbose=args.verbose,
     ):
         log.warning(f"Could not close the day for {args.tel_id}!")
         # Send email, if later than 18:00 UTC and telescope is not ready to close
