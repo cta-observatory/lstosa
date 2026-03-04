@@ -36,7 +36,7 @@ def extract_ids_and_paths(job_id, job_name, log_path, error_path):
         groups = match.groups()
         run_id = groups[0]
         subrun_id = groups[1] if groups[1] else "0"
-        
+
         # Formateo de paths (solo si existe subrun)
         subrun_fmt = f"{int(subrun_id):04d}"
         error_path = error_path.replace("%4a", subrun_fmt)
