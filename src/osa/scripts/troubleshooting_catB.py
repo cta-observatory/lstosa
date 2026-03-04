@@ -32,12 +32,6 @@ KNOWN_ERRORS = {
     }
 }
 
-def get_summary_path():
-    """Helper to generate standard RunSummary path."""
-    yesterday = datetime.now() - timedelta(days=1)
-    date_str = yesterday.strftime('%Y%m%d')
-    return date_str, f'/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/RunSummary/RunSummary_{date_str}.ecsv'
-
 def finalize_action(job_id, success, logger_func, success_msg, fail_msg):
     """Logs results and saves job ID on success."""
     if success:
@@ -51,7 +45,7 @@ def finalize_action(job_id, success, logger_func, success_msg, fail_msg):
 def handle_ecsv_type_update(job_id, review_path, logger_func, subruns_limit=None):
     """Updates run_type to EDATA in ECSV."""
     run_id = utils.get_run_id_from_path(review_path)
-    _, ecsv_path = get_summary_path()
+    _, ecsv_path = utils.get_summary_info()
     success = utils.update_ecsv_cell(ecsv_path, run_id, "run_type", "EDATA", subruns_limit=subruns_limit)
     finalize_action(job_id, success, logger_func, f"Run {run_id} set to EDATA.", "Could not update ECSV.")
 
@@ -63,7 +57,7 @@ def handle_log_cleanup(job_id, log_path, error_path, logger_func):
 
 def handle_pro_link(job_id, log_path, error_path, logger_func):
     """Creates pro link if missing and cleans logs."""
-    date_str, _ = get_summary_path()
+    date_str, _ = utils.get_summary_info()
     base_path = f'/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/PixelCalibration/Cat-A/calibration/{date_str}/'
     if not utils.is_link(base_path + "pro"):
         success = utils.run_command(f'ln -s {base_path}v0.1.1 {base_path}pro')
