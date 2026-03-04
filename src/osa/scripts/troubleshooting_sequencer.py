@@ -56,7 +56,6 @@ def extract_ids_and_paths(job_id, job_name, log_path, error_path):
         subrun_fmt = f"{int(subrun_id):04d}"
         error_path = error_path.replace("%4a", subrun_fmt)
         log_path = log_path.replace("%4a", subrun_fmt)
-            
     return run_id, subrun_id, log_path, error_path
 
 # --- ACTION HANDLERS ---
