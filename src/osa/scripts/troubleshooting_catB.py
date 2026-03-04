@@ -29,6 +29,11 @@ KNOWN_ERRORS = {
         "tag": "Missing Calibration file",
         "msg": "Check Cat-A calibration and pro link",
         "error_id": 5
+    },
+    re.escape("error message = 'Resource temporarily unavailable'"): {
+        "tag": "error message = 'Resource temporarily unavailable'",
+        "msg": "Remove all logs from Cat-B and relaunch the job.",
+        "error_id": 6
     }
 }
 
@@ -94,11 +99,12 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                 if re.search(pattern, content, re.IGNORECASE):
                     logger_func(f"   |__ ❌ DETECTED: {details['tag']}")
                     eid = details['error_id']
-
                     if eid == 2:
                         handle_ecsv_type_update(job_id, review_path, logger_func, subruns_limit=20)
-                    elif eid == 3:
+                    elif eid == 1 or eid == 3 or eid == 6:
                         handle_log_cleanup(job_id, log_path, error_path, logger_func)
+                        success = utils.run_command(command)
+                        return command if finalize_action(job_id, success, logger_func, "Memory increased & relaunched.", "Relaunch failed.") else None
                     elif eid == 4:
                         handle_ecsv_type_update(job_id, review_path, logger_func)
                     elif eid == 5:
