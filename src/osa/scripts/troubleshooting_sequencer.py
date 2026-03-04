@@ -39,12 +39,6 @@ KNOWN_ERRORS = {
 
 # --- HELPERS ---
 
-def get_summary_info():
-    yesterday = datetime.now() - timedelta(days=1)
-    summary_date = yesterday.strftime('%Y%m%d')
-    path = f'/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/RunSummary/RunSummary_{summary_date}.ecsv'
-    return summary_date, path
-
 def log_and_save(job_id, success, logger_func, success_msg, fail_msg):
     if success:
         logger_func(f"   |__ ✅ SUCCESS: {success_msg}")
@@ -83,7 +77,7 @@ def perform_relaunch(job_id, command, logger_func, handler, msg="Job relaunched"
 
 def handle_case_actions(error_id, job_id, run_id, subrun_id, command, logger_func, handler):
     """Routes specific error IDs to their logic."""
-    _, ecsv_path = get_summary_info()
+    _, ecsv_path = utils.get_summary_info()
 
     if error_id == 3:  # Discard last subrun
         last_sr = utils.get_ecsv_column_value(ecsv_path, run_id, 'n_subruns')
@@ -98,7 +92,7 @@ def handle_case_actions(error_id, job_id, run_id, subrun_id, command, logger_fun
     elif error_id == 5:  # Relaunch only
         return perform_relaunch(job_id, command, logger_func, handler)
     elif error_id == 6:  # Delete DRS4 and relaunch
-        summary_date, _ = get_summary_info()
+        summary_date, _ = utils.get_summary_info()
         drs4_glob = f"/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/PixelCalibration/Cat-A/drs4_baseline/{summary_date}/v0.1.1/drs4_pedestal*.h5"
         if utils.delete_path(drs4_glob):
             return perform_relaunch(job_id, command, logger_func, handler, "DRS4 deleted & relaunched")
