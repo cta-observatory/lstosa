@@ -414,3 +414,9 @@ def file_exists(file_path: str) -> bool:
 def is_link(path: str) -> bool:
     """Checks if the path is a symbolic link."""
     return Path(path).is_symlink()
+
+def get_summary_info():
+    yesterday = datetime.now() - timedelta(days=1)
+    summary_date = yesterday.strftime('%Y%m%d')
+    path = f'/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/RunSummary/RunSummary_{summary_date}.ecsv'
+    return summary_date, path
