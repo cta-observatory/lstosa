@@ -28,6 +28,11 @@ KNOWN_ERRORS = {
         "action": "Remove the DRS4 file",
         "description": "the DRS4 file already exists",
         "error_id": 5
+    },
+    re.escape("error message = 'Resource temporarily unavailable'"): {
+        "tag": "error message = 'Resource temporarily unavailable'",
+        "msg": "Command must be relaunched",
+        "error_id": 6
     }
 }
 
@@ -81,7 +86,7 @@ def handle_case_actions(error_id, job_id, run_id, subrun_id, command, logger_fun
     elif error_id == 3:  # Discard Run
         success = utils.update_ecsv_cell(ecsv_path, run_id, "run_type", "EDATA")
         log_and_save(job_id, success, logger_func, "Run marked as EDATA", "ECSV update failed")
-    elif error_id == 4:  # Relaunch only
+    elif error_id in [4, 6]:  # Relaunch only
         return perform_relaunch(job_id, command, logger_func, handler)
     elif error_id == 5:  # Delete DRS4 and relaunch
         summary_date, _ = utils.get_summary_info()
