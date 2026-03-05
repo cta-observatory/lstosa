@@ -178,7 +178,7 @@ def main():
     directory.mkdir(parents=True, exist_ok=True)
 
     html_file = directory / Path(f"osa_status_{flat_date}.html")
-    html_file.write_text(html_content(html_table, html_warnings, date, "OSA Sequencer"), encoding="utf-8")
+    html_file.write_text(html_content(html_table, html_warnings, date, "LST OSA Sequencer"), encoding="utf-8")
 
     log.info("Done")
 
