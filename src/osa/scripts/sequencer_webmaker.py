@@ -21,13 +21,15 @@ from osa.paths import all_dl1ab_config_files_exist
 log = myLogger(logging.getLogger())
 
 
-def html_content(body: str, date: str, title: str) -> str:
+def html_content(body: str, warnings: str, date: str, title: str) -> str:
     """Build the HTML content.
 
     Parameters
     ----------
     body : str
         Table with the sequencer status report.
+    warnings : str
+        HTML block with warnings.
     date : str
         Date of the processing YYYY-MM-DD.
 
@@ -50,6 +52,7 @@ def html_content(body: str, date: str, title: str) -> str:
          <body>
          <h1>{title} processing status</h1>
          <p>Processing data from: {date}. Last updated: {time_update} UTC</p>
+         {warnings}
          {body}
          </body>
         </html>"""
@@ -105,11 +108,14 @@ def get_sequencer_output(date: str, config: str, test=False, no_gainsel=False) -
 def lines_to_matrix(lines: Iterable) -> list:
     """Build the matrix from the sequencer output lines."""
     matrix = []
+    warnings = []
     for line in lines:
         l_fields = line.split()
         if len(l_fields) == 19:
             matrix.append(l_fields)
-    return matrix
+        elif "No source information found in the database" in line:
+            warnings.append(line)
+    return matrix, warnings
 
 
 def matrix_to_html(matrix: list) -> str:
@@ -119,6 +125,14 @@ def matrix_to_html(matrix: list) -> str:
         return "<p>No data found</p>"
     df = pd.DataFrame(matrix[1:], columns=matrix[0])
     return df.to_html(index=False)
+
+
+def warnings_to_html(warnings: list) -> str:
+    """Build an HTML block displaying warnings."""
+    if not warnings:
+        return ""
+    items = "".join(f"<li>{w}</li>" for w in warnings)
+    return f'<div><h2>Warnings</h2><ul>{items}</ul></div>'
 
 
 def main():
@@ -154,8 +168,9 @@ def main():
     lines = get_sequencer_output(date, args.config, test=args.test, no_gainsel=args.no_gainsel)
 
     # Build the html sequencer table that will be place in the body of the HTML file
-    matrix = lines_to_matrix(lines)
+    matrix, warnings = lines_to_matrix(lines)
     html_table = matrix_to_html(matrix)
+    html_warnings = warnings_to_html(warnings)
 
     # Save the HTML file
     log.info("Saving the HTML file")
@@ -163,7 +178,7 @@ def main():
     directory.mkdir(parents=True, exist_ok=True)
 
     html_file = directory / Path(f"osa_status_{flat_date}.html")
-    html_file.write_text(html_content(html_table, date, "OSA Sequencer"), encoding="utf-8")
+    html_file.write_text(html_content(html_table, html_warnings, date, "OSA Sequencer"), encoding="utf-8")
 
     log.info("Done")
 
