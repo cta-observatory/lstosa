@@ -1,3 +1,4 @@
+import glob
 import os
 import shutil
 import re
@@ -30,18 +31,28 @@ def log_contains_pattern(log_path, pattern):
 # ==========================================
 
 def delete_path(path):
-    """Safely deletes a file or an entire directory."""
-    if not os.path.exists(path):
+    """Safely deletes files or directories, supporting wildcards (*)."""
+    # Expandimos el path (ej: de '.../*.h5' a ['.../file1.h5', '.../file2.h5'])                                                                                                                             
+    matching_paths = glob.glob(path)
+    print(path)
+    print(matching_paths)
+    if not matching_paths:
+        print("Path to delete not found")
         return False
-    try:
-        if os.path.isfile(path) or os.path.islink(path):
-            os.remove(path)
-        elif os.path.isdir(path):
-            shutil.rmtree(path)
-        return True
-    except Exception as e:
-        print(f"[UTILS ERROR] Could not delete {path}: {e}")
-        return False
+
+    success = True
+    for p in matching_paths:
+        try:
+            if os.path.isfile(p) or os.path.islink(p):
+                os.remove(p)
+            elif os.path.isdir(p):
+                shutil.rmtree(p)
+            print("Path successfully deleted")
+        except Exception as e:
+            print(f"[UTILS ERROR] Could not delete {p}: {e}")
+            success = False
+
+    return success
 
 def create_folder(path):
     """Creates a directory (and parents) if it doesn't exist."""
