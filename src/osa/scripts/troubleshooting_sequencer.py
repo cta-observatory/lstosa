@@ -1,3 +1,4 @@
+import glob
 import os
 import re
 import troubleshooting_utils as utils
@@ -48,20 +49,31 @@ def log_and_save(job_id, success, logger_func, success_msg, fail_msg):
     return False
 
 def extract_ids_and_paths(job_id, job_name, log_path, error_path):
-    match = re.search(r'^(\d{8,9})_(\d{1,3})$', job_id) or \
-            re.search(r'LST1_(\d{5,6})(?:_(\d+))?', job_name)
-    run_id, subrun_id = 0, 0
-    if match:
-        # Extraemos los grupos y limpiamos posibles None
-        groups = match.groups()
-        run_id = groups[0]
-        subrun_id = groups[1] if groups[1] else "0"
+    match = re.search(r'^(\d+)_(\d+)$', job_id) or \
+            re.search(r'LST1_(\d+)(?:_(\d+))?', job_name)
 
-        # Formateo de paths (solo si existe subrun)
-        subrun_fmt = f"{int(subrun_id):04d}"
-        error_path = error_path.replace("%4a", subrun_fmt)
-        log_path = log_path.replace("%4a", subrun_fmt)
-    return run_id, subrun_id, log_path, error_path
+    run_id, subrun_id = 0, 0
+
+    if match:
+        run_id = match.group(1)
+        subrun_id = match.group(2) if match.group(2) else "*" # Usamos * si es None
+    else:
+        subrun_id = "*" # Comodín por si falla el match
+
+    if subrun_id == "*":
+        search_pattern_err = error_path.replace(".%4a", ".*")
+        search_pattern_log = log_path.replace(".%4a", ".*")
+    else:
+        subrun_fmt = f"{int(subrun_id):04d}" if len(subrun_id) < 5 else subrun_id
+        search_pattern_err = error_path.replace("%4a", subrun_fmt)
+        search_pattern_log = log_path.replace("%4a", subrun_fmt)
+
+    found_err = glob.glob(search_pattern_err)
+    found_log = glob.glob(search_pattern_log)
+    final_error_path = found_err[0] if found_err else search_pattern_err
+    final_log_path = found_log[0] if found_log else search_pattern_log
+
+    return run_id, subrun_id, final_log_path, final_error_path
 
 # --- ACTION HANDLERS ---
 
