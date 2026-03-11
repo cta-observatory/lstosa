@@ -164,6 +164,11 @@ def extract_runs(summary_table):
                 run.source_ra = source_catalog.loc[run_id]["source_ra"]
                 run.source_dec = source_catalog.loc[run_id]["source_dec"]
 
+        if len(source_catalog) == 0:
+            log.warning("No source information found in the database. The run catalog "
+                        f"for date {date_to_iso(options.date)} will be empty.")
+
+
     elif database.db_available():
         run_table = Table(
             names=["run_id", "source_name", "source_ra", "source_dec"],
@@ -196,6 +201,10 @@ def extract_runs(summary_table):
                     ]
                     log.debug(f"Adding line with source info to RunCatalog: {line}")
                     run_table.add_row(line)
+
+        if len(run_table) == 0:
+            log.warning("No source information found in the database. The run catalog "
+                        f"for date {date_to_iso(options.date)} will be empty.")
 
         # Save table to disk
         run_table.write(source_catalog_file, overwrite=True, delimiter=",")
