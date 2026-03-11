@@ -588,20 +588,44 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     job_list = []
     no_display_backend = "--export=ALL,MPLBACKEND=Agg"
 
+    parent_jobid = None
     for sequence in sequence_list:
         # Sequencer 1
         if options.no_dl1ab:
             if (
                 sequence.action == "NoGSel"
-                or sequence.state in {"PENDING", "RUNNING", "COMPLETED"}
+                    or sequence.state in {"PENDING", "RUNNING"}
             ):
+                log.info(
+                    "Skipping sequence %s (type=%s, state=%s, action=%s)",
+                    sequence.run,
+                    sequence.type,
+                    sequence.state,
+                    sequence.action
+                )
                 continue
+
         # Sequencer 2
         else:
             if (
                 (sequence.type == "DATA" and sequence.catbstatus != "CLOSED")
-                or sequence.state in {"PENDING", "RUNNING", "COMPLETED"}
+                    or sequence.state in {"PENDING", "RUNNING"}
             ):
+                if sequence.type == "DATA":
+                    log.info(
+                        "Skipping sequence %s (type=%s, state=%s, catbstatus=%s)",
+                        sequence.run,
+                        sequence.type,
+                        sequence.state,
+                        sequence.catbstatus
+                    )
+                else:
+                    log.info(
+                        "Skipping sequence %s (type=%s, state=%s)",
+                        sequence.run,
+                        sequence.type,
+                        sequence.state
+                    )
                 continue
 
         commandargs = [batch_command, "--parsable", no_display_backend]
@@ -628,8 +652,10 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
         if sequence.type == "DATA":
             if not options.simulate and not options.no_calib and not options.test:
                 log.debug("Adding dependencies to job submission")
-                depend_string = f"--dependency=afterok:{parent_jobid}"
-                commandargs.append(depend_string)
+
+                if parent_jobid:
+                    depend_string = f"--dependency=afterok:{parent_jobid}"
+                    commandargs.append(depend_string)
 
             commandargs.append(sequence.script)
 
