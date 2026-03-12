@@ -2,6 +2,8 @@ import os
 import re
 import troubleshooting_utils as utils
 from datetime import datetime, timedelta
+from osa.configs.config import cfg
+from pathlib import Path
 
 # --- KNOWN ERROR DICTIONARY ---
 KNOWN_ERRORS = {
@@ -67,7 +69,8 @@ def process_ecsv_update(job_id, review_path, logger_func):
     run_id = utils.get_run_id_from_path(review_path)
     yesterday = datetime.now() - timedelta(days=1)
     summary_date = yesterday.strftime('%Y%m%d')
-    ecsv_path = f'/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/RunSummary/RunSummary_{summary_date}.ecsv'
+    RUN_SUMMARY_DIR = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
+    ecsv_path = f'{RUN_SUMMARY_DIR}/RunSummary_{summary_date}.ecsv'
 
     success = utils.update_ecsv_cell(ecsv_path, run_id, "run_type", "EDATA", subruns_limit=20)
 
@@ -114,7 +117,8 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                         run_id, subrun_id, log_path, error_path = extract_ids_and_paths(job_id, job_name, log_path, error_path)
                         yesterday = datetime.now() - timedelta(days=1)
                         summary_date = yesterday.strftime('%Y%m%d')
-                        utils.delete_path(f'/fefs/onsite/data/lst-pipe/LSTN-01/R0G/{summary_date}/LST-1.1.Run{run_id}.{subrun_id}.fits.fz')
+                        R0_DIR = Path(cfg.get("LST1", "R0_DIR"))
+                        utils.delete_path(f'{R0_DIR}/{summary_date}/LST-1.1.Run{run_id}.{subrun_id}.fits.fz')
                         return process_memory_relaunch(job_id, command, review_path, logger_func, handler)
 
     except Exception as e:
