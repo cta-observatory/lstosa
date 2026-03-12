@@ -1,6 +1,8 @@
 import os
 import re
 import troubleshooting_utils as utils
+from osa.configs.config import cfg
+from pathlib import Path
 
 # --- KNOWN ERROR DICTIONARY ---
 KNOWN_ERRORS = {
@@ -46,10 +48,10 @@ def finalize_action(job_id, success, logger_func, success_msg, fail_msg):
     logger_func(f"   |__ ⚠️ FAILURE: {fail_msg}")
     return False
 
-def handle_ecsv_type_update(job_id, review_path, logger_func, subruns_limit=None):
+def handle_ecsv_type_update(job_id, review_path, logger_func, subruns_limit, target_date):
     """Updates run_type to EDATA in ECSV."""
     run_id = utils.get_run_id_from_path(review_path)
-    _, ecsv_path = utils.get_summary_info()
+    _, ecsv_path = utils.get_summary_info(target_date)
     success = utils.update_ecsv_cell(ecsv_path, run_id, "run_type", "EDATA", subruns_limit=subruns_limit)
     finalize_action(job_id, success, logger_func, f"Run {run_id} set to EDATA.", "Could not update ECSV.")
 
@@ -59,10 +61,11 @@ def handle_log_cleanup(job_id, log_path, error_path, logger_func):
     s2 = utils.delete_path(log_path)
     finalize_action(job_id, (s1 and s2), logger_func, "Logs removed.", "Failed to remove some logs.")
 
-def handle_pro_link(job_id, log_path, error_path, logger_func):
+def handle_pro_link(job_id, log_path, error_path, logger_func, target_date):
     """Creates pro link if missing and cleans logs."""
-    date_str, _ = utils.get_summary_info()
-    base_path = f'/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/PixelCalibration/Cat-A/calibration/{date_str}/'
+    date_str, _ = utils.get_summary_info(target_date)
+    CAT_A_CALIB_DIR = Path(cfg.get("LST1", "CAT_A_CALIB_DIR"))
+    base_path = f'{CAT_A_CALIB_DIR}/{date_str}/'
     if not utils.is_link(base_path + "pro"):
         success = utils.run_command(f'ln -s {base_path}v0.1.1 {base_path}pro')
         if success:
@@ -105,9 +108,9 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                         success = utils.run_command(command)
                         return command if finalize_action(job_id, success, logger_func, "Memory increased & relaunched.", "Relaunch failed.") else None
                     elif eid == 4:
-                        handle_ecsv_type_update(job_id, review_path, logger_func)
+                        handle_ecsv_type_update(job_id, review_path, logger_func, start_date)
                     elif eid == 5:
-                        handle_pro_link(job_id, log_path, error_path, logger_func)
+                        handle_pro_link(job_id, log_path, error_path, logger_func, start_date)
                     return None # Action taken
     except Exception as e:
         logger_func(f"   |__ ❌ EXCEPTION: {str(e)}")
