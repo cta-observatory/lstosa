@@ -10,6 +10,9 @@ import troubleshooting_gainsel as handlers_gainsel
 import troubleshooting_catB as handlers_catB
 import troubleshooting_sequencer as handlers_sequencer
 import troubleshooting_utils as utils
+from osa.configs.config import cfg
+from osa.paths import DEFAULT_CFG
+from pathlib import Path
 
 # --- CONFIGURATION ---
 SACCT_CMD = "sacct"
@@ -176,11 +179,12 @@ def process_jobs(start_date, end_date, more_days, no_show_processed):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("date", nargs="?", help="YYYY-MM-DD")
+    parser.add_argument("-d","--date", nargs="?", help="YYYY-MM-DD")
     parser.add_argument("--no-show-processed", action="store_true")
     parser.add_argument("--more-days", action="store_true")
-    args = parser.parse_args()
+    parser.add_argument("-c", "--config", action="store", type=Path, default=DEFAULT_CFG, help="Configuration file")
 
+    args = parser.parse_args()
     target_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     if args.date:
         try:
