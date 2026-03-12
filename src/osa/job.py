@@ -594,9 +594,9 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
         if options.no_dl1ab:
             if (
                 sequence.action == "NoGSel"
-                    or sequence.state in {"PENDING", "RUNNING"}
+                    or sequence.state in {"PENDING", "RUNNING", "COMPLETED"}
             ):
-                log.info(
+                log.debug(
                     "Skipping sequence %s (type=%s, state=%s, action=%s)",
                     sequence.run,
                     sequence.type,
@@ -609,10 +609,16 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
         else:
             if (
                 (sequence.type == "DATA" and sequence.catbstatus != "CLOSED")
-                    or sequence.state in {"PENDING", "RUNNING"}
+                or sequence.state in {"PENDING", "RUNNING"}
+                or (sequence.type != "DATA" and sequence.state == "COMPLETED")
+                or (
+                    sequence.type == "DATA"
+                    and sequence.state == "COMPLETED"
+                    and int(sequence.dl1abstatus) > 1
+                )
             ):
                 if sequence.type == "DATA":
-                    log.info(
+                    log.debug(
                         "Skipping sequence %s (type=%s, state=%s, catbstatus=%s)",
                         sequence.run,
                         sequence.type,
@@ -620,7 +626,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
                         sequence.catbstatus
                     )
                 else:
-                    log.info(
+                    log.debug(
                         "Skipping sequence %s (type=%s, state=%s)",
                         sequence.run,
                         sequence.type,
