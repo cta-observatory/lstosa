@@ -34,12 +34,9 @@ def log_contains_pattern(log_path, pattern):
 def delete_path(path):
     """Safely deletes files or directories, supporting wildcards (*)."""
     matching_paths = glob.glob(path)
-    print(path)
-    print(matching_paths)
     if not matching_paths:
         print("Path to delete not found")
         return False
-
     success = True
     for p in matching_paths:
         try:
