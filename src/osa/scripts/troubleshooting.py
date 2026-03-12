@@ -10,7 +10,6 @@ import troubleshooting_gainsel as handlers_gainsel
 import troubleshooting_catB as handlers_catB
 import troubleshooting_sequencer as handlers_sequencer
 import troubleshooting_utils as utils
-from osa.configs.config import cfg
 from osa.paths import DEFAULT_CFG
 from pathlib import Path
 
