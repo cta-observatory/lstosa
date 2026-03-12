@@ -2,6 +2,8 @@ import glob
 import os
 import re
 import troubleshooting_utils as utils
+from osa.configs.config import cfg
+from pathlib import Path
 
 # --- KNOWN ERROR DICTIONARY ---
 KNOWN_ERRORS = {
@@ -84,9 +86,9 @@ def perform_relaunch(job_id, command, logger_func, handler, msg="Job relaunched"
     success = utils.increase_memory_and_relaunch(command, 30)
     return command if log_and_save(job_id, success, logger_func, msg, "Relaunch failed") else None
 
-def handle_case_actions(error_id, job_id, run_id, subrun_id, command, logger_func, handler):
+def handle_case_actions(error_id, job_id, run_id, subrun_id, command, logger_func, handler, target_date):
     """Routes specific error IDs to their logic."""
-    _, ecsv_path = utils.get_summary_info()
+    _, ecsv_path = utils.get_summary_info(target_date)
 
     if error_id == 2:  # Discard last subrun
         last_sr = utils.get_ecsv_column_value(ecsv_path, run_id, 'n_subruns')
@@ -101,8 +103,9 @@ def handle_case_actions(error_id, job_id, run_id, subrun_id, command, logger_fun
     elif error_id in [4, 6]:  # Relaunch only
         return perform_relaunch(job_id, command, logger_func, handler)
     elif error_id == 5:  # Delete DRS4 and relaunch
-        summary_date, _ = utils.get_summary_info()
-        drs4_glob = f"/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/PixelCalibration/Cat-A/drs4_baseline/{summary_date}/v0.1.1/drs4_pedestal*.h5"
+        summary_date, _ = utils.get_summary_info(target_date)
+        pedestal_dir = Path(cfg.get("LST1", "CAT_A_PEDESTAL_DIR"))
+        drs4_glob = f"{pedestal_dir}/{summary_date}/v0.1.1/drs4_pedestal*.h5"
         if utils.delete_path(drs4_glob):
             return perform_relaunch(job_id, command, logger_func, handler, "DRS4 deleted & relaunched")
 
@@ -131,7 +134,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
             for pattern, details in KNOWN_ERRORS.items():
                 if re.search(pattern, content, re.IGNORECASE):
                     logger_func(f"   |__ ❌ DETECTED: {details.get('tag', details.get('description'))}")
-                    return handle_case_actions(details['error_id'], job_id, run_id, subrun_id, command, logger_func, handler)
+                    return handle_case_actions(details['error_id'], job_id, run_id, subrun_id, command, logger_func, handler, start_date)
     except Exception as e:
         logger_func(f"   |__ ❌ EXCEPTION: {str(e)}")
         return None
