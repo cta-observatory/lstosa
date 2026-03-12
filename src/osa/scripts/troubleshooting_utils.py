@@ -33,7 +33,6 @@ def log_contains_pattern(log_path, pattern):
 
 def delete_path(path):
     """Safely deletes files or directories, supporting wildcards (*)."""
-    # Expandimos el path (ej: de '.../*.h5' a ['.../file1.h5', '.../file2.h5'])                                                                                                                             
     matching_paths = glob.glob(path)
     print(path)
     print(matching_paths)
