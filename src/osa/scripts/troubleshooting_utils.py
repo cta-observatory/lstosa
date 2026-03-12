@@ -4,6 +4,7 @@ import shutil
 import re
 import subprocess
 from datetime import datetime, timedelta
+from osa.configs.config import cfg
 from pathlib import Path
 
 # ==========================================
@@ -240,7 +241,10 @@ def run_command(command_str):
     try:
         # 1. Remove shell-specific operators (like ; or &)
         # that are incompatible with shell=False
-        clean_command = command_str.replace("osa_env;", "").replace("osa_env &", "").strip()
+        if command_str == 'ose_env':
+            clean_command = command_str
+        else:
+            clean_command = command_str.replace("osa_env;", "").replace("osa_env &", "").strip()
         # 2. Convert string to list by splitting on whitespace
         # "sbatch --mem=20G script.sh" -> ["sbatch", "--mem=20G", "script.sh"]
         command_args = [arg for arg in clean_command.split(" ") if arg]
@@ -315,6 +319,23 @@ def increase_memory_and_relaunch(script_path, new_mem):
         return False
 
 def get_run_id_from_path(path):
+    """
+    Extracts the Run ID from a log file with the format '..._RUNID_JOBID.log'
+    Example: /.../tailcuts_finder_23342_51712367.log -> Returns '23342'
+    """
+    if not path:
+        return None
+    # 1. Keep only the filename (ignore folders)
+    filename = os.path.basename(path)
+
+    # 2. Use Regex to find the final pattern: _(Digits)_(Digits).log
+    match = re.search(r'(\d+)_(?:\d+_)?\d+\.[a-zA-Z]{3}$', filename)
+    if match:
+        return match.group(1)
+
+    return None
+
+def get_date_from_path(path):
     """
     Extracts the Run ID from a log file with the format '..._RUNID_JOBID.log'
     Example: /.../tailcuts_finder_23342_51712367.log -> Returns '23342'
@@ -426,8 +447,13 @@ def is_link(path: str) -> bool:
     """Checks if the path is a symbolic link."""
     return Path(path).is_symlink()
 
-def get_summary_info():
-    yesterday = datetime.now() - timedelta(days=1)
-    summary_date = yesterday.strftime('%Y%m%d')
-    path = f'/fefs/onsite/data/lst-pipe/LSTN-01/monitoring/RunSummary/RunSummary_{summary_date}.ecsv'
+def get_summary_info(target_date):
+    if not target_date:
+        yesterday = datetime.now() - timedelta(days=1)
+        summary_date = yesterday.strftime('%Y%m%d')
+    else:
+        dt_obj = datetime.strptime(target_date, '%Y-%m-%d')
+        summary_date = dt_obj.strftime('%Y%m%d')
+    RUN_SUMMARY_DIR = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
+    path = f'{RUN_SUMMARY_DIR}/RunSummary_{summary_date}.ecsv'
     return summary_date, path
