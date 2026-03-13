@@ -108,7 +108,7 @@ def handle_case_actions(error_id, job_id, run_id, subrun_id, command, logger_fun
         pedestal_dir = Path(cfg.get("LST1", "CAT_A_PEDESTAL_DIR"))
         lstcam_env = Path(cfg.get("LST1", "CALIB_ENV"))
         lstcam_calib_version = osa_utils.get_lstcam_calib_version(lstcam_env)
-        drs4_glob = f"{pedestal_dir}/{summary_date}/{lstcam_calib_version}/drs4_pedestal*.h5"
+        drs4_glob = f"{pedestal_dir}/{summary_date}/v{lstcam_calib_version}/drs4_pedestal*.h5"
         if utils.delete_path(drs4_glob):
             return perform_relaunch(job_id, command, logger_func, handler, "DRS4 deleted & relaunched")
 
