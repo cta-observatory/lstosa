@@ -607,31 +607,21 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
 
         # Sequencer 2
         else:
-            if (
-                (sequence.type == "DATA" and sequence.catbstatus != "CLOSED")
-                or sequence.state in {"PENDING", "RUNNING"}
-                or (sequence.type != "DATA" and sequence.state == "COMPLETED")
-                or (
-                    sequence.type == "DATA"
-                    and sequence.state == "COMPLETED"
-                    and int(sequence.dl1abstatus) > 1
-                )
-            ):
-                if sequence.type == "DATA":
-                    log.debug(
-                        "Skipping sequence %s (type=%s, state=%s, catbstatus=%s)",
-                        sequence.run,
-                        sequence.type,
-                        sequence.state,
-                        sequence.catbstatus
-                    )
-                else:
-                    log.debug(
-                        "Skipping sequence %s (type=%s, state=%s)",
-                        sequence.run,
-                        sequence.type,
-                        sequence.state
-                    )
+            if sequence.type == "DATA":
+
+                if cfg.getboolean("lstchain", "apply_catB_calibration") and sequence.catbstatus != "CLOSED":
+                    log.debug(f"Skipping sequence {sequence.run} (catbstatus={sequence.catbstatus})")
+                    continue
+
+                if sequence.state in {"PENDING", "RUNNING"}:
+                    log.debug(f"Skipping sequence {sequence.run} (state={sequence.stat})")
+                    continue
+
+                if (sequence.state == "COMPLETED" and int(sequence.dl1abstatus) > 0):
+                    log.debug(f"Skipping sequence {sequence.run} (state={sequence.stat}")
+                    continue
+
+            else:
                 continue
 
         commandargs = [batch_command, "--parsable", no_display_backend]
