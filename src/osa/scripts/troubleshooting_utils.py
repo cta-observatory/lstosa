@@ -398,7 +398,7 @@ def is_job_already_processed_or_skipped(job_id):
     main_date = yesterday.strftime('%Y%m%d')
     TROUBLESHOOTING_DIR = Path(cfg.get("LST1", "TROUBLESHOOTING_DIR"))
     file_path_processed =TROUBLESHOOTING_DIR+main_date+'/'+main_date+'_processed.txt'
-    file_path_skipped =TROUBLESHOOTING_DIR'+main_date+'/'+main_date+'_skipped.txt'
+    file_path_skipped =TROUBLESHOOTING_DIR+main_date+'/'+main_date+'_skipped.txt'
 
     try:
         if os.path.exists(file_path_processed):
