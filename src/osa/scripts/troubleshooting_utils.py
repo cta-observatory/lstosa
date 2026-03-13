@@ -357,7 +357,8 @@ def save_processed_job_id(job_id):
         yesterday = datetime.now() - timedelta(days=1)
         main_date = yesterday.strftime('%Y%m%d')
         # Ensure the directory exists
-        folder = os.path.dirname('/fefs/aswg/lstosa/troubleshooting/'+main_date+'/')
+        TROUBLESHOOTING_DIR = Path(cfg.get("LST1", "TROUBLESHOOTING_DIR"))
+        folder = os.path.dirname(TROUBLESHOOTING_DIR+main_date+'/')
         if folder and not os.path.exists(folder):
             os.makedirs(folder, exist_ok=True)
 
@@ -377,7 +378,8 @@ def save_skipped_job_id(job_id):
         yesterday = datetime.now() - timedelta(days=1)
         main_date = yesterday.strftime('%Y%m%d')
         # Ensure the directory exists
-        folder = os.path.dirname('/fefs/aswg/lstosa/troubleshooting/'+main_date+'/')
+        TROUBLESHOOTING_DIR = Path(cfg.get("LST1", "TROUBLESHOOTING_DIR"))
+        folder = os.path.dirname(TROUBLESHOOTING_DIR+main_date+'/')
         if folder and not os.path.exists(folder):
             os.makedirs(folder, exist_ok=True)
 
@@ -394,8 +396,9 @@ def is_job_already_processed_or_skipped(job_id):
     """
     yesterday = datetime.now() - timedelta(days=1)
     main_date = yesterday.strftime('%Y%m%d')
-    file_path_processed ='/fefs/aswg/lstosa/troubleshooting/'+main_date+'/'+main_date+'_processed.txt'
-    file_path_skipped ='/fefs/aswg/lstosa/troubleshooting/'+main_date+'/'+main_date+'_skipped.txt'
+    TROUBLESHOOTING_DIR = Path(cfg.get("LST1", "TROUBLESHOOTING_DIR"))
+    file_path_processed =TROUBLESHOOTING_DIR+main_date+'/'+main_date+'_processed.txt'
+    file_path_skipped =TROUBLESHOOTING_DIR'+main_date+'/'+main_date+'_skipped.txt'
 
     try:
         if os.path.exists(file_path_processed):
