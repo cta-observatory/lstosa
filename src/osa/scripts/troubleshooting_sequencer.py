@@ -51,16 +51,17 @@ def log_and_save(job_id, success, logger_func, success_msg, fail_msg):
     return False
 
 def extract_ids_and_paths(job_id, job_name, log_path, error_path):
-    match = re.search(r'^(\d+)_(\d+)$', job_id) or \
-            re.search(r'LST1_(\d+)(?:_(\d+))?', job_name)
-
+    match1 = re.search(r'^(\d+)_(\d+)$', job_id)
+    match2 =  re.search(r'LST1_(\d+)(?:_(\d+))?', job_name)
     run_id, subrun_id = 0, 0
+    subrun_id = "*" # Comodín por si falla el match
 
-    if match:
-        run_id = match.group(1)
-        subrun_id = match.group(2) if match.group(2) else "*" # Usamos * si es None
-    else:
-        subrun_id = "*" # Comodín por si falla el match
+    if match1:
+        run_id = match1.group(1)
+        subrun_id = match1.group(2) if match1.group(2) else "*" # Usamos * si es None
+    if match2:
+        run_id = match2.group(1)
+        subrun_id = match2.group(2) if match2.group(2) else "*" # Usamos * si es None
 
     if subrun_id == "*":
         search_pattern_err = error_path.replace(".%4a", ".*")
@@ -89,7 +90,6 @@ def perform_relaunch(job_id, command, logger_func, handler, msg="Job relaunched"
 def handle_case_actions(error_id, job_id, run_id, subrun_id, command, logger_func, handler, target_date):
     """Routes specific error IDs to their logic."""
     _, ecsv_path = utils.get_summary_info(target_date)
-
     if error_id == 2:  # Discard last subrun
         last_sr = utils.get_ecsv_column_value(ecsv_path, run_id, 'n_subruns')
         if int(subrun_id) == int(last_sr):
