@@ -3,6 +3,7 @@ import re
 import troubleshooting_utils as utils
 from osa.configs.config import cfg
 from pathlib import Path
+from osa.utils import osa_utils
 
 # --- KNOWN ERROR DICTIONARY ---
 KNOWN_ERRORS = {
@@ -67,7 +68,9 @@ def handle_pro_link(job_id, log_path, error_path, logger_func, target_date):
     CAT_A_CALIB_DIR = Path(cfg.get("LST1", "CAT_A_CALIB_DIR"))
     base_path = f'{CAT_A_CALIB_DIR}/{date_str}/'
     if not utils.is_link(base_path + "pro"):
-        success = utils.run_command(f'ln -s {base_path}v0.1.1 {base_path}pro')
+        lstcam_env = Path(cfg.get("LST1", "CALIB_ENV"))
+        lstcam_calib_version = osa_utils.get_lstcam_calib_version(lstcam_env)
+        success = utils.run_command(f'ln -s {base_path}{lstcam_calib_version} {base_path}pro')
         if success:
             handle_log_cleanup(job_id, log_path, error_path, logger_func)
         else:
