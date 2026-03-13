@@ -614,11 +614,11 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
                     continue
 
                 if sequence.state in {"PENDING", "RUNNING"}:
-                    log.debug(f"Skipping sequence {sequence.run} (state={sequence.stat})")
+                    log.debug(f"Skipping sequence {sequence.run} (state={sequence.state})")
                     continue
 
                 if (sequence.state == "COMPLETED" and int(sequence.dl1abstatus) > 0):
-                    log.debug(f"Skipping sequence {sequence.run} (state={sequence.stat}")
+                    log.debug(f"Skipping sequence {sequence.run} (state={sequence.state}")
                     continue
 
             else:
