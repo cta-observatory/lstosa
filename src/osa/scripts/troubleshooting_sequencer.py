@@ -4,6 +4,7 @@ import re
 import troubleshooting_utils as utils
 from osa.configs.config import cfg
 from pathlib import Path
+from osa.utils import osa_utils
 
 # --- KNOWN ERROR DICTIONARY ---
 KNOWN_ERRORS = {
@@ -105,7 +106,9 @@ def handle_case_actions(error_id, job_id, run_id, subrun_id, command, logger_fun
     elif error_id == 5:  # Delete DRS4 and relaunch
         summary_date, _ = utils.get_summary_info(target_date)
         pedestal_dir = Path(cfg.get("LST1", "CAT_A_PEDESTAL_DIR"))
-        drs4_glob = f"{pedestal_dir}/{summary_date}/v0.1.1/drs4_pedestal*.h5"
+        lstcam_env = Path(cfg.get("LST1", "CALIB_ENV"))
+        lstcam_calib_version = osa_utils.get_lstcam_calib_version(lstcam_env)
+        drs4_glob = f"{pedestal_dir}/{summary_date}/{lstcam_calib_version}/drs4_pedestal*.h5"
         if utils.delete_path(drs4_glob):
             return perform_relaunch(job_id, command, logger_func, handler, "DRS4 deleted & relaunched")
 
