@@ -70,7 +70,7 @@ def handle_pro_link(job_id, log_path, error_path, logger_func, target_date):
     if not utils.is_link(base_path + "pro"):
         lstcam_env = Path(cfg.get("LST1", "CALIB_ENV"))
         lstcam_calib_version = osa_utils.get_lstcam_calib_version(lstcam_env)
-        success = utils.run_command(f'ln -s {base_path}{lstcam_calib_version} {base_path}pro')
+        success = utils.run_command(f'ln -s {base_path}v{lstcam_calib_version} {base_path}pro')
         if success:
             handle_log_cleanup(job_id, log_path, error_path, logger_func)
         else:
