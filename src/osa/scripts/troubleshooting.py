@@ -10,6 +10,7 @@ import troubleshooting_gainsel as handlers_gainsel
 import troubleshooting_catB as handlers_catB
 import troubleshooting_sequencer as handlers_sequencer
 import troubleshooting_utils as utils
+from osa.configs.config import cfg
 from osa.paths import DEFAULT_CFG
 from pathlib import Path
 
@@ -72,11 +73,11 @@ def display_job_batch(title, jobs, icon="✅"):
 #       CORE PROCESSING LOGIC
 # ---------------------------------------------------------
 
-def get_failed_slurm_jobs(start_date, end_date):
+def get_failed_slurm_jobs(start_date):
     """Fetches jobs from sacct and filters for non-success states."""
     cmd = [
         SACCT_CMD, '-X', f'--user={SLURM_USER}',
-        f'--starttime={start_date}', f'--endtime={end_date}',
+        f'--starttime={start_date}',# f'--endtime={end_date}',
         '--format=JobID,JobName,State', '--noconvert', '-n', '-P'
     ]
     try:
@@ -118,13 +119,11 @@ def run_handler_routing(category, job, start_date, end_date, relaunched_commands
 def process_jobs(start_date, end_date, more_days, no_show_processed):
     log_msg(f"INFO: Searching failures for {SLURM_USER} ({start_date} to {end_date})")
 
-    raw_failures = get_failed_slurm_jobs(start_date, end_date)
+    raw_failures = get_failed_slurm_jobs(end_date)
     grouped_jobs = defaultdict(list)
     processed_history = []
     skipped_history = []
     relaunched_commands = []
-
-    utils.run_command('osa-env')
 
     for job in raw_failures:
         # Check history first
