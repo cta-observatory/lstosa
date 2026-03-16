@@ -105,7 +105,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                     logger_func(f"   |__ ❌ DETECTED: {details['tag']}")
                     eid = details['error_id']
                     if eid == 2:
-                        handle_ecsv_type_update(job_id, review_path, logger_func, subruns_limit=20)
+                        handle_ecsv_type_update(job_id, review_path, logger_func, 20, start_date)
                     elif eid == 1 or eid == 3 or eid == 6:
                         handle_log_cleanup(job_id, log_path, error_path, logger_func)
                         success = utils.run_command(command)
@@ -113,7 +113,7 @@ def handle_error(job_id, job_name, state, log_path, error_path, command, logger_
                     elif eid == 4:
                         handle_ecsv_type_update(job_id, review_path, logger_func, start_date)
                     elif eid == 5:
-                        handle_pro_link(job_id, log_path, error_path, logger_func, start_date)
+                        handle_pro_link(job_id, log_path, error_path, logger_func, 0, start_date)
                     return None # Action taken
     except Exception as e:
         logger_func(f"   |__ ❌ EXCEPTION: {str(e)}")
