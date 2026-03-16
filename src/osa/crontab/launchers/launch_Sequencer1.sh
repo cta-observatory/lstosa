@@ -6,7 +6,11 @@
 # (CONDA_ENV); these three parameters are exported from osa-env.sh 
 # --------------------------------------------------------------------
 
-obsdate=$(date +\%Y\%m\%d -d yesterday)
+# Export parameters from osa-env.sh
+source /fefs/aswg/workspace/maria.rivero/lstosa/src/osa/crontab/osa-env.sh
+
+# Convert YYYY-MM-DD to YYYYMMDD
+obsdate=$(date -d "$OBS_DATE" +%Y%m%d)
 
 LOGDIR="${LSTN1}/OSA/Sequencer_log"
 LOGFILE="${LOGDIR}/${OBS_DATE}_1_LST1.log"
