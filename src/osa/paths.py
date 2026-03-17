@@ -387,24 +387,28 @@ def is_job_completed(job_id: str):
     return False
 
 
-def create_longterm_symlink():
+def create_longterm_symlink(cherenkov_job_id: str=None):
     """If the created longterm DL1 datacheck file corresponds to the latest 
     version available, make symlink to it in the "all" common directory."""
-    
-    nightdir = utils.date_to_dir(options.date)
-    longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR"))
-    output_dir = Path(cfg.get("LST1", "DATACHECK_DIR"))
-    
-    extensions = ["h5", "log", "html"]
-    
-    for ext in extensions:
-        linked_longterm_file = output_dir / f"night_wise/DL1_datacheck_{nightdir}.{ext}"
-        all_longterm_files = longterm_dir.rglob(f"v*/{nightdir}/DL1_datacheck_{nightdir}.{ext}")
-        latest_version_file = get_latest_version_file(all_longterm_files)
-        linked_longterm_file.unlink(missing_ok=True)
-        linked_longterm_file.symlink_to(latest_version_file)
 
+    if not cherenkov_job_id or is_job_completed(cherenkov_job_id):
+        nightdir = utils.date_to_dir(options.date)
+        longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR"))
+        output_dir = Path(cfg.get("LST1", "DATACHECK_DIR"))
+        
+        extensions = ["h5", "log", "html"]
+        
+        for ext in extensions:
+            linked_longterm_file = output_dir / f"night_wise/DL1_datacheck_{nightdir}.{ext}"
+            all_longterm_files = longterm_dir.rglob(f"v*/{nightdir}/DL1_datacheck_{nightdir}.{ext}")
+            latest_version_file = get_latest_version_file(all_longterm_files)
+            linked_longterm_file.unlink(missing_ok=True)
+            log.info("Creating symlink of the daily datacheck file in the common directory.")
+            linked_longterm_file.symlink_to(latest_version_file)
+    else:
+        log.warning(f"Job {cherenkov_job_id} (lstchain_cherenkov_transparency) did not finish successfully.")
 
+    
 def create_runwise_datacheck_symlinks():
     """Create symlinks of the run-wise datacheck files in the "datacheck" directory."""
     nightdir = utils.date_to_dir(options.date)
@@ -439,16 +443,13 @@ def create_muons_symlinks():
             output_file.symlink_to(input_file.resolve())
 
 
-def create_datacheck_symlinks(cherenkov_job_id: str=None):
-    """Once all steps of autocloser have finished successfully, create symlinks of the run-wise
-    and night-wise datacheck files, and of the muon files in the "datacheck" directory."""
-    if not cherenkov_job_id or is_job_completed(cherenkov_job_id):
-        log.info("Creating symlinks of the datacheck and muon files in the common directory.")
-        create_longterm_symlink()
-        create_runwise_datacheck_symlinks()
-        create_muons_symlinks()
-    else:
-        log.warning(f"Job {cherenkov_job_id} (lstchain_cherenkov_transparency) did not finish successfully.")
+def create_datacheck_symlinks():
+    """Create symlinks of the run-wise datacheck files, and of the muon 
+    files in the "datacheck" directory."""
+    
+    log.info("Creating symlinks of the datacheck and muon files in the common directory.")
+    create_runwise_datacheck_symlinks()
+    create_muons_symlinks()
 
 
 def dl1_datacheck_longterm_file_exits() -> bool:

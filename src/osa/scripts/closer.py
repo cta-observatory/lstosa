@@ -27,6 +27,7 @@ from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import (
     destination_dir,
     create_datacheck_symlinks,
+    create_longterm_symlink,
     dl1_datacheck_longterm_file_exits
 )
 from osa.raw import is_raw_data_available
@@ -161,7 +162,7 @@ def post_process(seq_tuple):
     
     if dl1_datacheck_longterm_file_exits() and not options.test:
         if cfg.getboolean("lstchain", "create_longterm_symlink"):
-            create_datacheck_symlinks()
+            create_longterm_symlink()
 
     else:
         # Close the sequences
@@ -184,10 +185,11 @@ def post_process(seq_tuple):
         # the longterm DL1 datacheck file with the cherenkov_transparency script.
         if cfg.getboolean("lstchain", "merge_dl1_datacheck"):
             list_job_id = merge_dl1_datacheck(seq_list)
+            create_datacheck_symlinks()
             longterm_job_id = daily_datacheck(daily_longterm_cmd(list_job_id))
             cherenkov_job_id = cherenkov_transparency(cherenkov_transparency_cmd(longterm_job_id))
             if cfg.getboolean("lstchain", "create_longterm_symlink"):
-                create_datacheck_symlinks(cherenkov_job_id)
+                create_longterm_symlink(cherenkov_job_id)
 
         time.sleep(600)
 
@@ -584,7 +586,7 @@ def merge_muon_files(sequence_list):
 def daily_longterm_cmd(parent_job_ids: List[str]) -> List[str]:
     """Build the daily longterm command."""
     nightdir = date_to_dir(options.date)
-    datacheck_dir = destination_dir("DATACHECK", create_dir=False, dl1_prod_id="tailcut*")
+    datacheck_dir = Path(cfg.get("LST1", "DATACHECK_DIR")) / nightdir
     muons_dir = destination_dir("MUON", create_dir=False)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR")) / options.prod_id / nightdir
     longterm_output_file = longterm_dir / f"DL1_datacheck_{nightdir}.h5"
