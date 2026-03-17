@@ -45,7 +45,8 @@ source "$CONDA_ENV"
 {
     gain_selection --check \
         -c "$CFG" \
-	-d "$OBS_DATE" 
+	-d "$OBS_DATE" \
+        "$@"
 
 } >> "$LOGFILE" 2>&1
 

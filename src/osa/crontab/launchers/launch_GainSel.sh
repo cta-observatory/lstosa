@@ -40,6 +40,7 @@ source "$CONDA_ENV"
         --no-queue-check \
         -c "$CFG" \
         -d "$OBS_DATE" \
-        -s 6 
+        -s 6 \
+        "$@"
 
 } >> "$LOGFILE" 2>&1

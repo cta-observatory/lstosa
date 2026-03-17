@@ -46,6 +46,8 @@ source "$CONDA_ENV"
 {
     sequencer_catB_tailcuts \
 	-c "$CFG" \
-	-d "$OBS_DATE" LST1
+	-d "$OBS_DATE" LST1 \
+        "$@"
+
 } >> "$LOGFILE" 2>&1
 

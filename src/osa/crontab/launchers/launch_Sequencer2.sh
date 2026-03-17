@@ -94,6 +94,6 @@ source "$CONDA_ENV"
 {
     sequencer \
 	-c "$CFG" \
-	-d "$OBS_DATE" LST1 
-
+	-d "$OBS_DATE" LST1 \
+        "$@"
 } >> "$LOGFILE" 2>&1
