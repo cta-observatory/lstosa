@@ -4,7 +4,12 @@
 # Copy the available calibration and DL1 datacheck to the LST1 webserver.
 # --------------------------------------------------------------------
 
-obsdate=$(date +\%Y\%m\%d -d yesterday)
+# Export parameters from osa-env.sh
+source /fefs/aswg/workspace/maria.rivero/lstosa/src/osa/crontab/osa-env.sh
+
+# Convert YYYY-MM-DD to YYYYMMDD
+obsdate=$(date -d "$OBS_DATE" +%Y%m%d)
+
 RA_DIR="${LSTN1}/running_analysis/${obsdate}"
 
 # -------------------------

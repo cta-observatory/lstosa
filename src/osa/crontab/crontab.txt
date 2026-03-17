@@ -2,6 +2,7 @@ SHELL=/usr/bin/bash
 BASH_ENV="/local/home/lstanalyzer/.bashrc"
 CRON_ENV="/local/home/lstanalyzer/osa-env.sh"
 CRON_TZ=UTC
+LAUNCHERS_DIR="/fefs/aswg/workspace/maria.rivero/lstosa/src/osa/crontab/launchers"
 # Update astropy auxiliary data (e.g. IERS) every week
 0 0 * * SUN source /fefs/aswg/lstosa/utils/osa-conda; python /fefs/aswg/data/aux/astropy/get_iers_data.py  > /dev/null 2>&1
 #
@@ -25,12 +26,12 @@ CRON_TZ=UTC
 # -------------------------------------------------------------------------------------------------------------------------
 # [GAIN SELECTION] Launch Gain Selection process 
 # -------------------------------------------------------------------------------------------------------------------------
-32 07-18 * * * . "$CRON_ENV"; /fefs/aswg/workspace/maria.rivero/crontabs/launchers/launch_GainSel.sh
+32 07-18 * * * $LAUNCHERS_DIR/launch_GainSel.sh
 #
 # -------------------------------------------------------------------------------------------------------------------------
 # [GAIN SELECTION CHECK & GAIN SEL WEB MAKER] Make gain selection check and xhtml table and copy it to the lst1 webserver
 # -------------------------------------------------------------------------------------------------------------------------
-00,15,30,45 08-19 * * * . "$CRON_ENV"; /fefs/aswg/workspace/maria.rivero/crontabs/launchers/launch_GainSelCheck.sh
+00,15,30,45 08-19 * * * $LAUNCHERS_DIR/launch_GainSelCheck.sh
 #
 # -------------------------------------------------------------------------------------------------------------------------
 # [SIMULATED SEQUENCER] Launch sequencer once in the morning simulated. It also produces the run summary file if not found.
@@ -40,32 +41,32 @@ CRON_TZ=UTC
 #  -------------------------------------------------------------------------------------------------------------------------
 # [SEQUENCER 1] Run only up to DL1A
 # -------------------------------------------------------------------------------------------------------------------------
-20,50 07-19 * * * . "$CRON_ENV"; /fefs/aswg/workspace/maria.rivero/crontabs/launchers/launch_Sequencer1.sh
+20,50 07-19 * * * $LAUNCHERS_DIR/launch_Sequencer1.sh
 #
 #  -------------------------------------------------------------------------------------------------------------------------
 # [SEQUENCER_CATB_TAILCUTS] Runs from DL1A, produces Cat-B calibration and tailcut files
 # -------------------------------------------------------------------------------------------------------------------------
-10,50 07-20 * * * . "$CRON_ENV"; /fefs/aswg/workspace/maria.rivero/crontabs/launchers/launch_SequencerCatB.sh
+10,50 07-20 * * * $LAUNCHERS_DIR/launch_SequencerCatB.sh
 #
 # -------------------------------------------------------------------------------------------------------------------------
 # [SEQUENCER 2] Finishes the processing producing DL1AB and DL2
 # -------------------------------------------------------------------------------------------------------------------------
-59,30 08-20 * * * . "$CRON_ENV"; /fefs/aswg/workspace/maria.rivero/crontabs/launchers/launch_Sequencer2.sh
+59,30 08-20 * * * $LAUNCHERS_DIR/launch_Sequencer2.sh
 #
 # -------------------------------------------------------------------------------------------------------------------------
 # [SEQUENCER WEB] Make sequencer xhtml table and copy it to the lst1 webserver
 # -------------------------------------------------------------------------------------------------------------------------
-*/20 07-22 * * * . "$CRON_ENV"; /fefs/aswg/workspace/maria.rivero/crontabs/launchers/launch_SequencerWeb.sh
+*/20 07-22 * * * $LAUNCHERS_DIR/launch_SequencerWeb.sh
 #
 # -------------------------------------------------------------------------------------------------------------------------
 # [AUTOCLOSER] Launch the closer without forcing it (no -f option).
 # -------------------------------------------------------------------------------------------------------------------------
-25,55 9-23 * * * . "$CRON_ENV"; /fefs/aswg/workspace/maria.rivero/crontabs/launchers/launch_Autocloser.sh
+25,55 9-23 * * * $LAUNCHERS_DIR/launch_Autocloser.sh
 #
 # -------------------------------------------------------------------------------------------------------------------------
 # [COPY DATACHECK] Copy the available calibration and DL1 datacheck to the LST1 webserver.
 # -------------------------------------------------------------------------------------------------------------------------
-05,25,45 07-23 * * * . "$CRON_ENV"; /fefs/aswg/workspace/maria.rivero/crontabs/launchers/launch_Datacheck.sh
+05,25,45 07-23 * * * $LAUNCHERS_DIR/launch_Datacheck.sh
 #
 # -------------------------------------------------------------------------------------------------------------------------
 # [SOURCE CATALOG]

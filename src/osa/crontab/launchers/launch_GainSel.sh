@@ -8,7 +8,11 @@
 # and Gain Selection register is saved in {OBS_DATE}_LST1.log
 # --------------------------------------------------------------------
 
-obsdate=$(date +\%Y\%m\%d -d yesterday)
+# Export parameters from osa-env.sh
+source /fefs/aswg/workspace/maria.rivero/lstosa/src/osa/crontab/osa-env.sh
+
+# Convert YYYY-MM-DD to YYYYMMDD
+obsdate=$(date -d "$OBS_DATE" +%Y%m%d)
 
 LOGDIR="${LSTN1}/OSA/GainSel_log"
 WORKDIR="${LSTN1}/OSA/GainSel/${obsdate}"
@@ -36,6 +40,7 @@ source "$CONDA_ENV"
         --no-queue-check \
         -c "$CFG" \
         -d "$OBS_DATE" \
-        -s 6 
+        -s 6 \
+        "$@"
 
 } >> "$LOGFILE" 2>&1

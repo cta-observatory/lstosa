@@ -10,7 +10,11 @@
 # Make gain selection xhtml table and copy it to the lst1 webserver.
 # --------------------------------------------------------------------
 
-obsdate=$(date +\%Y\%m\%d -d yesterday)
+# Export parameters from osa-env.sh
+source /fefs/aswg/workspace/maria.rivero/lstosa/src/osa/crontab/osa-env.sh
+
+# Convert YYYY-MM-DD to YYYYMMDD
+obsdate=$(date -d "$OBS_DATE" +%Y%m%d)
 
 WORKDIR="${LSTN1}/OSA/GainSel/${obsdate}"
 FLAG_FILE="${WORKDIR}/GainSelFinished.txt"
@@ -41,7 +45,8 @@ source "$CONDA_ENV"
 {
     gain_selection --check \
         -c "$CFG" \
-	-d "$OBS_DATE" 
+	-d "$OBS_DATE" \
+        "$@"
 
 } >> "$LOGFILE" 2>&1
 
