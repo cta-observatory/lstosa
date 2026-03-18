@@ -237,10 +237,7 @@ def run_command(command_str):
     try:
         # 1. Remove shell-specific operators (like ; or &)
         # that are incompatible with shell=False
-        if command_str == 'ose_env':
-            clean_command = command_str
-        else:
-            clean_command = command_str.replace("osa_env;", "").replace("osa_env &", "").strip()
+        clean_command = command_str.replace("osa_env;", "").replace("osa_env &", "").strip()
         # 2. Convert string to list by splitting on whitespace
         # "sbatch --mem=20G script.sh" -> ["sbatch", "--mem=20G", "script.sh"]
         command_args = [arg for arg in clean_command.split(" ") if arg]
