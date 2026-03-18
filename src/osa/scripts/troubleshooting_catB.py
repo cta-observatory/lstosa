@@ -3,7 +3,7 @@ import re
 import troubleshooting_utils as utils
 from osa.configs.config import cfg
 from pathlib import Path
-from osa.utils import osa_utils
+from osa.utils import utils as osa_utils
 
 # --- KNOWN ERROR DICTIONARY ---
 KNOWN_ERRORS = {
