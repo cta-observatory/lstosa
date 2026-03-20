@@ -9,7 +9,8 @@ import click
 from osa.utils.logging import myLogger
 
 ANALYSIS_PATH = Path("/fefs/aswg/data/real")
-LONGTERM_PATH = ANALYSIS_PATH / "OSA/DL1DataCheck_LongTerm"
+DATACHECK_PATH = ANALYSIS_PATH / "DL1/datacheck_files"
+LONGTERM_PATH = DATACHECK_PATH / "night_wise"
 
 
 log = myLogger(logging.getLogger())
@@ -30,7 +31,7 @@ def run_longterm(date: str, prod_id: str, new_prod_id: str, log_dir: Path):
     log_dir : Path
         Path to the directory where job logs will be stored.
     """
-    dl1_dir = ANALYSIS_PATH / "DL1" / date / prod_id / "tailcut*" / "datacheck"
+    dl1_dir = DATACHECK_PATH / date
     muons_dir = ANALYSIS_PATH / "DL1" / date / prod_id / "muons"
     new_longterm_dir = LONGTERM_PATH / new_prod_id / date
     longterm_output_file = new_longterm_dir / f"DL1_datacheck_{date}.h5"
