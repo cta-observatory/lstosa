@@ -1,4 +1,3 @@
-## README - Launchers
 
 The launcher framework was introduced to reduce the computational load
 caused by processes running continuously without interruption.
