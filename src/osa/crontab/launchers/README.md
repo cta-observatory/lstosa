@@ -8,7 +8,7 @@ Currently, there are 8 launchers:
 - Executes Gain Selection  
 - Stops when the flag `GainSelFinished` exists  
 
-1. `launch_GainSelCheck`
+2. `launch_GainSelCheck`
 
 - Launches:
   
@@ -19,36 +19,36 @@ Currently, there are 8 launchers:
 
 Both of them are planned for removal when no longer GainSel.
 
-1. `launch_Sequencer1`
+3. `launch_Sequencer1`
 
 - Starts DL1a production
 - Runs only when `GainSelFinished` flag exists  
 
 Future option: trigger when the first `gainselection*.closed` file exists.
 
-1. `launch_sequencerCatB`
+4. `launch_sequencerCatB`
 
 - Launches `sequencer_catb_tailcuts`  
 - Starts when the date directory is created in running_analysis
 
-1. `launch_Sequencer2`
+5. `launch_Sequencer2`
 
 - Starts DL1ab production using the first config file  
 - Includes an alternative condition (commented out, fallback option)  
 
-1. `launch_SequencerWeb`
+6. `launch_SequencerWeb`
 
 - Launches web Sequencer 1 and 2  
 - Requires `GainSelFinished` flag  
 
-1. `launch_autocloser`
+7. `launch_autocloser`
 
 - Responsible for closing the night  
 - Executes only when a `tailcut` directory exists in running_analysis
 
 Sequencer and autocloser stop execution once `NightFinished.txt` exists.
 
-1. `launch_Datacheck`
+8. `launch_Datacheck`
 
 - Executes `copy_datacheck` for DL1 files  
 - Starts when the date directory exists in running_analysis
