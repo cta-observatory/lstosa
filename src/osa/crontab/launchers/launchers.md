@@ -1,4 +1,3 @@
-
 # Launchers
 
 Currently, there are 8 launchers:
