@@ -1,4 +1,4 @@
-# Launchers
+# Launcher Framework
 
 The launcher framework was introduced to reduce the computational load
 caused by processes running continuously without interruption.
@@ -25,7 +25,7 @@ Currently, there are 8 launchers:
 
 Both of them are planned for removal when no longer GainSel.
 
----
+
 
 ### 3. `launch_Sequencer1`
 
@@ -34,28 +34,20 @@ Both of them are planned for removal when no longer GainSel.
 
 Future option: trigger when the first `gainselection*.closed` file exists.
 
----
-
 ### 4. `launch_sequencerCatB`
 
 - Launches `sequencer_catb_tailcuts`  
 - Starts when the date directory is created in running_analysis
-
----
 
 ### 5. `launch_Sequencer2`
 
 - Starts DL1ab production using the first config file  
 - Includes an alternative condition (commented out, fallback option)  
 
----
-
 ### 6. `launch_SequencerWeb`
 
 - Launches web Sequencer 1 and 2  
 - Requires `GainSelFinished` flag  
-
----
 
 ### 7. `launch_autocloser`
 
@@ -63,8 +55,6 @@ Future option: trigger when the first `gainselection*.closed` file exists.
 - Executes only when a `tailcut` directory exists in running_analysis
 
 Sequencer and autocloser stop execution once `NightFinished.txt` exists.
-
----
 
 ### 8. `launch_Datacheck`
 
