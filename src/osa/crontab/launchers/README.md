@@ -1,8 +1,5 @@
 
-The launcher framework was introduced to reduce the computational load
-caused by processes running continuously without interruption.
-
-## Launchers
+# Launchers
 
 Currently, there are 8 launchers:
 
