@@ -1,4 +1,4 @@
-# Launcher Framework – README
+# Launcher Framework
 
 The launcher framework was introduced to reduce the computational load
 caused by processes running continuously without interruption.
@@ -20,7 +20,7 @@ Currently, there are 8 launchers:
   
   - Gain Selection Check  
   - Web interface
-      
+
 - Stops when the flag `GainSelFinished` exists  
 
 Both of them are planned for removal when no longer GainSel.
