@@ -1,4 +1,4 @@
-Launcher Framework – README
+
 # Launchers
 
 Currently, there are 8 launchers:
