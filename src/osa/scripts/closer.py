@@ -185,7 +185,7 @@ def post_process(seq_tuple):
         # the longterm DL1 datacheck file with the cherenkov_transparency script.
         if cfg.getboolean("lstchain", "merge_dl1_datacheck"):
             list_job_id = merge_dl1_datacheck(seq_list)
-            create_datacheck_symlinks()
+            create_datacheck_symlinks(list_job_id)
             longterm_job_id = daily_datacheck(daily_longterm_cmd(list_job_id))
             cherenkov_job_id = cherenkov_transparency(cherenkov_transparency_cmd(longterm_job_id))
             if cfg.getboolean("lstchain", "create_longterm_symlink"):
