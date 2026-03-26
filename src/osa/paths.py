@@ -409,7 +409,7 @@ def create_longterm_symlink(cherenkov_job_id: str=None):
         log.warning(f"Job {cherenkov_job_id} (lstchain_cherenkov_transparency) did not finish successfully.")
 
     
-def create_runwise_datacheck_symlinks():
+def create_runwise_datacheck_symlinks(parent_job_ids: List[str]):
     """Create symlinks of the run-wise datacheck files in the "datacheck" directory."""
     nightdir = utils.date_to_dir(options.date)
     dl1_dir = Path(cfg.get("LST1", "DL1_DIR")) / nightdir / options.prod_id
@@ -421,11 +421,24 @@ def create_runwise_datacheck_symlinks():
         "tailcut*/datacheck/datacheck_dl1_LST-1.Run?????.h5",
     ]
 
+    commands = []
     for pattern in patterns:
         for input_file in dl1_dir.rglob(pattern):
             output_file = output_dir / input_file.name
             if not output_file.is_symlink():
-                output_file.symlink_to(input_file.resolve())
+                commands.append(f'ln -s "$(realpath {input_file})" {output_file}')
+
+    if commands:
+        full_cmd = "\n".join(commands)
+
+        sbatch_cmd = [
+            "sbatch",
+            f"--dependency=afterok:{','.join(parent_job_ids)}",
+            "--wrap",
+            full_cmd,
+        ]
+
+        subprocess.run(sbatch_cmd, check=True)
 
 
 def create_muons_symlinks():
@@ -443,12 +456,12 @@ def create_muons_symlinks():
             output_file.symlink_to(input_file.resolve())
 
 
-def create_datacheck_symlinks():
+def create_datacheck_symlinks(parent_job_ids: List[str]):
     """Create symlinks of the run-wise datacheck files, and of the muon 
     files in the "datacheck" directory."""
     
     log.info("Creating symlinks of the datacheck and muon files in the common directory.")
-    create_runwise_datacheck_symlinks()
+    create_runwise_datacheck_symlinks(parent_job_ids)
     create_muons_symlinks()
 
 
