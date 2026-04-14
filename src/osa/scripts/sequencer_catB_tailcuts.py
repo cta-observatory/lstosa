@@ -1,3 +1,8 @@
+"""
+Orchestrator script that submits run-wise SLURM jobs to produce Cat-B calibration
+and tailcuts configs once the DL1A step has finished.
+"""
+
 import glob
 import re
 import argparse
@@ -8,16 +13,14 @@ import subprocess as sp
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.nightsummary.extract import get_last_pedcalib
 from osa.utils.cliopts import valid_date, set_default_date_if_needed
 from osa.utils.logging import myLogger
+from osa.utils.utils import date_to_dir, date_to_iso
 from osa.job import run_sacct, get_sacct_output
-from osa.utils.utils import date_to_dir, get_calib_filters, get_lstchain_version
 from osa.paths import (
     catB_closed_file_exists,
     catB_calibration_file_exists,
     analysis_path,
-    get_major_version
 )
 
 log = myLogger(logging.getLogger())
@@ -68,6 +71,94 @@ parser.add_argument(
     help="telescope identifier LST1, LST2, ST or all.",
 )
 
+def tailcuts_config_file_exists(run_id: int) -> bool:
+    """Check if the config file created by the tailcuts finder script already exists."""
+    tailcuts_config_file = Path(cfg.get(options.tel_id, "TAILCUTS_FINDER_DIR")) / f"dl1ab_Run{run_id:05d}.json"
+    return tailcuts_config_file.exists()
+
+
+def pilot_job_is_active(run_id: int) -> bool:
+    """
+    Return True if the last submitted pilot job for this run is still RUNNING/PENDING.
+    This avoids resubmitting the same work if the cron runs again.
+    """
+    jobid_path = Path(options.directory) / "log" / f"catb_tailcuts_{options.tel_id}_{run_id:05d}.jobid"
+    if not jobid_path.exists():
+        return False
+
+    job_id = jobid_path.read_text().strip()
+    if not job_id:
+        return False
+
+    state_series = get_sacct_output(run_sacct(job_id=job_id))["State"]
+    state = str(state_series.iloc[0])
+    return state in ("RUNNING", "PENDING")
+
+
+def write_pilot_script(run_id: int) -> Path:
+    """
+    Create a pilot script analogous to sequencer's pilots:
+    a python file with #SBATCH header that just calls a worker script.
+    """
+    log_dir = Path(options.directory) / "log"
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    job_name = f"{options.tel_id}_catB_tailcuts_{run_id:05d}"
+    account = cfg.get("SLURM", "ACCOUNT")
+
+    # Worker will run the actual commands (no sbatch inside)
+    worker_argv = [
+        "catb_tailcuts_pipeline",
+        f"--date={date_to_iso(options.date)}",
+    ]
+
+    if options.verbose:
+        worker_argv.append("--verbose")
+    if options.simulate:
+        worker_argv.append("--simulate")
+    if options.configfile:
+        worker_argv.extend(["--config", str(Path(options.configfile).resolve())])
+    if options.overwrite_catB:
+        worker_argv.append("--overwrite-catB")
+    if options.overwrite_tailcuts:
+        worker_argv.append("--overwrite-tailcuts")
+
+    # Positional args at the end (like datasequence)
+    worker_argv.append(f"{run_id:d}")
+    worker_argv.append(f"{options.tel_id}")
+
+    content = ""
+    content += "#!/usr/bin/env python\n\n"
+    content += f"#SBATCH --job-name={job_name}\n"
+    content += f"#SBATCH --chdir={options.directory}\n"
+    content += f"#SBATCH --output=log/{job_name}_%j.out\n"
+    content += f"#SBATCH --error=log/{job_name}_%j.err\n"
+    content += f"#SBATCH --account={account}\n\n"
+    content += "import subprocess\n"
+    content += "import sys\n\n"
+
+    content += "proc = subprocess.run([\n"
+    for arg in worker_argv:
+        content += f"    {arg!r},\n"
+    content += "])\n"
+    content += "sys.exit(proc.returncode)\n"
+
+    path = Path(options.directory) / f"sequence_{options.tel_id}_{run_id:05d}_catb_tailcuts.py"
+    path.write_text(content)
+    return path
+
+
+def submit_pilot_script(run_id: int) -> None:
+    script = write_pilot_script(run_id)
+    if options.simulate:
+        log.info(f"Simulate: would submit {script}")
+        return
+    out = sp.check_output(["sbatch", "--parsable", str(script)], universal_newlines=True, shell=False).split()[0]
+    jobid_path = Path(options.directory) / "log" / f"catb_tailcuts_{options.tel_id}_{run_id:05d}.jobid"
+    jobid_path.write_text(out + "\n")
+    log.info(f"Submitted {script.name}: jobid {out}")
+
+
 def are_all_history_files_created(run_id: int) -> bool:
     """Check if all the history files (one per subrun) were created for a given run."""
     run_summary_dir = Path(cfg.get(options.tel_id, "RUN_SUMMARY_DIR"))
@@ -110,115 +201,6 @@ def get_catB_last_job_id(run_id: int) -> int:
         return job_id
 
 
-def launch_catB_calibration(run_id: int):
-    """
-    Launch the Cat-B calibration script for a given run if the Cat-B calibration 
-    file has not been created yet. If the Cat-B calibration script was launched
-    before and it finished successfully, it creates a catB_{run}.closed file.
-    """
-    job_id = get_catB_last_job_id(run_id)
-    if job_id and not options.overwrite_catB:
-        job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
-        if job_status.item() in ["RUNNING", "PENDING"]:
-            log.debug(f"Job {job_id} (corresponding to run {run_id:05d}) is still running.")
-
-        elif job_status.item() == "COMPLETED":
-            catB_closed_file = Path(options.directory) / f"catB_{run_id:05d}.closed"
-            catB_closed_file.touch()
-            log.debug(
-                f"Cat-B job {job_id} (corresponding to run {run_id:05d}) finished "
-                f"successfully. Creating file {catB_closed_file}"
-            )
-
-        else: 
-            log.warning(f"Cat-B job {job_id} (corresponding to run {run_id:05d}) failed.")
-
-    else:
-        if catB_calibration_file_exists(run_id):
-            if not options.overwrite_catB:
-                log.info(f"Cat-B calibration file already produced for run {run_id:05d}.")
-                return 
-            else:
-                log.info(f"Cat-B calibration file already produced for run {run_id:05d}. Overwriting it.")
-
-        command = cfg.get("lstchain", "catB_calibration")
-        if cfg.getboolean("lstchain", "use_lstcam_env_for_CatB_calib"):
-            env_command = f"conda run -n lstcam-env {command}"
-        else:
-            env_command = command
-        options.filters = get_calib_filters(run_id) 
-        base_dir = Path(cfg.get(options.tel_id, "BASE")).resolve()
-        r0_dir = Path(cfg.get(options.tel_id, "R0_DIR")).resolve()
-        log_dir = Path(options.directory) / "log"
-        catA_calib_run = get_last_pedcalib(options.date)
-        slurm_account = cfg.get("SLURM", "ACCOUNT")
-        lstchain_version = get_major_version(get_lstchain_version())
-        analysis_dir = cfg.get("LST1", "ANALYSIS_DIR")
-        cmd = ["sbatch", f"--account={slurm_account}", "--parsable",
-            "-o", f"{log_dir}/catB_calibration_{run_id:05d}_%j.out",
-            "-e", f"{log_dir}/catB_calibration_{run_id:05d}_%j.err",
-            env_command,
-            f"-r {run_id:05d}",
-            f"--catA_calibration_run={catA_calib_run}",
-            "-b", base_dir,
-            f"--r0-dir={r0_dir}",
-            f"--filters={options.filters}",
-        ]
-        
-        if command=="onsite_create_cat_B_calibration_file":
-            cmd.append(f"--interleaved-dir={analysis_dir}")
-        elif command=="lstcam_calib_onsite_create_cat_B_calibration_file":
-            cmd.append(f"--dl1-dir={analysis_dir}")
-            cmd.append(f"--lstchain-version={lstchain_version[1:]}")
-
-        if options.overwrite_catB:
-            cmd.append("--yes")
-
-        if not options.simulate:
-            job = sp.run(cmd, encoding="utf-8", capture_output=True, text=True, check=True)
-            job_id = job.stdout.strip()
-            log.debug(f"Launched Cat-B calibration job {job_id} for run {run_id}!")
-
-        else: 
-            log.info(f"Simulate launching of the {command} script.")
-            
-
-def launch_tailcuts_finder(run_id: int):
-    """
-    Launch the lstchain script to calculate the correct
-    tailcuts to use for a given run. 
-    """
-    command = cfg.get("lstchain", "tailcuts_finder")
-    slurm_account = cfg.get("SLURM", "ACCOUNT")
-    input_dir = Path(options.directory)
-    output_dir = Path(cfg.get(options.tel_id, "TAILCUTS_FINDER_DIR"))
-    log_dir = Path(options.directory) / "log"
-    log_file = log_dir / f"tailcuts_finder_{run_id:05d}_%j.log"
-    cmd = [
-        "sbatch", "--parsable",
-        f"--account={slurm_account}",
-        "-o", log_file,
-        command,
-        f"--input-dir={input_dir}",
-        f"--run={run_id}",
-        f"--output-dir={output_dir}",
-    ]
-    if not options.simulate:
-        job = sp.run(cmd, encoding="utf-8", capture_output=True, text=True, check=True)
-        job_id = job.stdout.strip()
-        log.debug(f"Launched lstchain_find_tailcuts job {job_id} for run {run_id}!")
-
-    else: 
-        log.info(f"Simulate launching of the {command} script.")
-
-
-
-def tailcuts_config_file_exists(run_id: int) -> bool:
-    """Check if the config file created by the tailcuts finder script already exists."""
-    tailcuts_config_file = Path(cfg.get(options.tel_id, "TAILCUTS_FINDER_DIR")) / f"dl1ab_Run{run_id:05d}.json"
-    return tailcuts_config_file.exists()
-    
-        
 def main():
     """
     Main script to be called as cron job. It launches the Cat-B calibration script 
@@ -248,16 +230,24 @@ def main():
         if not r0_to_dl1_step_finished_for_run(run_id):
             log.info(f"The r0_to_dl1 step did not finish yet for run {run_id:05d}. Please try again later.")
         else:
-            # launch catB calibration and tailcut finder in parallel
-            if cfg.getboolean("lstchain", "apply_catB_calibration") and not catB_closed_file_exists(run_id):
-                launch_catB_calibration(run_id)
-            if not cfg.getboolean("lstchain", "apply_standard_dl1b_config"):
-                if tailcuts_config_file_exists(run_id) and not options.overwrite_tailcuts:
-                    log.debug(
-                        f"Tailcuts config file already exists for run {run_id:05d}. Use --overwrite-tailcuts to overwrite it."
-                    )
-                else:
-                    launch_tailcuts_finder(run_id)
+            # Avoid duplicate submissions if last pilot is still active
+            if pilot_job_is_active(run_id):
+                log.info(f"Pilot job already running/pending for run {run_id:05d}, skipping resubmission.")
+                continue
+
+            # If there is something to do (catB and/or tailcuts), submit a pilot script.
+            # The worker will do the actual processing.
+            need_catb = cfg.getboolean("lstchain", "apply_catB_calibration") and (
+                options.overwrite_catB or (not catB_closed_file_exists(run_id) and not catB_calibration_file_exists(run_id))
+            )
+            need_tailcuts = (not cfg.getboolean("lstchain", "apply_standard_dl1b_config")) and (
+                options.overwrite_tailcuts or (not tailcuts_config_file_exists(run_id))
+            )
+
+            if need_catb or need_tailcuts:
+                submit_pilot_script(run_id)
+            else:
+                log.debug(f"Nothing to do for run {run_id:05d} (CatB/tailcuts already done).")
 
 
 if __name__ == "__main__":
