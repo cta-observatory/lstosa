@@ -42,12 +42,13 @@ def test_preparejobs(running_analysis_dir, sequence_list):
 
     options.simulate = False
     options.test = True
+    options.no_dl1ab = False
     options.directory = running_analysis_dir
     prepare_jobs(sequence_list)
     expected_calib_script = os.path.join(running_analysis_dir, "sequence_LST1_01809.py")
-    expected_data_script = os.path.join(running_analysis_dir, "sequence_LST1_01807.py")
+    expected_data_script_dl1b = os.path.join(running_analysis_dir, "sequence_LST1_01807_dl1b.py")
     assert os.path.isfile(os.path.abspath(expected_calib_script))
-    assert os.path.isfile(os.path.abspath(expected_data_script))
+    assert os.path.isfile(os.path.abspath(expected_data_script_dl1b))
 
 
 def test_sequence_filenames(running_analysis_dir, sequence_list):
