@@ -600,7 +600,42 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     job_list = []
     no_display_backend = "--export=ALL,MPLBACKEND=Agg"
 
+    parent_jobid = None
     for sequence in sequence_list:
+        # Sequencer 1
+        if options.no_dl1ab:
+            if (
+                sequence.action == "NoGSel"
+                    or sequence.state in {"PENDING", "RUNNING", "COMPLETED"}
+            ):
+                log.debug(
+                    "Skipping sequence %s (type=%s, state=%s, action=%s)",
+                    sequence.run,
+                    sequence.type,
+                    sequence.state,
+                    sequence.action
+                )
+                continue
+
+        # Sequencer 2
+        else:
+            if sequence.type == "DATA":
+
+                if cfg.getboolean("lstchain", "apply_catB_calibration") and sequence.catbstatus != "CLOSED":
+                    log.debug(f"Skipping sequence {sequence.run} (catbstatus={sequence.catbstatus})")
+                    continue
+
+                if sequence.state in {"PENDING", "RUNNING"}:
+                    log.debug(f"Skipping sequence {sequence.run} (state={sequence.state})")
+                    continue
+
+                if (sequence.state == "COMPLETED" and int(sequence.dl1abstatus) > 0):
+                    log.debug(f"Skipping sequence {sequence.run} (state={sequence.state}")
+                    continue
+
+            else:
+                continue
+
         commandargs = [batch_command, "--parsable", no_display_backend]
         if sequence.type == "PEDCALIB":
             commandargs.append(str(sequence.script))
@@ -625,8 +660,10 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
         if sequence.type == "DATA":
             if not options.simulate and not options.no_calib and not options.test:
                 log.debug("Adding dependencies to job submission")
-                depend_string = f"--dependency=afterok:{parent_jobid}"
-                commandargs.append(depend_string)
+
+                if parent_jobid:
+                    depend_string = f"--dependency=afterok:{parent_jobid}"
+                    commandargs.append(depend_string)
 
             commandargs.append(sequence.script)
 
@@ -811,7 +848,10 @@ def set_queue_values(
     for sequence in sequence_list:
         df_jobname = job_info_filtered[job_info_filtered["JobName"] == sequence.jobname]
         sequence.tries = df_jobname["JobID"].nunique()
-        sequence.action = "Check"
+
+        # Only set to "Check" if no action is already set
+        if sequence.action is None:
+            sequence.action = "Check"
 
         if not df_jobname.empty:
             sequence.jobid = df_jobname["JobID"].max()  # Get latest JobID
