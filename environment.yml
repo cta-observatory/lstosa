@@ -4,7 +4,7 @@ channels:
 dependencies:
   # core dependencies
   - python=3.11
-  - numpy
+  - numpy>=1.23,<2.0
   - pip
   - astropy>=6.1,<8
   - ctapipe>=0.25.0

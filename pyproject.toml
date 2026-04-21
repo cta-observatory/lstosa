@@ -35,7 +35,7 @@ dependencies = [
     "astropy>=6.1,<8",
     "lstchain>=0.11.0",
     "matplotlib",
-    "numpy",
+    "numpy>=1.23,<2.0",
     "pandas",
     "pyyaml",
     "prov",
@@ -62,6 +62,7 @@ closer = "osa.scripts.closer:main"
 autocloser = "osa.scripts.autocloser:main"
 copy_datacheck = "osa.scripts.copy_datacheck:main"
 datasequence = "osa.scripts.datasequence:main"
+catb_tailcuts_pipeline = "osa.scripts.catb_tailcuts_pipeline:main"
 sequencer_webmaker = "osa.scripts.sequencer_webmaker:main"
 show_run_summary = "osa.scripts.show_run_summary:main"
 show_run_summary_tcu = "osa.scripts.show_run_summary_tcu:main"
