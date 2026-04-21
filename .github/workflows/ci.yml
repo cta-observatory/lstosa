@@ -88,5 +88,5 @@ jobs:
           cat coverage.xml
 
       - name: Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         if: contains(matrix.extra-args, 'codecov')
