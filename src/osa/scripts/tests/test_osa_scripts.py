@@ -25,7 +25,9 @@ ALL_SCRIPTS = [
     "source_coordinates",
     "sequencer_webmaker",
     "gainsel_webmaker",
+    "organize",
 ]
+
 
 options.date = datetime.datetime.fromisoformat("2020-01-17")
 options.tel_id = "LST1"
@@ -477,3 +479,25 @@ def test_gainsel_web_content():
     table = check_failed_jobs(options.date)
     assert table["GainSelStatus"][0] == "NOT STARTED"
     assert table["GainSel%"][0] == 0.0
+
+def test_organize_simulate(tmp_path):
+    cfg = tmp_path / "test.cfg"
+
+    cfg.write_text(f"""
+[LST1]
+BASE = {tmp_path}
+ANALYSIS_DIR = %(BASE)s/analysis
+OSA_DIR = %(BASE)s/osa
+""")
+
+    rc = run_program(
+        "organize",
+        "-c", str(cfg),
+        "-d", "2025-01-01",
+        "-s",
+        "--no-gainsel",
+        "--no-running",
+    )
+
+    assert rc.returncode == 0
+
