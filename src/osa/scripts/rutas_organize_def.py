@@ -135,7 +135,6 @@ def compress_gainsel(path, simulate):
     if not path.exists():
         print("[GAINSEL] Path not found")
         return
-
     check_logs = list(path.glob("*check*.log"))
     normal_logs = [f for f in path.glob("*.log") if "check" not in f.name]
 
