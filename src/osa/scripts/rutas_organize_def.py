@@ -5,8 +5,7 @@ import configparser
 import datetime
 
 def clean_path(raw_path, base):
-    """
-    Limpia rutas del cfg.
+    """Limpia rutas del cfg.
 	
     - Si contiene %(BASE)s → lo sustituye manualmente
     - Si hay algo antes del primer / → la elimina
