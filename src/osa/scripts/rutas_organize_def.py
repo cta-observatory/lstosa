@@ -14,7 +14,6 @@ def clean_path(raw_path, base):
     # Quedarse desde el primer /
     if "/" in raw_path:
         raw_path = raw_path[raw_path.find("/"):]
-    
     return pathlib.Path(raw_path)
 
 
