@@ -217,7 +217,7 @@ def main():
         if not day_path.exists():
             print(f"❌ Day not found: {args.date}")
         else:
-            print(f"\n🔹 Running Analysis")
+            print("\n🔹 Running Analysis")
             print(f"Selected: {day_path}")
 
             version_path = find_version_folder(day_path)
