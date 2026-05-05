@@ -10,10 +10,6 @@ def clean_path(raw_path, base):
     # Sustituir %(BASE)s manualmente
     if "%(BASE)s" in raw_path:
         raw_path = raw_path.replace("%(BASE)s", base)
-
-    # Quedarse desde el primer /
-    if "/" in raw_path:
-        raw_path = raw_path[raw_path.find("/"):]
     return pathlib.Path(raw_path)
 
 
