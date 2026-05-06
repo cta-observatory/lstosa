@@ -1,8 +1,9 @@
 #!/usr/bin/bash
 #SBATCH --job-name=organize
 #SBATCH --time=02:00:00
-#SBATCH --output=/fefs/onsite/data/lst-pipe/LSTN-01/OSA/Organize/log/slurm-%j.out
-#SBATCH --error=/fefs/onsite/data/lst-pipe/LSTN-01/OSA/Organize/log/slurm-%j.err
+#SBATCH --chdir=/fefs/onsite/data/lst-pipe/LSTN-01/OSA/Organize
+#SBATCH --output=log/slurm-%j.out
+#SBATCH --error=log/slurm-%j.err
 
 
 #OBS_DATE=2020-01-17 example
