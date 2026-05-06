@@ -61,7 +61,7 @@ source "$CONDA_ENV"
 # -------------------------
 # Run Python script
 # -------------------------
-python /fefs/aswg/workspace/manuel.martinezherresanchez/lstosa/src/osa/scripts/rutas_organize_def.py \
+python /fefs/aswg/workspace/manuel.martinezherresanchez/lstosa/src/osa/scripts/organize_def.py \
     -c "$CFG" \
     -d "$obsdate" \
     "$@"
