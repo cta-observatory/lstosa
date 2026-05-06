@@ -23,17 +23,14 @@ exists() {
 # -------------------------
 # Check NightFinished.txt
 # -------------------------
-if ! exists "/fefs/aswg/workspace/manuel.martinezherresanchez/lstosa/test_osa/test_files0/OSA/Closer/${obsdate}/v*/NightFinished.txt" ; then
+if ! exists "${LSTN1}/OSA/Closer/${obsdate}/v*/NightFinished.txt" ; then
     exit
 fi
 
-#/fefs/aswg/workspace/manuel.martinezherresanchez/lstosa/test_osa/test_files0/
-#${LSTN1}/OSA/Closer/
 
 # -------------------------
 # DONE FILE (STOP FUTURE RUNS)
 # -------------------------
-# Aqui esto tengo que cambiarlo hay que ver donde se mete esto, ademas de que ese directorio no existe
 DONE_FILE="${LSTN1}/OSA/Organize/${obsdate}/DONE.txt"
 
 if [ -f "$DONE_FILE" ]; then
