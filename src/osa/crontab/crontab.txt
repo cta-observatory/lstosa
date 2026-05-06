@@ -99,4 +99,4 @@ LAUNCHERS_DIR="/fefs/aswg/workspace/maria.rivero/lstosa/src/osa/crontab/launcher
 # -------------------------------------------------------------------------------------------------------------------------
 # [ORGANIZE SLURM JOBS]
 # -------------------------------------------------------------------------------------------------------------------------
-* * * * * /fefs/aswg/workspace/manuel.martinezherresanchez/lstosa/src/osa/crontab/launchers/organizeslurm.sh > /dev/null 2>&1
+* * * * * /fefs/aswg/lstosa/src/osa/crontab/launchers/organizeslurm.sh > /dev/null 2>&1
