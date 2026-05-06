@@ -3,7 +3,7 @@
 # -------------------------
 # Load environment
 # -------------------------
-source /fefs/aswg/workspace/manuel.martinezherresanchez/lstosa/osa-env.sh
+source /local/home/lstanalyzer/osa-env.sh"
 
 # If OBS_DATE not set, use yesterday
 if [ -z "$OBS_DATE" ]; then
