@@ -96,3 +96,7 @@ LAUNCHERS_DIR="/fefs/aswg/workspace/maria.rivero/lstosa/src/osa/crontab/launcher
 # Restart camera processing of calibration runs in realtime in case it was killed for whatever reason
 # -------------------------------------------------------------------------------------------------------------------------
 04 * * * * cd /local/home/lstanalyzer/camera/lst-camera-watchers;./lst1_watcher_restarter
+# -------------------------------------------------------------------------------------------------------------------------
+# [ORGANIZE SLURM JOBS]
+# -------------------------------------------------------------------------------------------------------------------------
+* * * * * /fefs/aswg/workspace/manuel.martinezherresanchez/lstosa/src/osa/crontab/launchers/organizeslurm.sh > /dev/null 2>&1
