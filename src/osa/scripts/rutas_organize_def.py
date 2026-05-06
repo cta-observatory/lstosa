@@ -7,14 +7,14 @@ import datetime
 def clean_path(raw_path, base):
     raw_path = raw_path.strip()
 
-    # Sustituir %(BASE)s manualmente
+    # %(BASE)s
     if "%(BASE)s" in raw_path:
         raw_path = raw_path.replace("%(BASE)s", base)
     return pathlib.Path(raw_path)
 
 
 # =========================
-# LEER CONFIG
+# CONFIG
 # =========================
 def load_config(cfg_path):
     cfg_path = pathlib.Path(cfg_path)
@@ -33,14 +33,14 @@ def load_config(cfg_path):
 
     section = config["LST1"]
 
-    # BASE limpio
+    # clean BASE
     base = section.get("BASE").strip()
 
-    # Leer directamente del cfg
+    # Read from the cfg
     analysis_raw = section.get("ANALYSIS_DIR")
     osa_raw = section.get("OSA_DIR")
 
-    # Limpiar rutas (aquí está la clave)
+    # routes
     running_analysis = clean_path(analysis_raw, base)
     osa_dir = clean_path(osa_raw, base)
 
@@ -49,7 +49,7 @@ def load_config(cfg_path):
     return running_analysis, gainsel
 
 # =========================
-# ENCONTRAR v0.11*
+# Find v*
 # =========================
 def find_version_folder(day_path):
     versions = [d for d in day_path.iterdir()
@@ -63,7 +63,7 @@ def find_version_folder(day_path):
 
 
 # =========================
-# COMPRIMIR LOGS
+# COMPRESS LOGS
 # =========================
 def compress_logs(base_path, simulate):
     log_path = base_path / "log"
@@ -101,7 +101,7 @@ def compress_logs(base_path, simulate):
 
 
 # =========================
-# COMPRIMIR HISTORY
+# COMPRESS HISTORY
 # =========================
 def compress_history(base_path, simulate):
     files = list(base_path.glob("*.history"))
@@ -127,7 +127,8 @@ def compress_history(base_path, simulate):
 # GAINSEL
 # =========================
 def compress_gainsel(path, simulate):
-    if not path.exists():
+    if not path.exists():Default date
+
         print("[GAINSEL] Path not found")
         return
     check_logs = list(path.glob("*check*.log"))
@@ -183,7 +184,7 @@ def main():
 
     args = parser.parse_args()
 
-    # Fecha por defecto
+    # Default date
     if args.date is None:
         yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
         args.date = yesterday.strftime("%Y%m%d")
@@ -192,7 +193,7 @@ def main():
     print(f"Mode: {'SIMULATION' if args.simulate else 'REAL'}")
     print("=" * 60)
 
-    # Leer config
+    # read config
     running_path, gainsel_path = load_config(args.config)
 
     # =========================
