@@ -1,8 +1,8 @@
 #!/usr/bin/bash
 #SBATCH --job-name=organize
 #SBATCH --time=02:00:00
-#SBATCH --output=/fefs/aswg/workspace/manuel.martinezherresanchez/lstosa/test_osa/test_files0/OSA/Organize_log/slurm-%j.out
-#SBATCH --error=/fefs/aswg/workspace/manuel.martinezherresanchez/lstosa/test_osa/test_files0/OSA/Organize_log/slurm-%j.err
+#SBATCH --output=/fefs/onsite/data/lst-pipe/LSTN-01/OSA/Organize/log/slurm-%j.out
+#SBATCH --error=/fefs/onsite/data/lst-pipe/LSTN-01/OSA/Organize/log/slurm-%j.err
 
 
 #OBS_DATE=2020-01-17 example
