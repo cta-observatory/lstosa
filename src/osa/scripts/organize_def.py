@@ -4,17 +4,22 @@ import argparse
 import configparser
 import datetime
 
+
 def clean_path(raw_path, base):
+    """
+    Limpia rutas del cfg:
+    - Sustituye %(BASE)s → base
+    """
     raw_path = raw_path.strip()
 
-    # %(BASE)s
     if "%(BASE)s" in raw_path:
         raw_path = raw_path.replace("%(BASE)s", base)
+
     return pathlib.Path(raw_path)
 
 
 # =========================
-# CONFIG
+# LEER CONFIG
 # =========================
 def load_config(cfg_path):
     cfg_path = pathlib.Path(cfg_path)
@@ -33,37 +38,25 @@ def load_config(cfg_path):
 
     section = config["LST1"]
 
-    # clean BASE
     base = section.get("BASE").strip()
 
-    # Read from the cfg
     analysis_raw = section.get("ANALYSIS_DIR")
     osa_raw = section.get("OSA_DIR")
 
-    # routes
     running_analysis = clean_path(analysis_raw, base)
     osa_dir = clean_path(osa_raw, base)
 
     gainsel = osa_dir / "GainSel_log"
 
-    return running_analysis, gainsel
+    prod_id = section.get("PROD_ID")
+    if prod_id:
+        prod_id = prod_id.strip()
 
-# =========================
-# Find v*
-# =========================
-def find_version_folder(day_path):
-    versions = [d for d in day_path.iterdir()
-                if d.is_dir() and d.name.startswith("v")]
-
-    if not versions:
-        print("❌ No v0.11* directory found")
-        return None
-
-    return versions[0]
+    return running_analysis, gainsel, prod_id
 
 
 # =========================
-# COMPRESS LOGS
+# COMPRIMIR LOGS
 # =========================
 def compress_logs(base_path, simulate):
     log_path = base_path / "log"
@@ -101,7 +94,7 @@ def compress_logs(base_path, simulate):
 
 
 # =========================
-# COMPRESS HISTORY
+# COMPRIMIR HISTORY
 # =========================
 def compress_history(base_path, simulate):
     files = list(base_path.glob("*.history"))
@@ -127,10 +120,10 @@ def compress_history(base_path, simulate):
 # GAINSEL
 # =========================
 def compress_gainsel(path, simulate):
-    if not path.exists():Default date
-
+    if not path.exists():
         print("[GAINSEL] Path not found")
         return
+
     check_logs = list(path.glob("*check*.log"))
     normal_logs = [f for f in path.glob("*.log") if "check" not in f.name]
 
@@ -162,8 +155,6 @@ def compress_gainsel(path, simulate):
 # =========================
 # MAIN
 # =========================
-
-
 def main():
     parser = argparse.ArgumentParser(description="Compression tool (sequencer-style)")
 
@@ -184,7 +175,6 @@ def main():
 
     args = parser.parse_args()
 
-    # Default date
     if args.date is None:
         yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
         args.date = yesterday.strftime("%Y%m%d")
@@ -193,27 +183,33 @@ def main():
     print(f"Mode: {'SIMULATION' if args.simulate else 'REAL'}")
     print("=" * 60)
 
-    # read config
-    running_path, gainsel_path = load_config(args.config)
+    running_path, gainsel_path, prod_id = load_config(args.config)
 
     # =========================
     # RUNNING ANALYSIS
     # =========================
     if args.no_running:
         print("\n🔹 Running Analysis SKIPPED")
+
     else:
         day_path = running_path / args.date
 
         if not day_path.exists():
             print(f"❌ Day not found: {args.date}")
+
+        elif not prod_id:
+            print("❌ PROD_ID not set in config")
+
         else:
-            print("\n🔹 Running Analysis")
-            print(f"Selected: {day_path}")
+            version_path = day_path / prod_id
 
-            version_path = find_version_folder(day_path)
+            if not version_path.exists():
+                print(f"❌ Version path not found from cfg: {version_path}")
 
-            if version_path:
-                print(f"Using version: {version_path.name}")
+            else:
+                print(f"\n🔹 Running Analysis")
+                print(f"Selected: {day_path}")
+                print(f"Using version from cfg: {prod_id}")
 
                 compress_logs(version_path, args.simulate)
                 compress_history(version_path, args.simulate)
@@ -223,6 +219,7 @@ def main():
     # =========================
     if args.no_gainsel:
         print("\n🔹 Gain Selection SKIPPED")
+
     else:
         print("\n🔹 Gain Selection")
         compress_gainsel(gainsel_path, args.simulate)
