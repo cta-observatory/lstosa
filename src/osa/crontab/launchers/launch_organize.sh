@@ -65,6 +65,17 @@ organize \
     -c "$CFG" \
     -d "$obsdate" \
     "$@"
+    
+status=$?
+
+echo "STATUS=$status"
+
+if [ $status -eq 0 ] && [ "$SIMULATION" = false ]; then
+    mkdir -p "$(dirname "$DONE_FILE")"
+    touch "$DONE_FILE"
+fi
+
+exit $status
 
 # -------------------------
 # Mark as done (ONLY if not simulation)
