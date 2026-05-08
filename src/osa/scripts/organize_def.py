@@ -6,10 +6,6 @@ import datetime
 
 
 def clean_path(raw_path, base):
-    """
-    Limpia rutas del cfg:
-    - Sustituye %(BASE)s → base
-    """
     raw_path = raw_path.strip()
 
     if "%(BASE)s" in raw_path:
@@ -207,7 +203,7 @@ def main():
                 print(f"❌ Version path not found from cfg: {version_path}")
 
             else:
-                print(f"\n🔹 Running Analysis")
+                print("\n🔹 Running Analysis")
                 print(f"Selected: {day_path}")
                 print(f"Using version from cfg: {prod_id}")
 
