@@ -15,7 +15,7 @@ def clean_path(raw_path, base):
 
 
 # =========================
-# LEER CONFIG
+# CONFIG
 # =========================
 def load_config(cfg_path):
     cfg_path = pathlib.Path(cfg_path)
@@ -52,7 +52,7 @@ def load_config(cfg_path):
 
 
 # =========================
-# COMPRIMIR LOGS
+# LOGS
 # =========================
 def compress_logs(base_path, simulate):
     log_path = base_path / "log"
@@ -90,7 +90,7 @@ def compress_logs(base_path, simulate):
 
 
 # =========================
-# COMPRIMIR HISTORY
+# HISTORY
 # =========================
 def compress_history(base_path, simulate):
     files = list(base_path.glob("*.history"))
