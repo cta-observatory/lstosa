@@ -115,13 +115,33 @@ def compress_history(base_path, simulate):
 # =========================
 # GAINSEL
 # =========================
+def _is_stable_gainsel_log(log_file):
+    if not log_file.is_file() or log_file.suffix != ".log":
+        return False
+
+    today_utc = datetime.datetime.now(datetime.timezone.utc).date()
+
+    modified_utc = datetime.datetime.fromtimestamp(
+        log_file.stat().st_mtime,
+        tz=datetime.timezone.utc,
+    ).date()
+
+    return modified_utc < today_utc
+
 def compress_gainsel(path, simulate):
     if not path.exists():
         print("[GAINSEL] Path not found")
         return
 
-    check_logs = list(path.glob("*check*.log"))
-    normal_logs = [f for f in path.glob("*.log") if "check" not in f.name]
+    check_logs = [
+        f for f in path.glob("*check*.log")
+        if _is_stable_gainsel_log(f)
+    ]
+
+    normal_logs = [
+        f for f in path.glob("*.log")
+        if "check" not in f.name and _is_stable_gainsel_log(f)
+    ]
 
     check_tar = path / "check_logs.tar.gz"
     normal_tar = path / "normal_logs.tar.gz"
@@ -146,6 +166,7 @@ def compress_gainsel(path, simulate):
                     tar.add(f, arcname=f.name)
             for f in normal_logs:
                 f.unlink()
+
 
 
 # =========================
