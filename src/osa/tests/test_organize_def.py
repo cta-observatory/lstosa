@@ -40,9 +40,9 @@ def test_load_config_ok(tmp_path):
     cfg = tmp_path / "test.cfg"
 
     cfg.write_text(
-        """
+        f"""
 [LST1]
-BASE=/tmp/base
+BASE={tmp_path}
 ANALYSIS_DIR=%(BASE)s/analysis
 OSA_DIR=%(BASE)s/osa
 PROD_ID=v1
@@ -51,8 +51,8 @@ PROD_ID=v1
 
     running_analysis, gainsel, prod_id = load_config(cfg)
 
-    assert running_analysis == Path("/tmp/base/analysis")
-    assert gainsel == Path("/tmp/base/osa/GainSel_log")
+    assert running_analysis == tmp_path / "analysis"
+    assert gainsel == tmp_path / "osa" / "GainSel_log"
     assert prod_id == "v1"
 
 
