@@ -76,14 +76,3 @@ if [ $status -eq 0 ] && [ "$SIMULATION" = false ]; then
 fi
 
 exit $status
-
-# -------------------------
-# Mark as done (ONLY if not simulation)
-# -------------------------
-DONE_FILE="${LSTN1}/OSA/Organize/${obsdate}/DONE.txt"
-
-
-if [ "$SIMULATION" = false ]; then
-    mkdir -p "$(dirname "$DONE_FILE")"
-    touch "$DONE_FILE"
-fi
