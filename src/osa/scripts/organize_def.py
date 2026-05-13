@@ -29,8 +29,11 @@ def load_config(cfg_path):
     config.read(cfg_path)
 
     if "LST1" not in config:
-        print("DEBUG sections:", config.sections())
-        raise ValueError("No se encontró la sección [LST1] en el cfg")
+        available_sections = ", ".join(config.sections()) or "(none)"
+        raise ValueError(
+            f"Missing required [LST1] section in config file: {cfg_path}. "
+            f"Available sections: {available_sections}"
+        )
 
     section = config["LST1"]
 
