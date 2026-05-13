@@ -480,6 +480,7 @@ def test_gainsel_web_content():
     assert table["GainSelStatus"][0] == "NOT STARTED"
     assert table["GainSel%"][0] == 0.0
 
+
 def test_organize_simulate(tmp_path):
     cfg = tmp_path / "test.cfg"
 
@@ -500,4 +501,89 @@ OSA_DIR = %(BASE)s/osa
     )
 
     assert rc.returncode == 0
+
+
+def test_organize_full(tmp_path):
+    # =========================
+    # Config
+    # =========================
+    cfg = tmp_path / "test.cfg"
+
+    cfg.write_text(f"""
+[LST1]
+BASE = {tmp_path}
+ANALYSIS_DIR = %(BASE)s/analysis
+OSA_DIR = %(BASE)s/osa
+PROD_ID = v1
+""")
+
+    # =========================
+    # Create minimal structure
+    # =========================
+
+    # Running analysis
+    analysis_dir = tmp_path / "analysis" / "20250101" / "v1"
+    log_dir = analysis_dir / "log"
+    log_dir.mkdir(parents=True)
+
+    # log files
+    err_file = log_dir / "a.err"
+    out_file = log_dir / "b.out"
+    err_file.write_text("error")
+    out_file.write_text("output")
+
+    # history file
+    history_file = analysis_dir / "test.history"
+    history_file.write_text("history")
+
+    # GainSel
+    gainsel_dir = tmp_path / "osa" / "GainSel_log"
+    gainsel_dir.mkdir(parents=True)
+
+    check_log = gainsel_dir / "check_test.log"
+    normal_log = gainsel_dir / "normal.log"
+
+    check_log.write_text("check")
+    normal_log.write_text("normal")
+
+    # make logs "old" so they are processed
+    old_time = datetime.datetime(
+        2025, 1, 2, tzinfo=datetime.timezone.utc
+    ).timestamp()
+
+    os.utime(check_log, (old_time, old_time))
+    os.utime(normal_log, (old_time, old_time))
+
+    # =========================
+    # Run program (real execution)
+    # =========================
+    rc = run_program(
+        "organize",
+        "-c", str(cfg),
+        "-d", "2025-01-01",
+    )
+
+    assert rc.returncode == 0
+
+    # =========================
+    # Assertions
+    # =========================
+
+    # LOGS compressed
+    assert len(list(log_dir.glob("logs_err_*.tar.gz"))) == 1
+    assert len(list(log_dir.glob("logs_out_*.tar.gz"))) == 1
+
+    # HISTORY compressed
+    assert len(list(analysis_dir.glob("all_history_*.tar.gz"))) == 1
+
+    # GAINSEL compressed
+    assert len(list(gainsel_dir.glob("check_logs_*.tar.gz"))) == 1
+    assert len(list(gainsel_dir.glob("normal_logs_*.tar.gz"))) == 1
+
+    # ORIGINAL FILES removed
+    assert not err_file.exists()
+    assert not out_file.exists()
+    assert not history_file.exists()
+    assert not check_log.exists()
+    assert not normal_log.exists()
 
