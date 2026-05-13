@@ -43,8 +43,6 @@ def load_config(cfg_path):
                 f"Missing required config option '{key}' in [LST1]"
             )
 
-
-
     base = section.get("BASE").strip()
 
     analysis_raw = section.get("ANALYSIS_DIR")
@@ -75,8 +73,10 @@ def compress_logs(base_path, simulate):
     err_files = list(log_path.glob("*.err"))
     out_files = list(log_path.glob("*.out"))
 
-    err_tar = log_path / "logs_err.tar.gz"
-    out_tar = log_path / "logs_out.tar.gz"
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H")
+
+    err_tar = log_path / f"logs_err_{timestamp}.tar.gz"
+    out_tar = log_path / f"logs_out_{timestamp}.tar.gz"
 
     print(f"[LOG] {len(err_files)} err files")
     print(f"[LOG] {len(out_files)} out files")
@@ -105,7 +105,9 @@ def compress_logs(base_path, simulate):
 # =========================
 def compress_history(base_path, simulate):
     files = list(base_path.glob("*.history"))
-    tar_name = base_path / "all_history.tar.gz"
+
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H")
+    tar_name = base_path / f"all_history_{timestamp}.tar.gz"
 
     print(f"[HISTORY] {len(files)} files")
 
@@ -139,6 +141,7 @@ def _is_stable_gainsel_log(log_file):
 
     return modified_utc < today_utc
 
+
 def compress_gainsel(path, simulate):
     if not path.exists():
         print("[GAINSEL] Path not found")
@@ -154,8 +157,10 @@ def compress_gainsel(path, simulate):
         if "check" not in f.name and _is_stable_gainsel_log(f)
     ]
 
-    check_tar = path / "check_logs.tar.gz"
-    normal_tar = path / "normal_logs.tar.gz"
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H")
+
+    check_tar = path / f"check_logs_{timestamp}.tar.gz"
+    normal_tar = path / f"normal_logs_{timestamp}.tar.gz"
 
     print(f"[GAINSEL] {len(check_logs)} check logs")
     print(f"[GAINSEL] {len(normal_logs)} normal logs")
@@ -303,6 +308,7 @@ def main():
         compress_gainsel(gainsel_path, args.simulate)
 
     print("\nDone.")
+
 
 if __name__ == "__main__":
     main()
