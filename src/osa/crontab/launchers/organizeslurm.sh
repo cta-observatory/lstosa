@@ -1,9 +1,8 @@
 #!/usr/bin/bash
-#SBATCH --job-name=organize
-#SBATCH --time=02:00:00
-#SBATCH --chdir=/fefs/onsite/data/lst-pipe/LSTN-01/OSA/Organize
-#SBATCH --output=log/slurm-%j.out
-#SBATCH --error=log/slurm-%j.err
+
+# This launcher is executed directly from cron.
+# SLURM `#SBATCH` directives are not used here because the script is not
+# submitted via `sbatch`; keep this file as a normal cron launcher.
 
 
 #OBS_DATE=2020-01-17 example
