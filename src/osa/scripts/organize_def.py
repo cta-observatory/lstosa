@@ -265,27 +265,27 @@ def main():
     # RUNNING ANALYSIS
     # =========================
     if args.no_running:
-        print("\n🔹 Running Analysis SKIPPED")
+        print("\nRunning Analysis SKIPPED")
 
     else:
         day_path = running_path / args.date
 
         if not day_path.exists():
-            print(f"❌ Day not found: {args.date}")
+            print(f"Day not found: {args.date}")
 
         elif not prod_id:
-            print("❌ PROD_ID not set in config")
+            print("PROD_ID not set in config")
 
         else:
             version_path = day_path / prod_id
 
             if not version_path.exists():
                 print(
-                    f"❌ Version path not found from cfg: {version_path}"
+                    f"Version path not found from cfg: {version_path}"
                 )
 
             else:
-                print("\n🔹 Running Analysis")
+                print("\nRunning Analysis")
                 print(f"Selected: {day_path}")
                 print(f"Using version from cfg: {prod_id}")
 
@@ -296,10 +296,10 @@ def main():
     # GAIN SELECTION
     # =========================
     if args.no_gainsel:
-        print("\n🔹 Gain Selection SKIPPED")
+        print("\nGain Selection SKIPPED")
 
     else:
-        print("\n🔹 Gain Selection")
+        print("\nGain Selection")
         compress_gainsel(gainsel_path, args.simulate)
 
     print("\nDone.")
