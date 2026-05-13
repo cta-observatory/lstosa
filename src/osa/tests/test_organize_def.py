@@ -94,8 +94,8 @@ def test_compress_logs_real(tmp_path):
 
     compress_logs(tmp_path, simulate=False)
 
-    assert (log_dir / "logs_err.tar.gz").exists()
-    assert (log_dir / "logs_out.tar.gz").exists()
+    assert len(list(log_dir.glob("logs_err_*.tar.gz"))) == 1
+    assert len(list(log_dir.glob("logs_out_*.tar.gz"))) == 1
 
     assert not err_file.exists()
     assert not out_file.exists()
@@ -111,7 +111,7 @@ def test_compress_logs_simulate(tmp_path):
     compress_logs(tmp_path, simulate=True)
 
     assert err_file.exists()
-    assert not (log_dir / "logs_err.tar.gz").exists()
+    assert not list(log_dir.glob("logs_err_*.tar.gz"))
 
 
 # =========================================================
@@ -123,14 +123,14 @@ def test_compress_history_real(tmp_path):
 
     compress_history(tmp_path, simulate=False)
 
-    assert (tmp_path / "all_history.tar.gz").exists()
+    assert len(list(tmp_path.glob("all_history_*.tar.gz"))) == 1
     assert not history_file.exists()
 
 
 def test_compress_history_empty(tmp_path):
     compress_history(tmp_path, simulate=False)
 
-    assert not (tmp_path / "all_history.tar.gz").exists()
+    assert not list(tmp_path.glob("all_history_*.tar.gz"))
 
 
 # =========================================================
@@ -147,6 +147,11 @@ def test_is_stable_gainsel_log_false_for_today_file(tmp_path):
     log = tmp_path / "today.log"
     log.write_text("x")
 
+    fixed_now = datetime.datetime(2026, 5, 13, tzinfo=datetime.timezone.utc)
+    today_time = fixed_now.timestamp()
+
+    os.utime(log, (today_time, today_time))
+
     assert _is_stable_gainsel_log(log) is False
 
 
@@ -154,7 +159,8 @@ def test_is_stable_gainsel_log_true_for_old_file(tmp_path):
     log = tmp_path / "old.log"
     log.write_text("x")
 
-    old_time = datetime.datetime.now().timestamp() - (2 * 86400)
+    fixed_now = datetime.datetime(2026, 5, 13, tzinfo=datetime.timezone.utc)
+    old_time = fixed_now.timestamp() - (2 * 86400)
 
     os.utime(log, (old_time, old_time))
 
@@ -177,15 +183,16 @@ def test_compress_gainsel_real(tmp_path):
     check_log.write_text("check")
     normal_log.write_text("normal")
 
-    old_time = datetime.datetime.now().timestamp() - (2 * 86400)
+    fixed_now = datetime.datetime(2026, 5, 13, tzinfo=datetime.timezone.utc)
+    old_time = fixed_now.timestamp() - (2 * 86400)
 
     os.utime(check_log, (old_time, old_time))
     os.utime(normal_log, (old_time, old_time))
 
     compress_gainsel(tmp_path, simulate=False)
 
-    assert (tmp_path / "check_logs.tar.gz").exists()
-    assert (tmp_path / "normal_logs.tar.gz").exists()
+    assert len(list(tmp_path.glob("check_logs_*.tar.gz"))) == 1
+    assert len(list(tmp_path.glob("normal_logs_*.tar.gz"))) == 1
 
     assert not check_log.exists()
     assert not normal_log.exists()
@@ -195,11 +202,12 @@ def test_compress_gainsel_simulate(tmp_path):
     log = tmp_path / "normal.log"
     log.write_text("normal")
 
-    old_time = datetime.datetime.now().timestamp() - (2 * 86400)
+    fixed_now = datetime.datetime(2026, 5, 13, tzinfo=datetime.timezone.utc)
+    old_time = fixed_now.timestamp() - (2 * 86400)
 
     os.utime(log, (old_time, old_time))
 
     compress_gainsel(tmp_path, simulate=True)
 
     assert log.exists()
-    assert not (tmp_path / "normal_logs.tar.gz").exists()
+    assert not list(tmp_path.glob("normal_logs_*.tar.gz"))
