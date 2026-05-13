@@ -36,6 +36,14 @@ def load_config(cfg_path):
         )
 
     section = config["LST1"]
+    required_keys = ["BASE", "ANALYSIS_DIR", "OSA_DIR"]
+    for key in required_keys:
+        if section.get(key) is None:
+            raise ValueError(
+                f"Missing required config option '{key}' in [LST1]"
+            )
+
+
 
     base = section.get("BASE").strip()
 
@@ -176,29 +184,52 @@ def compress_gainsel(path, simulate):
 # MAIN
 # =========================
 def main():
-    parser = argparse.ArgumentParser(description="Compression tool (sequencer-style)")
+    parser = argparse.ArgumentParser(
+        description="Compression tool (sequencer-style)"
+    )
 
-    parser.add_argument("-c", "--config", required=True,
-                        help="Path to config file")
+    parser.add_argument(
+        "-c",
+        "--config",
+        required=True,
+        help="Path to config file",
+    )
 
-    parser.add_argument("-d", "--date",
-                        help="Date to process (YYYYMMDD), default = yesterday")
+    parser.add_argument(
+        "-d",
+        "--date",
+        help="Date to process (YYYY-MM-DD or YYYYMMDD), default = yesterday",
+    )
 
-    parser.add_argument("-s", "--simulate", action="store_true",
-                        help="Simulation mode (no changes)")
+    parser.add_argument(
+        "-s",
+        "--simulate",
+        action="store_true",
+        help="Simulation mode (no changes)",
+    )
 
-    parser.add_argument("--no-gainsel", action="store_true",
-                        help="Skip Gain Selection compression")
+    parser.add_argument(
+        "--no-gainsel",
+        action="store_true",
+        help="Skip Gain Selection compression",
+    )
 
-    parser.add_argument("--no-running", action="store_true",
-                        help="Skip Running Analysis compression")
+    parser.add_argument(
+        "--no-running",
+        action="store_true",
+        help="Skip Running Analysis compression",
+    )
 
     args = parser.parse_args()
 
     if args.date is None:
         yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
         args.date = yesterday.strftime("%Y%m%d")
+
         print(f"No date provided → using yesterday: {args.date}")
+
+    else:
+        args.date = args.date.replace("-", "")
 
     print(f"Mode: {'SIMULATION' if args.simulate else 'REAL'}")
     print("=" * 60)
@@ -245,7 +276,6 @@ def main():
         compress_gainsel(gainsel_path, args.simulate)
 
     print("\nDone.")
-
 
 if __name__ == "__main__":
     main()
