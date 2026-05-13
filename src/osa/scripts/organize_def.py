@@ -179,7 +179,6 @@ def compress_gainsel(path, simulate):
                 f.unlink()
 
 
-
 # =========================
 # MAIN
 # =========================
@@ -198,7 +197,10 @@ def main():
     parser.add_argument(
         "-d",
         "--date",
-        help="Date to process (YYYY-MM-DD or YYYYMMDD), default = yesterday",
+        help=(
+            "Date to process "
+            "(YYYYMMDD or YYYY-MM-DD, default = yesterday in UTC)"
+        ),
     )
 
     parser.add_argument(
@@ -222,14 +224,37 @@ def main():
 
     args = parser.parse_args()
 
+    # =========================
+    # DATE HANDLING
+    # =========================
     if args.date is None:
-        yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+        yesterday = (
+            datetime.datetime.now(datetime.timezone.utc)
+            - datetime.timedelta(days=1)
+        )
+
         args.date = yesterday.strftime("%Y%m%d")
 
-        print(f"No date provided → using yesterday: {args.date}")
+        print(f"No date provided → using yesterday (UTC): {args.date}")
 
     else:
-        args.date = args.date.replace("-", "")
+        try:
+            parsed_date = datetime.datetime.strptime(
+                args.date,
+                "%Y-%m-%d",
+            )
+
+            args.date = parsed_date.strftime("%Y%m%d")
+
+        except ValueError:
+            try:
+                datetime.datetime.strptime(args.date, "%Y%m%d")
+
+            except ValueError as exc:
+                raise ValueError(
+                    "Invalid date format. "
+                    "Use YYYYMMDD or YYYY-MM-DD."
+                ) from exc
 
     print(f"Mode: {'SIMULATION' if args.simulate else 'REAL'}")
     print("=" * 60)
@@ -255,7 +280,9 @@ def main():
             version_path = day_path / prod_id
 
             if not version_path.exists():
-                print(f"❌ Version path not found from cfg: {version_path}")
+                print(
+                    f"❌ Version path not found from cfg: {version_path}"
+                )
 
             else:
                 print("\n🔹 Running Analysis")
