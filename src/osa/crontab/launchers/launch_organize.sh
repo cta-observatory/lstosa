@@ -24,7 +24,7 @@ exists() {
 # Check NightFinished.txt
 # -------------------------
 if ! exists "${LSTN1}/OSA/Closer/${obsdate}/v*/NightFinished.txt" ; then
-    exit
+    exit 0
 fi
 
 
