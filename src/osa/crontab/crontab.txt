@@ -95,7 +95,7 @@ LAUNCHERS_DIR="/fefs/aswg/lstosa/src/osa/crontab/launchers"
 # -------------------------------------------------------------------------------------------------------------------------
 # [ORGANIZE SLURM JOBS]
 # -------------------------------------------------------------------------------------------------------------------------
-* * * * * $LAUNCHERS_DIR/organizeslurm.sh >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/Organize/organizeslurm.log 2>&1
+* * * * * /usr/bin/sbatch $LAUNCHERS_DIR/organizeslurm.sh >> /fefs/onsite/data/lst-pipe/LSTN-01/OSA/Organize/organizeslurm.log 2>&1
 # -------------------------------------------------------------------------------------------------------------------------
 # Restart camera processing of calibration runs in realtime in case it was killed for whatever reason
 # -------------------------------------------------------------------------------------------------------------------------
