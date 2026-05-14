@@ -145,7 +145,6 @@ def test_is_stable_gainsel_log_false_for_non_log(tmp_path):
 def test_is_stable_gainsel_log_false_for_today_file(tmp_path):
     log = tmp_path / "today.log"
     log.write_text("x")
-    
     now = datetime.datetime.now(datetime.timezone.utc)
     today_time = now.timestamp()
 
