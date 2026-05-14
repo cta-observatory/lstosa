@@ -142,13 +142,12 @@ def test_is_stable_gainsel_log_false_for_non_log(tmp_path):
 
     assert _is_stable_gainsel_log(file) is False
 
-
 def test_is_stable_gainsel_log_false_for_today_file(tmp_path):
     log = tmp_path / "today.log"
     log.write_text("x")
-
-    fixed_now = datetime.datetime(2026, 5, 13, tzinfo=datetime.timezone.utc)
-    today_time = fixed_now.timestamp()
+    
+    now = datetime.datetime.now(datetime.timezone.utc)
+    today_time = now.timestamp()
 
     os.utime(log, (today_time, today_time))
 
