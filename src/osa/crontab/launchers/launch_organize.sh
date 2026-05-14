@@ -23,7 +23,11 @@ exists() {
 # -------------------------
 # Check NightFinished.txt
 # -------------------------
-if ! exists "${LSTN1}/OSA/Closer/${obsdate}/v*/NightFinished.txt" ; then
+
+
+PROD_ID=$(grep "^PROD_ID:" "$CFG" | cut -d':' -f2 | xargs)
+
+if ! exists "${LSTN1}/OSA/Closer/${obsdate}/${PROD_ID}/NightFinished.txt" ; then
     exit 0
 fi
 
