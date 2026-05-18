@@ -3,6 +3,7 @@ import tarfile
 import argparse
 import configparser
 import datetime
+import sys
 
 
 def clean_path(raw_path, base):
@@ -50,29 +51,20 @@ def load_config(cfg_path):
     config.read(cfg_path)
 
     if "LST1" not in config:
-        available_sections = ", ".join(config.sections()) or "(none)"
-        raise ValueError(
-            f"Missing required [LST1] section in config file: {cfg_path}. "
-            f"Available sections: {available_sections}"
-        )
+        raise ValueError("Missing [LST1] section")
 
     section = config["LST1"]
 
-    required_keys = ["BASE", "ANALYSIS_DIR", "OSA_DIR"]
-    for key in required_keys:
+    for key in ["BASE", "ANALYSIS_DIR", "OSA_DIR"]:
         if section.get(key) is None:
-            raise ValueError(
-                f"Missing required config option '{key}' in [LST1]"
-            )
+            raise ValueError(f"Missing config option '{key}'")
 
     base = section.get("BASE").strip()
-    analysis_raw = section.get("ANALYSIS_DIR")
-    osa_raw = section.get("OSA_DIR")
 
-    running_analysis = clean_path(analysis_raw, base)
-    osa_dir = clean_path(osa_raw, base)
+    running_analysis = clean_path(section.get("ANALYSIS_DIR"), base)
+    osa_dir = clean_path(section.get("OSA_DIR"), base)
+
     gainsel = osa_dir / "GainSel_log"
-
     prod_id = resolve_prod_id(section)
 
     return running_analysis, gainsel, prod_id
@@ -93,7 +85,7 @@ def compress_logs(base_path, simulate):
 
     if not log_path.exists():
         print("[LOG] No log directory")
-        return
+        return False
 
     err_files = list(log_path.glob("*.err"))
     out_files = list(log_path.glob("*.out"))
@@ -106,7 +98,10 @@ def compress_logs(base_path, simulate):
     print(f"[LOG] {len(err_files)} err files")
     print(f"[LOG] {len(out_files)} out files")
 
+    did_work = False
+
     if err_files:
+        did_work = True
         print(f"[COMPRESS] err → {err_tar.name}")
         if not simulate:
             with tarfile.open(err_tar, "w:gz") as tar:
@@ -116,6 +111,7 @@ def compress_logs(base_path, simulate):
                 f.unlink()
 
     if out_files:
+        did_work = True
         print(f"[COMPRESS] out → {out_tar.name}")
         if not simulate:
             with tarfile.open(out_tar, "w:gz") as tar:
@@ -124,6 +120,8 @@ def compress_logs(base_path, simulate):
             for f in out_files:
                 f.unlink()
 
+    return did_work
+
 
 # =========================
 # HISTORY
@@ -131,14 +129,14 @@ def compress_logs(base_path, simulate):
 def compress_history(base_path, simulate):
     files = list(base_path.glob("*.history"))
 
+    if not files:
+        print("[HISTORY] 0 files")
+        return False
+
     timestamp = make_timestamp()
     tar_name = base_path / f"all_history_{timestamp}.tar.gz"
 
     print(f"[HISTORY] {len(files)} files")
-
-    if not files:
-        return
-
     print(f"[COMPRESS] history → {tar_name.name}")
 
     if not simulate:
@@ -148,6 +146,8 @@ def compress_history(base_path, simulate):
 
         for f in files:
             f.unlink()
+
+    return True
 
 
 # =========================
@@ -169,8 +169,7 @@ def _is_stable_gainsel_log(log_file):
 
 def compress_gainsel(path, simulate):
     if not path.exists():
-        print("[GAINSEL] Path not found")
-        return
+        raise RuntimeError("[GAINSEL] Path not found")
 
     check_logs = [
         f for f in path.glob("*check*.log")
@@ -190,7 +189,10 @@ def compress_gainsel(path, simulate):
     print(f"[GAINSEL] {len(check_logs)} check logs")
     print(f"[GAINSEL] {len(normal_logs)} normal logs")
 
+    did_work = False
+
     if check_logs:
+        did_work = True
         print(f"[COMPRESS] check → {check_tar.name}")
         if not simulate:
             with tarfile.open(check_tar, "w:gz") as tar:
@@ -200,6 +202,7 @@ def compress_gainsel(path, simulate):
                 f.unlink()
 
     if normal_logs:
+        did_work = True
         print(f"[COMPRESS] normal → {normal_tar.name}")
         if not simulate:
             with tarfile.open(normal_tar, "w:gz") as tar:
@@ -208,15 +211,14 @@ def compress_gainsel(path, simulate):
             for f in normal_logs:
                 f.unlink()
 
+    return did_work
+
 
 # =========================
 # MAIN
 # =========================
 def main():
-    parser = argparse.ArgumentParser(
-        description="Compression tool (sequencer-style)"
-    )
-
+    parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", required=True)
     parser.add_argument("-d", "--date")
     parser.add_argument("-s", "--simulate", action="store_true")
@@ -226,16 +228,15 @@ def main():
     args = parser.parse_args()
 
     if args.date is None:
-        yesterday = (
+        args.date = (
             datetime.datetime.now(datetime.timezone.utc)
             - datetime.timedelta(days=1)
-        )
-        args.date = yesterday.strftime("%Y%m%d")
-        print(f"No date provided → using yesterday (UTC): {args.date}")
+        ).strftime("%Y%m%d")
     else:
         try:
-            parsed_date = datetime.datetime.strptime(args.date, "%Y-%m-%d")
-            args.date = parsed_date.strftime("%Y%m%d")
+            args.date = datetime.datetime.strptime(
+                args.date, "%Y-%m-%d"
+            ).strftime("%Y%m%d")
         except ValueError:
             datetime.datetime.strptime(args.date, "%Y%m%d")
 
@@ -244,33 +245,41 @@ def main():
 
     running_path, gainsel_path, prod_id = load_config(args.config)
 
-    if args.no_running:
-        print("\nRunning Analysis SKIPPED")
-    else:
+    did_any_work = False
+
+    # RUNNING ANALYSIS
+    if not args.no_running:
         day_path = running_path / args.date
 
         if not day_path.exists():
-            print(f"Day not found: {args.date}")
+            print(f"[SKIP] Day not found: {args.date}")
         else:
             version_path = day_path / prod_id
 
             if not version_path.exists():
-                print(f"Version path not found: {version_path}")
-            else:
-                print("\nRunning Analysis")
-                print(f"Selected: {day_path}")
-                print(f"Using PROD_ID: {prod_id}")
+                raise RuntimeError(f"Version path not found: {version_path}")
 
-                compress_logs(version_path, args.simulate)
-                compress_history(version_path, args.simulate)
+            print("\nRunning Analysis")
 
-    if args.no_gainsel:
-        print("\nGain Selection SKIPPED")
-    else:
+            if compress_logs(version_path, args.simulate):
+                did_any_work = True
+
+            if compress_history(version_path, args.simulate):
+                did_any_work = True
+
+    # GAINSEL
+    if not args.no_gainsel:
         print("\nGain Selection")
-        compress_gainsel(gainsel_path, args.simulate)
+        if compress_gainsel(gainsel_path, args.simulate):
+            did_any_work = True
+
+    # FINAL STATUS
+    if not did_any_work:
+        print("\n[SKIP] No work performed")
+        sys.exit(2)
 
     print("\nDone.")
+    sys.exit(0)
 
 
 if __name__ == "__main__":
