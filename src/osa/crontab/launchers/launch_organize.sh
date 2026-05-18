@@ -23,13 +23,21 @@ exists() {
 # -------------------------
 # Check NightFinished.txt
 # -------------------------
-
-
-PROD_ID=$(grep "^PROD_ID:" "$CFG" | cut -d':' -f2 | xargs)
-
-if ! exists "${LSTN1}/OSA/Closer/${obsdate}/${PROD_ID}/NightFinished.txt" ; then
-    exit 0
-fi
+	
+ PROD_ID=$(
+     awk '
+         /^[[:space:]]*PROD_ID[[:space:]]*[:=]/ {
+             sub(/^[[:space:]]*PROD_ID[[:space:]]*[:=][[:space:]]*/, "", $0)
+             sub(/[[:space:]]*#.*/, "", $0)
+             sub(/[[:space:]]*$/, "", $0)
+             print
+             exit
+         }
+     ' "$CFG"
+ )
+ if [ -n "$PROD_ID" ] && ! exists "${LSTN1}/OSA/Closer/${obsdate}/${PROD_ID}/NightFinished.txt" ; then
+     exit 0
+ fi
 
 
 # -------------------------
@@ -47,12 +55,12 @@ fi
 
 
 # -------------------------
-# Detect simulation mode (-s)
+ # Detect simulation mode (-s / --simulate)
 # -------------------------
 SIMULATION=false
 
 for arg in "$@"; do
-    if [ "$arg" = "-s" ]; then
+     if [ "$arg" = "-s" ] || [ "$arg" = "--simulate" ]; then
         SIMULATION=true
     fi
 done
