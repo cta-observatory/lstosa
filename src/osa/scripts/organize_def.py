@@ -15,6 +15,28 @@ def clean_path(raw_path, base):
 
 
 # =========================
+# PROD_ID RESOLUTION
+# =========================
+def resolve_prod_id(section):
+    prod_id = section.get("PROD_ID")
+
+    if prod_id and prod_id.strip():
+        prod_id = prod_id.strip()
+        print(f"[CONFIG] Using PROD_ID from config: {prod_id}")
+        return prod_id
+
+    try:
+        from osa.utils import utils
+        prod_id = utils.get_prod_id()
+        print(f"[CONFIG] Using fallback PROD_ID from OSA: {prod_id}")
+        return prod_id
+    except Exception as e:
+        raise RuntimeError(
+            "PROD_ID not set and fallback to get_prod_id() failed"
+        ) from e
+
+
+# =========================
 # CONFIG
 # =========================
 def load_config(cfg_path):
@@ -25,7 +47,6 @@ def load_config(cfg_path):
 
     config = configparser.ConfigParser(delimiters=(":", "="))
     config.optionxform = str
-
     config.read(cfg_path)
 
     if "LST1" not in config:
@@ -36,6 +57,7 @@ def load_config(cfg_path):
         )
 
     section = config["LST1"]
+
     required_keys = ["BASE", "ANALYSIS_DIR", "OSA_DIR"]
     for key in required_keys:
         if section.get(key) is None:
@@ -44,20 +66,23 @@ def load_config(cfg_path):
             )
 
     base = section.get("BASE").strip()
-
     analysis_raw = section.get("ANALYSIS_DIR")
     osa_raw = section.get("OSA_DIR")
 
     running_analysis = clean_path(analysis_raw, base)
     osa_dir = clean_path(osa_raw, base)
-
     gainsel = osa_dir / "GainSel_log"
 
-    prod_id = section.get("PROD_ID")
-    if prod_id:
-        prod_id = prod_id.strip()
+    prod_id = resolve_prod_id(section)
 
     return running_analysis, gainsel, prod_id
+
+
+# =========================
+# UTILS
+# =========================
+def make_timestamp():
+    return datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
 
 
 # =========================
@@ -73,7 +98,7 @@ def compress_logs(base_path, simulate):
     err_files = list(log_path.glob("*.err"))
     out_files = list(log_path.glob("*.out"))
 
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H")
+    timestamp = make_timestamp()
 
     err_tar = log_path / f"logs_err_{timestamp}.tar.gz"
     out_tar = log_path / f"logs_out_{timestamp}.tar.gz"
@@ -106,7 +131,7 @@ def compress_logs(base_path, simulate):
 def compress_history(base_path, simulate):
     files = list(base_path.glob("*.history"))
 
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H")
+    timestamp = make_timestamp()
     tar_name = base_path / f"all_history_{timestamp}.tar.gz"
 
     print(f"[HISTORY] {len(files)} files")
@@ -157,7 +182,7 @@ def compress_gainsel(path, simulate):
         if "check" not in f.name and _is_stable_gainsel_log(f)
     ]
 
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H")
+    timestamp = make_timestamp()
 
     check_tar = path / f"check_logs_{timestamp}.tar.gz"
     normal_tar = path / f"normal_logs_{timestamp}.tar.gz"
@@ -192,117 +217,55 @@ def main():
         description="Compression tool (sequencer-style)"
     )
 
-    parser.add_argument(
-        "-c",
-        "--config",
-        required=True,
-        help="Path to config file",
-    )
-
-    parser.add_argument(
-        "-d",
-        "--date",
-        help=(
-            "Date to process "
-            "(YYYYMMDD or YYYY-MM-DD, default = yesterday in UTC)"
-        ),
-    )
-
-    parser.add_argument(
-        "-s",
-        "--simulate",
-        action="store_true",
-        help="Simulation mode (no changes)",
-    )
-
-    parser.add_argument(
-        "--no-gainsel",
-        action="store_true",
-        help="Skip Gain Selection compression",
-    )
-
-    parser.add_argument(
-        "--no-running",
-        action="store_true",
-        help="Skip Running Analysis compression",
-    )
+    parser.add_argument("-c", "--config", required=True)
+    parser.add_argument("-d", "--date")
+    parser.add_argument("-s", "--simulate", action="store_true")
+    parser.add_argument("--no-gainsel", action="store_true")
+    parser.add_argument("--no-running", action="store_true")
 
     args = parser.parse_args()
 
-    # =========================
-    # DATE HANDLING
-    # =========================
     if args.date is None:
         yesterday = (
             datetime.datetime.now(datetime.timezone.utc)
             - datetime.timedelta(days=1)
         )
-
         args.date = yesterday.strftime("%Y%m%d")
-
         print(f"No date provided → using yesterday (UTC): {args.date}")
-
     else:
         try:
-            parsed_date = datetime.datetime.strptime(
-                args.date,
-                "%Y-%m-%d",
-            )
-
+            parsed_date = datetime.datetime.strptime(args.date, "%Y-%m-%d")
             args.date = parsed_date.strftime("%Y%m%d")
-
         except ValueError:
-            try:
-                datetime.datetime.strptime(args.date, "%Y%m%d")
-
-            except ValueError as exc:
-                raise ValueError(
-                    "Invalid date format. "
-                    "Use YYYYMMDD or YYYY-MM-DD."
-                ) from exc
+            datetime.datetime.strptime(args.date, "%Y%m%d")
 
     print(f"Mode: {'SIMULATION' if args.simulate else 'REAL'}")
     print("=" * 60)
 
     running_path, gainsel_path, prod_id = load_config(args.config)
 
-    # =========================
-    # RUNNING ANALYSIS
-    # =========================
     if args.no_running:
         print("\nRunning Analysis SKIPPED")
-
     else:
         day_path = running_path / args.date
 
         if not day_path.exists():
             print(f"Day not found: {args.date}")
-
-        elif not prod_id:
-            print("PROD_ID not set in config")
-
         else:
             version_path = day_path / prod_id
 
             if not version_path.exists():
-                print(
-                    f"Version path not found from cfg: {version_path}"
-                )
-
+                print(f"Version path not found: {version_path}")
             else:
                 print("\nRunning Analysis")
                 print(f"Selected: {day_path}")
-                print(f"Using version from cfg: {prod_id}")
+                print(f"Using PROD_ID: {prod_id}")
 
                 compress_logs(version_path, args.simulate)
                 compress_history(version_path, args.simulate)
 
-    # =========================
-    # GAIN SELECTION
-    # =========================
     if args.no_gainsel:
         print("\nGain Selection SKIPPED")
-
     else:
         print("\nGain Selection")
         compress_gainsel(gainsel_path, args.simulate)
