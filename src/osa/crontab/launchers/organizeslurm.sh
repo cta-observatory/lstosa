@@ -12,5 +12,5 @@
 source /fefs/aswg/lstosa/src/osa/crontab/osa-env.sh
 
 	
-/usr/bin/bash /fefs/aswg/lstosa/src/osa/crontab/launchers/launch_organize.sh "$@"
+/usr/bin/bash /fefs/aswg/lstosa/src/osa/crontab/launchers/launch_organize.sh
 # options: -s --no-gainsel --no-running
