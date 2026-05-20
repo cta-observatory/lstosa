@@ -489,19 +489,20 @@ def test_organize_simulate(tmp_path):
 BASE = {tmp_path}
 ANALYSIS_DIR = %(BASE)s/analysis
 OSA_DIR = %(BASE)s/osa
+PROD_ID = test
 """)
 
-    rc = run_program(
-        "organize",
-        "-c", str(cfg),
-        "-d", "2025-01-01",
-        "-s",
-        "--no-gainsel",
-        "--no-running",
-    )
+    with pytest.raises(sp.CalledProcessError) as exc:
+        run_program(
+            "organize",
+            "-c", str(cfg),
+            "-d", "2025-01-01",
+            "-s",
+            "--no-gainsel",
+            "--no-running",
+        )
 
-    assert rc.returncode == 0
-
+    assert exc.value.returncode == 2
 
 def test_organize_full(tmp_path):
     # =========================
