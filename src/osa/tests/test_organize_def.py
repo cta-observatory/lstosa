@@ -142,9 +142,11 @@ def test_is_stable_gainsel_log_false_for_non_log(tmp_path):
 
     assert _is_stable_gainsel_log(file) is False
 
+
 def test_is_stable_gainsel_log_false_for_today_file(tmp_path):
     log = tmp_path / "today.log"
     log.write_text("x")
+
     now = datetime.datetime.now(datetime.timezone.utc)
     today_time = now.timestamp()
 
@@ -171,7 +173,8 @@ def test_is_stable_gainsel_log_true_for_old_file(tmp_path):
 def test_compress_gainsel_missing_path(tmp_path):
     missing = tmp_path / "missing"
 
-    compress_gainsel(missing, simulate=False)
+    with pytest.raises(RuntimeError):
+        compress_gainsel(missing, simulate=False)
 
 
 def test_compress_gainsel_real(tmp_path):
