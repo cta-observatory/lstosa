@@ -24,6 +24,7 @@ exists() {
 # Check NightFinished.txt
 # -------------------------
 	
+	
  PROD_ID=$(
      awk '
          /^[[:space:]]*PROD_ID[[:space:]]*[:=]/ {
@@ -35,7 +36,11 @@ exists() {
          }
      ' "$CFG"
  )
- if [ -n "$PROD_ID" ] && ! exists "${LSTN1}/OSA/Closer/${obsdate}/${PROD_ID}/NightFinished.txt" ; then
+ if [ -n "$PROD_ID" ]; then
+     if ! exists "${LSTN1}/OSA/Closer/${obsdate}/${PROD_ID}/NightFinished.txt" ; then
+         exit 0
+     fi
+ elif ! exists "${LSTN1}/OSA/Closer/${obsdate}/v*/NightFinished.txt" ; then
      exit 0
  fi
 
