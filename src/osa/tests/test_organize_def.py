@@ -159,8 +159,8 @@ def test_is_stable_gainsel_log_true_for_old_file(tmp_path):
     log = tmp_path / "old.log"
     log.write_text("x")
 
-    fixed_now = datetime.datetime(2026, 5, 13, tzinfo=datetime.timezone.utc)
-    old_time = fixed_now.timestamp() - (2 * 86400)
+    now = datetime.datetime.now(datetime.timezone.utc)
+    old_time = (now - datetime.timedelta(days=2)).timestamp()
 
     os.utime(log, (old_time, old_time))
 
@@ -184,8 +184,8 @@ def test_compress_gainsel_real(tmp_path):
     check_log.write_text("check")
     normal_log.write_text("normal")
 
-    fixed_now = datetime.datetime(2026, 5, 13, tzinfo=datetime.timezone.utc)
-    old_time = fixed_now.timestamp() - (2 * 86400)
+    now = datetime.datetime.now(datetime.timezone.utc)
+    old_time = (now - datetime.timedelta(days=2)).timestamp()
 
     os.utime(check_log, (old_time, old_time))
     os.utime(normal_log, (old_time, old_time))
@@ -203,8 +203,8 @@ def test_compress_gainsel_simulate(tmp_path):
     log = tmp_path / "normal.log"
     log.write_text("normal")
 
-    fixed_now = datetime.datetime(2026, 5, 13, tzinfo=datetime.timezone.utc)
-    old_time = fixed_now.timestamp() - (2 * 86400)
+    now = datetime.datetime.now(datetime.timezone.utc)
+    old_time = (now - datetime.timedelta(days=2)).timestamp()
 
     os.utime(log, (old_time, old_time))
 
