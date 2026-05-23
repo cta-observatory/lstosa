@@ -332,7 +332,7 @@ def get_nsb_level(run_id):
     log_file = tailcuts_finder_dir / f"log_find_tailcuts_Run{run_id:05d}.log"
     with open(log_file, "r") as file:
         log_content = file.read()
-    match = re.search(r"Additional NSB rate \(over dark MC\): ([\d.]+)", log_content)
+    match = re.search(r"Additional NSB rate \(over dark MC\): (-?[\d.]+)", log_content)
     nsb = float(match.group(1))
     
     dl1b_config_filename = tailcuts_finder_dir / f"dl1ab_Run{run_id:05d}.json"
