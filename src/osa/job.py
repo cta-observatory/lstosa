@@ -266,6 +266,15 @@ def prepare_jobs(sequence_list):
         if sequence.type == "PEDCALIB":
             calibration_sequence_job_template(sequence)
         elif sequence.type == "DATA":
+            # For each DATA run, generate the pilot script needed for this sequencer execution:
+            # - sequence_{tel}_{run}_dl1a.py -> datasequence --no-dl1ab (when sequencer runs with --no-dl1ab)
+            # - sequence_{tel}_{run}_dl1b.py -> datasequence (when sequencer runs without --no-dl1ab)
+            tel = options.tel_id
+            run = f"{sequence.run:05d}"
+            dl1a_script = Path(options.directory) / f"sequence_{tel}_{run}_dl1a.py"
+            dl1b_script = Path(options.directory) / f"sequence_{tel}_{run}_dl1b.py"
+
+            sequence.script = dl1a_script if options.no_dl1ab else dl1b_script
             data_sequence_job_template(sequence)
         else:
             raise ValueError(f"Type {sequence.type} not expected")
@@ -273,6 +282,9 @@ def prepare_jobs(sequence_list):
 
 def sequence_filenames(sequence):
     """Build names of the script, veto and history files."""
+    # Default pilot script name.
+    # For DATA sequences, `prepare_jobs` will override this to point to either
+    # `sequence_{run}_dl1a_{tel}.py` or `sequence_{run}_dl1b_{tel}.py`.
     basename = f"sequence_{sequence.jobname}"
     sequence.script = Path(options.directory) / f"{basename}.py"
     sequence.veto = Path(options.directory) / f"{basename}.veto"
@@ -588,7 +600,42 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     job_list = []
     no_display_backend = "--export=ALL,MPLBACKEND=Agg"
 
+    parent_jobid = None
     for sequence in sequence_list:
+        # Sequencer 1
+        if options.no_dl1ab:
+            if (
+                sequence.action == "NoGSel"
+                    or sequence.state in {"PENDING", "RUNNING", "COMPLETED"}
+            ):
+                log.debug(
+                    "Skipping sequence %s (type=%s, state=%s, action=%s)",
+                    sequence.run,
+                    sequence.type,
+                    sequence.state,
+                    sequence.action
+                )
+                continue
+
+        # Sequencer 2
+        else:
+            if sequence.type == "DATA":
+
+                if cfg.getboolean("lstchain", "apply_catB_calibration") and sequence.catbstatus != "CLOSED":
+                    log.debug(f"Skipping sequence {sequence.run} (catbstatus={sequence.catbstatus})")
+                    continue
+
+                if sequence.state in {"PENDING", "RUNNING"}:
+                    log.debug(f"Skipping sequence {sequence.run} (state={sequence.state})")
+                    continue
+
+                if (sequence.state == "COMPLETED" and int(sequence.dl1abstatus) > 0):
+                    log.debug(f"Skipping sequence {sequence.run} (state={sequence.state}")
+                    continue
+
+            else:
+                continue
+
         commandargs = [batch_command, "--parsable", no_display_backend]
         if sequence.type == "PEDCALIB":
             commandargs.append(str(sequence.script))
@@ -613,8 +660,10 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
         if sequence.type == "DATA":
             if not options.simulate and not options.no_calib and not options.test:
                 log.debug("Adding dependencies to job submission")
-                depend_string = f"--dependency=afterok:{parent_jobid}"
-                commandargs.append(depend_string)
+
+                if parent_jobid:
+                    depend_string = f"--dependency=afterok:{parent_jobid}"
+                    commandargs.append(depend_string)
 
             commandargs.append(sequence.script)
 
@@ -799,7 +848,10 @@ def set_queue_values(
     for sequence in sequence_list:
         df_jobname = job_info_filtered[job_info_filtered["JobName"] == sequence.jobname]
         sequence.tries = df_jobname["JobID"].nunique()
-        sequence.action = "Check"
+
+        # Only set to "Check" if no action is already set
+        if sequence.action is None:
+            sequence.action = "Check"
 
         if not df_jobname.empty:
             sequence.jobid = df_jobname["JobID"].max()  # Get latest JobID
