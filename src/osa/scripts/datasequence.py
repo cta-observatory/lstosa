@@ -4,6 +4,7 @@ import logging
 import sys
 from pathlib import Path
 
+from osa.processing_plan import build_processing_plan
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import historylevel
@@ -136,18 +137,46 @@ def r0_to_dl1(
     r0_file = r0_dir / f"LST-1.1.Run{run_str}.fits.fz"
     dl1a_config = Path(cfg.get("lstchain", "dl1a_config"))
 
+    
+    #crear plan
+    plan = build_processing_plan(options.input_state)
     cmd = [
         command,
         f"--input-file={r0_file}",
         f"--output-dir={options.directory}",
-        f"--pedestal-file={pedestal_file}",
-        f"--calibration-file={calibration_file}",
-        f"--time-calibration-file={time_calibration_file}",
-        f"--systematic-correction-file={systematic_correction_file}",
         f"--config={dl1a_config}",
         f"--pointing-file={drive_file}",
         f"--run-summary-path={run_summary}",
     ]
+
+    #control de calibración
+
+    if plan.run_pedestal_correction:
+        cmd.append(f"--pedestal-file={pedestal_file}")
+    else:
+        log.info("Skipping pedestal correction (already applied upstream)")
+    
+    if plan.run_catA_calibration:
+        cmd.append(f"--calibration-file={calibration_file}")
+    else:
+        log.info("Skipping Cat-A calibration (already applied upstream)")
+
+    if plan.run_time_calibration:
+        cmd.append(f"--time-calibration-file={time_calibration_file}")
+    else:
+        if not plan.run_time_calibration:
+            log.info("Skipping time calibration (already applied upstream)")
+    
+    if plan.run_systematic_correction:
+        cmd.append(f"--systematic-correction-file={systematic_correction_file}")
+    else:
+        if not plan.run_systematic_correction:
+            log.info("Skipping systematic correction (already applied upstream)")
+
+
+
+
+
 
     if pedestal_ids_file is not None:
         cmd.append(f"--pedestal-ids-path={pedestal_ids_file}")
@@ -293,3 +322,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
