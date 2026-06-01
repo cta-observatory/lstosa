@@ -1,40 +1,31 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class ProcessingPlan:
     input_state: str
-    run_catA_calibration: bool
-    run_pedestal_correction: bool
-    run_time_calibration: bool  
-    run_systematic_correction: bool
+    needs_calibration: bool
+
 
 def build_processing_plan(input_state: str) -> ProcessingPlan:
+    """
+    Build a simplified processing plan based on input_state.
 
-    if input_state == "legacy_raw":
+    Philosophy:
+    - legacy_raw / gain_selected → aplicar TODA la cadena de calibración
+    - catA_calibrated → NO aplicar ninguna calibración (ya vienen aplicadas)
+    """
+
+    if input_state == "catA_calibrated":
         return ProcessingPlan(
             input_state=input_state,
-            run_catA_calibration=True,
-            run_pedestal_correction=True,
-            run_time_calibration=True,
-            run_systematic_correction=True,
+            needs_calibration=False,
         )
 
-    elif input_state == "gain_selected":
+    elif input_state in ["legacy_raw", "gain_selected"]:
         return ProcessingPlan(
             input_state=input_state,
-            run_catA_calibration=True,
-            run_pedestal_correction=True,
-            run_time_calibration=True,
-            run_systematic_correction=True,
-        )
-
-    elif input_state == "catA_calibrated":
-        return ProcessingPlan(
-            input_state=input_state,
-            run_catA_calibration=False,
-            run_pedestal_correction=False,
-            run_time_calibration=False,
-            run_systematic_correction=False,
+            needs_calibration=True,
         )
 
     else:
