@@ -20,13 +20,22 @@ WORKDIR="${LSTN1}/OSA/GainSel/${obsdate}"
 LOGFILE="${LOGDIR}/${OBS_DATE}_LST1.log"
 FLAG_FILE="${WORKDIR}/GainSelFinished.txt"
 
+# ---------------------------------
+# Skip if input already preprocessed
+# ---------------------------------
+if [ "$INPUT_STATE" != "legacy_raw" ]; then
+    echo "Skipping GainSel: INPUT_STATE=$INPUT_STATE" >> "$LOGFILE"
+    exit 0
+fi
+
 # -------------------------
 # Check GainSelFinished file exists
 # -------------------------
 if [ -e "$FLAG_FILE" ]; then
     echo "GainSelFinished.txt exists for ${OBS_DATE}" >> "$LOGFILE"
-    exit
+    exit 0
 fi
+
 # -------------------------
 # Environment
 # -------------------------
