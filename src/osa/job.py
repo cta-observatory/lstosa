@@ -455,14 +455,16 @@ def data_sequence_job_template(sequence):
             f"--run-summary={get_summary_file(flat_date)}",
         )
     )
-    if plan.run_pedestal_correction:
-        commandargs.append(f"--drs4-pedestal-file={sequence.drs4_file}")
-    if plan.run_catA_calibration:
-        commandargs.append(f"--pedcal-file={sequence.calibration_file}")
-    if plan.run_time_calibration:
-        commandargs.append(f"--time-calib-file={sequence.time_calibration_file}")
-    if plan.run_systematic_correction:
-        commandargs.append(f"--systematic-correction-file={sequence.systematic_correction_file}")
+    
+    if plan.needs_calibration:
+        commandargs.extend([
+            f"--drs4-pedestal-file={sequence.drs4_file}",
+            f"--pedcal-file={sequence.calibration_file}",
+            f"--time-calib-file={sequence.time_calibration_file}",
+            f"--systematic-correction-file={sequence.systematic_correction_file}",
+        ])
+    else:
+        log.info(f"Skipping calibration inputs for run {sequence.run} (already calibrated)")
 
     if not options.no_dl1ab:
         dl1_prod_id, dl1b_config = get_dl1_prod_id_and_config(sequence.run)
@@ -582,7 +584,14 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     Submit the jobs to the cluster.
 
     Parameters
-    ----------
+    ----------    if plan.run_pedestal_correction:
+        commandargs.append(f"--drs4-pedestal-file={sequence.drs4_file}")
+    if plan.run_catA_calibration:
+        commandargs.append(f"--pedcal-file={sequence.calibration_file}")
+    if plan.run_time_calibration:
+        commandargs.append(f"--time-calib-file={sequence.time_calibration_file}")
+    if plan.run_systematic_correction:
+        commandargs.append(f"--systematic-correction-file={sequence.systematic_correction_file}")
     sequence_list: list
         List of sequences to submit.
     batch_command: str
@@ -600,7 +609,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
         plan = build_processing_plan(options.input_state)
         commandargs = [batch_command, "--parsable", no_display_backend]
         if sequence.type == "PEDCALIB":
-            if not plan.run_catA_calibration:
+            if not plan.needs_calibration:
                 log.info(f"Skipping PEDCALIB for run {sequence.run} (already calibrated)")       
                 continue
             commandargs.append(sequence.script)
@@ -627,7 +636,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
 
         if sequence.type == "DATA":
             if not options.simulate and not options.no_calib and not options.test:
-                if plan.run_catA_calibration and 'parent_jobid' in locals():
+                if plan.needs_calibration and 'parent_jobid' in locals():
                     log.debug("Adding dependency on calibration job")
                     depend_string = f"--dependency=afterok:{parent_jobid}"
                     commandargs.append(depend_string)
