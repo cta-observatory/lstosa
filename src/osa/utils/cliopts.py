@@ -177,6 +177,14 @@ def data_sequence_argparser():
         dest="prod_id",
         help="Set the prod ID to define data directories",
     )
+    
+    parser.add_argument(
+        "--input-state",
+        choices=["legacy_raw", "gain_selected", "catA_calibrated"],
+        default="legacy_raw",
+        help="Declared preprocessing state of input data",
+    )
+
     parser.add_argument(
         "--no-dl1ab",
         action="store_true",
@@ -234,6 +242,7 @@ def data_sequence_cli_parsing():
     options.prod_id = opts.prod_id
     options.no_dl1ab = opts.no_dl1ab
     options.tel_id = opts.tel_id
+    options.input_state = opts.input_state
 
     log.debug(f"The options and arguments are {opts}")
 
@@ -261,6 +270,12 @@ def sequencer_argparser():
     parser = ArgumentParser(
         description="Build the jobs for each run and process them for a given date",
         parents=[common_parser],
+    )
+    parser.add_argument(
+        "--input-state",
+        choices=["legacy_raw", "gain_selected", "catA_calibrated"],
+        default="legacy_raw",
+        help="Declared preprocessing state of input data",
     )
     parser.add_argument(
         "--no-submit",
@@ -314,6 +329,8 @@ def sequencer_cli_parsing():
     options.no_dl1ab = opts.no_dl1ab
     options.no_gainsel = opts.no_gainsel
     options.force_submit = opts.force_submit
+    options.input_state = opts.input_state
+
 
     log.debug(f"the options are {opts}")
 
@@ -501,7 +518,9 @@ def autocloser_cli_parser():
         action="store_true",
         default=False,
         help="Disregard the production of DL2 files",
+
     )
+
     parser.add_argument(
         "--no-gainsel",
         action="store_true",
