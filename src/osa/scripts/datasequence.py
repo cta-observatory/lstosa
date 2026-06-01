@@ -107,39 +107,15 @@ def r0_to_dl1(
     pedestal_ids_file: Path,
     run_str: str,
 ) -> int:
-    """
-    Prepare and launch the actual lstchain script that is performing
-    the low and high-level calibration to raw camera images.
-    It also applies the image cleaning and obtains shower parameters.
 
-    Parameters
-    ----------
-    calibration_file: pathlib.Path
-    pedestal_file: pathlib.Path
-    time_calibration_file: pathlib.Path
-    systematic_correction_file: pathlib.Path
-    drive_file: pathlib.Path
-    run_summary: : pathlib.Path
-        Path to the run summary file
-    pedestal_ids_file: pathlib.Path
-        Path to file containing the interleaved pedestal event ids
-    run_str: str
-        XXXXX.XXXX (run_number.subrun_number)
-
-    Returns
-    -------
-    rc: int
-        Return code of the executed command.
-    """
     command = cfg.get("lstchain", "r0_to_dl1")
     night_dir = date_to_dir(options.date)
     r0_dir = Path(cfg.get("LST1", "R0_DIR")) / night_dir
     r0_file = r0_dir / f"LST-1.1.Run{run_str}.fits.fz"
     dl1a_config = Path(cfg.get("lstchain", "dl1a_config"))
 
-    
-    #crear plan
     plan = build_processing_plan(options.input_state)
+
     cmd = [
         command,
         f"--input-file={r0_file}",
@@ -149,34 +125,16 @@ def r0_to_dl1(
         f"--run-summary-path={run_summary}",
     ]
 
-    #control de calibración
-
-    if plan.run_pedestal_correction:
-        cmd.append(f"--pedestal-file={pedestal_file}")
+    # control de calibración
+    if plan.needs_calibration:
+        cmd.extend([
+            f"--pedestal-file={pedestal_file}",
+            f"--calibration-file={calibration_file}",
+            f"--time-calibration-file={time_calibration_file}",
+            f"--systematic-correction-file={systematic_correction_file}",
+        ])
     else:
-        log.info("Skipping pedestal correction (already applied upstream)")
-    
-    if plan.run_catA_calibration:
-        cmd.append(f"--calibration-file={calibration_file}")
-    else:
-        log.info("Skipping Cat-A calibration (already applied upstream)")
-
-    if plan.run_time_calibration:
-        cmd.append(f"--time-calibration-file={time_calibration_file}")
-    else:
-        if not plan.run_time_calibration:
-            log.info("Skipping time calibration (already applied upstream)")
-    
-    if plan.run_systematic_correction:
-        cmd.append(f"--systematic-correction-file={systematic_correction_file}")
-    else:
-        if not plan.run_systematic_correction:
-            log.info("Skipping systematic correction (already applied upstream)")
-
-
-
-
-
+        log.info("Skipping all calibration steps (already applied upstream)")
 
     if pedestal_ids_file is not None:
         cmd.append(f"--pedestal-ids-path={pedestal_ids_file}")
@@ -184,10 +142,14 @@ def r0_to_dl1(
     if options.simulate:
         return 0
 
-    analysis_step = AnalysisStage(run=run_str, command_args=cmd, config_file=dl1a_config.name)
+    analysis_step = AnalysisStage(
+        run=run_str,
+        command_args=cmd,
+        config_file=dl1a_config.name
+    )
+
     analysis_step.execute()
     return analysis_step.rc
-
 
 @trace
 def dl1ab(run_str: str, dl1b_config: Path, dl1_prod_id: str) -> int:
