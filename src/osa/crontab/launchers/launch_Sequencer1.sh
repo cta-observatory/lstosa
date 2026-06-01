@@ -6,6 +6,7 @@
 # (CONDA_ENV); these three parameters are exported from osa-env.sh 
 # --------------------------------------------------------------------
 
+
 # Export parameters from osa-env.sh
 source /fefs/aswg/workspace/maria.rivero/lstosa/src/osa/crontab/osa-env.sh
 
@@ -18,25 +19,28 @@ LOGFILE="${LOGDIR}/${OBS_DATE}_1_LST1.log"
 GSDIR="${LSTN1}/OSA/GainSel/${obsdate}"
 FLAG_FILE="${GSDIR}/GainSelFinished.txt"
 
-
-# -------------------------
-# Check GainSelFinished.txt
-# -------------------------
-if [ ! -e "$FLAG_FILE" ]; then
-    echo "No GainSelFinished.txt for ${OBS_DATE} yet" >> "$LOGFILE"
-    exit
+# ---------------------------------
+# Conditional GainSel requirement
+# ---------------------------------
+if [ "$INPUT_STATE" = "legacy_raw" ]; then
+    if [ ! -e "$FLAG_FILE" ]; then
+        echo "No GainSelFinished.txt for ${OBS_DATE} yet" >> "$LOGFILE"
+        exit 0
+    fi
+else
+    echo "Skipping GainSel requirement: INPUT_STATE=$INPUT_STATE" >> "$LOGFILE"
 fi
 
-# -------------------------
+# ---------------------------------
 # Check NightFinished.txt
-# -------------------------
+# ---------------------------------
 exists() {
     compgen -G "$1" > /dev/null
 }
 
 if exists "${LSTN1}/OSA/Closer/${obsdate}/v*/NightFinished.txt" ; then
     echo "Date ${obsdate} is already closed for LST1" >> "$LOGFILE"
-    exit
+    exit 0
 fi
 
 # -------------------------
@@ -49,9 +53,11 @@ source "$CONDA_ENV"
 # -------------------------
 {
     sequencer \
-	-c "$CFG" \
-	--no-dl1ab \
-	-d "$OBS_DATE" LST1 \
+        --input-state "$INPUT_STATE" \
+        -c "$CFG" \
+        --no-dl1ab \
+        -d "$OBS_DATE" LST1 \
         "$@"
 
 } >> "$LOGFILE" 2>&1
+
