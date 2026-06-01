@@ -24,12 +24,14 @@ SEQUENCER2_WEB="/home/www/html/datacheck/lstosa/sequencer_2.xhtml"
 GSDIR="${LSTN1}/OSA/GainSel/${obsdate}"
 FLAG_FILE="${GSDIR}/GainSelFinished.txt"
 
-# -------------------------
-# Check GainSelFinished.txt
-# -------------------------
-if [ ! -e "$FLAG_FILE" ]; then
-    echo "No GainSelFinished.txt for ${OBS_DATE} yet" >> "$LOGFILE"
-    exit
+# ---------------------------------
+# Conditional GainSel requirement
+# ---------------------------------
+if [ "$INPUT_STATE" = "legacy_raw" ]; then
+    if [ ! -e "$FLAG_FILE" ]; then
+        echo "No GainSelFinished.txt for ${OBS_DATE} yet" >> "$LOGFILE"
+        exit 0
+    fi
 fi
 
 # -------------------------
@@ -40,28 +42,17 @@ source "$CONDA_ENV"
 # -------------------------
 # Run SEQUENCER WEBMAKER
 # -------------------------
-{
-    sequencer_webmaker \
-        -c "$CFG"
-} >> "$LOGFILE" 2>&1
+sequencer_webmaker -c "$CFG" >> "$LOGFILE" 2>&1
 
-{
-    if [ $? = 0 ]; then
-        scp "$HTMLFILE" datacheck:"$SEQUENCER_WEB"
-    fi
-} >> "$LOGFILE" 2>&1
+if [ $? = 0 ]; then
+    scp "$HTMLFILE" datacheck:"$SEQUENCER_WEB" >> "$LOGFILE" 2>&1
+fi
 
 # -------------------------
 # Run SEQUENCER WEBMAKER 2
 # -------------------------
+sequencer_webmaker_2 -c "$CFG" >> "$LOGFILE2" 2>&1
 
-{
-    sequencer_webmaker_2 \
-        -c "$CFG"
-} >> "$LOGFILE2" 2>&1
-
-{
-    if [ $? = 0 ]; then
-        scp "$HTMLFILE2" datacheck:"$SEQUENCER2_WEB"
-    fi
-} >> "$LOGFILE2" 2>&1
+if [ $? = 0 ]; then
+    scp "$HTMLFILE2" datacheck:"$SEQUENCER2_WEB" >> "$LOGFILE2" 2>&1
+fi
