@@ -22,16 +22,16 @@ log = myLogger(logging.getLogger())
 
 
 def data_sequence(
-    calibration_file: Path,
-    pedestal_file: Path,
-    time_calibration_file: Path,
-    systematic_correction_file: Path,
     drive_file: Path,
     run_summary: Path,
     pedestal_ids_file: Path,
     run_str: str,
     dl1b_config: Path,
     dl1_prod_id: str,
+    calibration_file: Path | None = None,
+    pedestal_file: Path | None = None,
+    time_calibration_file: Path | None = None,
+    systematic_correction_file: Path | None = None,
 ):
     """
     Performs all the steps to process a whole run.
@@ -107,7 +107,7 @@ def r0_to_dl1(
     pedestal_ids_file: Path,
     run_str: str,
 ) -> int:
-
+    
     command = cfg.get("lstchain", "r0_to_dl1")
     night_dir = date_to_dir(options.date)
     r0_dir = Path(cfg.get("LST1", "R0_DIR")) / night_dir
@@ -267,7 +267,7 @@ def main():
         log.setLevel(logging.INFO)
 
     # Run the routine piping all the analysis steps
-    rc = data_sequence(
+    '''rc = data_sequence(
         calibration_file,
         drs4_ped_file,
         time_calibration_file,
@@ -278,6 +278,19 @@ def main():
         run_number,
         dl1b_config,
         dl1_prod_id,
+    )'''
+# Run the routine piping all the analysis steps                                                                                                                                              
+    rc = data_sequence(
+        drive_file=drive_log_file,
+        run_summary=run_summary_file,
+        pedestal_ids_file=pedestal_ids_file,
+        run_str=run_number,
+        dl1b_config=dl1b_config,
+        dl1_prod_id=dl1_prod_id,
+        calibration_file=calibration_file,
+        pedestal_file=drs4_ped_file,
+        time_calibration_file=time_calibration_file,
+        systematic_correction_file=systematic_correction_file,
     )
     sys.exit(rc)
 
