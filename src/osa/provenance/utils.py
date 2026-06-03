@@ -35,7 +35,6 @@ def parse_variables(class_instance):
     # --run-summary .../monitoring/RunSummary/RunSummary_20200101.ecsv
     # 02006.0000
     # LST1
-
     flat_date = date_to_dir(options.date)
     configfile_dl1b = cfg.get("lstchain", "dl1b_config")
     configfile_dl2 = cfg.get("lstchain", "dl2_config")
@@ -104,25 +103,24 @@ def parse_variables(class_instance):
         # run_summary_file   [5] .../RunSummary/RunSummary_20200101.ecsv
         # pedestal_ids_file  [6] .../path/to/interleaved/pedestal/events.h5
         # run_str            [7] 02006.0000
-
         run_subrun = class_instance.args[7]
         run = run_subrun.split(".")[0]
         class_instance.ObservationRun = run
 
         outdir_dl1 = dl1_dir / flat_date / options.prod_id
-        calibration_file = Path(class_instance.args[0]).resolve()
-        pedestal_file = Path(class_instance.args[1]).resolve()
-        timecalibration_file = Path(class_instance.args[2]).resolve()
-        systematic_correction_file = Path(class_instance.args[3]).resolve()
+        calibration_file = Path(class_instance.args[0]).resolve() if class_instance.args[0] else None
+        pedestal_file = Path(class_instance.args[1]).resolve() if class_instance.args[1] else None
+        timecalibration_file = Path(class_instance.args[2]).resolve() if class_instance.args[2] else None
+        systematic_correction_file = Path(class_instance.args[3]).resolve() if class_instance.args[3] else None
         class_instance.R0SubrunDataset = str((
             raw_dir / flat_date / f"LST-1.1.Run{run_subrun}.fits.fz"
         ).resolve())
-        class_instance.CoefficientsCalibrationFile = str(calibration_file)
-        class_instance.PedestalFile = str(pedestal_file)
-        class_instance.TimeCalibrationFile = str(timecalibration_file)
-        class_instance.SystematicCorrectionFile = str(systematic_correction_file)
-        class_instance.PointingFile = str(Path(class_instance.args[4]).resolve())
-        class_instance.RunSummaryFile = str(Path(class_instance.args[5]).resolve())
+        class_instance.CoefficientsCalibrationFile = str(calibration_file) if calibration_file else None
+        class_instance.PedestalFile = str(pedestal_file) if pedestal_file else None
+        class_instance.TimeCalibrationFile = str(timecalibration_file) if timecalibration_file else None
+        class_instance.SystematicCorrectionFile = str(systematic_correction_file) if systematic_correction_file else None
+        class_instance.PointingFile = str(Path(class_instance.args[4]).resolve()) if class_instance.args[4] else None
+        class_instance.RunSummaryFile = str(Path(class_instance.args[5]).resolve()) if class_instance.args[5] else None
         class_instance.DL1SubrunDataset = str(
             (outdir_dl1 / f"dl1_LST-1.Run{run_subrun}.h5").resolve()
         )

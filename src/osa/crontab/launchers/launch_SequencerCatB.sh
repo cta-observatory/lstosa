@@ -43,11 +43,13 @@ source "$CONDA_ENV"
 # -------------------------
 # Run SEQUENCER CATEGORY B
 # -------------------------
+
 {
+
     sequencer_catB_tailcuts \
-	-c "$CFG" \
-	-d "$OBS_DATE" LST1 \
+        --input-state "$INPUT_STATE" \
+        -c "$CFG" \
+        -d "$OBS_DATE" LST1 \
         "$@"
 
 } >> "$LOGFILE" 2>&1
-

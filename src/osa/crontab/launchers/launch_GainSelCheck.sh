@@ -27,11 +27,19 @@ GS_HTML="${LSTN1}/OSA/GainSelWeb/osa_gainsel_status_${OBS_DATE}.html"
 GS_LSTOSA="/home/www/html/datacheck/lstosa/gainsel.xhtml"
 
 # ---------------------------------
+# Skip if input already preprocessed
+# ---------------------------------
+if [ "$INPUT_STATE" != "legacy_raw" ]; then
+    echo "Skipping GainSelCheck: INPUT_STATE=$INPUT_STATE" >> "$LOGFILE"
+    exit 0
+fi
+
+# ---------------------------------
 # Check GainSelFinished file exists
 # ---------------------------------
 if [ -e "$FLAG_FILE" ]; then
     echo "GainSelFinished.txt exists for ${OBS_DATE}" >> "$LOGFILE"
-    exit
+    exit 0
 fi
 
 # -------------------------
@@ -45,7 +53,7 @@ source "$CONDA_ENV"
 {
     gain_selection --check \
         -c "$CFG" \
-	-d "$OBS_DATE" \
+        -d "$OBS_DATE" \
         "$@"
 
 } >> "$LOGFILE" 2>&1
@@ -58,8 +66,10 @@ source "$CONDA_ENV"
         -c "$CFG"
 } >> "$LOGFILE_WEB" 2>&1
 
-{
-    if [ $? = 0 ]; then
-        scp "$GS_HTML" datacheck:"$GS_LSTOSA"
-    fi
-} >> "$LOGFILE_WEB" 2>&1
+# -------------------------
+# Copy to web server
+# -------------------------
+if [ $? = 0 ]; then
+    scp "$GS_HTML" datacheck:"$GS_LSTOSA" >> "$LOGFILE_WEB" 2>&1
+fi
+

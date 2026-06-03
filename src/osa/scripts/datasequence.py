@@ -4,6 +4,7 @@ import logging
 import sys
 from pathlib import Path
 
+from osa.processing_plan import build_processing_plan
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.job import historylevel
@@ -21,16 +22,16 @@ log = myLogger(logging.getLogger())
 
 
 def data_sequence(
-    calibration_file: Path,
-    pedestal_file: Path,
-    time_calibration_file: Path,
-    systematic_correction_file: Path,
     drive_file: Path,
     run_summary: Path,
     pedestal_ids_file: Path,
     run_str: str,
     dl1b_config: Path,
     dl1_prod_id: str,
+    calibration_file: Path | None = None,
+    pedestal_file: Path | None = None,
+    time_calibration_file: Path | None = None,
+    systematic_correction_file: Path | None = None,
 ):
     """
     Performs all the steps to process a whole run.
@@ -106,48 +107,34 @@ def r0_to_dl1(
     pedestal_ids_file: Path,
     run_str: str,
 ) -> int:
-    """
-    Prepare and launch the actual lstchain script that is performing
-    the low and high-level calibration to raw camera images.
-    It also applies the image cleaning and obtains shower parameters.
-
-    Parameters
-    ----------
-    calibration_file: pathlib.Path
-    pedestal_file: pathlib.Path
-    time_calibration_file: pathlib.Path
-    systematic_correction_file: pathlib.Path
-    drive_file: pathlib.Path
-    run_summary: : pathlib.Path
-        Path to the run summary file
-    pedestal_ids_file: pathlib.Path
-        Path to file containing the interleaved pedestal event ids
-    run_str: str
-        XXXXX.XXXX (run_number.subrun_number)
-
-    Returns
-    -------
-    rc: int
-        Return code of the executed command.
-    """
+    
     command = cfg.get("lstchain", "r0_to_dl1")
     night_dir = date_to_dir(options.date)
     r0_dir = Path(cfg.get("LST1", "R0_DIR")) / night_dir
     r0_file = r0_dir / f"LST-1.1.Run{run_str}.fits.fz"
     dl1a_config = Path(cfg.get("lstchain", "dl1a_config"))
 
+    plan = build_processing_plan(options.input_state)
+
     cmd = [
         command,
         f"--input-file={r0_file}",
         f"--output-dir={options.directory}",
-        f"--pedestal-file={pedestal_file}",
-        f"--calibration-file={calibration_file}",
-        f"--time-calibration-file={time_calibration_file}",
-        f"--systematic-correction-file={systematic_correction_file}",
         f"--config={dl1a_config}",
         f"--pointing-file={drive_file}",
         f"--run-summary-path={run_summary}",
     ]
+
+    # control de calibración
+    if plan.needs_calibration:
+        cmd.extend([
+            f"--pedestal-file={pedestal_file}",
+            f"--calibration-file={calibration_file}",
+            f"--time-calibration-file={time_calibration_file}",
+            f"--systematic-correction-file={systematic_correction_file}",
+        ])
+    else:
+        log.info("Skipping all calibration steps (already applied upstream)")
 
     if pedestal_ids_file is not None:
         cmd.append(f"--pedestal-ids-path={pedestal_ids_file}")
@@ -155,10 +142,14 @@ def r0_to_dl1(
     if options.simulate:
         return 0
 
-    analysis_step = AnalysisStage(run=run_str, command_args=cmd, config_file=dl1a_config.name)
+    analysis_step = AnalysisStage(
+        run=run_str,
+        command_args=cmd,
+        config_file=dl1a_config.name
+    )
+
     analysis_step.execute()
     return analysis_step.rc
-
 
 @trace
 def dl1ab(run_str: str, dl1b_config: Path, dl1_prod_id: str) -> int:
@@ -276,7 +267,7 @@ def main():
         log.setLevel(logging.INFO)
 
     # Run the routine piping all the analysis steps
-    rc = data_sequence(
+    '''rc = data_sequence(
         calibration_file,
         drs4_ped_file,
         time_calibration_file,
@@ -287,9 +278,23 @@ def main():
         run_number,
         dl1b_config,
         dl1_prod_id,
+    )'''
+# Run the routine piping all the analysis steps                                                                                                                                              
+    rc = data_sequence(
+        drive_file=drive_log_file,
+        run_summary=run_summary_file,
+        pedestal_ids_file=pedestal_ids_file,
+        run_str=run_number,
+        dl1b_config=dl1b_config,
+        dl1_prod_id=dl1_prod_id,
+        calibration_file=calibration_file,
+        pedestal_file=drs4_ped_file,
+        time_calibration_file=time_calibration_file,
+        systematic_correction_file=systematic_correction_file,
     )
     sys.exit(rc)
 
 
 if __name__ == "__main__":
     main()
+

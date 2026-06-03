@@ -16,6 +16,7 @@ from osa import osadb
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.veto import get_closed_list, get_veto_list
+from osa.processing_plan import build_processing_plan
 from osa.utils.logging import myLogger
 
 warnings.filterwarnings(
@@ -108,16 +109,22 @@ def single_process(telescope):
         os.makedirs(options.log_directory, exist_ok=True)
 
     summary_table = run_summary_table(options.date)
+    plan = build_processing_plan(options.input_state)
+    log.info(f"Processing input_state = {options.input_state}")
+  
     if len(summary_table) == 0:
         log.warning("No runs found for this date. Nothing to do. Exiting.")
-        sys.exit(0)
+        sys.exit(0) 
+    if plan.input_state == "legacy_raw":
+        if not options.no_gainsel and not GainSel_finished(options.date):
+            log.info(
+                f"Gain selection did not finish successfully for date {date_to_iso(options.date)}. "
+                "Try again later."
+            )
+            sys.exit()
+    else:
+        log.info("Skipping gain-selection check (handled upstream)")
 
-    if not options.no_gainsel and not GainSel_finished(options.date):
-        log.info(
-            f"Gain selection did not finish successfully for date {date_to_iso(options.date)}. "
-            "Try again later, once gain selection has finished."
-        )
-        sys.exit()
 
     if is_day_closed():
         log.info(f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}")

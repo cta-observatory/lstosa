@@ -6,4 +6,7 @@ CONDA_ENV=${CONDA_ENV:-"/fefs/aswg/lstosa/utils/osa-conda"}
 
 LSTN1=${LSTN1:-"/fefs/onsite/data/lst-pipe/LSTN-01"}
 
-export OBS_DATE CFG CONDA_ENV LSTN1
+
+INPUT_STATE=${INPUT_STATE:-legacy_raw}
+
+export OBS_DATE CFG CONDA_ENV LSTN1 INPUT_STATE

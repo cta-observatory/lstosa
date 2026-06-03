@@ -25,6 +25,7 @@ from osa.paths import (
 )
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
+from osa.processing_plan import build_processing_plan
 from osa.utils.utils import (
     date_to_dir,
     time_to_seconds,
@@ -431,8 +432,11 @@ def data_sequence_job_template(sequence):
     job_header = job_header_template(sequence)
 
     flat_date = date_to_dir(options.date)
+    plan = build_processing_plan(options.input_state)
+
 
     commandargs = ["datasequence"]
+    commandargs.append(f"--input-state={options.input_state}")
 
     if options.verbose:
         commandargs.append("-v")
@@ -447,14 +451,20 @@ def data_sequence_job_template(sequence):
         (
             f"--date={date_to_iso(options.date)}",
             f"--prod-id={options.prod_id}",
-            f"--drs4-pedestal-file={sequence.drs4_file}",
-            f"--time-calib-file={sequence.time_calibration_file}",
-            f"--pedcal-file={sequence.calibration_file}",
-            f"--systematic-correction-file={sequence.systematic_correction_file}",
             f"--drive-file={get_drive_file(flat_date)}",
             f"--run-summary={get_summary_file(flat_date)}",
         )
     )
+    
+    if plan.needs_calibration:
+        commandargs.extend([
+            f"--drs4-pedestal-file={sequence.drs4_file}",
+            f"--pedcal-file={sequence.calibration_file}",
+            f"--time-calib-file={sequence.time_calibration_file}",
+            f"--systematic-correction-file={sequence.systematic_correction_file}",
+        ])
+    else:
+        log.info(f"Skipping calibration inputs for run {sequence.run} (already calibrated)")
 
     if not options.no_dl1ab:
         dl1_prod_id, dl1b_config = get_dl1_prod_id_and_config(sequence.run)
@@ -574,7 +584,14 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     Submit the jobs to the cluster.
 
     Parameters
-    ----------
+    ----------    if plan.run_pedestal_correction:
+        commandargs.append(f"--drs4-pedestal-file={sequence.drs4_file}")
+    if plan.run_catA_calibration:
+        commandargs.append(f"--pedcal-file={sequence.calibration_file}")
+    if plan.run_time_calibration:
+        commandargs.append(f"--time-calib-file={sequence.time_calibration_file}")
+    if plan.run_systematic_correction:
+        commandargs.append(f"--systematic-correction-file={sequence.systematic_correction_file}")
     sequence_list: list
         List of sequences to submit.
     batch_command: str
@@ -589,9 +606,15 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     no_display_backend = "--export=ALL,MPLBACKEND=Agg"
 
     for sequence in sequence_list:
+        plan = build_processing_plan(options.input_state)
         commandargs = [batch_command, "--parsable", no_display_backend]
         if sequence.type == "PEDCALIB":
-            commandargs.append(str(sequence.script))
+            if not plan.needs_calibration:
+                log.info(f"Skipping PEDCALIB for run {sequence.run} (already calibrated)")       
+                continue
+            commandargs.append(sequence.script)
+
+
             if options.simulate or options.no_calib or options.test:
                 log.debug("SIMULATE Launching scripts")
             else:
@@ -610,13 +633,19 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
         # from previous time sequencer was launched.
 
         # Add the job dependencies after calibration sequence
+
         if sequence.type == "DATA":
             if not options.simulate and not options.no_calib and not options.test:
-                log.debug("Adding dependencies to job submission")
-                depend_string = f"--dependency=afterok:{parent_jobid}"
-                commandargs.append(depend_string)
-
+                if plan.needs_calibration and 'parent_jobid' in locals():
+                    log.debug("Adding dependency on calibration job")
+                    depend_string = f"--dependency=afterok:{parent_jobid}"
+                    commandargs.append(depend_string)
+                else:
+                    log.info("No calibration dependency needed (input already calibrated)")
+        
             commandargs.append(sequence.script)
+
+
 
             if options.simulate:
                 log.debug("SIMULATE Launching scripts")
@@ -852,3 +881,4 @@ def job_finished_in_timeout(job_id: str) -> bool:
         return True
     else:
         return False
+
