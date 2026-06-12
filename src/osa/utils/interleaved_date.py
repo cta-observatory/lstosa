@@ -122,7 +122,7 @@ def summary_dates(date, summary_dir):
             try:
                 entry["run_id"].append(int(row[0]))
                 entry["run_type"].append(row[2])
-            except:
+            except (ValueError, IndexError):
                 continue
 
     return entry
@@ -144,11 +144,16 @@ def info_dates(date, catalog_dir, runs_id):
 
             try:
                 run_id = int(row[0])
-            except:
+            except ValueError:
                 continue
 
             if run_id in runs_id:
-                if "crab" in row[1].lower():
+                try:
+                    source_name = row[1]
+                except IndexError:
+                    continue
+
+                if "crab" in source_name.lower():
                     entry["crab"].append(run_id)
                 else:
                     entry["other_source"].append(run_id)
@@ -157,7 +162,7 @@ def info_dates(date, catalog_dir, runs_id):
 
 
 # =========================================================
-# MAIN (SIN CAMBIOS DE LÓGICA)
+# MAIN
 # =========================================================
 
 if __name__ == "__main__":
@@ -242,4 +247,3 @@ if __name__ == "__main__":
                     with open(recordfile, "a") as file:
                         file.write(f"rm {filepath}\n")
                         file.write(f"rm {link_filepath}\n")
-
