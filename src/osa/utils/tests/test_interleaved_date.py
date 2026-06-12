@@ -209,8 +209,6 @@ def test_summary_and_info_integration(tmp_path):
         "12345,Crab\n12346,Mrk421\n"
     )
 
-    from osa.utils.interleaved_date import summary_dates, info_dates
-
     summary = summary_dates("20250101", tmp_path)
 
     data_runs = [
