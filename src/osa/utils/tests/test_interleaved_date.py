@@ -1,9 +1,11 @@
 import pytest
+
 from osa.utils.interleaved_date import (
     clean_path,
     load_config,
     summary_dates,
     info_dates,
+    find_interleaved,
 )
 
 
@@ -52,7 +54,7 @@ OSA_DIR=%(BASE)s/OSA
 
 
 def test_load_config_missing_file():
-    with pytest.raises(Exception):
+    with pytest.raises(FileNotFoundError):
         load_config("missing.cfg")
 
 
@@ -75,8 +77,7 @@ BASE=/tmp
 # =========================================================
 
 def test_summary_dates_ok(tmp_path):
-    summary_dir = tmp_path
-    file = summary_dir / "RunSummary_20250101.ecsv"
+    file = tmp_path / "RunSummary_20250101.ecsv"
 
     file.write_text(
         """
@@ -86,7 +87,7 @@ def test_summary_dates_ok(tmp_path):
 """
     )
 
-    result = summary_dates("20250101", summary_dir)
+    result = summary_dates("20250101", tmp_path)
 
     assert 12345 in result["run_id"]
     assert "DATA" in result["run_type"]
@@ -103,8 +104,7 @@ def test_summary_dates_missing_file(tmp_path):
 # =========================================================
 
 def test_info_dates_crab_and_other(tmp_path):
-    catalog_dir = tmp_path
-    file = catalog_dir / "RunCatalog_20250101.ecsv"
+    file = tmp_path / "RunCatalog_20250101.ecsv"
 
     file.write_text(
         """
@@ -117,7 +117,7 @@ def test_info_dates_crab_and_other(tmp_path):
 
     runs = [12345, 12346, 12347]
 
-    result = info_dates("20250101", catalog_dir, runs)
+    result = info_dates("20250101", tmp_path, runs)
 
     assert 12345 in result["crab"]
     assert 12347 in result["crab"]
@@ -131,8 +131,7 @@ def test_info_dates_no_file(tmp_path):
 
 
 def test_info_dates_filter_runs(tmp_path):
-    catalog_dir = tmp_path
-    file = catalog_dir / "RunCatalog_20250101.ecsv"
+    file = tmp_path / "RunCatalog_20250101.ecsv"
 
     file.write_text(
         """
@@ -141,7 +140,85 @@ def test_info_dates_filter_runs(tmp_path):
 """
     )
 
-    result = info_dates("20250101", catalog_dir, [12345])
+    result = info_dates("20250101", tmp_path, [12345])
 
     assert result["crab"] == [12345]
     assert result["other_source"] == []
+
+
+# =========================================================
+# find_interleaved
+# =========================================================
+
+def test_find_interleaved_basic(tmp_path):
+
+    base = tmp_path / "DL1"
+    base.mkdir()
+
+    date_dir = base / "20250115"
+    inter_dir = date_dir / "v1" / "interleaved"
+    inter_dir.mkdir(parents=True)
+
+    from osa.utils import interleaved_date
+    interleaved_date.data_dirs = [str(base)]
+
+    paths, dates = find_interleaved("20250120")
+
+    assert len(paths) == 1
+    assert "interleaved" in paths[0]
+    assert dates == ["20250115"]
+
+
+def test_find_interleaved_outside_range(tmp_path):
+
+    base = tmp_path / "DL1"
+    base.mkdir()
+
+    date_dir = base / "20230101"
+    inter_dir = date_dir / "v1" / "interleaved"
+    inter_dir.mkdir(parents=True)
+
+    from osa.utils import interleaved_date
+    interleaved_date.data_dirs = [str(base)]
+
+    paths, dates = find_interleaved("20250120")
+
+    assert paths == []
+    assert dates == []
+
+
+def test_find_interleaved_invalid_date():
+
+    with pytest.raises(SystemExit):
+        find_interleaved("bad_date")
+
+
+# =========================================================
+# INTEGRATION TEST (MUY IMPORTANTE PARA COVERAGE)
+# =========================================================
+
+def test_summary_and_info_integration(tmp_path):
+
+    # RunSummary
+    (tmp_path / "RunSummary_20250101.ecsv").write_text(
+        "12345,xxx,DATA\n12346,xxx,DATA\n"
+    )
+
+    # RunCatalog
+    (tmp_path / "RunCatalog_20250101.ecsv").write_text(
+        "12345,Crab\n12346,Mrk421\n"
+    )
+
+    from osa.utils.interleaved_date import summary_dates, info_dates
+
+    summary = summary_dates("20250101", tmp_path)
+
+    data_runs = [
+        r for r, t in zip(summary["run_id"], summary["run_type"])
+        if t == "DATA"
+    ]
+
+    entry = info_dates("20250101", tmp_path, data_runs)
+
+    assert entry["crab"] == [12345]
+    assert entry["other_source"] == [12346]
