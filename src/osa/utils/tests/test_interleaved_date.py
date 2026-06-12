@@ -1,5 +1,3 @@
-import os
-from pathlib import Path
 import pytest
 from osa.utils.interleaved_date import (
     clean_path,
