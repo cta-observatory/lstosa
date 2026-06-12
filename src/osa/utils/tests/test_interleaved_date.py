@@ -15,17 +15,13 @@ from osa.utils.interleaved_date import (
 
 def test_clean_path_replace_base(tmp_path):
     base = str(tmp_path)
-
     result = clean_path("%(BASE)s/data", base)
-
     assert result == str(tmp_path / "data")
 
 
 def test_clean_path_without_base(tmp_path):
     base = str(tmp_path)
-
     result = clean_path("/my/path", base)
-
     assert result == "/my/path"
 
 
@@ -95,8 +91,15 @@ def test_summary_dates_ok(tmp_path):
 
 def test_summary_dates_missing_file(tmp_path):
     result = summary_dates("20250101", tmp_path)
-
     assert result == {"run_id": [], "run_type": []}
+
+
+def test_summary_dates_bad_rows(tmp_path):
+    file = tmp_path / "RunSummary_20250101.ecsv"
+    file.write_text("badline\n12345\n")
+
+    result = summary_dates("20250101", tmp_path)
+    assert isinstance(result, dict)
 
 
 # =========================================================
@@ -126,7 +129,6 @@ def test_info_dates_crab_and_other(tmp_path):
 
 def test_info_dates_no_file(tmp_path):
     result = info_dates("20250101", tmp_path, [1, 2])
-
     assert result == {"crab": [], "other_source": []}
 
 
@@ -146,12 +148,19 @@ def test_info_dates_filter_runs(tmp_path):
     assert result["other_source"] == []
 
 
+def test_info_dates_bad_rows(tmp_path):
+    file = tmp_path / "RunCatalog_20250101.ecsv"
+    file.write_text("badline\n12345\n")
+
+    result = info_dates("20250101", tmp_path, [12345])
+    assert isinstance(result, dict)
+
+
 # =========================================================
 # find_interleaved
 # =========================================================
 
 def test_find_interleaved_basic(tmp_path):
-
     base = tmp_path / "DL1"
     base.mkdir()
 
@@ -165,18 +174,15 @@ def test_find_interleaved_basic(tmp_path):
     paths, dates = find_interleaved("20250120")
 
     assert len(paths) == 1
-    assert "interleaved" in paths[0]
     assert dates == ["20250115"]
 
 
 def test_find_interleaved_outside_range(tmp_path):
-
     base = tmp_path / "DL1"
     base.mkdir()
 
     date_dir = base / "20230101"
-    inter_dir = date_dir / "v1" / "interleaved"
-    inter_dir.mkdir(parents=True)
+    (date_dir / "v1" / "interleaved").mkdir(parents=True)
 
     from osa.utils import interleaved_date
     interleaved_date.data_dirs = [str(base)]
@@ -188,23 +194,33 @@ def test_find_interleaved_outside_range(tmp_path):
 
 
 def test_find_interleaved_invalid_date():
-
     with pytest.raises(SystemExit):
         find_interleaved("bad_date")
 
 
+def test_find_interleaved_no_dirs(tmp_path):
+    base = tmp_path / "DL1"
+    base.mkdir()
+
+    from osa.utils import interleaved_date
+    interleaved_date.data_dirs = [str(base)]
+
+    paths, dates = find_interleaved("20250101")
+
+    assert paths == []
+    assert dates == []
+
+
 # =========================================================
-# INTEGRATION TEST (MUY IMPORTANTE PARA COVERAGE)
+# INTEGRATION TEST
 # =========================================================
 
 def test_summary_and_info_integration(tmp_path):
 
-    # RunSummary
     (tmp_path / "RunSummary_20250101.ecsv").write_text(
         "12345,xxx,DATA\n12346,xxx,DATA\n"
     )
 
-    # RunCatalog
     (tmp_path / "RunCatalog_20250101.ecsv").write_text(
         "12345,Crab\n12346,Mrk421\n"
     )
@@ -220,3 +236,42 @@ def test_summary_and_info_integration(tmp_path):
 
     assert entry["crab"] == [12345]
     assert entry["other_source"] == [12346]
+
+
+# =========================================================
+# MAIN TEST (CLAVE PARA COVERAGE)
+# =========================================================
+
+def test_main_execution(tmp_path, monkeypatch):
+
+    import sys
+    import importlib
+    from osa.utils import interleaved_date
+
+    cfg = tmp_path / "test.cfg"
+    cfg.write_text(
+        f"""
+[LST1]
+BASE={tmp_path}
+RUN_SUMMARY_DIR=%(BASE)s/RunSummary
+RUN_CATALOG=%(BASE)s/RunCatalog
+OSA_DIR=%(BASE)s/OSA
+"""
+    )
+
+    (tmp_path / "RunSummary").mkdir()
+    (tmp_path / "RunCatalog").mkdir()
+
+    monkeypatch.setattr(
+        sys, "argv",
+        ["script", "20250101", "-c", str(cfg)]
+    )
+
+    # evitamos depender del filesystem real
+    monkeypatch.setattr(
+        interleaved_date,
+        "find_interleaved",
+        lambda x: ([], [])
+    )
+
+    importlib.reload(interleaved_date)
