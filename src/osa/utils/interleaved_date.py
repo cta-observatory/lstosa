@@ -1,8 +1,3 @@
-"""
-Remove interleaved directories for data runs that have already been processed.
-Config-driven version (no hardcoded paths).
-"""
-
 import os
 import sys
 import csv
@@ -12,10 +7,17 @@ from pathlib import Path
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
+__all__ = [
+    "clean_path",
+    "load_config",
+    "summary_dates",
+    "info_dates",
+]
 
-# =========================
+
+# =========================================================
 # CONFIG
-# =========================
+# =========================================================
 
 def clean_path(raw_path, base):
     raw_path = raw_path.strip()
@@ -27,6 +29,11 @@ def clean_path(raw_path, base):
 
 
 def load_config(cfg_file):
+    cfg_path = Path(cfg_file)
+
+    if not cfg_path.exists():
+        raise FileNotFoundError(f"Config file not found: {cfg_file}")
+
     config = configparser.ConfigParser(delimiters=(":", "="))
     config.optionxform = str
     config.read(cfg_file)
@@ -45,9 +52,9 @@ def load_config(cfg_file):
     return summary_dir, catalog_dir, osa_dir
 
 
-# =========================
+# =========================================================
 # DATA DIRECTORIES
-# =========================
+# =========================================================
 
 data_dirs = [
     "/fefs/onsite/data/lst-pipe/LSTN-01/DL1",
@@ -55,9 +62,9 @@ data_dirs = [
 ]
 
 
-# =========================
+# =========================================================
 # FUNCTIONS
-# =========================
+# =========================================================
 
 def find_interleaved(target_date_str):
 
@@ -72,7 +79,6 @@ def find_interleaved(target_date_str):
 
     for base_dir in data_dirs:
         if not os.path.isdir(base_dir):
-            print(f"Path not found: {base_dir}")
             continue
 
         for date_dir in sorted(os.listdir(base_dir)):
@@ -93,10 +99,9 @@ def find_interleaved(target_date_str):
                 continue
 
             for root, dirs, _ in os.walk(date_path):
-                for d in dirs:
-                    if d == "interleaved":
-                        interleaved_paths.append(os.path.join(root, d))
-                        interleaved_dates.append(date_dir)
+                if "interleaved" in dirs:
+                    interleaved_paths.append(os.path.join(root, "interleaved"))
+                    interleaved_dates.append(date_dir)
 
     return interleaved_paths, interleaved_dates
 
@@ -104,8 +109,7 @@ def find_interleaved(target_date_str):
 def summary_dates(date, summary_dir):
 
     entry = {"run_id": [], "run_type": []}
-    filename = f"RunSummary_{date}.ecsv"
-    filepath = os.path.join(summary_dir, filename)
+    filepath = os.path.join(summary_dir, f"RunSummary_{date}.ecsv")
 
     if not os.path.isfile(filepath):
         return entry
@@ -127,8 +131,7 @@ def summary_dates(date, summary_dir):
 def info_dates(date, catalog_dir, runs_id):
 
     entry = {"crab": [], "other_source": []}
-    filename = f"RunCatalog_{date}.ecsv"
-    filepath = os.path.join(catalog_dir, filename)
+    filepath = os.path.join(catalog_dir, f"RunCatalog_{date}.ecsv")
 
     if not os.path.isfile(filepath):
         return entry
@@ -153,9 +156,9 @@ def info_dates(date, catalog_dir, runs_id):
     return entry
 
 
-# =========================
-# MAIN
-# =========================
+# =========================================================
+# MAIN (SIN CAMBIOS DE LÓGICA)
+# =========================================================
 
 if __name__ == "__main__":
 
@@ -174,13 +177,11 @@ if __name__ == "__main__":
         print("Config file not provided")
         sys.exit(1)
 
-    # LOAD CFG
     summary_dir, catalog_dir, osa_dir = load_config(cfg_file)
 
     backup_summary_dir = summary_dir
     backup_catalog_dir = catalog_dir
 
-    # OUTPUT in OSA
     output_dir = os.path.join(osa_dir, "interleaved_cleanup_sh")
     os.makedirs(output_dir, exist_ok=True)
 
@@ -196,10 +197,6 @@ if __name__ == "__main__":
         p.replace("/DL1/", "/running_analysis/").removesuffix("/interleaved")
         for p in found_paths
     ]
-
-    print("Interleaved directories encontrados:")
-    for p in found_paths:
-        print(p)
 
     for path, link_path, date in zip(found_paths, new_paths, found_dates):
 
@@ -246,4 +243,3 @@ if __name__ == "__main__":
                         file.write(f"rm {filepath}\n")
                         file.write(f"rm {link_filepath}\n")
 
-    print(f"\nScript generado en:\n{recordfile}")
