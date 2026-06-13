@@ -176,8 +176,11 @@ if __name__ == "__main__":
     cfg_file = None
     for i, arg in enumerate(sys.argv):
         if arg == "-c":
+            if i + 1 >= len(sys.argv):
+                print("Config file not provided")
+                sys.exit(1)
             cfg_file = sys.argv[i + 1]
-
+            break
     if cfg_file is None:
         print("Config file not provided")
         sys.exit(1)
