@@ -154,7 +154,7 @@ def test_find_interleaved_outside_range(tmp_path):
 
 def test_find_interleaved_invalid_date():
     with pytest.raises(SystemExit):
-        find_interleaved("bad_date", "/tmp")
+        find_interleaved("bad_date", str(tmp_path))
 
 
 def test_find_interleaved_no_dirs(tmp_path):
