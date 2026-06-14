@@ -152,7 +152,7 @@ def test_find_interleaved_outside_range(tmp_path):
     assert dates == []
 
 
-def test_find_interleaved_invalid_date():
+def test_find_interleaved_invalid_date(tmp_path):
     with pytest.raises(SystemExit):
         find_interleaved("bad_date", str(tmp_path))
 
