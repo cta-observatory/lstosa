@@ -20,7 +20,6 @@ python interleaved_date.py 20260101 -c sequencer.cfg
 The script generates a bash file that must be manually reviewed and executed.
 
 Configuration file must contain:
-OSA/interleaved_cleanup_sh
 [LST1]
 BASE=/path/to/base
 DL1_DIR=%(BASE)s/DL1
@@ -46,9 +45,7 @@ __all__ = [
 ]
 
 
-# =========================================================
-# CONFIG
-# =========================================================
+
 
 def clean_path(raw_path, base):
     raw_path = raw_path.strip()
@@ -89,13 +86,10 @@ def load_config(cfg_file):
     return dl1_dir, summary_dir, catalog_dir, osa_dir
 
 
-# =========================================================
-# FUNCTIONS
-# =========================================================
+
 
 def find_interleaved(target_date_str, data_dir):
     """Find interleaved directories within the last month."""
-
     try:
         target_date = datetime.strptime(target_date_str, "%Y%m%d").date()
     except ValueError:
@@ -188,9 +182,7 @@ def info_dates(date, catalog_dir, runs_id):
     return entry
 
 
-# =========================================================
-# MAIN
-# =========================================================
+
 
 if __name__ == "__main__":
 
@@ -256,8 +248,8 @@ if __name__ == "__main__":
             link_filepath = os.path.join(link_path, filename)
 
             with open(recordfile, "a") as file:
-                file.write(f"rm {link_filepath}\n")
-                file.write(f"rm -r {path}\n")
+                file.write(f"rm -f {link_filepath}\n")
+                file.write(f"rm -rf {path}\n")
 
         else:
             for runid in entry["other_source"]:
@@ -269,5 +261,5 @@ if __name__ == "__main__":
 
                 if glob.glob(filepath):
                     with open(recordfile, "a") as file:
-                        file.write(f"rm {filepath}\n")
-                        file.write(f"rm {link_filepath}\n")
+                        file.write(f"rm -f {filepath}\n")
+                        file.write(f"rm -f {link_filepath}\n")
