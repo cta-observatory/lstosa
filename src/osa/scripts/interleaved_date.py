@@ -74,6 +74,11 @@ def load_config(cfg_file):
 
     section = config["LST1"]
 
+    required = ["BASE", "DL1_DIR", "RUN_SUMMARY_DIR", "RUN_CATALOG", "OSA_DIR"]
+    missing = [k for k in required if not section.get(k) or not section.get(k).strip()]
+    if missing:
+        raise ValueError(f"Missing config option(s) in [LST1]: {', '.join(missing)}")
+
     base = section.get("BASE").strip()
 
     dl1_dir = clean_path(section.get("DL1_DIR"), base)
