@@ -157,6 +157,8 @@ def info_dates(date, catalog_dir, runs_id):
     if not os.path.isfile(filepath):
         return entry
 
+    runs_id_set = set(runs_id)
+
     with open(filepath, "r") as f:
         reader = csv.reader(f)
         for row in reader:
@@ -168,7 +170,7 @@ def info_dates(date, catalog_dir, runs_id):
             except ValueError:
                 continue
 
-            if run_id in runs_id:
+            if run_id in runs_id_set:
                 try:
                     source_name = row[1]
                 except IndexError:
@@ -253,8 +255,8 @@ if __name__ == "__main__":
             link_filepath = os.path.join(link_path, filename)
 
             with open(recordfile, "a") as file:
-                file.write(f"rm -f {link_filepath}\n")
-                file.write(f"rm -rf {path}\n")
+                file.write(f'rm -f -- "{link_path}"/{filename}\n')
+                file.write(f'rm -rf -- "{path}"\n')
 
         else:
             for runid in entry["other_source"]:
@@ -266,5 +268,5 @@ if __name__ == "__main__":
 
                 if glob.glob(filepath):
                     with open(recordfile, "a") as file:
-                        file.write(f"rm -f {filepath}\n")
-                        file.write(f"rm -f {link_filepath}\n")
+                        file.write(f'rm -f -- "{path}"/{filename}\n')
+                        file.write(f'rm -f -- "{link_path}"/{filename}\n')
