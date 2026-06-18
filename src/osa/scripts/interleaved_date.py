@@ -42,6 +42,7 @@ __all__ = [
     "load_config",
     "summary_dates",
     "info_dates",
+    "find_interleaved",
 ]
 
 
@@ -266,7 +267,7 @@ if __name__ == "__main__":
                 filepath = os.path.join(path, filename)
                 link_filepath = os.path.join(link_path, filename)
 
-                if glob.glob(filepath):
+                if glob.glob(filepath) or glob.glob(link_filepath):
                     with open(recordfile, "a") as file:
                         file.write(f'rm -f -- "{path}"/{filename}\n')
                         file.write(f'rm -f -- "{link_path}"/{filename}\n')
