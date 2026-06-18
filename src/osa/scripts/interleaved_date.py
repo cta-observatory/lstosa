@@ -207,9 +207,14 @@ if __name__ == "__main__":
 
     dl1_dir, summary_dir, catalog_dir, osa_dir = load_config(cfg_file)
 
+    try:
+        datetime.strptime(date_arg, "%Y%m%d")
+    except ValueError:
+        print("Invalid format. Use YYYYMMDD")
+        sys.exit(1)
+
     output_dir = os.path.join(osa_dir, "interleaved_cleanup_sh")
     os.makedirs(output_dir, exist_ok=True)
-
     month = date_arg[:6]
     recordfile = os.path.join(output_dir, f"entries_rm_{month}.sh")
 
