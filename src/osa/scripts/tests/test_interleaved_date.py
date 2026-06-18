@@ -218,11 +218,8 @@ OSA_DIR=%(BASE)s/OSA
         ["script", "20260220", "-c", str(cfg)]
     )
 
-    monkeypatch.setattr(
-        interleaved_date,
-        "find_interleaved",
-        lambda date, path: ([], [])
-    )
+    # NOTE: runpy.run_module executes the module in a fresh __main__ namespace,
+    # so patching osa.scripts.interleaved_date.find_interleaved here has no effect.
 
     runpy.run_module(interleaved_date.__name__, run_name="__main__")
 
