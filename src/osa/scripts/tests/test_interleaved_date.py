@@ -32,15 +32,17 @@ DL1_DIR=%(BASE)s/DL1
 RUN_SUMMARY_DIR=%(BASE)s/RunSummary
 RUN_CATALOG=%(BASE)s/RunCatalog
 OSA_DIR=%(BASE)s/OSA
+ANALYSIS_DIR=%(BASE)s/running_analysis
 """
     )
 
-    dl1_dir, summary, catalog, osa = load_config(cfg)
+    dl1_dir, summary, catalog, osa, analysis = load_config(cfg)
 
     assert dl1_dir == str(tmp_path / "DL1")
     assert summary == str(tmp_path / "RunSummary")
     assert catalog == str(tmp_path / "RunCatalog")
     assert osa == str(tmp_path / "OSA")
+    assert analysis == str(tmp_path / "running_analysis")
 
 
 def test_load_config_missing_file():
@@ -206,8 +208,9 @@ DL1_DIR=%(BASE)s/DL1
 RUN_SUMMARY_DIR=%(BASE)s/RunSummary
 RUN_CATALOG=%(BASE)s/RunCatalog
 OSA_DIR=%(BASE)s/OSA
+ANALYSIS_DIR=%(BASE)s/running_analysis
 """
-    )
+    )    
 
     (tmp_path / "DL1").mkdir()
     (tmp_path / "RunSummary").mkdir()
