@@ -57,6 +57,7 @@ def clean_path(raw_path, base):
     return raw_path
 
 
+
 def load_config(cfg_file):
     cfg_path = Path(cfg_file)
 
@@ -72,7 +73,7 @@ def load_config(cfg_file):
 
     section = config["LST1"]
 
-    required = ["BASE", "DL1_DIR", "RUN_SUMMARY_DIR", "RUN_CATALOG", "OSA_DIR"]
+    required = ["BASE", "DL1_DIR", "RUN_SUMMARY_DIR", "RUN_CATALOG", "OSA_DIR", "ANALYSIS_DIR"]
     missing = [k for k in required if not section.get(k) or not section.get(k).strip()]
     if missing:
         raise ValueError(f"Missing config option(s) in [LST1]: {', '.join(missing)}")
@@ -83,8 +84,9 @@ def load_config(cfg_file):
     summary_dir = clean_path(section.get("RUN_SUMMARY_DIR"), base)
     catalog_dir = clean_path(section.get("RUN_CATALOG"), base)
     osa_dir = clean_path(section.get("OSA_DIR"), base)
+    analysis_dir = clean_path(section.get("ANALYSIS_DIR"), base)
 
-    return dl1_dir, summary_dir, catalog_dir, osa_dir
+    return dl1_dir, summary_dir, catalog_dir, osa_dir, analysis_dir
 
 
 
@@ -208,8 +210,7 @@ if __name__ == "__main__":
         print("Config file not provided")
         sys.exit(1)
 
-    dl1_dir, summary_dir, catalog_dir, osa_dir = load_config(cfg_file)
-
+    dl1_dir, summary_dir, catalog_dir, osa_dir, analysis_dir = load_config(cfg_file)
     try:
         datetime.strptime(date_arg, "%Y%m%d")
     except ValueError:
@@ -226,8 +227,9 @@ if __name__ == "__main__":
 
     found_paths, found_dates = find_interleaved(date_arg, dl1_dir)
 
+
     new_paths = [
-        p.replace("/DL1/", "/running_analysis/").removesuffix("/interleaved")
+        p.replace(dl1_dir, analysis_dir).removesuffix("/interleaved")
         for p in found_paths
     ]
 
