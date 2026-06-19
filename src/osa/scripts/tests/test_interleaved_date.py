@@ -210,7 +210,7 @@ RUN_CATALOG=%(BASE)s/RunCatalog
 OSA_DIR=%(BASE)s/OSA
 ANALYSIS_DIR=%(BASE)s/running_analysis
 """
-    )    
+    )
 
     (tmp_path / "DL1").mkdir()
     (tmp_path / "RunSummary").mkdir()
