@@ -253,7 +253,6 @@ if __name__ == "__main__":
         if not entry["crab"] and len(found_dataruns) == len(data_runs):
 
             filename = "interleaved_LST-1.Run*.h5"
-            link_filepath = os.path.join(link_path, filename)
 
             with open(recordfile, "a") as file:
                 file.write(f'rm -f -- "{link_path}"/{filename}\n')
