@@ -739,15 +739,11 @@ def run_sacct(job_id: str = None) -> StringIO:
     
 
 def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
-    """
-    Fetch the information of jobs in the queue using the sacct SLURM output
-    and store it in a pandas dataframe.
-
-    Returns
-    -------
-    queue_list: pd.DataFrame
-    """
     sacct_output = pd.read_csv(sacct_output, names=FORMAT_SLURM)
+
+    # asegurar tipo string
+    sacct_output["JobID"] = sacct_output["JobID"].astype(str)
+    sacct_output["JobName"] = sacct_output["JobName"].astype(str)
 
     # Keep only the jobs corresponding to OSA sequences
     sacct_output = sacct_output[
@@ -758,7 +754,6 @@ def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
     try:
         sacct_output["JobID"] = sacct_output["JobID"].apply(lambda x: x.split("_")[0])
         sacct_output["JobID"] = sacct_output["JobID"].str.strip(".batch").astype(int)
-
     except AttributeError:
         log.debug("No job info could be obtained from sacct")
 

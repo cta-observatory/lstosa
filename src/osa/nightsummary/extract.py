@@ -231,9 +231,10 @@ def extract_sequences(date: datetime, run_obj_list: List[RunObj]) -> List[Sequen
     """
 
     # Last DRS4 and PEDCALIB runs required to process the sky-data runs
-    required_drs4_run = get_last_drs4(date)
-    required_pedcal_run = get_last_pedcalib(date)
-
+    #required_drs4_run = get_last_drs4(date)
+    #required_pedcal_run = get_last_pedcalib(date)
+    required_drs4_run = None
+    required_pedcal_run = None
     # Get DATA runs to be processed
     data_runs_to_process = get_data_runs(date)
     if not data_runs_to_process:
@@ -285,7 +286,7 @@ def extract_sequences(date: datetime, run_obj_list: List[RunObj]) -> List[Sequen
             sequence_list.append(sequence)
 
     # Add the calibration file names
-    sequence_calibration_files(sequence_list)
+    #sequence_calibration_files(sequence_list)
     log.debug("Workflow completed")
 
     log.debug("Sequence list extracted")

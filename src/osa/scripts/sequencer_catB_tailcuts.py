@@ -23,59 +23,61 @@ from osa.paths import (
 import re
 from pathlib import Path
 
-# ============================================================
-# TABLA
-# ============================================================
+# calibration table
+
 
 TABLE_TEXT = """
-20260522 1779438493227 20260512 (r24145) 20260521 (r24229) 20250911 (r21747) 20260521 (r24229) since 20260521 (r24224)
+20260522 1779438493227 20260512 (r24145) 20260617 (r24552) 20250911 (r21747) 20260521 (r24229) 20260521 (r24229) since 20260617 (r24552)
+20260522 1779438493227 20260512 (r24145) 20260521 (r24229) 20250911 (r21747) 20260521 (r24229) 20260521 (r24229) since 20260521 (r24229)
 20260513 1778660458817 20260512 (r24145) 20251111 (r22837) 20250911 (r21747) 20250326 (r20529)
 20260416 1776350768431 20260415 (r24107) 20251111 (r22837) 20250911 (r21747) 20250326 (r20529)
 """
-
-
-# ============================================================
-# PARSEAR TABLA
-# ============================================================
 
 def parse_calibration_table(table_text):
     periods = []
 
     for line in table_text.splitlines():
-        if "since" in line:
-            match = re.search(r"since\s+(\d{8})\s+\(r(\d+)\)", line)
-            if not match:
-                continue
+        if "since" not in line:
+            continue
 
-            since_run = int(match.group(2))
-            calib_matches = re.findall(r"(\d{8})\s+\(r(\d+)\)", line)
+        match = re.search(r"since\s+(\d{8})\s+\(r(\d+)\)", line)
+        if not match:
+            continue
 
-            if len(calib_matches) < 2:
-                continue
+        since_run = int(match.group(2))
 
-            calib_date, calibration_run = calib_matches[1]
+        calib_matches = re.findall(r"(\d{8})\s+\(r(\d+)\)", line)
 
-            periods.append({
-                "since_run": since_run,
-                "calib_date": calib_date,
-                "calibration_run": int(calibration_run),
-            })
+        if len(calib_matches) < 3:
+            continue
+
+        # calibration
+        calib_date, calibration_run = calib_matches[1]
+
+        # ffactor = penultimate column
+        ffactor_date, ffactor_run = calib_matches[-2]
+
+        periods.append({
+            "since_run": since_run,
+            "calib_date": calib_date,
+            "calibration_run": int(calibration_run),
+            "ffactor_date": ffactor_date,
+            "ffactor_run": int(ffactor_run),
+        })
 
     return sorted(periods, key=lambda x: x["since_run"], reverse=True)
-
 
 def find_period_for_run(run_id, periods):
     for p in periods:
         if run_id >= p["since_run"]:
             return p
 
-    print(f"[WARNING] Run {run_id} anterior al primer periodo, usando fallback")
+    print(f"[WARNING] Run {run_id} prior to the first period, using fallback")
     return periods[-1]
 
 
-# ============================================================
-# PATHS
-# ============================================================
+
+# Paths
 
 BASE_SERVICE = Path("/fefs/onsite/data/lst-pipe/LSTN-01/service/PixelCalibration/Cat-A")
 
@@ -91,11 +93,11 @@ def find_catA_file(calib_date, calibration_run):
 
 
 def find_systematics_file(calib_date):
-    path = BASE_SERVICE / "ffactor_systematics" / calib_date / "pro"
+    path = BASE_SERVICE / "ffactor_systematics" / calib_date / "v0.3.1"
     files = list(path.glob("scan_fit*.h5"))
 
     if not files:
-        raise RuntimeError(f"No systematics para fecha {calib_date} en {path}")
+        raise RuntimeError(f"No systematics for date {calib_date} in {path}")
 
     return str(sorted(files)[0])
 
@@ -106,11 +108,15 @@ def get_catA_and_systematics(run_id):
 
     calib_date = period["calib_date"]
     calibration_run = period["calibration_run"]
+    ffactor_date = period["ffactor_date"]
 
     catA_file = find_catA_file(calib_date, calibration_run)
-    systematics_file = find_systematics_file(calib_date)
+    systematics_file = find_systematics_file(ffactor_date)
+
 
     return catA_file, systematics_file
+
+
 
 log = myLogger(logging.getLogger())
 
@@ -221,7 +227,6 @@ def launch_catB_calibration(run_id: int):
         base_dir = Path(cfg.get(options.tel_id, "BASE")).resolve()
         r0_dir = Path(cfg.get(options.tel_id, "R0_DIR")).resolve()
         log_dir = Path(options.directory) / "log"
-        ###########################
         input_state = getattr(options, "input_state", "legacy_raw")
         if input_state == "catA_calibrated":
             catA_file, systematics_file = get_catA_and_systematics(run_id)
@@ -229,11 +234,9 @@ def launch_catB_calibration(run_id: int):
             log.info(f"[CatB] Using systematics: {systematics_file}")
         else:
             catA_calib_run = get_last_pedcalib(options.date)
-        ###########################
         slurm_account = cfg.get("SLURM", "ACCOUNT")
         lstchain_version = get_major_version(get_lstchain_version())
         analysis_dir = cfg.get("LST1", "ANALYSIS_DIR")
-        ##############################
         cmd = ["sbatch", f"--account={slurm_account}", "--parsable",
             "-o", f"{log_dir}/catB_calibration_{run_id:05d}_%j.out",
             "-e", f"{log_dir}/catB_calibration_{run_id:05d}_%j.err",
@@ -251,7 +254,6 @@ def launch_catB_calibration(run_id: int):
             ])
         else:
             cmd.append(f"--catA_calibration_run={catA_calib_run}")
-        ####################################
         
         if command=="onsite_create_cat_B_calibration_file":
             cmd.append(f"--interleaved-dir={analysis_dir}")
@@ -285,6 +287,7 @@ def launch_tailcuts_finder(run_id: int):
     cmd = [
         "sbatch", "--parsable",
         f"--account={slurm_account}",
+        "--mem-per-cpu=10GB",
         "-o", log_file,
         command,
         f"--input-dir={input_dir}",
