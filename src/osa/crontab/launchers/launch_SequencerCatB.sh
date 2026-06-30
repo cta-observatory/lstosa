@@ -5,8 +5,8 @@
 # --------------------------------------------------------------------
 
 # Export parameters from osa-env.sh
-source /fefs/aswg/workspace/maria.rivero/lstosa/src/osa/crontab/osa-env.sh
 
+source /local/home/lstanalyzer/osa-env.sh
 # Convert YYYY-MM-DD to YYYYMMDD
 obsdate=$(date -d "$OBS_DATE" +%Y%m%d)
 
@@ -43,13 +43,12 @@ source "$CONDA_ENV"
 # -------------------------
 # Run SEQUENCER CATEGORY B
 # -------------------------
-
 {
-
     sequencer_catB_tailcuts \
+	-c "$CFG" \
         --input-state "$INPUT_STATE" \
-        -c "$CFG" \
-        -d "$OBS_DATE" LST1 \
+	-d "$OBS_DATE" LST1 \
         "$@"
 
 } >> "$LOGFILE" 2>&1
+

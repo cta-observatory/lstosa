@@ -23,7 +23,7 @@ FLAG_FILE="${WORKDIR}/GainSelFinished.txt"
 # ---------------------------------
 # Skip if input already preprocessed
 # ---------------------------------
-if [ "$INPUT_STATE" != "legacy_raw" ]; then
+if [ "${INPUT_STATE}" != "legacy_raw" ]; then
     echo "Skipping GainSel: INPUT_STATE=$INPUT_STATE" >> "$LOGFILE"
     exit 0
 fi
@@ -33,9 +33,8 @@ fi
 # -------------------------
 if [ -e "$FLAG_FILE" ]; then
     echo "GainSelFinished.txt exists for ${OBS_DATE}" >> "$LOGFILE"
-    exit 0
+    exit 0 
 fi
-
 # -------------------------
 # Environment
 # -------------------------
@@ -53,3 +52,4 @@ source "$CONDA_ENV"
         "$@"
 
 } >> "$LOGFILE" 2>&1
+
