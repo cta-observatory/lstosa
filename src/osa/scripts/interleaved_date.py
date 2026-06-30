@@ -229,7 +229,7 @@ if __name__ == "__main__":
 
 
     new_paths = [
-        p.replace(dl1_dir, analysis_dir).removesuffix("/interleaved")
+        p.replace(dl1_dir, analysis_dir)
         for p in found_paths
     ]
 
