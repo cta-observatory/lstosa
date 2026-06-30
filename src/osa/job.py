@@ -610,7 +610,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
         commandargs = [batch_command, "--parsable", no_display_backend]
         if sequence.type == "PEDCALIB":
             if not plan.needs_calibration:
-                log.info(f"Skipping PEDCALIB for run {sequence.run} (already calibrated)")       
+                log.info(f"Skipping PEDCALIB for run {sequence.run} (already calibrated)")
                 continue
             commandargs.append(sequence.script)
 

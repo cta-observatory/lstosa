@@ -114,7 +114,7 @@ def single_process(telescope):
   
     if len(summary_table) == 0:
         log.warning("No runs found for this date. Nothing to do. Exiting.")
-        sys.exit(0) 
+        sys.exit(0)
     if plan.input_state == "legacy_raw":
         if not options.no_gainsel and not GainSel_finished(options.date):
             log.info(

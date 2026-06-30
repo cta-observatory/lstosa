@@ -266,20 +266,7 @@ def main():
     else:
         log.setLevel(logging.INFO)
 
-    # Run the routine piping all the analysis steps
-    '''rc = data_sequence(
-        calibration_file,
-        drs4_ped_file,
-        time_calibration_file,
-        systematic_correction_file,
-        drive_log_file,
-        run_summary_file,
-        pedestal_ids_file,
-        run_number,
-        dl1b_config,
-        dl1_prod_id,
-    )'''
-# Run the routine piping all the analysis steps                                                                                                                                              
+# Run the routine piping all the analysis steps
     rc = data_sequence(
         drive_file=drive_log_file,
         run_summary=run_summary_file,

@@ -336,7 +336,7 @@ def get_nsb_level(run_id):
     nsb = float(match.group(1))
     if nsb < 0:
         raise ValueError("The Additional NSB rate found is below 0.")
-    
+
     dl1b_config_filename = tailcuts_finder_dir / f"dl1ab_Run{run_id:05d}.json"
     with open(dl1b_config_filename) as json_file:
         dl1b_config = json.load(json_file)

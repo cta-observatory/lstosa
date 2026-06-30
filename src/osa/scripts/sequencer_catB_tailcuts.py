@@ -20,8 +20,6 @@ from osa.paths import (
     get_major_version
 )
 
-import re
-from pathlib import Path
 
 # calibration table
 

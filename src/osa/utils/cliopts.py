@@ -177,7 +177,7 @@ def data_sequence_argparser():
         dest="prod_id",
         help="Set the prod ID to define data directories",
     )
-    
+
     parser.add_argument(
         "--input-state",
         choices=["legacy_raw", "gain_selected", "catA_calibrated"],
