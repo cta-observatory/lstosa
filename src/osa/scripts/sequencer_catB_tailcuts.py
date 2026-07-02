@@ -20,16 +20,23 @@ from osa.paths import (
     get_major_version
 )
 
+log = myLogger(logging.getLogger())
+
 
 # calibration table
 
+def load_calibration_table():
+    table_file = Path(cfg.get(options.tel_id, "TABLE_CATB"))
 
-TABLE_TEXT = """
-20260522 1779438493227 20260512 (r24145) 20260617 (r24552) 20250911 (r21747) 20260521 (r24229) 20260521 (r24229) since 20260617 (r24552)
-20260522 1779438493227 20260512 (r24145) 20260521 (r24229) 20250911 (r21747) 20260521 (r24229) 20260521 (r24229) since 20260521 (r24229)
-20260513 1778660458817 20260512 (r24145) 20251111 (r22837) 20250911 (r21747) 20250326 (r20529)
-20260416 1776350768431 20260415 (r24107) 20251111 (r22837) 20250911 (r21747) 20250326 (r20529)
-"""
+    if not table_file.exists():
+        raise FileNotFoundError(
+            f"Cat-B calibration table not found: {table_file}"
+        )
+
+    log.info(f"Using Cat-B calibration table: {table_file}")
+
+    return table_file.read_text()
+
 
 def parse_calibration_table(table_text):
     periods = []
@@ -65,19 +72,23 @@ def parse_calibration_table(table_text):
 
     return sorted(periods, key=lambda x: x["since_run"], reverse=True)
 
+
 def find_period_for_run(run_id, periods):
     for p in periods:
         if run_id >= p["since_run"]:
             return p
 
-    print(f"[WARNING] Run {run_id} prior to the first period, using fallback")
+    log.warning(
+        f"Run {run_id} prior to the first period in calibration table, using fallback"
+    )
     return periods[-1]
-
 
 
 # Paths
 
-BASE_SERVICE = Path("/fefs/onsite/data/lst-pipe/LSTN-01/service/PixelCalibration/Cat-A")
+BASE_SERVICE = Path(
+    "/fefs/onsite/data/lst-pipe/LSTN-01/service/PixelCalibration/Cat-A"
+)
 
 
 def find_catA_file(calib_date, calibration_run):
@@ -85,7 +96,9 @@ def find_catA_file(calib_date, calibration_run):
     files = list(path.glob(f"*Run{calibration_run:05d}*.fits*"))
 
     if not files:
-        raise RuntimeError(f"No Cat-A file para run {calibration_run} en {path}")
+        raise RuntimeError(
+            f"No Cat-A file for run {calibration_run} in {path}"
+        )
 
     return str(sorted(files)[0])
 
@@ -95,13 +108,17 @@ def find_systematics_file(calib_date):
     files = list(path.glob("scan_fit*.h5"))
 
     if not files:
-        raise RuntimeError(f"No systematics for date {calib_date} in {path}")
+        raise RuntimeError(
+            f"No systematics for date {calib_date} in {path}"
+        )
 
     return str(sorted(files)[0])
 
 
 def get_catA_and_systematics(run_id):
-    periods = parse_calibration_table(TABLE_TEXT)
+    table_text = load_calibration_table()
+    periods = parse_calibration_table(table_text)
+
     period = find_period_for_run(run_id, periods)
 
     calib_date = period["calib_date"]
@@ -111,12 +128,8 @@ def get_catA_and_systematics(run_id):
     catA_file = find_catA_file(calib_date, calibration_run)
     systematics_file = find_systematics_file(ffactor_date)
 
-
     return catA_file, systematics_file
 
-
-
-log = myLogger(logging.getLogger())
 
 parser = ArgumentParser(parents=[common_parser])
 parser.add_argument(
@@ -352,3 +365,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
