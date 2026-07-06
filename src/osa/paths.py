@@ -466,7 +466,6 @@ done
 
 
 def create_muons_symlinks():
-    """Create symlinks of the muon files in the datacheck directory."""
 
     nightdir = utils.date_to_dir(options.date)
     muons_dir = destination_dir("MUON", create_dir=False)
@@ -481,7 +480,6 @@ def create_muons_symlinks():
 
 
 def create_datacheck_symlinks(parent_job_ids: List[str]):
-    """Create symlinks of datacheck and muon files in the common directory."""
 
     log.info("Creating symlinks of the datacheck and muon files in the common directory.")
 
