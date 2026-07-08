@@ -483,8 +483,8 @@ def sequence_file_list(
     # First sequence in the list corresponds to the calibration run 1809
     return [
         running_analysis_dir / "sequence_LST1_01809.py",
-        running_analysis_dir / "sequence_LST1_01807.py",
-        running_analysis_dir / "sequence_LST1_01808.py",
+        running_analysis_dir / "sequence_LST1_01807_dl1b.py",
+        running_analysis_dir / "sequence_LST1_01808_dl1b.py",
     ]
 
 
