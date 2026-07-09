@@ -584,14 +584,7 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     Submit the jobs to the cluster.
 
     Parameters
-    ----------    if plan.run_pedestal_correction:
-        commandargs.append(f"--drs4-pedestal-file={sequence.drs4_file}")
-    if plan.run_catA_calibration:
-        commandargs.append(f"--pedcal-file={sequence.calibration_file}")
-    if plan.run_time_calibration:
-        commandargs.append(f"--time-calib-file={sequence.time_calibration_file}")
-    if plan.run_systematic_correction:
-        commandargs.append(f"--systematic-correction-file={sequence.systematic_correction_file}")
+    ----------
     sequence_list: list
         List of sequences to submit.
     batch_command: str
@@ -605,15 +598,21 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     job_list = []
     no_display_backend = "--export=ALL,MPLBACKEND=Agg"
 
+    parent_jobid = None
+
     for sequence in sequence_list:
         plan = build_processing_plan(options.input_state)
         commandargs = [batch_command, "--parsable", no_display_backend]
+
         if sequence.type == "PEDCALIB":
             if not plan.needs_calibration:
-                log.info(f"Skipping PEDCALIB for run {sequence.run} (already calibrated)")
+                log.info(
+                    f"Skipping PEDCALIB for run {sequence.run} "
+                    "(already calibrated)"
+                )
                 continue
-            commandargs.append(sequence.script)
 
+            commandargs.append(sequence.script)
 
             if options.simulate or options.no_calib or options.test:
                 log.debug("SIMULATE Launching scripts")
@@ -621,11 +620,15 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
                 try:
                     log.debug(f"Launching script {sequence.script}")
                     parent_jobid = sp.check_output(
-                        commandargs, universal_newlines=True, shell=False
+                        commandargs,
+                        universal_newlines=True,
+                        shell=False,
                     ).split()[0]
                 except sp.CalledProcessError as error:
                     rc = error.returncode
-                    log.exception(f"Command '{batch_command}' not found, error {rc}")
+                    log.exception(
+                        f"Command '{batch_command}' not found, error {rc}"
+                    )
 
             log.debug(stringify(commandargs))
 
@@ -635,26 +638,31 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
         # Add the job dependencies after calibration sequence
 
         if sequence.type == "DATA":
+
             if not options.simulate and not options.no_calib and not options.test:
-                if plan.needs_calibration and 'parent_jobid' in locals():
+                if plan.needs_calibration and parent_jobid is not None:
                     log.debug("Adding dependency on calibration job")
                     depend_string = f"--dependency=afterok:{parent_jobid}"
                     commandargs.append(depend_string)
                 else:
-                    log.info("No calibration dependency needed (input already calibrated)")
-        
+                    log.info(
+                        "No calibration dependency needed "
+                        "(input already calibrated)"
+                    )
+
             commandargs.append(sequence.script)
-
-
 
             if options.simulate:
                 log.debug("SIMULATE Launching scripts")
+
             elif options.test:
                 log.debug(
-                    "TEST launching datasequence scripts for " "first subrun without scheduler"
+                    "TEST launching datasequence scripts for "
+                    "first subrun without scheduler"
                 )
                 commandargs = ["python", sequence.script]
                 sp.check_output(commandargs, shell=False)
+
             else:
                 log.info("Submitting jobs to the cluster.")
                 try:
