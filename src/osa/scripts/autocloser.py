@@ -221,9 +221,14 @@ class Telescope:
 
         log.debug(f"Executing {' '.join(closer_cmd)}")
         closer = subprocess.Popen(
-            closer_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False
+            closer_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1,
         )
-        stdout, _ = closer.communicate()
+        
+        for line in closer.stdout:
+            log.info(line.strip())
+        closer.wait()
+        #stdout, _ = closer.communicate()
+        #log.info(stdout)
         if closer.returncode != 0:
             log.warning(f"closer returned error code {closer.returncode}! See output: {stdout}")
             return False
@@ -498,3 +503,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
