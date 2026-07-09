@@ -223,14 +223,11 @@ class Telescope:
         closer = subprocess.Popen(
             closer_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1,
         )
-        
         for line in closer.stdout:
             log.info(line.strip())
         closer.wait()
-        #stdout, _ = closer.communicate()
-        #log.info(stdout)
         if closer.returncode != 0:
-            log.warning(f"closer returned error code {closer.returncode}! See output: {stdout}")
+            log.warning(f"closer returned error code {closer.returncode}")
             return False
         self.closed = True
         return True
