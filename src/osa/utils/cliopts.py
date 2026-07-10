@@ -80,6 +80,9 @@ common_parser.add_argument(
 # TODO: add here the tel_id common option
 
 
+
+
+
 def closer_argparser():
     parser = ArgumentParser(parents=[common_parser])
 
@@ -91,6 +94,7 @@ def closer_argparser():
         default=False,
         help="assume yes to all questions",
     )
+
     parser.add_argument(
         "--seq",
         action="store",
@@ -98,12 +102,21 @@ def closer_argparser():
         dest="seqtoclose",
         help="If you only want to close a certain sequence",
     )
+
     parser.add_argument(
         "--no-dl2",
         action="store_true",
         default=False,
         help="Do not produce DL2 files (default False)",
     )
+
+    parser.add_argument(
+        "--input-state",
+        choices=["legacy_raw", "gain_selected", "catA_calibrated"],
+        default="legacy_raw",
+        help="Declared preprocessing state of input data",
+    )
+
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
 
     return parser
@@ -118,6 +131,7 @@ def closercliparsing():
     options.seqtoclose = opts.seqtoclose
     options.no_dl2 = opts.no_dl2
     options.noninteractive = opts.noninteractive
+    options.input_state = opts.input_state
 
     log.debug(f"the options are {opts}")
 
@@ -125,7 +139,6 @@ def closercliparsing():
     options.date = set_default_date_if_needed()
     options.directory = analysis_path(options.tel_id)
     options.prod_id = get_prod_id()
-
 
 def calibration_pipeline_argparser():
     """Command line parser for the calibration pipeline."""

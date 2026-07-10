@@ -3,6 +3,7 @@ Script to handle the automatic closing of the OSA
 checking that all jobs are correctly finished.
 """
 
+
 import datetime
 import glob
 import logging
@@ -42,6 +43,7 @@ class Telescope:
         ignore_cronlock: bool = False,
         test: bool = False,
         no_gainsel: bool = False,
+        input_state: str = "legacy_raw",
     ):
         """
         Parameters
@@ -60,6 +62,7 @@ class Telescope:
 
         self.telescope = telescope
         # necessary to make sure that cron.lock gets deleted in the end
+        self.input_state = input_state
         self.cron_lock = cron_lock(self.telescope)
         self.keyLine = None
         self.locked = False
@@ -134,6 +137,8 @@ class Telescope:
                 str(config_file),
                 "-d",
                 date,
+                "--input-state",
+                self.input_state,
                 self.telescope,
             ]
             if no_gainsel:
@@ -200,6 +205,8 @@ class Telescope:
             "closer",
             "-c",
             str(config),
+            "--input-state",
+            self.input_state,
             "-y",
             "-d",
             date,
@@ -322,6 +329,7 @@ class Sequence:
         date: str,
         config: Path,
         no_dl2: bool,
+        input_state: str,
         simulate: bool = False,
         test: bool = False,
         verbose: bool = False,
@@ -333,6 +341,8 @@ class Sequence:
             "closer",
             "-c",
             str(config),
+            "--input-state",
+            input_state,
             "-y",
             "-d",
             date,
@@ -454,7 +464,7 @@ def main():
     # create telescope and sequence objects
     log.info("Simulating sequencer...")
 
-    telescope = Telescope(args.tel_id, date, args.config, no_gainsel=args.no_gainsel)
+    telescope = Telescope(args.tel_id, date, args.config, no_gainsel=args.no_gainsel, input_state=args.input_state)
 
     log.info(f"Processing {args.tel_id}...")
 
@@ -471,6 +481,7 @@ def main():
                 date=date,
                 config=args.config,
                 no_dl2=args.no_dl2,
+                input_state=args.input_state,
                 simulate=args.simulate,
                 test=args.test,
                 verbose=args.verbose,
@@ -500,4 +511,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

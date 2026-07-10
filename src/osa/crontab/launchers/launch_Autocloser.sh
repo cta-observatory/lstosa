@@ -23,7 +23,7 @@ not_exists() {
     ! compgen -G "$1" > /dev/null
 }
 
-if not_exists "${LSTN1}/running_analysis/${obsdate}/v*/tailcut*" ; then
+if not_exists "${LSTN1}/running_analysis/${obsdate}/v*/tailcut*"; then
     echo "No tailcut directory for ${OBS_DATE} yet" >> "$LOGFILE"
     exit
 fi
@@ -35,7 +35,7 @@ exists() {
     compgen -G "$1" > /dev/null
 }
 
-if exists "${LSTN1}/OSA/Closer/${obsdate}/v*/NightFinished.txt" ; then
+if exists "${LSTN1}/OSA/Closer/${obsdate}/v*/NightFinished.txt"; then
     echo "Date ${obsdate} is already closed for LST1" >> "$LOGFILE"
     exit
 fi
@@ -49,12 +49,14 @@ source "$CONDA_ENV"
 # Run AUTOCLOSER
 # -------------------------
 {
-     autocloser \
-	-c "$CFG" \
+    autocloser \
+        -c "$CFG" \
         -v \
-	--no-gainsel \
-	-d "$OBS_DATE" LST1 \
-	"$@"
+        --input-state "$INPUT_STATE" \
+        --no-gainsel \
+        -d "$OBS_DATE" \
+        LST1 \
+        "$@"
 
 } >> "$LOGFILE" 2>&1
 
