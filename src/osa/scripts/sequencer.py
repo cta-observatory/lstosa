@@ -8,7 +8,6 @@ prepares a SLURM job array which launches the data sequences for every subrun.
 import warnings
 import logging
 import os
-import sys
 from decimal import Decimal
 import datetime
 import re

@@ -19,7 +19,6 @@ from osa.configs.datamodel import (
     SequenceCalibration,
     SequenceData,
 )
-from osa.configs.datamodel import Sequence
 from osa.job import sequence_filenames
 from osa.nightsummary import database
 from osa.nightsummary.nightsummary import run_summary_table
