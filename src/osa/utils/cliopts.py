@@ -473,20 +473,33 @@ def copy_datacheck_parsing():
     options.prod_id = get_prod_id()
 
 
+
+
 def sequencer_webmaker_argparser():
     parser = ArgumentParser(
-        description="Script to make an xhtml from LSTOSA sequencer output", parents=[common_parser]
+        description="Script to make an xhtml from LSTOSA sequencer output",
+        parents=[common_parser],
     )
+
     parser.add_argument(
         "--no-gainsel",
         action="store_true",
         default=False,
         help="Do not check if the gain selection finished correctly (default False)",
     )
+
+    parser.add_argument(
+        "--input-state",
+        choices=["legacy_raw", "gain_selected", "catA_calibrated"],
+        default="legacy_raw",
+        help="Declared preprocessing state of input data",
+    )
+
     options.tel_id = "LST1"
     options.prod_id = get_prod_id()
 
     return parser
+
 
 
 def set_default_date_if_needed():
@@ -504,21 +517,32 @@ def set_common_globals(opts):
     options.tel_id = opts.tel_id
 
 
+
 def autocloser_cli_parser():
     """Define the command line parser for the autocloser."""
     parser = ArgumentParser(
-        description="Automatic job completion check and sequence closer.", parents=[common_parser]
+        description="Automatic job completion check and sequence closer.",
+        parents=[common_parser],
     )
-    parser.add_argument("--ignore-cronlock", action="store_true", help='Ignore "cron.lock"')
+
     parser.add_argument(
-        "-f", "--force", action="store_true", help="Force the autocloser to close the day"
+        "--ignore-cronlock",
+        action="store_true",
+        help='Ignore "cron.lock"',
     )
+
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Force the autocloser to close the day",
+    )
+
     parser.add_argument(
         "--no-dl2",
         action="store_true",
         default=False,
         help="Disregard the production of DL2 files",
-
     )
 
     parser.add_argument(
@@ -527,7 +551,30 @@ def autocloser_cli_parser():
         default=False,
         help="Do not check if the gain selection finished correctly (default False)",
     )
-    parser.add_argument("-r", "--runwise", action="store_true", help="Close the day run-wise.")
-    parser.add_argument("-l", "--log", type=Path, default=None, help="Write log to a file.")
+
+    parser.add_argument(
+        "--input-state",
+        choices=["legacy_raw", "gain_selected", "catA_calibrated"],
+        default="legacy_raw",
+        help="Declared preprocessing state of input data",
+    )
+
+    parser.add_argument(
+        "-r",
+        "--runwise",
+        action="store_true",
+        help="Close the day run-wise.",
+    )
+
+    parser.add_argument(
+        "-l",
+        "--log",
+        type=Path,
+        default=None,
+        help="Write log to a file.",
+    )
+
     parser.add_argument("tel_id", type=str, choices=["LST1"])
+
     return parser
+

@@ -200,15 +200,19 @@ def get_catB_last_job_id(run_id: int) -> int:
 
 def launch_catB_calibration(run_id: int):
     """
-    Launch the Cat-B calibration script for a given run if the Cat-B calibration 
+    Launch the Cat-B calibration script for a given run if the Cat-B calibration
     file has not been created yet. If the Cat-B calibration script was launched
     before and it finished successfully, it creates a catB_{run}.closed file.
     """
     job_id = get_catB_last_job_id(run_id)
+
     if job_id and not options.overwrite_catB:
         job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
+
         if job_status.item() in ["RUNNING", "PENDING"]:
-            log.debug(f"Job {job_id} (corresponding to run {run_id:05d}) is still running.")
+            log.debug(
+                f"Job {job_id} (corresponding to run {run_id:05d}) is still running."
+            )
 
         elif job_status.item() == "COMPLETED":
             catB_closed_file = Path(options.directory) / f"catB_{run_id:05d}.closed"
@@ -218,57 +222,81 @@ def launch_catB_calibration(run_id: int):
                 f"successfully. Creating file {catB_closed_file}"
             )
 
-        else: 
-            log.warning(f"Cat-B job {job_id} (corresponding to run {run_id:05d}) failed.")
+        else:
+            log.warning(
+                f"Cat-B job {job_id} (corresponding to run {run_id:05d}) failed."
+            )
 
     else:
         if catB_calibration_file_exists(run_id):
             if not options.overwrite_catB:
-                log.info(f"Cat-B calibration file already produced for run {run_id:05d}.")
-                return 
+                log.info(
+                    f"Cat-B calibration file already produced for run {run_id:05d}."
+                )
+                return
             else:
-                log.info(f"Cat-B calibration file already produced for run {run_id:05d}. Overwriting it.")
+                log.info(
+                    f"Cat-B calibration file already produced for run "
+                    f"{run_id:05d}. Overwriting it."
+                )
 
         command = cfg.get("lstchain", "catB_calibration")
+
         if cfg.getboolean("lstchain", "use_lstcam_env_for_CatB_calib"):
             env_command = f"conda run -n lstcam-env {command}"
         else:
             env_command = command
-        options.filters = get_calib_filters(run_id) 
+
+        options.filters = get_calib_filters(run_id)
+
         base_dir = Path(cfg.get(options.tel_id, "BASE")).resolve()
         r0_dir = Path(cfg.get(options.tel_id, "R0_DIR")).resolve()
         log_dir = Path(options.directory) / "log"
+
         input_state = getattr(options, "input_state", "legacy_raw")
+
         if input_state == "catA_calibrated":
             catA_file, systematics_file = get_catA_and_systematics(run_id)
+
             log.info(f"[CatB] Using Cat-A file: {catA_file}")
             log.info(f"[CatB] Using systematics: {systematics_file}")
         else:
             catA_calib_run = get_last_pedcalib(options.date)
+
         slurm_account = cfg.get("SLURM", "ACCOUNT")
         lstchain_version = get_major_version(get_lstchain_version())
         analysis_dir = cfg.get("LST1", "ANALYSIS_DIR")
-        cmd = ["sbatch", f"--account={slurm_account}", "--parsable",
-            "-o", f"{log_dir}/catB_calibration_{run_id:05d}_%j.out",
-            "-e", f"{log_dir}/catB_calibration_{run_id:05d}_%j.err",
+
+        cmd = [
+            "sbatch",
+            f"--account={slurm_account}",
+            "--parsable",
+            "-o",
+            f"{log_dir}/catB_calibration_{run_id:05d}_%j.out",
+            "-e",
+            f"{log_dir}/catB_calibration_{run_id:05d}_%j.err",
             env_command,
             f"-r {run_id:05d}",
-            "-b", base_dir,
+            "-b",
+            base_dir,
             f"--r0-dir={r0_dir}",
             f"--filters={options.filters}",
         ]
 
         if input_state == "catA_calibrated":
-            cmd.extend([
-                f"--cat_A_calibration_file={catA_file}",
-                f"--systematics_file={systematics_file}",
-            ])
+            cmd.extend(
+                [
+                    f"--cat_A_calibration_file={catA_file}",
+                    f"--systematics_file={systematics_file}",
+                ]
+            )
         else:
             cmd.append(f"--catA_calibration_run={catA_calib_run}")
-        
-        if command=="onsite_create_cat_B_calibration_file":
+
+        if command == "onsite_create_cat_B_calibration_file":
             cmd.append(f"--interleaved-dir={analysis_dir}")
-        elif command=="lstcam_calib_onsite_create_cat_B_calibration_file":
+
+        elif command == "lstcam_calib_onsite_create_cat_B_calibration_file":
             cmd.append(f"--dl1-dir={analysis_dir}")
             cmd.append(f"--lstchain-version={lstchain_version[1:]}")
 
@@ -276,11 +304,48 @@ def launch_catB_calibration(run_id: int):
             cmd.append("--yes")
 
         if not options.simulate:
-            job = sp.run(cmd, encoding="utf-8", capture_output=True, text=True, check=True)
-            job_id = job.stdout.strip()
-            log.debug(f"Launched Cat-B calibration job {job_id} for run {run_id}!")
+            job = sp.run(
+                cmd,
+                encoding="utf-8",
+                capture_output=True,
+                text=True,
+                check=True,
+            )
 
-        else: 
+            job_id = job.stdout.strip()
+
+            log.debug(
+                f"Launched Cat-B calibration job {job_id} for run {run_id}!"
+            )
+
+            # Create .closed automatically when Cat-B finishes successfully
+            catB_closed_file = (
+                Path(options.directory) / f"catB_{run_id:05d}.closed"
+            )
+
+            close_cmd = [
+                "sbatch",
+                "--parsable",
+                f"--account={slurm_account}",
+                f"--dependency=afterok:{job_id}",
+                "--wrap",
+                f"touch {catB_closed_file}",
+            ]
+
+            sp.run(
+                close_cmd,
+                encoding="utf-8",
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+
+            log.debug(
+                f"Scheduled creation of {catB_closed_file} after successful "
+                f"completion of Cat-B job {job_id}"
+            )
+
+        else:
             log.info(f"Simulate launching of the {command} script.")
             
 
@@ -365,4 +430,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
