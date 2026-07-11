@@ -252,7 +252,8 @@ def test_create_job_template_scheduler(
     options.simulate = True
     assert content1 == expected_content1
     assert content2 == expected_content2
-  def test_create_job_template_local(
+
+def test_create_job_template_local(
     sequence_list,
     drs4_time_calibration_files,
     drs4_baseline_file,
