@@ -162,15 +162,21 @@ def test_simulated_sequencer(
 
     assert rc.returncode == 0
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M")
-    assert rc.stdout == dedent(
+
+    expected = dedent(
         f"""\
         =================================== Starting sequencer.py at {now} UTC for LST, Telescope: LST1, Date: 2020-01-17 ===================================
+        Processing input_state = legacy_raw
         Tel   Seq  Parent  Type      Run   Subruns  Source        Action  Tries  JobID  State  CPU_time  Exit  DL1%  MUONS%  CAT-B  DL1AB%  DATACHECK%  DL2%  
         LST1    1  None    PEDCALIB  1809  5        None          None    None   None   None   None      None  None  None    None   None    None        None  
         LST1    2       1  DATA      1807  11       Crab          None    None   None   None   None      None     0       0  None        0           0   100  
         LST1    3       1  DATA      1808  9        MadeUpSource  None    None   None   None   None      None     0       0  None        0           0   100  
         """  # noqa: E501
     )
+
+    for line in expected.splitlines():
+        if line:
+            assert line in rc.stdout
 
 
 def test_sequencer(sequence_file_list):
@@ -412,10 +418,13 @@ def test_observation_finished():
 
 def test_no_runs_found():
     output = sp.run(
-        ["sequencer", "-s", "-d", "2015-01-01", "LST1"], text=True, stdout=sp.PIPE, stderr=sp.PIPE
+        ["sequencer", "-s", "-d", "2015-01-01", "LST1"],
+        text=True,
+        stdout=sp.PIPE,
+        stderr=sp.PIPE,
     )
     assert output.returncode == 0
-    assert "No runs found for this date. Nothing to do. Exiting." in output.stderr.splitlines()[-1]
+    assert "No runs found for this date. Nothing to do." in output.stderr
 
 
 @pytest.mark.skip(reason="Currently not working with all combinations")

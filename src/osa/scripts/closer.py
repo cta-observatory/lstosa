@@ -156,7 +156,6 @@ def ask_for_closing():
                 answer_check = False
 
 def post_process(seq_tuple):
-    """Set of last instructions."""
     seq_list = seq_tuple[1]
 
     if dl1_datacheck_longterm_file_exits() and not options.test:
@@ -180,30 +179,38 @@ def post_process(seq_tuple):
 
         # --- DATACHECK + SYMLINK + LONGTERM ---
         if cfg.getboolean("lstchain", "merge_dl1_datacheck"):
-            list_job_id = merge_dl1_datacheck(seq_list)
 
-            symlink_job_id = create_datacheck_symlinks(list_job_id)
-
-            log.info(f"Datacheck symlink job → {symlink_job_id}")
-
-            if symlink_job_id:
-                deps = [symlink_job_id]
+            # Nothing below should run in test mode
+            if options.test:
+                log.debug("Skipping datacheck/longterm jobs in test mode")
             else:
-                log.warning("No symlink job created, falling back to merge job dependencies")
-                deps = list_job_id
+                list_job_id = merge_dl1_datacheck(seq_list)
 
-            longterm_job_id = daily_datacheck(
-                daily_longterm_cmd(deps)
-            )
+                symlink_job_id = create_datacheck_symlinks(list_job_id)
 
-            cherenkov_job_id = cherenkov_transparency(
-                cherenkov_transparency_cmd(longterm_job_id)
-            )
+                log.info(f"Datacheck symlink job → {symlink_job_id}")
 
-            if cfg.getboolean("lstchain", "create_longterm_symlink"):
-                create_longterm_symlink(cherenkov_job_id)
+                if symlink_job_id:
+                    deps = [symlink_job_id]
+                else:
+                    log.warning(
+                        "No symlink job created, falling back to merge job dependencies"
+                    )
+                    deps = list_job_id
 
-        time.sleep(600)
+                longterm_job_id = daily_datacheck(
+                    daily_longterm_cmd(deps)
+                )
+
+                cherenkov_job_id = cherenkov_transparency(
+                    cherenkov_transparency_cmd(longterm_job_id)
+                )
+
+                if cfg.getboolean("lstchain", "create_longterm_symlink"):
+                    create_longterm_symlink(cherenkov_job_id)
+
+        if not options.test:
+            time.sleep(600)
 
     # --- WAIT LOOP ---
     n_max = 6
