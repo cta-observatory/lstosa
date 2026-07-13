@@ -1,6 +1,6 @@
 import glob
 import re
-import argparse
+from argparse import ArgumentParser
 import logging
 from pathlib import Path
 from astropy.table import Table
@@ -9,7 +9,7 @@ import subprocess as sp
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.nightsummary.extract import get_last_pedcalib
-from osa.utils.cliopts import valid_date, set_default_date_if_needed
+from osa.utils.cliopts import common_parser, set_default_date_if_needed
 from osa.utils.logging import myLogger
 from osa.job import run_sacct, get_sacct_output
 from osa.utils.utils import date_to_dir, get_calib_filters, get_lstchain_version
@@ -22,39 +22,127 @@ from osa.paths import (
 
 log = myLogger(logging.getLogger())
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "-c",                                                                                            
-    "--config",                                                                                      
-    action="store",
-    type=Path,
-    help="Configuration file",
+
+# calibration table
+
+def load_calibration_table():
+    table_file = Path(cfg.get(options.tel_id, "TABLE_CATB"))
+
+    if not table_file.exists():
+        raise FileNotFoundError(
+            f"Cat-B calibration table not found: {table_file}"
+        )
+
+    log.info(f"Using Cat-B calibration table: {table_file}")
+
+    return table_file.read_text()
+
+
+def parse_calibration_table(table_text):
+    periods = []
+
+    for line in table_text.splitlines():
+        if "since" not in line:
+            continue
+
+        match = re.search(r"since\s+(\d{8})\s+\(r(\d+)\)", line)
+        if not match:
+            continue
+
+        since_run = int(match.group(2))
+
+        calib_matches = re.findall(r"(\d{8})\s+\(r(\d+)\)", line)
+
+        if len(calib_matches) < 3:
+            continue
+
+        # calibration
+        calib_date, calibration_run = calib_matches[1]
+
+        # ffactor = penultimate column
+        ffactor_date, ffactor_run = calib_matches[-2]
+
+        periods.append({
+            "since_run": since_run,
+            "calib_date": calib_date,
+            "calibration_run": int(calibration_run),
+            "ffactor_date": ffactor_date,
+            "ffactor_run": int(ffactor_run),
+        })
+
+    return sorted(periods, key=lambda x: x["since_run"], reverse=True)
+
+
+def find_period_for_run(run_id, periods):
+    for p in periods:
+        if run_id >= p["since_run"]:
+            return p
+
+    log.warning(
+        f"Run {run_id} prior to the first period in calibration table, using fallback"
+    )
+    return periods[-1]
+
+
+# Paths
+
+BASE_SERVICE = Path(
+    "/fefs/onsite/data/lst-pipe/LSTN-01/service/PixelCalibration/Cat-A"
 )
-parser.add_argument(                                                                                     
-    "-d",                                                                                            
-    "--date",
-    type=valid_date,
-    default=None,
-)
-parser.add_argument(
-    "-v",                                                                                      
-    "--verbose",
-    action="store_true",
-    default=False,
-    help="Activate debugging mode.",
-)
-parser.add_argument(
-    "-s",
-    "--simulate",
-    action="store_true",
-    default=False,
-    help="Simulate launching of the sequencer_catB_tailcuts script.",
-)
+
+
+def find_catA_file(calib_date, calibration_run):
+    path = BASE_SERVICE / "calibration" / calib_date / "pro"
+    files = list(path.glob(f"*Run{calibration_run:05d}*.fits*"))
+
+    if not files:
+        raise RuntimeError(
+            f"No Cat-A file for run {calibration_run} in {path}"
+        )
+
+    return str(sorted(files)[0])
+
+
+def find_systematics_file(calib_date):
+    path = BASE_SERVICE / "ffactor_systematics" / calib_date / "v0.3.1"
+    files = list(path.glob("scan_fit*.h5"))
+
+    if not files:
+        raise RuntimeError(
+            f"No systematics for date {calib_date} in {path}"
+        )
+
+    return str(sorted(files)[0])
+
+
+def get_catA_and_systematics(run_id):
+    table_text = load_calibration_table()
+    periods = parse_calibration_table(table_text)
+
+    period = find_period_for_run(run_id, periods)
+
+    calib_date = period["calib_date"]
+    calibration_run = period["calibration_run"]
+    ffactor_date = period["ffactor_date"]
+
+    catA_file = find_catA_file(calib_date, calibration_run)
+    systematics_file = find_systematics_file(ffactor_date)
+
+    return catA_file, systematics_file
+
+
+parser = ArgumentParser(parents=[common_parser])
 parser.add_argument(
     "--overwrite-tailcuts",
     action="store_true",
     default=False,
     help="Overwrite the tailcuts config file if it already exists.",
+)
+parser.add_argument(
+    "--input-state",
+    choices=["legacy_raw", "gain_selected", "catA_calibrated"],
+    default="legacy_raw",
+    help="Declared preprocessing state of input data",
 )
 parser.add_argument(
     "--overwrite-catB",
@@ -112,15 +200,19 @@ def get_catB_last_job_id(run_id: int) -> int:
 
 def launch_catB_calibration(run_id: int):
     """
-    Launch the Cat-B calibration script for a given run if the Cat-B calibration 
+    Launch the Cat-B calibration script for a given run if the Cat-B calibration
     file has not been created yet. If the Cat-B calibration script was launched
     before and it finished successfully, it creates a catB_{run}.closed file.
     """
     job_id = get_catB_last_job_id(run_id)
+
     if job_id and not options.overwrite_catB:
         job_status = get_sacct_output(run_sacct(job_id=job_id))["State"]
+
         if job_status.item() in ["RUNNING", "PENDING"]:
-            log.debug(f"Job {job_id} (corresponding to run {run_id:05d}) is still running.")
+            log.debug(
+                f"Job {job_id} (corresponding to run {run_id:05d}) is still running."
+            )
 
         elif job_status.item() == "COMPLETED":
             catB_closed_file = Path(options.directory) / f"catB_{run_id:05d}.closed"
@@ -130,44 +222,81 @@ def launch_catB_calibration(run_id: int):
                 f"successfully. Creating file {catB_closed_file}"
             )
 
-        else: 
-            log.warning(f"Cat-B job {job_id} (corresponding to run {run_id:05d}) failed.")
+        else:
+            log.warning(
+                f"Cat-B job {job_id} (corresponding to run {run_id:05d}) failed."
+            )
 
     else:
         if catB_calibration_file_exists(run_id):
             if not options.overwrite_catB:
-                log.info(f"Cat-B calibration file already produced for run {run_id:05d}.")
-                return 
+                log.info(
+                    f"Cat-B calibration file already produced for run {run_id:05d}."
+                )
+                return
             else:
-                log.info(f"Cat-B calibration file already produced for run {run_id:05d}. Overwriting it.")
+                log.info(
+                    f"Cat-B calibration file already produced for run "
+                    f"{run_id:05d}. Overwriting it."
+                )
 
         command = cfg.get("lstchain", "catB_calibration")
+
         if cfg.getboolean("lstchain", "use_lstcam_env_for_CatB_calib"):
             env_command = f"conda run -n lstcam-env {command}"
         else:
             env_command = command
-        options.filters = get_calib_filters(run_id) 
+
+        options.filters = get_calib_filters(run_id)
+
         base_dir = Path(cfg.get(options.tel_id, "BASE")).resolve()
         r0_dir = Path(cfg.get(options.tel_id, "R0_DIR")).resolve()
         log_dir = Path(options.directory) / "log"
-        catA_calib_run = get_last_pedcalib(options.date)
+
+        input_state = getattr(options, "input_state", "legacy_raw")
+
+        if input_state == "catA_calibrated":
+            catA_file, systematics_file = get_catA_and_systematics(run_id)
+
+            log.info(f"[CatB] Using Cat-A file: {catA_file}")
+            log.info(f"[CatB] Using systematics: {systematics_file}")
+        else:
+            catA_calib_run = get_last_pedcalib(options.date)
+
         slurm_account = cfg.get("SLURM", "ACCOUNT")
         lstchain_version = get_major_version(get_lstchain_version())
         analysis_dir = cfg.get("LST1", "ANALYSIS_DIR")
-        cmd = ["sbatch", f"--account={slurm_account}", "--parsable",
-            "-o", f"{log_dir}/catB_calibration_{run_id:05d}_%j.out",
-            "-e", f"{log_dir}/catB_calibration_{run_id:05d}_%j.err",
+
+        cmd = [
+            "sbatch",
+            f"--account={slurm_account}",
+            "--parsable",
+            "-o",
+            f"{log_dir}/catB_calibration_{run_id:05d}_%j.out",
+            "-e",
+            f"{log_dir}/catB_calibration_{run_id:05d}_%j.err",
             env_command,
             f"-r {run_id:05d}",
-            f"--catA_calibration_run={catA_calib_run}",
-            "-b", base_dir,
+            "-b",
+            base_dir,
             f"--r0-dir={r0_dir}",
             f"--filters={options.filters}",
         ]
-        
-        if command=="onsite_create_cat_B_calibration_file":
+
+        if input_state == "catA_calibrated":
+            cmd.extend(
+                [
+                    f"--cat_A_calibration_file={catA_file}",
+                    f"--systematics_file={systematics_file}",
+                ]
+            )
+        else:
+            cmd.append(f"--catA_calibration_run={catA_calib_run}")
+
+        if command == "onsite_create_cat_B_calibration_file":
             cmd.append(f"--interleaved-dir={analysis_dir}")
-        elif command=="lstcam_calib_onsite_create_cat_B_calibration_file":
+
+        elif command == "lstcam_calib_onsite_create_cat_B_calibration_file":
             cmd.append(f"--dl1-dir={analysis_dir}")
             cmd.append(f"--lstchain-version={lstchain_version[1:]}")
 
@@ -175,11 +304,48 @@ def launch_catB_calibration(run_id: int):
             cmd.append("--yes")
 
         if not options.simulate:
-            job = sp.run(cmd, encoding="utf-8", capture_output=True, text=True, check=True)
-            job_id = job.stdout.strip()
-            log.debug(f"Launched Cat-B calibration job {job_id} for run {run_id}!")
+            job = sp.run(
+                cmd,
+                encoding="utf-8",
+                capture_output=True,
+                text=True,
+                check=True,
+            )
 
-        else: 
+            job_id = job.stdout.strip()
+
+            log.debug(
+                f"Launched Cat-B calibration job {job_id} for run {run_id}!"
+            )
+
+            # Create .closed automatically when Cat-B finishes successfully
+            catB_closed_file = (
+                Path(options.directory) / f"catB_{run_id:05d}.closed"
+            )
+
+            close_cmd = [
+                "sbatch",
+                "--parsable",
+                f"--account={slurm_account}",
+                f"--dependency=afterok:{job_id}",
+                "--wrap",
+                f"touch {catB_closed_file}",
+            ]
+
+            sp.run(
+                close_cmd,
+                encoding="utf-8",
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+
+            log.debug(
+                f"Scheduled creation of {catB_closed_file} after successful "
+                f"completion of Cat-B job {job_id}"
+            )
+
+        else:
             log.info(f"Simulate launching of the {command} script.")
             
 
@@ -197,6 +363,7 @@ def launch_tailcuts_finder(run_id: int):
     cmd = [
         "sbatch", "--parsable",
         f"--account={slurm_account}",
+        "--mem-per-cpu=10GB",
         "-o", log_file,
         command,
         f"--input-dir={input_dir}",
@@ -226,6 +393,7 @@ def main():
     the catB_{run}.closed files if Cat-B calibration has finished successfully.
     """ 
     opts = parser.parse_args()
+    options.input_state = opts.input_state
     options.tel_id = opts.tel_id
     options.simulate = opts.simulate
     options.overwrite_tailcuts = opts.overwrite_tailcuts

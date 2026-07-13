@@ -51,15 +51,20 @@ def html_content(body: str, warnings: str, date: str, title: str) -> str:
          </head>
          <body>
          <h1>{title} processing status</h1>
-         <p>Processing data from: {date}. Last updated: {time_update} UTC</p>
+         <p>Processing data from: {date}. Last updated: {time_update} UTC.</p>
          {warnings}
          {body}
          </body>
         </html>"""
     )
 
-
-def get_sequencer_output(date: str, config: str, test=False, no_gainsel=False) -> list:
+def get_sequencer_output(
+    date: str,
+    config: str,
+    input_state: str,
+    test=False,
+    no_gainsel=False,
+) -> list:
     """Call sequencer to get table with the sequencer status report.
 
     Parameters
@@ -68,6 +73,8 @@ def get_sequencer_output(date: str, config: str, test=False, no_gainsel=False) -
         Date of the processing YYYY-MM-DD.
     config : str
         OSA configuration file to use.
+    input_state : str
+        Input state passed to sequencer.
     test : bool
 
     Returns
@@ -76,6 +83,7 @@ def get_sequencer_output(date: str, config: str, test=False, no_gainsel=False) -
         Lines of the sequencer output.
     """
     log.info("Calling sequencer...")
+
     commandargs = [
         "sequencer",
         "-c",
@@ -83,12 +91,14 @@ def get_sequencer_output(date: str, config: str, test=False, no_gainsel=False) -
         "-s",
         "-d",
         date,
+        "--input-state",
+        input_state,
         options.tel_id,
     ]
 
     if no_gainsel:
-        commandargs.insert(1, "--no-gainsel")
-        
+        commandargs.insert(-1, "--no-gainsel")
+
     if test:
         commandargs.insert(-1, "-t")
 
@@ -96,12 +106,22 @@ def get_sequencer_output(date: str, config: str, test=False, no_gainsel=False) -
         commandargs.insert(-1, "--no-dl1ab")
 
     try:
-        output = sp.run(commandargs, stdout=sp.PIPE, stderr=sp.STDOUT, encoding="utf-8", check=True)
+        log.info(f"Using input_state={input_state}")
+        log.info(f"{commandargs}")
+
+        output = sp.run(
+            commandargs,
+            stdout=sp.PIPE,
+            stderr=sp.STDOUT,
+            encoding="utf-8",
+            check=True,
+        )
+
     except sp.CalledProcessError as error:
         log.error(f"Command {commandargs} failed, {error.returncode}")
         sys.exit(1)
+
     else:
-        # Strip newlines and fit it into a table:
         return output.stdout.splitlines()
 
 
@@ -121,6 +141,8 @@ def lines_to_matrix(lines: Iterable) -> list:
 def matrix_to_html(matrix: list) -> str:
     """Build the html table with the sequencer status report."""
     log.info("Building the html table from sequencer output")
+    log.info(matrix)
+    log.info(len(matrix))
     if len(matrix) < 2:
         return "<p>No data found</p>"
     df = pd.DataFrame(matrix[1:], columns=matrix[0])
@@ -160,28 +182,55 @@ def main():
 
     run_summary_directory = Path(cfg.get("LST1", "RUN_SUMMARY_DIR"))
     run_summary_file = run_summary_directory / f"RunSummary_{flat_date}.ecsv"
+
     if not run_summary_file.is_file():
         log.error(f"No RunSummary file found for {date}")
         sys.exit(1)
 
-    # Get the table with the sequencer status report:
-    lines = get_sequencer_output(date, args.config, test=args.test, no_gainsel=args.no_gainsel)
+    log.info(f"Using input_state={args.input_state}")
 
-    # Build the html sequencer table that will be place in the body of the HTML file
+    # Get the table with the sequencer status report:
+    lines = get_sequencer_output(
+        date,
+        args.config,
+        args.input_state,
+        test=args.test,
+        no_gainsel=args.no_gainsel,
+    )
+
+    log.info(f"{lines}")
+
+    # Build the html sequencer table that will be placed in the body
     matrix, warnings = lines_to_matrix(lines)
+
     html_table = matrix_to_html(matrix)
     html_warnings = warnings_to_html(warnings)
 
+    log.info(f"{html_table}")
+
     # Save the HTML file
     log.info("Saving the HTML file")
+
     directory = Path(cfg.get("LST1", "SEQUENCER_WEB_DIR"))
     directory.mkdir(parents=True, exist_ok=True)
 
-    html_file = directory / Path(f"osa_status_{flat_date}.html")
-    html_file.write_text(html_content(html_table, html_warnings, date, "LST OSA Sequencer"), encoding="utf-8")
+    html_file = directory / f"osa_status_{flat_date}.html"
+
+    log.info(f"{html_file}")
+
+    html_file.write_text(
+        html_content(
+            html_table,
+            html_warnings,
+            date,
+            "LST OSA Sequencer",
+        ),
+        encoding="utf-8",
+    )
 
     log.info("Done")
 
 
 if __name__ == "__main__":
     main()
+

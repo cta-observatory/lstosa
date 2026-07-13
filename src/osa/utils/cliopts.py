@@ -80,6 +80,9 @@ common_parser.add_argument(
 # TODO: add here the tel_id common option
 
 
+
+
+
 def closer_argparser():
     parser = ArgumentParser(parents=[common_parser])
 
@@ -91,6 +94,7 @@ def closer_argparser():
         default=False,
         help="assume yes to all questions",
     )
+
     parser.add_argument(
         "--seq",
         action="store",
@@ -98,12 +102,21 @@ def closer_argparser():
         dest="seqtoclose",
         help="If you only want to close a certain sequence",
     )
+
     parser.add_argument(
         "--no-dl2",
         action="store_true",
         default=False,
         help="Do not produce DL2 files (default False)",
     )
+
+    parser.add_argument(
+        "--input-state",
+        choices=["legacy_raw", "gain_selected", "catA_calibrated"],
+        default="legacy_raw",
+        help="Declared preprocessing state of input data",
+    )
+
     parser.add_argument("tel_id", choices=["ST", "LST1", "LST2"])
 
     return parser
@@ -118,6 +131,7 @@ def closercliparsing():
     options.seqtoclose = opts.seqtoclose
     options.no_dl2 = opts.no_dl2
     options.noninteractive = opts.noninteractive
+    options.input_state = opts.input_state
 
     log.debug(f"the options are {opts}")
 
@@ -125,7 +139,6 @@ def closercliparsing():
     options.date = set_default_date_if_needed()
     options.directory = analysis_path(options.tel_id)
     options.prod_id = get_prod_id()
-
 
 def calibration_pipeline_argparser():
     """Command line parser for the calibration pipeline."""
@@ -177,6 +190,14 @@ def data_sequence_argparser():
         dest="prod_id",
         help="Set the prod ID to define data directories",
     )
+
+    parser.add_argument(
+        "--input-state",
+        choices=["legacy_raw", "gain_selected", "catA_calibrated"],
+        default="legacy_raw",
+        help="Declared preprocessing state of input data",
+    )
+
     parser.add_argument(
         "--no-dl1ab",
         action="store_true",
@@ -234,6 +255,7 @@ def data_sequence_cli_parsing():
     options.prod_id = opts.prod_id
     options.no_dl1ab = opts.no_dl1ab
     options.tel_id = opts.tel_id
+    options.input_state = opts.input_state
 
     log.debug(f"The options and arguments are {opts}")
 
@@ -261,6 +283,12 @@ def sequencer_argparser():
     parser = ArgumentParser(
         description="Build the jobs for each run and process them for a given date",
         parents=[common_parser],
+    )
+    parser.add_argument(
+        "--input-state",
+        choices=["legacy_raw", "gain_selected", "catA_calibrated"],
+        default="legacy_raw",
+        help="Declared preprocessing state of input data",
     )
     parser.add_argument(
         "--no-submit",
@@ -314,6 +342,8 @@ def sequencer_cli_parsing():
     options.no_dl1ab = opts.no_dl1ab
     options.no_gainsel = opts.no_gainsel
     options.force_submit = opts.force_submit
+    options.input_state = opts.input_state
+
 
     log.debug(f"the options are {opts}")
 
@@ -456,20 +486,33 @@ def copy_datacheck_parsing():
     options.prod_id = get_prod_id()
 
 
+
+
 def sequencer_webmaker_argparser():
     parser = ArgumentParser(
-        description="Script to make an xhtml from LSTOSA sequencer output", parents=[common_parser]
+        description="Script to make an xhtml from LSTOSA sequencer output",
+        parents=[common_parser],
     )
+
     parser.add_argument(
         "--no-gainsel",
         action="store_true",
         default=False,
         help="Do not check if the gain selection finished correctly (default False)",
     )
+
+    parser.add_argument(
+        "--input-state",
+        choices=["legacy_raw", "gain_selected", "catA_calibrated"],
+        default="legacy_raw",
+        help="Declared preprocessing state of input data",
+    )
+
     options.tel_id = "LST1"
     options.prod_id = get_prod_id()
 
     return parser
+
 
 
 def set_default_date_if_needed():
@@ -487,28 +530,64 @@ def set_common_globals(opts):
     options.tel_id = opts.tel_id
 
 
+
 def autocloser_cli_parser():
     """Define the command line parser for the autocloser."""
     parser = ArgumentParser(
-        description="Automatic job completion check and sequence closer.", parents=[common_parser]
+        description="Automatic job completion check and sequence closer.",
+        parents=[common_parser],
     )
-    parser.add_argument("--ignore-cronlock", action="store_true", help='Ignore "cron.lock"')
+
     parser.add_argument(
-        "-f", "--force", action="store_true", help="Force the autocloser to close the day"
+        "--ignore-cronlock",
+        action="store_true",
+        help='Ignore "cron.lock"',
     )
+
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Force the autocloser to close the day",
+    )
+
     parser.add_argument(
         "--no-dl2",
         action="store_true",
         default=False,
         help="Disregard the production of DL2 files",
     )
+
     parser.add_argument(
         "--no-gainsel",
         action="store_true",
         default=False,
         help="Do not check if the gain selection finished correctly (default False)",
     )
-    parser.add_argument("-r", "--runwise", action="store_true", help="Close the day run-wise.")
-    parser.add_argument("-l", "--log", type=Path, default=None, help="Write log to a file.")
+
+    parser.add_argument(
+        "--input-state",
+        choices=["legacy_raw", "gain_selected", "catA_calibrated"],
+        default="legacy_raw",
+        help="Declared preprocessing state of input data",
+    )
+
+    parser.add_argument(
+        "-r",
+        "--runwise",
+        action="store_true",
+        help="Close the day run-wise.",
+    )
+
+    parser.add_argument(
+        "-l",
+        "--log",
+        type=Path,
+        default=None,
+        help="Write log to a file.",
+    )
+
     parser.add_argument("tel_id", type=str, choices=["LST1"])
+
     return parser
+

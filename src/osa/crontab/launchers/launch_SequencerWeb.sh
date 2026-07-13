@@ -4,8 +4,7 @@
 # Make sequencer xhtml table and copy it to the lst1 webserver
 # --------------------------------------------------------------------
 
-# Export parameters from osa-env.sh
-source /fefs/aswg/workspace/maria.rivero/lstosa/src/osa/crontab/osa-env.sh
+source /local/home/lstanalyzer/osa-env.sh
 
 # Convert YYYY-MM-DD to YYYYMMDD
 obsdate=$(date -d "$OBS_DATE" +%Y%m%d)
@@ -27,22 +26,28 @@ FLAG_FILE="${GSDIR}/GainSelFinished.txt"
 # -------------------------
 # Check GainSelFinished.txt
 # -------------------------
-if [ ! -e "$FLAG_FILE" ]; then
-    echo "No GainSelFinished.txt for ${OBS_DATE} yet" >> "$LOGFILE"
-    exit
+
+if [ "${INPUT_STATE}" = "legacy_raw" ]; then
+    if [ ! -e "$FLAG_FILE" ]; then
+        echo "No GainSelFinished.txt for ${OBS_DATE} yet" >> "$LOGFILE"
+        exit 0
+    fi
 fi
 
 # -------------------------
 # Environment
 # -------------------------
+
 source "$CONDA_ENV"
 
 # -------------------------
 # Run SEQUENCER WEBMAKER
 # -------------------------
+
 {
     sequencer_webmaker \
-        -c "$CFG"
+        -c "$CFG" \
+        --input-state "$INPUT_STATE"
 } >> "$LOGFILE" 2>&1
 
 {
@@ -57,7 +62,8 @@ source "$CONDA_ENV"
 
 {
     sequencer_webmaker_2 \
-        -c "$CFG"
+        -c "$CFG" \
+        --input-state "$INPUT_STATE"
 } >> "$LOGFILE2" 2>&1
 
 {
@@ -65,3 +71,4 @@ source "$CONDA_ENV"
         scp "$HTMLFILE2" datacheck:"$SEQUENCER2_WEB"
     fi
 } >> "$LOGFILE2" 2>&1
+

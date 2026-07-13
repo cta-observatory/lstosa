@@ -31,3 +31,4 @@ no_submit = False
 seqtoclose = None
 run = None
 filters = None
+input_state = "legacy_raw"

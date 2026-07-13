@@ -132,7 +132,6 @@ def test_job_header_template(sequence_list, running_analysis_dir):
     )
     assert header == output_string2
 
-
 def test_create_job_template_scheduler(
     sequence_list,
     drs4_time_calibration_files,
@@ -180,16 +179,17 @@ def test_create_job_template_scheduler(
         os.environ['NUMBA_CACHE_DIR'] = tmpdirname
         proc = subprocess.run([
             'datasequence',
+            '--input-state=legacy_raw',
             '--config',
             '{DEFAULT_CFG}',
             '--date=2020-01-17',
             '--prod-id=v0.1.0',
-            '--drs4-pedestal-file={drs4_baseline_file}',
-            '--time-calib-file={drs4_time_calibration_files[0]}',
-            '--pedcal-file={calibration_file}',
-            '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
             '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/DrivePosition_log_20200117.txt',
             '--run-summary={run_summary_file}',
+            '--drs4-pedestal-file={drs4_baseline_file}',
+            '--pedcal-file={calibration_file}',
+            '--time-calib-file={drs4_time_calibration_files[0]}',
+            '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
             '--dl1b-config={dl1b_config_files[0]}',
             '--dl1-prod-id=tailcut84',
             f'01807.{{subruns:04d}}',
@@ -228,16 +228,17 @@ def test_create_job_template_scheduler(
             os.environ['NUMBA_CACHE_DIR'] = tmpdirname
             proc = subprocess.run([
                 'datasequence',
+                '--input-state=legacy_raw',
                 '--config',
                 '{DEFAULT_CFG}',
                 '--date=2020-01-17',
                 '--prod-id=v0.1.0',
-                '--drs4-pedestal-file={drs4_baseline_file}',
-                '--time-calib-file={drs4_time_calibration_files[0]}',
-                '--pedcal-file={calibration_file}',
-                '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
                 '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/DrivePosition_log_20200117.txt',
                 '--run-summary={run_summary_file}',
+                '--drs4-pedestal-file={drs4_baseline_file}',
+                '--pedcal-file={calibration_file}',
+                '--time-calib-file={drs4_time_calibration_files[0]}',
+                '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
                 '--dl1b-config={dl1b_config_files[1]}',
                 '--dl1-prod-id=tailcut84',
                 f'--pedestal-ids-file={Path.cwd()}/test_osa/test_files0/auxiliary/PedestalFinder/20200117/pedestal_ids_Run01808.{{subruns:04d}}.h5',
@@ -251,7 +252,6 @@ def test_create_job_template_scheduler(
     options.simulate = True
     assert content1 == expected_content1
     assert content2 == expected_content2
-
 
 def test_create_job_template_local(
     sequence_list,
@@ -299,16 +299,17 @@ def test_create_job_template_local(
         os.environ['NUMBA_CACHE_DIR'] = tmpdirname
         proc = subprocess.run([
             'datasequence',
+            '--input-state=legacy_raw',
             '--config',
             '{DEFAULT_CFG}',
             '--date=2020-01-17',
             '--prod-id=v0.1.0',
-            '--drs4-pedestal-file={drs4_baseline_file}',
-            '--time-calib-file={drs4_time_calibration_files[0]}',
-            '--pedcal-file={calibration_file}',
-            '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
             '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/DrivePosition_log_20200117.txt',
             '--run-summary={run_summary_file}',
+            '--drs4-pedestal-file={drs4_baseline_file}',
+            '--pedcal-file={calibration_file}',
+            '--time-calib-file={drs4_time_calibration_files[0]}',
+            '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
             '--dl1b-config={dl1b_config_files[0]}',
             '--dl1-prod-id=tailcut84',
             f'01807.{{subruns:04d}}',
@@ -334,16 +335,17 @@ def test_create_job_template_local(
             os.environ['NUMBA_CACHE_DIR'] = tmpdirname
             proc = subprocess.run([
                 'datasequence',
+                '--input-state=legacy_raw',
                 '--config',
                 '{DEFAULT_CFG}',
                 '--date=2020-01-17',
                 '--prod-id=v0.1.0',
-                '--drs4-pedestal-file={drs4_baseline_file}',
-                '--time-calib-file={drs4_time_calibration_files[0]}',
-                '--pedcal-file={calibration_file}',
-                '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
                 '--drive-file={Path.cwd()}/test_osa/test_files0/monitoring/DrivePositioning/DrivePosition_log_20200117.txt',
                 '--run-summary={run_summary_file}',
+                '--drs4-pedestal-file={drs4_baseline_file}',
+                '--pedcal-file={calibration_file}',
+                '--time-calib-file={drs4_time_calibration_files[0]}',
+                '--systematic-correction-file={Path.cwd()}/test_osa/test_files0/monitoring/PixelCalibration/Cat-A/ffactor_systematics/20200725/pro/ffactor_systematics_20200725.h5',
                 '--dl1b-config={dl1b_config_files[1]}',
                 '--dl1-prod-id=tailcut84',
                 f'--pedestal-ids-file={Path.cwd()}/test_osa/test_files0/auxiliary/PedestalFinder/20200117/pedestal_ids_Run01808.{{subruns:04d}}.h5',

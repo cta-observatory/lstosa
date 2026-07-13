@@ -27,6 +27,15 @@ GS_HTML="${LSTN1}/OSA/GainSelWeb/osa_gainsel_status_${OBS_DATE}.html"
 GS_LSTOSA="/home/www/html/datacheck/lstosa/gainsel.xhtml"
 
 # ---------------------------------
+# Skip if input already preprocessed
+# ---------------------------------
+if [ "${INPUT_STATE}" != "legacy_raw" ]; then
+    echo "Skipping GainSelCheck: INPUT_STATE=$INPUT_STATE" >> "$LOGFILE"
+    exit 0
+fi
+
+
+# ---------------------------------
 # Check GainSelFinished file exists
 # ---------------------------------
 if [ -e "$FLAG_FILE" ]; then
@@ -63,3 +72,4 @@ source "$CONDA_ENV"
         scp "$GS_HTML" datacheck:"$GS_LSTOSA"
     fi
 } >> "$LOGFILE_WEB" 2>&1
+

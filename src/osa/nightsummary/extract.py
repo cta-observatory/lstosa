@@ -19,7 +19,6 @@ from osa.configs.datamodel import (
     SequenceCalibration,
     SequenceData,
 )
-from osa.configs.datamodel import Sequence
 from osa.job import sequence_filenames
 from osa.nightsummary import database
 from osa.nightsummary.nightsummary import run_summary_table
@@ -81,18 +80,7 @@ def get_last_pedcalib(date) -> int:
 
 def extract_runs(summary_table):
     """
-    Extract sub-wun wise information from RunSummary files.
-
-    Parameters
-    ----------
-    summary_table: astropy.Table
-        Table containing run-wise information indicated in `nightsummary.run_summary`
-
-    See Also: `nightsummary.run_summary`
-
-    Returns
-    -------
-    subrun_list
+    Extract sub-run wise information from RunSummary files.
     """
 
     if len(summary_table) == 0:
@@ -101,39 +89,46 @@ def extract_runs(summary_table):
 
     run_list = []
 
-    required_drs4_run = get_last_drs4(options.date)
-    required_pedcal_run = get_last_pedcalib(options.date)
+    needs_calibration = options.input_state == "legacy_raw"
 
-    if required_drs4_run not in summary_table["run_id"]:
-        drs4_date = get_run_date(required_drs4_run)
-        drs4_date_summary = run_summary_table(drs4_date)
-        run_info = drs4_date_summary.loc[required_drs4_run]
-        run = RunObj(
-            run=required_drs4_run,
-            run_str=f"{required_drs4_run:05d}",
-            type=run_info["run_type"],
-            night=date_to_iso(drs4_date),
-            subruns=run_info["n_subruns"],
-        )
-        run_list.append(run)
+    if needs_calibration:
+        required_drs4_run = get_last_drs4(options.date)
+        required_pedcal_run = get_last_pedcalib(options.date)
 
-    if required_pedcal_run not in summary_table["run_id"]:
-        pedcal_date = get_run_date(required_pedcal_run)
-        pedcal_date_summary = run_summary_table(pedcal_date)
-        run_info = pedcal_date_summary.loc[required_pedcal_run]
-        run = RunObj(
-            run=required_pedcal_run,
-            run_str=f"{required_pedcal_run:05d}",
-            type=run_info["run_type"],
-            night=date_to_iso(pedcal_date),
-            subruns=run_info["n_subruns"],
-        )
-        run_list.append(run)
+        if required_drs4_run not in summary_table["run_id"]:
+            drs4_date = get_run_date(required_drs4_run)
+            drs4_date_summary = run_summary_table(drs4_date)
+            run_info = drs4_date_summary.loc[required_drs4_run]
+
+            run = RunObj(
+                run=required_drs4_run,
+                run_str=f"{required_drs4_run:05d}",
+                type=run_info["run_type"],
+                night=date_to_iso(drs4_date),
+                subruns=run_info["n_subruns"],
+            )
+
+            run_list.append(run)
+
+        if required_pedcal_run not in summary_table["run_id"]:
+            pedcal_date = get_run_date(required_pedcal_run)
+            pedcal_date_summary = run_summary_table(pedcal_date)
+            run_info = pedcal_date_summary.loc[required_pedcal_run]
+
+            run = RunObj(
+                run=required_pedcal_run,
+                run_str=f"{required_pedcal_run:05d}",
+                type=run_info["run_type"],
+                night=date_to_iso(pedcal_date),
+                subruns=run_info["n_subruns"],
+            )
+
+            run_list.append(run)
 
     # Get information run-wise going through each row
     for run_id in summary_table["run_id"]:
         run_info = summary_table.loc[run_id]
-        # Build run object
+
         run = RunObj(
             run=run_id,
             run_str=f"{run_id:05d}",
@@ -141,6 +136,7 @@ def extract_runs(summary_table):
             night=date_to_iso(options.date),
             subruns=run_info["n_subruns"],
         )
+
         run_list.append(run)
 
     # Before trying to access the information in the database, check if it is available
@@ -214,84 +210,102 @@ def extract_runs(summary_table):
     return run_list
 
 
-def extract_sequences(date: datetime, run_obj_list: List[RunObj]) -> List[Sequence]:
+def extract_sequences(date: datetime, run_obj_list: List[RunObj]) -> List:
     """
     Create calibration and data sequences from run objects.
-
-    Parameters
-    ----------
-    date : datetime
-        Date of the runs to analyze
-    run_obj_list : List[RunObj]
-        List of run objects
-
-    Returns
-    -------
-    sequence_list : List[Sequence]
     """
 
-    # Last DRS4 and PEDCALIB runs required to process the sky-data runs
-    required_drs4_run = get_last_drs4(date)
-    required_pedcal_run = get_last_pedcalib(date)
+    needs_calibration = options.input_state == "legacy_raw"
 
-    # Get DATA runs to be processed
+    if needs_calibration:
+        required_drs4_run = get_last_drs4(date)
+        required_pedcal_run = get_last_pedcalib(date)
+    else:
+        required_drs4_run = None
+        required_pedcal_run = None
+
     data_runs_to_process = get_data_runs(date)
+
     if not data_runs_to_process:
         log.warning("No data sequences found for this date. Nothing to do. Exiting.")
         sys.exit(0)
 
-    log.debug(f"There are {len(data_runs_to_process)} data sequences: {data_runs_to_process}")
+    log.debug(
+        f"There are {len(data_runs_to_process)} data sequences: "
+        f"{data_runs_to_process}"
+    )
 
-    # Loop over the list of run objects and create the corresponding sequences
-    # First, the calibration sequence based on the last DRS4 and PEDCALIB runs.
-    # Then, the data sequences which require the calibration files produced
-    # by the calibration sequence.
     sequence_list = []
 
     for run in run_obj_list:
-        if run.run == required_pedcal_run:
+
+        if (
+            needs_calibration
+            and run.run == required_pedcal_run
+        ):
             sequence = SequenceCalibration(run)
             sequence.jobname = f"{run.telescope}_{run.run:05d}"
-            sequence_list.insert(0, sequence)
+
             sequence.drs4_run = required_drs4_run
             sequence.pedcal_run = run.run
+
             sequence_filenames(sequence)
+
+            sequence_list.insert(0, sequence)
+
             log.debug(
                 f"Calibration sequence {sequence.seq} composed of "
-                f"DRS4 run {required_drs4_run} and Ped-Cal run {required_pedcal_run}"
+                f"DRS4 run {required_drs4_run} and "
+                f"Ped-Cal run {required_pedcal_run}"
             )
 
         elif run.run in data_runs_to_process:
+
             sequence = SequenceData(run)
-            # data sequences counted after the calibration sequence
-            sequence.seq = data_runs_to_process.index(run.run) + 2
+
+            sequence.seq = (
+                data_runs_to_process.index(run.run)
+                + (2 if needs_calibration else 1)
+            )
+
             sequence.jobname = f"{run.telescope}_{run.run:05d}"
+
             sequence.drs4_run = required_drs4_run
             sequence.pedcal_run = required_pedcal_run
+
             sequence_filenames(sequence)
+
             log.debug(
-                f"Data sequence {sequence.seq} from run {run.run} whose parent is "
-                f"{sequence.parent} (DRS4 {required_drs4_run} & Ped-Cal {required_pedcal_run})"
+                f"Data sequence {sequence.seq} from run {run.run} "
+                f"whose parent is {sequence.parent} "
+                f"(DRS4 {required_drs4_run} & "
+                f"Ped-Cal {required_pedcal_run})"
             )
-            if not options.no_dl1ab and sequence.type=="DATA":
-                dl1_prod_id, dl1b_config = get_dl1_prod_id_and_config(sequence.run)
+
+            if not options.no_dl1ab and sequence.type == "DATA":
+                dl1_prod_id, dl1b_config = get_dl1_prod_id_and_config(
+                    sequence.run
+                )
                 sequence.dl1_prod_id = dl1_prod_id
                 sequence.dl1b_config = dl1b_config
 
-            if not options.no_dl2 and not options.no_dl1ab and sequence.type=="DATA":
+            if (
+                not options.no_dl2
+                and not options.no_dl1ab
+                and sequence.type == "DATA"
+            ):
                 sequence.dl2_prod_id = get_dl2_prod_id(sequence.run)
                 sequence.rf_model = get_RF_model(sequence.run)
 
             sequence_list.append(sequence)
 
-    # Add the calibration file names
-    sequence_calibration_files(sequence_list)
-    log.debug("Workflow completed")
+    if needs_calibration:
+        sequence_calibration_files(sequence_list)
 
+    log.debug("Workflow completed")
     log.debug("Sequence list extracted")
 
     return sequence_list
-
 
 def build_sequences(date: datetime) -> List:
     """Build the list of sequences to process from a given date."""
@@ -332,3 +346,4 @@ def get_source_list(date: datetime) -> dict:
         sys.exit("No sources found. Check the access to database. Exiting.")
 
     return dict(source_dict_grouped)
+

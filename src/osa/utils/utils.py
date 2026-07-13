@@ -334,7 +334,6 @@ def get_nsb_level(run_id):
         log_content = file.read()
     match = re.search(r"Additional NSB rate \(over dark MC\): (-?[\d.]+)", log_content)
     nsb = float(match.group(1))
-
     if nsb < 0:
         raise ValueError("The Additional NSB rate found is below 0.")
 

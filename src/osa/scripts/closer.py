@@ -155,11 +155,9 @@ def ask_for_closing():
                 log.warning("Answer not understood, please type y or n")
                 answer_check = False
 
-
 def post_process(seq_tuple):
-    """Set of last instructions."""
     seq_list = seq_tuple[1]
-    
+
     if dl1_datacheck_longterm_file_exits() and not options.test:
         if cfg.getboolean("lstchain", "create_longterm_symlink"):
             create_longterm_symlink()
@@ -176,27 +174,48 @@ def post_process(seq_tuple):
         # Merge DL1b files run-wise
         for sequence in seq_list:
             dl1_merge_job_id = merge_files(sequence, data_level="DL1AB")
-            # Produce DL2 files run-wise
-            if not options.no_dl2 and sequence.type=="DATA":
+            if not options.no_dl2 and sequence.type == "DATA":
                 dl1_to_dl2(sequence, dl1_merge_job_id)
 
-        # Merge DL1 datacheck files and produce PDFs. It also produces
-        # the daily datacheck report using the longterm script, and updates
-        # the longterm DL1 datacheck file with the cherenkov_transparency script.
+        # --- DATACHECK + SYMLINK + LONGTERM ---
         if cfg.getboolean("lstchain", "merge_dl1_datacheck"):
-            list_job_id = merge_dl1_datacheck(seq_list)
-            create_datacheck_symlinks(list_job_id)
-            longterm_job_id = daily_datacheck(daily_longterm_cmd(list_job_id))
-            cherenkov_job_id = cherenkov_transparency(cherenkov_transparency_cmd(longterm_job_id))
-            if cfg.getboolean("lstchain", "create_longterm_symlink"):
-                create_longterm_symlink(cherenkov_job_id)
 
-        time.sleep(600)
+            # Nothing below should run in test mode
+            if options.test:
+                log.debug("Skipping datacheck/longterm jobs in test mode")
+            else:
+                list_job_id = merge_dl1_datacheck(seq_list)
 
-    # Check if all jobs launched by autocloser finished correctly 
-    # before creating the NightFinished.txt file
+                symlink_job_id = create_datacheck_symlinks(list_job_id)
+
+                log.info(f"Datacheck symlink job → {symlink_job_id}")
+
+                if symlink_job_id:
+                    deps = [symlink_job_id]
+                else:
+                    log.warning(
+                        "No symlink job created, falling back to merge job dependencies"
+                    )
+                    deps = list_job_id
+
+                longterm_job_id = daily_datacheck(
+                    daily_longterm_cmd(deps)
+                )
+
+                cherenkov_job_id = cherenkov_transparency(
+                    cherenkov_transparency_cmd(longterm_job_id)
+                )
+
+                if cfg.getboolean("lstchain", "create_longterm_symlink"):
+                    create_longterm_symlink(cherenkov_job_id)
+
+        if not options.test:
+            time.sleep(600)
+
+    # --- WAIT LOOP ---
     n_max = 6
     n = 0
+
     while not all_closer_jobs_finished_correctly() and n <= n_max:
         log.info(
             "All jobs launched by autocloser did not finished correctly yet. "
@@ -213,7 +232,7 @@ def post_process(seq_tuple):
         database = cfg.get("database", "path")
         if database:
             osadb.end_processing(date_to_iso(options.date))
-        # Creating closing flag files will be deprecated in future versions
+
         return set_closed_with_file()
 
     return False

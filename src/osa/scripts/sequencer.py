@@ -8,7 +8,6 @@ prepares a SLURM job array which launches the data sequences for every subrun.
 import warnings
 import logging
 import os
-import sys
 from decimal import Decimal
 import datetime
 import re
@@ -16,6 +15,7 @@ from osa import osadb
 from osa.configs import options
 from osa.configs.config import cfg
 from osa.veto import get_closed_list, get_veto_list
+from osa.processing_plan import build_processing_plan
 from osa.utils.logging import myLogger
 
 warnings.filterwarnings(
@@ -79,26 +79,12 @@ def main():
     else:
         log.error("Process mode not supported yet")
 
-
 def single_process(telescope):
-    """
-    Runs the single process for a single telescope
-
-    Parameters
-    ----------
-    telescope : str
-        Options: 'LST1'
-
-    Returns
-    -------
-    sequence_list : list
-    """
 
     database = cfg.get("database", "path")
     if database:
         osadb.start_processing(date_to_iso(options.date))
 
-    # Define global variables and create night directory
     sequence_list = []
     options.tel_id = telescope
     options.directory = analysis_path(options.tel_id)
@@ -108,57 +94,160 @@ def single_process(telescope):
         os.makedirs(options.log_directory, exist_ok=True)
 
     summary_table = run_summary_table(options.date)
-    if len(summary_table) == 0:
-        log.warning("No runs found for this date. Nothing to do. Exiting.")
-        sys.exit(0)
+    plan = build_processing_plan(options.input_state)
+    log.info(f"Processing input_state = {options.input_state}")
 
-    if not options.no_gainsel and not GainSel_finished(options.date):
-        log.info(
-            f"Gain selection did not finish successfully for date {date_to_iso(options.date)}. "
-            "Try again later, once gain selection has finished."
-        )
-        sys.exit()
+    if len(summary_table) == 0:
+        log.warning("No runs found for this date. Nothing to do.")
+        return []
+
+    if plan.input_state == "legacy_raw":
+        if not options.no_gainsel and not GainSel_finished(options.date):
+            log.info(
+                f"Gain selection not finished for {date_to_iso(options.date)}"
+            )
+            return []
+    else:
+        log.info("Skipping gain-selection check")
 
     if is_day_closed():
-        log.info(f"Date {date_to_iso(options.date)} is already closed for {options.tel_id}")
-        return sequence_list
+        log.info(f"Date already closed for {options.tel_id}")
+        return []
 
     if not options.test and not options.simulate:
-        if is_sequencer_running(options.date):
-            log.info(f"Sequencer is still running for date {date_to_iso(options.date)}. Try again later.")
-            sys.exit(0)
 
-        if is_sequencer_completed(options.date) and not options.force_submit:
-            log.info(f"Sequencer already finished for date {date_to_iso(options.date)}. Exiting")
-            sys.exit(0)
+        if options.no_dl1ab:
 
-        elif timeout_in_sequencer(options.date) and not options.force_submit:
-            log.info(f"Some jobs of sequencer finished in TIMEOUT for date {date_to_iso(options.date)}."
-                " Please relaunch the affected sequences manually.")
-            sys.exit(0)
+            if is_sequencer_running(options.date):
+                log.info(
+                    f"Sequencer is still running for date {date_to_iso(options.date)}. "
+                    "Try again later."
+                )
+                return []
 
-    # Build the sequences
+        else:
+            log.info("Running in per-run parallel mode (Cat-B stage)")
+
+    # Build sequences
     sequence_list = build_sequences(options.date)
 
-    # Create job pilot scripts
     prepare_jobs(sequence_list)
-
-    # Update sequences objects with information from SLURM
     update_job_info(sequence_list)
 
     get_veto_list(sequence_list)
     get_closed_list(sequence_list)
     update_sequence_status(sequence_list)
 
+    sacct_output = run_sacct()
+    sacct_info = get_sacct_output(sacct_output)
+
+    def is_run_active(seq):
+        jobs = sacct_info[sacct_info["JobName"] == seq.jobname]
+
+        if len(jobs) == 0:
+            return False
+
+        states = set(jobs["State"])
+
+        return any(
+            state in ["RUNNING", "PENDING", "COMPLETING"]
+            for state in states
+        )
+
+    def run_fully_processed(seq):
+        """
+        Returns True only if ALL subruns of the run have
+        lstchain_check_dl1 exit code 0.
+        """
+
+        history_files = sorted(
+            options.directory.glob(
+                f"sequence_LST1_{seq.run:05d}.*.history"
+            )
+        )
+
+        if not history_files:
+            return False
+
+        for history_file in history_files:
+
+            found_check_dl1 = False
+
+            try:
+                lines = history_file.read_text().splitlines()
+            except Exception as err:
+                log.warning(f"Cannot read {history_file}: {err}")
+                return False
+
+            for line in lines:
+
+                if (
+                    "lstchain_check_dl1" in line
+                    and line.strip().endswith(" 0")
+                ):
+                    found_check_dl1 = True
+                    break
+
+
+            if not found_check_dl1:
+                return False
+
+        return True
+
+    ready_sequences = []
+
+    for seq in sequence_list:
+
+        if seq.type != "DATA":
+            ready_sequences.append(seq)
+            continue
+
+        # SEQUENCER 1 (--no-dl1ab)
+        if options.no_dl1ab:
+
+            ready = True
+
+        # SEQUENCER 2 (post Cat-B)
+        else:
+
+            if seq.catbstatus != "CLOSED":
+                log.debug(
+                    f"Run {seq.run} skipped: catB status = {seq.catbstatus}"
+                )
+                continue
+
+            if is_run_active(seq):
+                log.debug(
+                    f"Run {seq.run} skipped: already RUNNING/PENDING"
+                )
+                continue
+
+
+            if run_fully_processed(seq):
+                log.debug(
+                    f"Run {seq.run} skipped: already fully processed"
+                )
+                continue
+
+            ready = True
+
+        if ready:
+            ready_sequences.append(seq)
+            log.info(f"Run {seq.run} READY -> submitting")
+
+        log.debug(
+            f"Run {seq.run} | type={seq.type} | "
+            f"catB={seq.catbstatus} | "
+            f"no_dl1ab={options.no_dl1ab}"
+        )
+
     if not options.no_submit:
-        submit_jobs(sequence_list)
+        submit_jobs(ready_sequences)
 
-    # TODO: insert_new_activity_db(sequence_list)
-
-    # Display the sequencer table with processing status
     report_sequences(sequence_list)
 
     return sequence_list
+
 
 
 def update_job_info(sequence_list):

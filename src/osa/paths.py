@@ -386,8 +386,7 @@ def is_job_completed(job_id: str):
     log.info(f"The maximum number of checks of job {job_id} was reached, job {job_id} did not finish succesfully yet.")
     return False
 
-
-def create_longterm_symlink(cherenkov_job_id: str=None):
+def create_longterm_symlink(cherenkov_job_id: str = None):
     """If the created longterm DL1 datacheck file corresponds to the latest 
     version available, make symlink to it in the "all" common directory."""
 
@@ -395,83 +394,111 @@ def create_longterm_symlink(cherenkov_job_id: str=None):
         nightdir = utils.date_to_dir(options.date)
         longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR"))
         output_dir = Path(cfg.get("LST1", "DATACHECK_DIR"))
-        
+
         extensions = ["h5", "log", "html"]
-        
+
         for ext in extensions:
             linked_longterm_file = output_dir / f"night_wise/DL1_datacheck_{nightdir}.{ext}"
-            all_longterm_files = longterm_dir.rglob(f"v*/{nightdir}/DL1_datacheck_{nightdir}.{ext}")
-            latest_version_file = get_latest_version_file(all_longterm_files)
+            all_longterm_files = longterm_dir.rglob(
+                f"v*/{nightdir}/DL1_datacheck_{nightdir}.{ext}"
+            )
+
+            try:
+                latest_version_file = get_latest_version_file(all_longterm_files)
+            except ValueError:
+                log.warning(f"No longterm file found for extension {ext}")
+                continue
+
             linked_longterm_file.unlink(missing_ok=True)
+
             log.info("Creating symlink of the daily datacheck file in the common directory.")
             linked_longterm_file.symlink_to(latest_version_file)
-    else:
-        log.warning(f"Job {cherenkov_job_id} (lstchain_cherenkov_transparency) did not finish successfully.")
 
-    
+    else:
+        log.warning(
+            f"Job {cherenkov_job_id} (lstchain_cherenkov_transparency) did not finish successfully."
+        )
+
 def create_runwise_datacheck_symlinks(parent_job_ids: List[str]):
-    """Create symlinks of the run-wise datacheck files in the "datacheck" directory."""
+
     nightdir = utils.date_to_dir(options.date)
     dl1_dir = Path(cfg.get("LST1", "DL1_DIR")) / nightdir / options.prod_id
     output_dir = Path(cfg.get("LST1", "DATACHECK_DIR")) / nightdir
+
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    patterns = [
-        "tailcut*/datacheck/datacheck_dl1_LST-1.Run?????.pdf",
-        "tailcut*/datacheck/datacheck_dl1_LST-1.Run?????.h5",
+    log_dir = Path(options.directory) / "log"
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    wrap_cmd = f"""
+find {dl1_dir} \\( -name "*.pdf" -o -name "*.h5" \\) \
+-path "*/datacheck/*" | while read f; do
+    ln -sfn "$f" {output_dir}/$(basename "$f")
+done
+"""
+
+    sbatch_cmd = [
+        "sbatch",
+        "--parsable",
+        f"--dependency=afterok:{','.join(parent_job_ids)}",
+        "-o", f"{log_dir}/datacheck_symlink_%j.out",
+        "-e", f"{log_dir}/datacheck_symlink_%j.err",
+        "--wrap",
+        wrap_cmd,
     ]
 
-    commands = []
-    for pattern in patterns:
-        for input_file in dl1_dir.rglob(pattern):
-            output_file = output_dir / input_file.name
-            if not output_file.is_symlink():
-                commands.append(f'ln -s "$(realpath {input_file})" {output_file}')
+    job = subprocess.run(
+        sbatch_cmd,
+        encoding="utf-8",
+        capture_output=True,
+        text=True,
+        check=True,
+    )
 
-    if commands:
-        full_cmd = "\n".join(commands)
+    job_id = job.stdout.strip()
 
-        sbatch_cmd = [
-            "sbatch",
-            f"--dependency=afterok:{','.join(parent_job_ids)}",
-            "--wrap",
-            full_cmd,
-        ]
+    log.info(f"Datacheck symlink job → {job_id}")
 
-        subprocess.run(sbatch_cmd, check=True)
+    return job_id
+
+
+
 
 
 def create_muons_symlinks():
-    """Create symlinks of the muon files in the "datacheck" directory."""
+
     nightdir = utils.date_to_dir(options.date)
     muons_dir = destination_dir("MUON", create_dir=False)
-    muons_file_list = muons_dir.rglob("muons_LST-1*.fits")
+
     output_dir = Path(cfg.get("LST1", "DATACHECK_DIR")) / nightdir / "muons"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    for input_file in muons_file_list:
+    for input_file in muons_dir.rglob("muons_LST-1*.fits"):
         output_file = output_dir / input_file.name
         if not output_file.is_symlink():
-            print(f"input file exists: {input_file.exists()}")
             output_file.symlink_to(input_file.resolve())
 
 
 def create_datacheck_symlinks(parent_job_ids: List[str]):
-    """Create symlinks of the run-wise datacheck files, and of the muon 
-    files in the "datacheck" directory."""
-    
+
     log.info("Creating symlinks of the datacheck and muon files in the common directory.")
-    create_runwise_datacheck_symlinks(parent_job_ids)
+
+    symlink_job_id = create_runwise_datacheck_symlinks(parent_job_ids)
+
     create_muons_symlinks()
+
+    return symlink_job_id
 
 
 def dl1_datacheck_longterm_file_exits() -> bool:
     """Return true if the longterm DL1 datacheck file was already produced."""
+
     nightdir = utils.date_to_dir(options.date)
     longterm_dir = Path(cfg.get("LST1", "LONGTERM_DIR"))
-    longterm_file = longterm_dir / options.prod_id / nightdir / f"DL1_datacheck_{nightdir}.h5"
-    return longterm_file.exists()
 
+    longterm_file = longterm_dir / options.prod_id / nightdir / f"DL1_datacheck_{nightdir}.h5"
+
+    return longterm_file.exists()
 
 def catB_closed_file_exists(run_id: int) -> bool:
     catB_closed_file = Path(options.directory) / f"catB_{run_id:05d}.closed"

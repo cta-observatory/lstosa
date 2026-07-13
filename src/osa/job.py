@@ -25,6 +25,7 @@ from osa.paths import (
 )
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
+from osa.processing_plan import build_processing_plan
 from osa.utils.utils import (
     date_to_dir,
     time_to_seconds,
@@ -431,8 +432,11 @@ def data_sequence_job_template(sequence):
     job_header = job_header_template(sequence)
 
     flat_date = date_to_dir(options.date)
+    plan = build_processing_plan(options.input_state)
+
 
     commandargs = ["datasequence"]
+    commandargs.append(f"--input-state={options.input_state}")
 
     if options.verbose:
         commandargs.append("-v")
@@ -447,14 +451,20 @@ def data_sequence_job_template(sequence):
         (
             f"--date={date_to_iso(options.date)}",
             f"--prod-id={options.prod_id}",
-            f"--drs4-pedestal-file={sequence.drs4_file}",
-            f"--time-calib-file={sequence.time_calibration_file}",
-            f"--pedcal-file={sequence.calibration_file}",
-            f"--systematic-correction-file={sequence.systematic_correction_file}",
             f"--drive-file={get_drive_file(flat_date)}",
             f"--run-summary={get_summary_file(flat_date)}",
         )
     )
+    
+    if plan.needs_calibration:
+        commandargs.extend([
+            f"--drs4-pedestal-file={sequence.drs4_file}",
+            f"--pedcal-file={sequence.calibration_file}",
+            f"--time-calib-file={sequence.time_calibration_file}",
+            f"--systematic-correction-file={sequence.systematic_correction_file}",
+        ])
+    else:
+        log.info(f"Skipping calibration inputs for run {sequence.run} (already calibrated)")
 
     if not options.no_dl1ab:
         dl1_prod_id, dl1b_config = get_dl1_prod_id_and_config(sequence.run)
@@ -588,21 +598,37 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
     job_list = []
     no_display_backend = "--export=ALL,MPLBACKEND=Agg"
 
+    parent_jobid = None
+
     for sequence in sequence_list:
+        plan = build_processing_plan(options.input_state)
         commandargs = [batch_command, "--parsable", no_display_backend]
+
         if sequence.type == "PEDCALIB":
-            commandargs.append(str(sequence.script))
+            if not plan.needs_calibration:
+                log.info(
+                    f"Skipping PEDCALIB for run {sequence.run} "
+                    "(already calibrated)"
+                )
+                continue
+
+            commandargs.append(sequence.script)
+
             if options.simulate or options.no_calib or options.test:
                 log.debug("SIMULATE Launching scripts")
             else:
                 try:
                     log.debug(f"Launching script {sequence.script}")
                     parent_jobid = sp.check_output(
-                        commandargs, universal_newlines=True, shell=False
+                        commandargs,
+                        universal_newlines=True,
+                        shell=False,
                     ).split()[0]
                 except sp.CalledProcessError as error:
                     rc = error.returncode
-                    log.exception(f"Command '{batch_command}' not found, error {rc}")
+                    log.exception(
+                        f"Command '{batch_command}' not found, error {rc}"
+                    )
 
             log.debug(stringify(commandargs))
 
@@ -610,22 +636,33 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
         # from previous time sequencer was launched.
 
         # Add the job dependencies after calibration sequence
+
         if sequence.type == "DATA":
+
             if not options.simulate and not options.no_calib and not options.test:
-                log.debug("Adding dependencies to job submission")
-                depend_string = f"--dependency=afterok:{parent_jobid}"
-                commandargs.append(depend_string)
+                if plan.needs_calibration and parent_jobid is not None:
+                    log.debug("Adding dependency on calibration job")
+                    depend_string = f"--dependency=afterok:{parent_jobid}"
+                    commandargs.append(depend_string)
+                else:
+                    log.info(
+                        "No calibration dependency needed "
+                        "(input already calibrated)"
+                    )
 
             commandargs.append(sequence.script)
 
             if options.simulate:
                 log.debug("SIMULATE Launching scripts")
+
             elif options.test:
                 log.debug(
-                    "TEST launching datasequence scripts for " "first subrun without scheduler"
+                    "TEST launching datasequence scripts for "
+                    "first subrun without scheduler"
                 )
                 commandargs = ["python", sequence.script]
                 sp.check_output(commandargs, shell=False)
+
             else:
                 log.info("Submitting jobs to the cluster.")
                 try:
@@ -710,15 +747,11 @@ def run_sacct(job_id: str = None) -> StringIO:
     
 
 def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
-    """
-    Fetch the information of jobs in the queue using the sacct SLURM output
-    and store it in a pandas dataframe.
-
-    Returns
-    -------
-    queue_list: pd.DataFrame
-    """
     sacct_output = pd.read_csv(sacct_output, names=FORMAT_SLURM)
+
+    # asegurar tipo string
+    sacct_output["JobID"] = sacct_output["JobID"].astype(str)
+    sacct_output["JobName"] = sacct_output["JobName"].astype(str)
 
     # Keep only the jobs corresponding to OSA sequences
     sacct_output = sacct_output[
@@ -729,7 +762,6 @@ def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
     try:
         sacct_output["JobID"] = sacct_output["JobID"].apply(lambda x: x.split("_")[0])
         sacct_output["JobID"] = sacct_output["JobID"].str.strip(".batch").astype(int)
-
     except AttributeError:
         log.debug("No job info could be obtained from sacct")
 
@@ -852,3 +884,4 @@ def job_finished_in_timeout(job_id: str) -> bool:
         return True
     else:
         return False
+
