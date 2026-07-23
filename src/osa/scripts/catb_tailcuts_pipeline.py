@@ -242,7 +242,6 @@ def parse_args() -> argparse.Namespace:
             "ST",
             "LST1",
             "LST2",
-            "all",
         ],
     )
 
