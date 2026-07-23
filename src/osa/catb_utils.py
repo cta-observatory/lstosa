@@ -15,8 +15,11 @@ BASE_SERVICE = Path(
 
 
 def load_calibration_table() -> str:
+    if not cfg.has_option(options.tel_id, "TABLE_CATB"):
+        raise RuntimeError(
+            f"Missing TABLE_CATB option in [{options.tel_id}] config section"
+        )
     table_file = Path(cfg.get(options.tel_id, "TABLE_CATB"))
-
     if not table_file.exists():
         raise FileNotFoundError(f"Cat-B calibration table not found: {table_file}")
 
@@ -74,27 +77,30 @@ def find_period_for_run(run_id: int, periods: list[dict]) -> dict:
 
 
 def find_catA_file(calib_date: str, calibration_run: int) -> str:
-
-    path = BASE_SERVICE / "calibration" / calib_date / "pro"
-
-    files = list(path.glob(f"*Run{calibration_run:05d}*.fits*"))
+    base_service = Path(
+        cfg.get(options.tel_id, "CAT_A_CALIB_BASE", fallback=str(BASE_SERVICE))
+    )
+    path = base_service / "calibration" / calib_date / "pro"
+    files = sorted(path.glob(f"*Run{calibration_run:05d}*.fits*"))
 
     if not files:
         raise RuntimeError(f"No Cat-A file for run {calibration_run} in {path}")
 
-    return str(sorted(files)[0])
+    return str(files[0]))
 
 
 def find_systematics_file(calib_date: str) -> str:
 
-    path = BASE_SERVICE / "ffactor_systematics" / calib_date / "v0.3.1"
+    base_service = Path(
+        cfg.get(options.tel_id, "CAT_A_CALIB_BASE", fallback=str(BASE_SERVICE))
+    )
+    base_dir = base_service / "ffactor_systematics" / calib_date
 
-    files = list(path.glob("scan_fit*.h5"))
+    files = sorted(base_dir.rglob("*.h5"))
 
     if not files:
-        raise RuntimeError(f"No systematics for date {calib_date} in {path}")
-
-    return str(sorted(files)[0])
+        raise RuntimeError(f"No systematics for date {calib_date} in {base_dir}")
+    return str(files[0])
 
 
 def get_catA_and_systematics(run_id: int) -> tuple[str, str]:
@@ -102,6 +108,10 @@ def get_catA_and_systematics(run_id: int) -> tuple[str, str]:
     table_text = load_calibration_table()
 
     periods = parse_calibration_table(table_text)
+    if not periods:
+        raise ValueError(
+            "No valid calibration periods found in Cat-B calibration table"
+        )
 
     period = find_period_for_run(run_id, periods)
 
