@@ -11,6 +11,7 @@ import logging
 import subprocess as sp
 import sys
 from pathlib import Path
+from datetime import datetime
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -248,6 +249,37 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
+def _write_history(
+    run_id: int,
+    exit_code: int,
+) -> None:
+
+    history_file = (
+        Path(options.directory)
+        / (
+            f"{options.tel_id}_catB_tailcuts_"
+            f"{run_id:05d}.history"
+        )
+    )
+
+    timestamp = datetime.now().strftime(
+        "%Y-%m-%d %H:%M"
+    )
+
+    version = get_major_version(
+        get_lstchain_version()
+    )
+
+    with open(history_file, "a") as history:
+
+        history.write(
+            f"{run_id:05d} "
+            f"catb_tailcuts_pipeline "
+            f"{version} "
+            f"{timestamp} "
+            f"{exit_code}\n"
+        )
+
 
 def main() -> int:
 
@@ -329,6 +361,7 @@ def main() -> int:
                 rc = sp.run(cmd).returncode
 
                 if rc != 0:
+                    _write_history(run_id, rc)
                     return rc
 
     #
@@ -374,12 +407,14 @@ def main() -> int:
                 rc = sp.run(cmd).returncode
 
                 if rc != 0:
+                    _write_history(run_id, rc)
                     return rc
 
     #
     # Everything finished successfully
     #
     if not options.simulate:
+        _write_history(run_id, 0)
 
         catb_closed_file.touch()
 
