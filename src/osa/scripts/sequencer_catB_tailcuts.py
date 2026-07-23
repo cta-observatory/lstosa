@@ -211,17 +211,10 @@ def pilot_job_is_active(run_id: int) -> bool:
 
     log_dir = Path(options.directory) / "log"
 
+    pattern = rf"{options.tel_id}_catB_tailcuts_{run_id:05d}_(\d+)\.err$"
     files = sorted(
-        glob.glob(
-            str(
-                log_dir
-                / (
-                    f"{options.tel_id}"
-                    f"_catB_tailcuts_"
-                    f"{run_id:05d}_*.err"
-                )
-            )
-        )
+        glob.glob(str(log_dir / f"{options.tel_id}_catB_tailcuts_{run_id:05d}_*.err")),
+        key=lambda p: int(re.search(pattern, p).group(1)) if re.search(pattern, p) else -1,
     )
 
     if not files:
