@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 from astropy.table import Table
 import subprocess as sp
+from datetime import datetime
 
 from osa.configs import options
 from osa.configs.config import cfg
@@ -87,7 +88,26 @@ def create_run_history_file(run_id: int) -> Path:
         / f"{options.tel_id}_{run_id:05d}.history"
     )
 
-    history_file.touch(exist_ok=True)
+    if history_file.exists():
+        return history_file
+
+    version = get_major_version(
+        get_lstchain_version()
+    )
+
+    timestamp = datetime.now().strftime(
+        "%Y-%m-%d %H:%M"
+    )
+
+    history_file.write_text(
+        f"{run_id:05d} "
+        f"lstchain_data_r0_to_dl1 "
+        f"{version} "
+        f"{timestamp} "
+        f"None "
+        f"all_subruns_finished "
+        f"0\n"
+    )
 
     return history_file
 
