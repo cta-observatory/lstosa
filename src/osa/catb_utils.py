@@ -86,7 +86,7 @@ def find_catA_file(calib_date: str, calibration_run: int) -> str:
     if not files:
         raise RuntimeError(f"No Cat-A file for run {calibration_run} in {path}")
 
-    return str(files[0]))
+    return str(files[0])
 
 
 def find_systematics_file(calib_date: str) -> str:
