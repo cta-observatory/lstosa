@@ -162,7 +162,7 @@ def write_pilot_script(run_id: int) -> Path:
     worker_argv.append(options.tel_id)
 
     content = ""
-    content += "#!/usr/bin/env python\n\n"
+    content += "#!/usr/bin/env python3\n\n"
 
     content += f"#SBATCH --job-name={job_name}\n"
     content += f"#SBATCH --chdir={options.directory}\n"
@@ -273,8 +273,12 @@ def pilot_job_is_active(run_id: int) -> bool:
             run_sacct(job_id=job_id)
         )["State"].item()
 
-    except Exception:
-        return False
+    except Exception as e:
+        log.warning(
+            f"Could not query sacct for job {job_id} (run {run_id:05d}): {e}. "
+            "Assuming job is active to avoid duplicate submissions."
+        )
+        return True
 
     return state in (
         "RUNNING",
@@ -290,6 +294,10 @@ def main():
     """
 
     opts = parser.parse_args()
+    if opts.tel_id == "all":
+        parser.error(
+            "tel_id 'all' is not supported by sequencer_catB_tailcuts; run separately for ST, LST1, or LST2."
+        )
 
     options.input_state = opts.input_state
     options.tel_id = opts.tel_id
