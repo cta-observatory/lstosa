@@ -79,6 +79,18 @@ def r0_to_dl1_step_finished_for_run(run_id: int) -> bool:
             return False
     return True
 
+def create_run_history_file(run_id: int) -> Path:
+    """Create the run-level history file if it does not exist."""
+
+    history_file = (
+        Path(options.directory)
+        / f"{options.tel_id}_{run_id:05d}.history"
+    )
+
+    history_file.touch(exist_ok=True)
+
+    return history_file
+
 
 def tailcuts_config_file_exists(run_id: int) -> bool:
     """Check if the config file created by the tailcuts finder script already exists."""
@@ -339,7 +351,8 @@ def main():
             )
 
             continue
-
+            
+        create_run_history_file(run_id)
         submit_pilot_script(run_id)
 
 
