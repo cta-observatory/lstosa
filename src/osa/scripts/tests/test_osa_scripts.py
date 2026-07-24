@@ -25,6 +25,8 @@ ALL_SCRIPTS = [
     "source_coordinates",
     "sequencer_webmaker",
     "gainsel_webmaker",
+    "sequencer_catB_tailcuts",
+    "catb_tailcuts_pipeline",
 ]
 
 options.date = datetime.datetime.fromisoformat("2020-01-17")
