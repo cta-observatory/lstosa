@@ -255,10 +255,7 @@ def _write_history(
 
     history_file = (
         Path(options.directory)
-        / (
-            f"{options.tel_id}_catB_tailcuts_"
-            f"{run_id:05d}.history"
-        )
+        / f"{options.tel_id}_{run_id:05d}.history"
     )
 
     timestamp = datetime.now().strftime(
@@ -276,9 +273,10 @@ def _write_history(
             f"catb_tailcuts_pipeline "
             f"{version} "
             f"{timestamp} "
+            f"None "
+            f"None "
             f"{exit_code}\n"
         )
-
 
 def main() -> int:
 
