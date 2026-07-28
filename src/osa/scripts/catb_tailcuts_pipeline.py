@@ -1,4 +1,4 @@
-""" 
+"""
 Worker script to run CatB calibration and tailcuts finder for a single run.
 
 This is analogous to datasequence.py, but run-wise and without any SLURM
