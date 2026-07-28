@@ -238,7 +238,6 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "tel_id",
         choices=[
-            "ST",
             "LST1",
             "LST2",
         ],
