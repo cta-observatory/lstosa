@@ -45,8 +45,8 @@ parser.add_argument(
 )
 parser.add_argument(
     "tel_id",
-    choices=["ST", "LST1", "LST2", "all"],
-    help="telescope identifier LST1, LST2, ST or all.",
+    choices=["LST1", "LST2", "all"],
+    help="telescope identifier LST1, LST2 or all.",
 )
 
 def are_all_history_files_created(run_id: int) -> bool:
