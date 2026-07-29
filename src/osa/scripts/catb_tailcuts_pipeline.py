@@ -253,7 +253,7 @@ def _write_history(
 
     history_file = (
         Path(options.directory)
-        / f"{options.tel_id}_{run_id:05d}.history"
+        / f"sequence_{options.tel_id}_{run_id:05d}.history"
     )
 
     timestamp = datetime.now().strftime(
