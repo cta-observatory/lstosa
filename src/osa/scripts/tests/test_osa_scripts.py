@@ -26,6 +26,8 @@ ALL_SCRIPTS = [
     "sequencer_webmaker",
     "gainsel_webmaker",
     "organize",
+    "sequencer_catB_tailcuts",
+    "catb_tailcuts_pipeline",
 ]
 
 
