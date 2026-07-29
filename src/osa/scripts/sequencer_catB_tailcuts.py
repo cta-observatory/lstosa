@@ -56,7 +56,7 @@ def are_all_history_files_created(run_id: int) -> bool:
     run_summary = Table.read(run_summary_file)
     n_subruns = run_summary[run_summary["run_id"] == run_id]["n_subruns"]
     analysis_dir = Path(options.directory)
-    history_files = glob.glob(f"{str(analysis_dir)}/sequence_LST1_{run_id:05d}.????.history")
+    history_files = glob.glob(f"{analysis_dir}/sequence_{options.tel_id}_{run_id:05d}.????.history")
     if len(history_files) == n_subruns:
         return True
     else:
@@ -72,7 +72,7 @@ def r0_to_dl1_step_finished_for_run(run_id: int) -> bool:
         log.debug(f"All history files for run {run_id:05d} were not created yet.")
         return False
     analysis_dir = Path(options.directory)
-    history_files = glob.glob(f"{str(analysis_dir)}/sequence_LST1_{run_id:05d}.????.history")
+    history_files = glob.glob(f"{analysis_dir}/sequence_{options.tel_id}_{run_id:05d}.????.history")
     for file in history_files:
         rc = Path(file).read_text().splitlines()[-1][-1]
         if rc != "0":
