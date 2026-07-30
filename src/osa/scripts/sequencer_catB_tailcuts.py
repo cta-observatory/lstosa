@@ -291,11 +291,6 @@ def main():
     """
 
     opts = parser.parse_args()
-    if opts.tel_id == "all":
-        parser.error(
-            "tel_id 'all' is not supported by sequencer_catB_tailcuts; run separately for ST, LST1, or LST2."
-        )
-
     options.input_state = opts.input_state
     options.tel_id = opts.tel_id
     options.simulate = opts.simulate
