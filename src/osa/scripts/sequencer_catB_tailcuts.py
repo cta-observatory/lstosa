@@ -9,15 +9,13 @@ from datetime import datetime
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.nightsummary.extract import get_last_pedcalib
 from osa.utils.cliopts import common_parser, set_default_date_if_needed
 from osa.utils.logging import myLogger
 from osa.job import run_sacct, get_sacct_output
-from osa.utils.utils import date_to_dir, get_calib_filters, get_lstchain_version
+from osa.utils.utils import date_to_dir, get_lstchain_version
 from osa.utils.utils import date_to_iso
 from osa.paths import (
     catB_closed_file_exists,
-    catB_calibration_file_exists,
     analysis_path,
     get_major_version
 )
