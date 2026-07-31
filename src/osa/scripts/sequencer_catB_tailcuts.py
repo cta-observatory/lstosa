@@ -52,13 +52,17 @@ def are_all_history_files_created(run_id: int) -> bool:
     run_summary_dir = Path(cfg.get(options.tel_id, "RUN_SUMMARY_DIR"))
     run_summary_file = run_summary_dir / f"RunSummary_{date_to_dir(options.date)}.ecsv"
     run_summary = Table.read(run_summary_file)
-    n_subruns = run_summary[run_summary["run_id"] == run_id]["n_subruns"]
+
+    n_subruns_col = run_summary[run_summary["run_id"] == run_id]["n_subruns"]
+    if len(n_subruns_col) == 0:
+        log.warning(f"No entry for run {run_id:05d} found in run summary {run_summary_file}")
+        return False
+    n_subruns = int(n_subruns_col[0])
+
     analysis_dir = Path(options.directory)
     history_files = glob.glob(f"{analysis_dir}/sequence_{options.tel_id}_{run_id:05d}.????.history")
-    if len(history_files) == n_subruns:
-        return True
-    else:
-        return False
+
+    return len(history_files) == n_subruns
 
 
 def r0_to_dl1_step_finished_for_run(run_id: int) -> bool:
@@ -206,21 +210,25 @@ def write_pilot_script(run_id: int) -> Path:
 
 def submit_pilot_script(run_id: int) -> str | None:
 
-    pilot_script = write_pilot_script(run_id)
+    pilot_script_path = (
+        Path(options.directory)
+        / (
+            f"sequence_"
+            f"{options.tel_id}_"
+            f"{run_id:05d}_"
+            f"catb_tailcuts.py"
+        )
+    )
 
-    cmd = [
-        "sbatch",
-        "--parsable",
-        str(pilot_script),
-    ]
+    cmd_preview = ["sbatch", "--parsable", str(pilot_script_path)]
 
     if options.simulate:
-
-        log.info(
-            f"Would submit {' '.join(cmd)}"
-        )
-
+        log.info(f"Would create pilot script {pilot_script_path} and submit {' '.join(cmd_preview)}")
         return None
+
+    pilot_script = write_pilot_script(run_id)
+
+    cmd = ["sbatch", "--parsable", str(pilot_script)]
 
     job = sp.run(
         cmd,
