@@ -88,6 +88,10 @@ def create_run_history_file(run_id: int) -> Path:
     if history_file.exists():
         return history_file
 
+    if options.simulate:
+        log.info(f"Would create history file {history_file}")
+        return history_file
+
     version = get_major_version(
         get_lstchain_version()
     )
