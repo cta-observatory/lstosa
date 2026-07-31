@@ -289,11 +289,8 @@ def main() -> int:
     )
 
     if args.config is not None:
-        options.configfile = (
-            args.config.resolve()
-        )
-    else:
-        options.configfile = None
+
+        options.configfile = args.config.resolve()
 
     options.date = args.date
 
