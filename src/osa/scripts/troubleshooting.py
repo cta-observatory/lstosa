@@ -24,6 +24,7 @@ JOB_CATEGORIES_MAP = {
     "onsite_create_cat_B_calibration_file": "CAT_B",
     "lstchain_find_tailcuts": "CAT_B",
     "catB_tailcuts": "CAT_B",
+    "LST1_catB_tailcuts_": "CAT_B",
     "LST1_": "SEQUENCER",
     "lstchain_dl1_to_dl2": "CLOSER",
     "closer": "CLOSER"
