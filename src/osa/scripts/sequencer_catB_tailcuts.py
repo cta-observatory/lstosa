@@ -138,8 +138,7 @@ def write_pilot_script(run_id: int) -> Path:
     account = cfg.get("SLURM", "ACCOUNT")
 
     worker_argv = [
-        "python",
-        "/fefs/aswg/workspace/manuel.martinezherresanchez/lstosa/src/osa/scripts/catb_tailcuts_pipeline.py",
+        "catb_tailcuts_pipeline",
         f"--date={date_to_iso(options.date)}",
         f"--input-state={options.input_state}",
     ]
