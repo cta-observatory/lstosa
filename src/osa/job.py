@@ -103,7 +103,7 @@ def are_all_jobs_correctly_finished(sequence_list):
         if sequence.type != "DATA":
             continue
         else:
-            history_files_list = analysis_directory.rglob(f"*{sequence.run}*.history")
+            history_files_list = analysis_directory.rglob(f"*{sequence.run}.0*.history")
         
         if not options.test:
             try:

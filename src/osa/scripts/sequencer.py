@@ -90,11 +90,16 @@ def single_process(telescope):
     options.directory = analysis_path(options.tel_id)
     options.log_directory = options.directory / "log"
 
+    seq1_closed = options.directory / f"seq1_{options.tel_id}.closed"
+    seq2_closed = options.directory / f"seq2_{options.tel_id}.closed"
+
+
     if not options.simulate:
         os.makedirs(options.log_directory, exist_ok=True)
 
     summary_table = run_summary_table(options.date)
     plan = build_processing_plan(options.input_state)
+
     log.info(f"Processing input_state = {options.input_state}")
 
     if len(summary_table) == 0:
@@ -120,26 +125,58 @@ def single_process(telescope):
 
             if is_sequencer_running(options.date):
                 log.info(
-                    f"Sequencer is still running for date {date_to_iso(options.date)}. "
-                    "Try again later."
+                    f"Sequencer is still running for date "
+                    f"{date_to_iso(options.date)}. Try again later."
                 )
                 return []
 
         else:
             log.info("Running in per-run parallel mode (Cat-B stage)")
 
+    #
+    # Global closure flags
+    #
+    if options.no_dl1ab:
+
+        if seq1_closed.exists() and not options.simulate:
+            log.info("Sequencer1 already closed")
+            return []
+
+        if is_seq1_completed():
+            log.info(
+                "All history files contain a successful "
+                "lstchain_data_r0_to_dl1 step. Closing Sequencer1."
+            )
+            if not options.simulate:
+                seq1_closed.touch()
+                return []
+
+    else:
+
+        if seq2_closed.exists() and not options.simulate:
+            log.info("Sequencer2 already closed")
+            return []
+
+        if is_seq2_completed():
+            log.info(
+                "All history files contain a successful "
+                "lstchain_check_dl1 step. Closing Sequencer2."
+            )
+            if not options.simulate:
+                seq2_closed.touch()
+                return []
+
     # Build sequences
     sequence_list = build_sequences(options.date)
-
-    prepare_jobs(sequence_list)
+  
     update_job_info(sequence_list)
-
     get_veto_list(sequence_list)
     get_closed_list(sequence_list)
     update_sequence_status(sequence_list)
 
     sacct_output = run_sacct()
     sacct_info = get_sacct_output(sacct_output)
+
 
     def is_run_active(seq):
         jobs = sacct_info[sacct_info["JobName"] == seq.jobname]
@@ -154,6 +191,46 @@ def single_process(telescope):
             for state in states
         )
 
+
+    def run_dl1_completed(seq):
+        """
+        Returns True only if ALL subruns of the run have
+        lstchain_data_r0_to_dl1 exit code 0.
+        """
+
+        history_files = sorted(
+            options.directory.glob(
+                f"sequence_{options.tel_id}_{seq.run:05d}.*.history"
+            )
+        )
+
+        if not history_files:
+            return False
+    
+        for history_file in history_files:
+    
+            found_r0_to_dl1 = False
+    
+            try:
+                lines = history_file.read_text().splitlines()
+            except Exception as err:
+                log.warning(f"Cannot read {history_file}: {err}")
+                return False
+    
+            for line in lines:
+    
+                if (
+                    "lstchain_data_r0_to_dl1" in line
+                    and line.strip().endswith(" 0")
+                ):
+                    found_r0_to_dl1 = True
+                    break
+    
+            if not found_r0_to_dl1:
+                return False
+
+        return True
+
     def run_fully_processed(seq):
         """
         Returns True only if ALL subruns of the run have
@@ -162,7 +239,7 @@ def single_process(telescope):
 
         history_files = sorted(
             options.directory.glob(
-                f"sequence_LST1_{seq.run:05d}.*.history"
+                f"sequence_{options.tel_id}_{seq.run:05d}.*.history"
             )
         )
 
@@ -188,7 +265,6 @@ def single_process(telescope):
                     found_check_dl1 = True
                     break
 
-
             if not found_check_dl1:
                 return False
 
@@ -204,6 +280,11 @@ def single_process(telescope):
 
         # SEQUENCER 1 (--no-dl1ab)
         if options.no_dl1ab:
+            if run_dl1_completed(seq):
+                log.debug(
+                    f"Run {seq.run} skipped: already processed to DL1"
+                )
+                continue
 
             ready = True
 
@@ -222,7 +303,6 @@ def single_process(telescope):
                 )
                 continue
 
-
             if run_fully_processed(seq):
                 log.debug(
                     f"Run {seq.run} skipped: already fully processed"
@@ -240,7 +320,8 @@ def single_process(telescope):
             f"catB={seq.catbstatus} | "
             f"no_dl1ab={options.no_dl1ab}"
         )
-
+  
+    prepare_jobs(ready_sequences)
     if not options.no_submit:
         submit_jobs(ready_sequences)
 
@@ -248,6 +329,78 @@ def single_process(telescope):
 
     return sequence_list
 
+def is_seq1_completed():
+    """
+    Sequencer1 (--no-dl1ab) completed when all history files contain
+    a successful lstchain_data_r0_to_dl1 step.
+    """
+
+    history_files = sorted(
+        options.directory.glob(f"sequence_{options.tel_id}_*.history")
+    )
+
+    if not history_files:
+        return False
+
+    for history_file in history_files:
+
+        found = False
+
+        try:
+            lines = history_file.read_text().splitlines()
+        except Exception as err:
+            log.warning(f"Cannot read {history_file}: {err}")
+            return False
+
+        for line in lines:
+            if (
+                "lstchain_data_r0_to_dl1" in line
+                and line.strip().endswith(" 0")
+            ):
+                found = True
+                break
+
+        if not found:
+            return False
+
+    return True
+
+
+def is_seq2_completed():
+    """
+    Sequencer2 completed when all history files contain
+    a successful lstchain_check_dl1 step.
+    """
+
+    history_files = sorted(
+        options.directory.glob(f"sequence_{options.tel_id}_*.history")
+    )
+
+    if not history_files:
+        return False
+
+    for history_file in history_files:
+
+        found = False
+
+        try:
+            lines = history_file.read_text().splitlines()
+        except Exception as err:
+            log.warning(f"Cannot read {history_file}: {err}")
+            return False
+
+        for line in lines:
+            if (
+                "lstchain_check_dl1" in line
+                and line.strip().endswith(" 0")
+            ):
+                found = True
+                break
+
+        if not found:
+            return False
+
+    return True
 
 
 def update_job_info(sequence_list):
@@ -308,10 +461,10 @@ def check_catB_status(seq):
         if closed_files:
             catbstatus = "CLOSED"
         else:
-            log_files = list(options.log_directory.glob(f"catB_calibration_{seq.run}_*.err"))
+            log_files = list(options.log_directory.glob(f"{options.tel_id}_catB_tailcuts_{seq.run}_*.err"))
             if log_files:
                 filename = sorted(log_files)[-1].name
-                match = re.search(f"catB_calibration_{seq.run}_(\d+).err", filename)
+                match = re.search(rf"{options.tel_id}_catB_tailcuts_{seq.run}_(\d+)\.err", filename)
                 if match:
                     job_id = match.group(1)
 
@@ -357,8 +510,8 @@ def get_status_for_sequence(sequence, data_level) -> int:
         try:
             directory = options.directory / sequence.dl1_prod_id
             alternative_directory = destination_dir(concept="DATACHECK", create_dir=False, dl1_prod_id=sequence.dl1_prod_id)
-            files = list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5"))
-            files += list(alternative_directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5"))
+            files = list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}.0*.h5"))
+            files += list(alternative_directory.glob(f"datacheck_dl1_LST-1*{sequence.run}.0*.h5"))
             
         except AttributeError:
             return 0
@@ -471,7 +624,7 @@ def is_sequencer_running(date: datetime.datetime) -> bool:
     sacct_info = get_sacct_output(sacct_output)
 
     for run in summary_table["run_id"]:
-        jobs_run = sacct_info[sacct_info["JobName"]==f"LST1_{run:05d}"]
+        jobs_run = sacct_info[sacct_info["JobName"]==f"{options.tel_id}_{run:05d}"]
         queued_jobs = jobs_run[(jobs_run["State"] == "RUNNING") | (jobs_run["State"] == "PENDING")]
         if len(queued_jobs) != 0:
             return True
@@ -500,7 +653,7 @@ def timeout_in_sequencer(date: datetime.datetime) -> bool:
     sacct_info = get_sacct_output(sacct_output)
 
     for run in data_runs["run_id"]:
-        jobs_run = sacct_info[sacct_info["JobName"]==f"LST1_{run:05d}"]
+        jobs_run = sacct_info[sacct_info["JobName"]==f"{options.tel_id}_{run:05d}"]
         if len(jobs_run["JobID"].unique())>1:
             last_job_id = sorted(jobs_run["JobID"].unique())[-1]
             jobs_run = sacct_info[sacct_info["JobID"]==last_job_id]
