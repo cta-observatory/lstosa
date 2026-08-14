@@ -6,6 +6,9 @@ import shutil
 import subprocess as sp
 import time
 import re
+import glob
+import os
+import errno
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent
@@ -22,16 +25,18 @@ from osa.paths import (
     get_summary_file,
     get_pedestal_ids_file,
     get_dl1_prod_id_and_config,
+    catB_closed_file_exists,
 )
 from osa.utils.iofile import write_to_file
 from osa.utils.logging import myLogger
-from osa.processing_plan import build_processing_plan
 from osa.utils.utils import (
     date_to_dir,
     time_to_seconds,
     stringify,
     date_to_iso,
+    get_lstchain_version,
 )
+from osa.processing_plan import build_processing_plan
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -53,8 +58,14 @@ __all__ = [
     "run_sacct",
     "run_squeue",
     "calibration_sequence_job_template",
-    "data_sequence_job_template",
+    "data_sequence_job_templates",
     "save_job_information",
+    # catB helpers:
+    "write_catb_pilot_script",
+    "submit_catb_pilot_script",
+    "pilot_job_is_active",
+    # AUTOCLOSER helpers:
+    "get_closer_sacct_output",
 ]
 
 TAB = "\t".expandtabs(4)
@@ -86,25 +97,15 @@ def are_all_jobs_correctly_finished(sequence_list):
     """
     Check if all jobs are correctly finished by looking
     at the history file.
-
-    Parameters
-    ----------
-    sequence_list: list
-        List of sequence objects
-
-    Returns
-    -------
-    flag: bool
     """
-    # FIXME: check based on sequence.jobid exit status
     flag = True
     analysis_directory = Path(options.directory)
     for sequence in sequence_list:
         if sequence.type != "DATA":
             continue
         else:
-            history_files_list = analysis_directory.rglob(f"*{sequence.run}*.history")
-        
+            history_files_list = analysis_directory.rglob(f"*{sequence.run}.0*.history")
+
         if not options.test:
             try:
                 next(history_files_list)
@@ -113,11 +114,6 @@ def are_all_jobs_correctly_finished(sequence_list):
                 flag = False
 
         for history_file in history_files_list:
-            # TODO: s.history should be SubRunObj attribute not RunObj
-            # s.history only working for CALIBRATION sequence (run-wise), since it is
-            # looking for .../sequence_LST1_04180.history files
-            # we need to check all the subrun wise history files
-            # .../sequence_LST1_04180.XXXX.history
             out, _ = historylevel(history_file, sequence.type)
             if out == 0:
                 log.debug(f"Job {sequence.seq} ({sequence.type}) correctly finished")
@@ -137,75 +133,11 @@ def are_all_jobs_correctly_finished(sequence_list):
     return flag
 
 
-def check_history_level(history_file: Path, program_levels: dict):
-    """
-    Check the history of the calibration sequence.
-
-    Parameters
-    ----------
-    history_file: pathlib.Path
-        Path to the history file
-    program_levels: dict
-        Dictionary with the program name and the level of the program
-
-    Returns
-    -------
-    level: int
-        Level of the history file
-    exit_status: int
-        Exit status pf the program according to the history file
-    """
-
-    # Check the program exit_status (last string of the line), if it is 0, go
-    # to the next level and check the next program. If exit_status is not 0, return the
-    # actual level and the exit status. Stop the iteration when reaching the level 0.
-    with open(history_file, "r") as file:
-        for line in file:
-            program = line.split()[1]
-            exit_status = int(line.split()[-1])
-            if program in program_levels:
-                if exit_status != 0:
-                    level = program_levels[program]
-                    return level, exit_status
-                level = program_levels[program]
-                continue
-
-        return level, exit_status
-
-
 def historylevel(history_file: Path, data_type: str):
     """
     Returns the level from which the analysis should begin and
     the rc of the last executable given a certain history file.
-
-    Notes
-    -----
-    Workflow for PEDCALIB sequences:
-     - Creation of DRS4 pedestal file, level 2->1
-     - Creation of charge calibration file, level 1->0
-     - Sequence completed when reaching level 0
-
-    Workflow for DATA sequences:
-     - R0->DL1, level 3->2
-     - DL1->DL1AB, level 2->1
-     - DATACHECK, level 1->0
-     - Sequence completed when reaching level 0
-
-    Parameters
-    ----------
-    history_file: pathlib.Path
-    data_type: str
-        Type of the sequence, either 'DATA' or 'PEDCALIB'
-
-    Returns
-    -------
-    level : int
-    exit_status : int
     """
-
-    # TODO: Create a dict with the program exit status and prod id to take
-    #  into account not only the last history line but also the others.
-
     if data_type == "DATA":
         level = 3
     elif data_type == "PEDCALIB":
@@ -220,7 +152,7 @@ def historylevel(history_file: Path, data_type: str):
             match = re.search(r"sequence_LST1_(\d+)\.\d+", str(history_file))
         elif data_type == "PEDCALIB":
             match = re.search(r"sequence_LST1_(\d+)\.history", str(history_file))
-        run_id = int(match.group(1)) 
+        run_id = int(match.group(1))
         for line in history_file.read_text().splitlines():
             words = line.split()
             try:
@@ -263,11 +195,11 @@ def prepare_jobs(sequence_list):
         log.info("Building job scripts for each sequence.")
 
     for sequence in sequence_list:
-        log.debug(f"Creating sequence.py for sequence {sequence.seq}")
+        log.debug(f"Creating job scripts for sequence {sequence.seq}")
         if sequence.type == "PEDCALIB":
             calibration_sequence_job_template(sequence)
         elif sequence.type == "DATA":
-            data_sequence_job_template(sequence)
+            data_sequence_job_templates(sequence)
         else:
             raise ValueError(f"Type {sequence.type} not expected")
 
@@ -282,10 +214,8 @@ def sequence_filenames(sequence):
 
 def save_job_information():
     """
-    Write job information from sacct (elapsed time, memory used, number of
-    completed, failed and running jobs in the queue) to a file.
+    Write job information from sacct to a file.
     """
-    # Set directory and file path
     log_directory = Path(options.directory) / "log"
     log_directory.mkdir(exist_ok=True, parents=True)
     file_path = log_directory / "job_information.csv"
@@ -293,36 +223,18 @@ def save_job_information():
     sacct_output = run_sacct()
     jobs_df = get_sacct_output(sacct_output)
 
-    # Fetch sacct output and prepare the data
     jobs_df_filtered = jobs_df.copy()
     jobs_df_filtered = jobs_df_filtered.dropna()
-    # Remove the G from MaxRSS value and convert to float
-    # jobs_df_filtered["MaxRSS"] = jobs_df_filtered["MaxRSS"].str.strip("G").astype(float)
 
     jobs_df_filtered.to_csv(file_path, index=False, sep=",")
 
 
 def plot_job_statistics(sacct_output: pd.DataFrame, directory: Path):
     """
-    Get statistics of the jobs. Check elapsed time used,
-    the memory used, the number of jobs completed, the number of jobs failed,
-    the number of jobs running, the number of jobs queued.
-    It will fetch the information from the sacct output.
-
-    Parameters
-    ----------
-    sacct_output: pd.DataFrame
-    directory: Path
-        Directory to save the plot.
+    Produce a histogram plot of job stats.
     """
-    # TODO: this function will be called in the closer loop after all
-    #  the jobs are done for a given production.
-
-    # Plot a 2D histogram of the used memory (MaxRSS) as a function of the
-    # elapsed time taking also into account the State of the job.
     sacct_output_filter = sacct_output.copy()
     sacct_output_filter = sacct_output_filter.dropna()
-    # Remove the G from MaxRSS value and convert to float
     sacct_output_filter["MaxRSS"] = sacct_output_filter["MaxRSS"].str.strip("G").astype(float)
 
     plt.figure()
@@ -335,9 +247,7 @@ def plot_job_statistics(sacct_output: pd.DataFrame, directory: Path):
 
 
 def scheduler_env_variables(sequence, scheduler="slurm"):
-    """Return the environment variables for the scheduler."""
-    # TODO: Create a class with the SBATCH variables we want to use in the pilot job
-    #  and then use the string representation of the class to create the header.
+    """Return the SBATCH environment variables for a sequence."""
     if scheduler != "slurm":
         log.warning("No other schedulers are currently supported")
         return None
@@ -350,11 +260,8 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
         f"--error=log/Run{sequence.run:05d}.%4a_jobid_%A.err",
     ]
 
-    # Get the number of subruns counting from 0.
     subruns = sequence.subruns - 1
 
-    # Depending on the type of sequence, we need to set
-    # different sbatch environment variables
     if sequence.type == "DATA":
         sbatch_parameters.append(f"--array=0-{subruns}")
 
@@ -367,17 +274,7 @@ def scheduler_env_variables(sequence, scheduler="slurm"):
 
 def job_header_template(sequence):
     """
-    Returns a string with the job header template
-    including SBATCH environment variables for sequencerXX.py script
-
-    Parameters
-    ----------
-    sequence: sequence object
-
-    Returns
-    -------
-    header: str
-        String with job header template
+    Returns a string with the job header template including SBATCH env vars.
     """
     python_shebang = "#!/bin/env python"
     if options.test:
@@ -388,15 +285,8 @@ def job_header_template(sequence):
 
 def set_cache_dirs():
     """
-    Export cache directories for the jobs provided they
-    are defined in the config file.
-
-    Returns
-    -------
-    content: string
-        String with the command to export the cache directories
+    Export cache directories for the jobs provided they are defined in the config file.
     """
-
     ctapipe_cache = cfg.get("CACHE", "CTAPIPE_CACHE")
     ctapipe_svc_path = cfg.get("CACHE", "CTAPIPE_SVC_PATH")
     mpl_config_path = cfg.get("CACHE", "MPLCONFIGDIR")
@@ -414,40 +304,28 @@ def set_cache_dirs():
     return "\n".join(content)
 
 
-def data_sequence_job_template(sequence):
+def data_sequence_job_templates(sequence):
     """
-    This file contains instruction to be submitted to job scheduler.
-
-    Parameters
-    ----------
-    sequence : sequence object
-
-    Returns
-    -------
-    job_template : string
+    Create two job scripts per DATA sequence:
+      - r0->dl1 (array) script
+      - dl1ab (array) script
     """
-    # TODO: refactor this function creating wrappers that handle slurm part
-
-    # Get the job header template.
     job_header = job_header_template(sequence)
-
     flat_date = date_to_dir(options.date)
     plan = build_processing_plan(options.input_state)
 
-
-    commandargs = ["datasequence"]
-    commandargs.append(f"--input-state={options.input_state}")
-
+    base_commandargs = ["datasequence"]
     if options.verbose:
-        commandargs.append("-v")
+        base_commandargs.append("-v")
     if options.simulate:
-        commandargs.append("-s")
+        base_commandargs.append("-s")
     if options.configfile:
-        commandargs.extend(("--config", f"{Path(options.configfile).resolve()}"))
+        base_commandargs.extend(("--config", f"{Path(options.configfile).resolve()}"))
+    base_commandargs.append(f"--input-state={options.input_state}")
     if sequence.type == "DATA" and options.no_dl1ab:
-        commandargs.append("--no-dl1ab")
+        base_commandargs.append("--no-dl1ab")
 
-    commandargs.extend(
+    base_commandargs.extend(
         (
             f"--date={date_to_iso(options.date)}",
             f"--prod-id={options.prod_id}",
@@ -455,14 +333,17 @@ def data_sequence_job_template(sequence):
             f"--run-summary={get_summary_file(flat_date)}",
         )
     )
-    
+
+    # Add calibration files only if needed
     if plan.needs_calibration:
-        commandargs.extend([
-            f"--drs4-pedestal-file={sequence.drs4_file}",
-            f"--pedcal-file={sequence.calibration_file}",
-            f"--time-calib-file={sequence.time_calibration_file}",
-            f"--systematic-correction-file={sequence.systematic_correction_file}",
-        ])
+        base_commandargs.extend(
+            (
+                f"--drs4-pedestal-file={sequence.drs4_file}",
+                f"--time-calib-file={sequence.time_calibration_file}",
+                f"--pedcal-file={sequence.calibration_file}",
+                f"--systematic-correction-file={sequence.systematic_correction_file}",
+            )
+        )
     else:
         log.info(f"Skipping calibration inputs for run {sequence.run} (already calibrated)")
 
@@ -471,61 +352,81 @@ def data_sequence_job_template(sequence):
         sequence.dl1_prod_id = dl1_prod_id
         sequence.dl1b_config = dl1b_config
 
-        commandargs.append(f"--dl1b-config={sequence.dl1b_config}")
-        commandargs.append(f"--dl1-prod-id={sequence.dl1_prod_id}")
+        base_commandargs.append(f"--dl1b-config={sequence.dl1b_config}")
+        base_commandargs.append(f"--dl1-prod-id={sequence.dl1_prod_id}")
 
-    content = job_header + "\n" + PYTHON_IMPORTS
-
+    # r0->dl1 script
+    header = job_header + "\n" + PYTHON_IMPORTS
     if not options.test:
-        content += set_cache_dirs()
-        content += "\n"
-        # Use the SLURM env variables
-        content += "subruns = int(os.getenv('SLURM_ARRAY_TASK_ID'))\n"
+        header += set_cache_dirs() + "\n"
+        header += "subruns = int(os.getenv('SLURM_ARRAY_TASK_ID'))\n"
     else:
-        # Just process the first subrun without SLURM
-        content += "subruns = 0\n"
+        header += "subruns = 0\n"
 
-    content += "\n"
+    header += "\n"
+    header += "with tempfile.TemporaryDirectory() as tmpdirname:\n"
+    header += TAB + "os.environ['NUMBA_CACHE_DIR'] = tmpdirname\n"
+    header += TAB + "proc = subprocess.run([\n"
 
-    content += "with tempfile.TemporaryDirectory() as tmpdirname:\n"
-    content += TAB + "os.environ['NUMBA_CACHE_DIR'] = tmpdirname\n"
-
-    content += TAB + "proc = subprocess.run([\n"
-
-    for arg in commandargs:
-        content += TAB * 2 + f"'{arg}',\n"
+    content_r0 = header
+    for arg in base_commandargs:
+        content_r0 += TAB * 2 + f"'{arg}',\n"
 
     if pedestal_ids_file_exists(sequence.run):
         pedestal_ids_file = get_pedestal_ids_file(sequence.run, flat_date)
-        content += TAB * 2 + f"f'--pedestal-ids-file={pedestal_ids_file}',\n"
+        content_r0 += TAB * 2 + f"f'--pedestal-ids-file={pedestal_ids_file}',\n"
 
-    content += TAB * 2 + f"f'{sequence.run:05d}.{{subruns:04d}}',\n"
+    content_r0 += TAB * 2 + f"f'{sequence.run:05d}.{{subruns:04d}}',\n"
+    content_r0 += TAB * 2 + f"'{options.tel_id}'\n"
+    content_r0 += TAB + "])\n\n"
+    content_r0 += "sys.exit(proc.returncode)"
 
-    content += TAB * 2 + f"'{options.tel_id}'\n"
-    content += TAB + "])\n"
-    content += "\n"
-    content += "sys.exit(proc.returncode)"
+    # dl1ab script
+    header_dl1ab = job_header + "\n" + PYTHON_IMPORTS
+    if not options.test:
+        header_dl1ab += set_cache_dirs() + "\n"
+        header_dl1ab += "subruns = int(os.getenv('SLURM_ARRAY_TASK_ID'))\n"
+    else:
+        header_dl1ab += "subruns = 0\n"
+
+    header_dl1ab += "\n"
+    header_dl1ab += "with tempfile.TemporaryDirectory() as tmpdirname:\n"
+    header_dl1ab += TAB + "os.environ['NUMBA_CACHE_DIR'] = tmpdirname\n"
+    header_dl1ab += TAB + "proc = subprocess.run([\n"
+
+    content_dl1ab = header_dl1ab
+    base_args_for_dl1ab = [a for a in base_commandargs if not a.startswith("--no-dl1ab")]
+    for arg in base_args_for_dl1ab:
+        content_dl1ab += TAB * 2 + f"'{arg}',\n"
+
+    if pedestal_ids_file_exists(sequence.run):
+        pedestal_ids_file = get_pedestal_ids_file(sequence.run, flat_date)
+        content_dl1ab += TAB * 2 + f"f'--pedestal-ids-file={pedestal_ids_file}',\n"
+
+    content_dl1ab += TAB * 2 + f"f'{sequence.run:05d}.{{subruns:04d}}',\n"
+    content_dl1ab += TAB * 2 + f"'{options.tel_id}'\n"
+    content_dl1ab += TAB + "])\n\n"
+    content_dl1ab += "sys.exit(proc.returncode)"
+
+    basename = f"sequence_{sequence.jobname}"
+    script_r0 = Path(options.directory) / f"{basename}.py"
+    script_dl1ab = Path(options.directory) / f"{basename}_dl1ab.py"
 
     if not options.simulate:
-        write_to_file(sequence.script, content)
+        write_to_file(script_r0, content_r0)
+        write_to_file(script_dl1ab, content_dl1ab)
 
-    return content
+    sequence.script_r0 = script_r0
+    sequence.script_dl1ab = script_dl1ab
+    sequence.script = script_r0
+
+    return content_r0
 
 
 def calibration_sequence_job_template(sequence):
     """
-    This file contains instruction to be submitted to job scheduler.
-
-    Parameters
-    ----------
-    sequence : sequence object
-
-    Returns
-    -------
-    job_template : string
+    Create job script for calibration sequence (unchanged behavior).
     """
-
-    # Get the job header template.
     job_header = job_header_template(sequence)
 
     if cfg.getboolean("lstchain", "use_lstcam_env_for_CatA_calib"):
@@ -552,10 +453,8 @@ def calibration_sequence_job_template(sequence):
     if not options.test:
         content += set_cache_dirs()
         content += "\n"
-        # Use the SLURM env variables
         content += "subruns = os.getenv('SLURM_ARRAY_TASK_ID')\n"
     else:
-        # Just process the first subrun without SLURM
         content += "subruns = 0\n"
 
     content += "\n"
@@ -579,31 +478,261 @@ def calibration_sequence_job_template(sequence):
     return content
 
 
+#
+# CatB pilot utilities: markers and submission helpers
+#
+def _catb_marker_path(run_id: int) -> Path:
+    """Path of the marker file used to indicate a submitted CatB pilot for a run."""
+    return Path(options.directory) / f"{options.tel_id}_{run_id:05d}.catb_submitted"
+
+
+def mark_catb_submitted(run_id: int, jobid: str) -> None:
+    """Atomically write a marker file with the jobid and timestamp to avoid duplicate submissions."""
+    marker = _catb_marker_path(run_id)
+    timestamp = datetime.datetime.utcnow().isoformat()
+    content = f"{jobid}\n{timestamp}\n"
+    marker.write_text(content)
+
+
+def read_catb_marker(run_id: int) -> tuple[str, str] | None:
+    """Read marker and return (jobid, timestamp) or None if missing/malformed."""
+    marker = _catb_marker_path(run_id)
+    if not marker.exists():
+        return None
+    try:
+        lines = marker.read_text().splitlines()
+        jobid = lines[0].strip()
+        ts = lines[1].strip() if len(lines) > 1 else ""
+        return jobid, ts
+    except Exception:
+        return None
+
+
+def remove_catb_marker(run_id: int) -> None:
+    """Remove the marker file if present."""
+    marker = _catb_marker_path(run_id)
+    try:
+        if marker.exists():
+            marker.unlink()
+    except Exception as e:
+        log.warning(f"Could not remove catB marker for run {run_id:05d}: {e}")
+
+
+def pilot_job_is_active(run_id: int) -> bool:
+    """
+    Return True if a CatB pilot job for run_id is already pending/running.
+    Strategy:
+      - If a marker file exists, query sacct for that job id to determine state.
+      - If no marker, scan log files for a recent matching job id and query sacct.
+      - If sacct is unavailable, be conservative and return True to avoid duplicates.
+    """
+    marker = _catb_marker_path(run_id)
+    if marker.exists():
+        info = read_catb_marker(run_id)
+        if info:
+            jobid, ts = info
+            try:
+                state = get_sacct_output(run_sacct(job_id=jobid))["State"].item()
+            except Exception:
+                log.warning("Could not query sacct to check existing catB job; assuming active to avoid duplicate submission.")
+                return True
+            return state in ("RUNNING", "PENDING")
+        else:
+            try:
+                marker.unlink()
+            except Exception:
+                pass
+            return False
+
+    # fallback: scan logs
+    log_dir = Path(options.directory) / "log"
+    pattern = rf"{options.tel_id}_catB_tailcuts_{run_id:05d}_(\d+)\.err$"
+    try:
+        files = sorted(
+            glob.glob(str(log_dir / f"{options.tel_id}_catB_tailcuts_{run_id:05d}_*.err")),
+            key=lambda p: int(re.search(pattern, p).group(1)) if re.search(pattern, p) else -1,
+        )
+    except Exception:
+        files = []
+
+    if not files:
+        return False
+
+    m = re.search(rf"{options.tel_id}_catB_tailcuts_{run_id:05d}_(\d+)\.err", files[-1])
+    if not m:
+        return False
+    jobid = m.group(1)
+    try:
+        state = get_sacct_output(run_sacct(job_id=jobid))["State"].item()
+    except Exception:
+        log.warning("Could not query sacct to check existing catB job; assuming active to avoid duplicate submission.")
+        return True
+    return state in ("RUNNING", "PENDING")
+
+
+def write_catb_pilot_script(run_id: int) -> Path:
+    """
+    Create a pilot script for CatB/tailcuts for a single run.
+    """
+    log_dir = Path(options.directory) / "log"
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    job_name = f"{options.tel_id}_catB_tailcuts_{run_id:05d}"
+    account = cfg.get("SLURM", "ACCOUNT")
+
+    worker_argv = [
+        "catb_tailcuts_pipeline",
+        f"--date={date_to_iso(options.date)}",
+        f"--input-state={options.input_state}",
+    ]
+
+    if options.verbose:
+        worker_argv.append("--verbose")
+
+    if options.simulate:
+        worker_argv.append("--simulate")
+
+    if options.configfile:
+        worker_argv.extend(["--config", str(Path(options.configfile).resolve())])
+
+    if options.overwrite_catB:
+        worker_argv.append("--overwrite-catB")
+
+    if options.overwrite_tailcuts:
+        worker_argv.append("--overwrite-tailcuts")
+
+    worker_argv.append(str(run_id))
+    worker_argv.append(options.tel_id)
+
+    content = ""
+    content += "#!/usr/bin/env python3\n\n"
+
+    content += f"#SBATCH --job-name={job_name}\n"
+    content += f"#SBATCH --chdir={options.directory}\n"
+    content += f"#SBATCH --output=log/{job_name}_%j.out\n"
+    content += f"#SBATCH --error=log/{job_name}_%j.err\n"
+    content += f"#SBATCH --account={account}\n\n"
+    content += "#SBATCH --mem=12G\n\n"
+
+    content += "import subprocess\n"
+    content += "import sys\n\n"
+
+    content += "proc = subprocess.run([\n"
+    for arg in worker_argv:
+        content += f"    {arg!r},\n"
+    content += "])\n"
+    content += "sys.exit(proc.returncode)\n"
+
+    pilot_script = Path(options.directory) / (
+        f"sequence_{options.tel_id}_{run_id:05d}_catb_tailcuts.py"
+    )
+
+    pilot_script.write_text(content)
+    pilot_script.chmod(0o755)
+
+    return pilot_script
+
+
+def submit_catb_pilot_script(run_id: int, dependency_jobid: str | None = None) -> str | None:
+    """
+    Submit the pilot script for CatB/tailcuts via sbatch. Optionally add dependency.
+    Uses atomic marker creation to avoid races.
+    """
+    # If run already closed, skip
+    if catB_closed_file_exists(run_id):
+        log.info(f"CatB already closed for run {run_id:05d}; skipping pilot submission.")
+        return None
+
+    marker = _catb_marker_path(run_id)
+
+    # Try to atomically create marker (reservation)
+    try:
+        fd = os.open(str(marker), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+    except OSError as e:
+        if e.errno == errno.EEXIST:
+            info = read_catb_marker(run_id)
+            if info:
+                jobid, ts = info
+                try:
+                    state = get_sacct_output(run_sacct(job_id=jobid))["State"].item()
+                except Exception:
+                    log.warning("Could not query sacct for existing marker; assuming active to avoid duplicate submission.")
+                    return jobid
+                if state in ("RUNNING", "PENDING"):
+                    log.info(f"Another process already submitted pilot for run {run_id:05d} (job {jobid}); skipping.")
+                    return jobid
+                else:
+                    try:
+                        marker.unlink()
+                    except Exception:
+                        log.warning("Could not remove stale marker; skipping submission to be safe.")
+                        return None
+                    return submit_catb_pilot_script(run_id, dependency_jobid)
+            else:
+                log.info(f"Marker exists for run {run_id:05d}, skipping to avoid duplicates.")
+                return None
+        else:
+            log.exception(f"Could not create marker file for run {run_id:05d}: {e}")
+            return None
+    else:
+        try:
+            with os.fdopen(fd, "w") as fh:
+                fh.write("PENDING\n")
+                fh.write(datetime.datetime.utcnow().isoformat() + "\n")
+        except Exception as e:
+            log.warning(f"Could not initialize marker for run {run_id:05d}: {e}")
+            try:
+                marker.unlink()
+            except Exception:
+                pass
+            return None
+
+    # Compose sbatch cmd
+    pilot_script = write_catb_pilot_script(run_id)
+    cmd = ["sbatch", "--parsable", str(pilot_script)]
+    if dependency_jobid:
+        cmd = ["sbatch", "--parsable", f"--dependency=afterok:{dependency_jobid}", str(pilot_script)]
+
+    if options.simulate:
+        log.info(f"Would submit {' '.join(cmd)}")
+        marker.write_text("SIMULATE\n" + datetime.datetime.utcnow().isoformat() + "\n")
+        return None
+
+    try:
+        job = sp.run(cmd, encoding="utf-8", capture_output=True, text=True, check=True)
+    except sp.CalledProcessError as error:
+        log.exception(f"Failed to submit CatB pilot for run {run_id:05d}: {error}")
+        try:
+            marker.unlink()
+        except Exception:
+            log.warning(f"Could not remove marker after failed sbatch for run {run_id:05d}")
+        return None
+
+    job_id = job.stdout.strip()
+    log.info(f"Submitted CatB pipeline for run {run_id:05d} ({job_id})")
+
+    try:
+        marker.write_text(f"{job_id}\n{datetime.datetime.utcnow().isoformat()}\n")
+    except Exception as e:
+        log.warning(f"Could not write jobid to marker for run {run_id:05d}: {e}")
+
+    return job_id
+
+
 def submit_jobs(sequence_list, batch_command="sbatch"):
     """
-    Submit the jobs to the cluster.
-
-    Parameters
-    ----------
-    sequence_list: list
-        List of sequences to submit.
-    batch_command: str
-        The batch command to submit the job (Default: sbatch)
-
-    Returns
-    -------
-    job_list: list
-        List of submitted job IDs.
+    Submit the jobs to the cluster in three-phases per sequence:
+      - r0->dl1 array (if not already active) with PEDCALIB dependency if needed
+      - catB/tailcuts per-run pilot dependent on r0 job (if needed)
+      - dl1ab array dependent on catB pilot (or r0 if no catB)
     """
     job_list = []
     no_display_backend = "--export=ALL,MPLBACKEND=Agg"
-
-    parent_jobid = None
+    plan = build_processing_plan(options.input_state)
+    parent_jobid = None  # Persist across loop iterations for PEDCALIB -> DATA dependency
 
     for sequence in sequence_list:
-        plan = build_processing_plan(options.input_state)
-        commandargs = [batch_command, "--parsable", no_display_backend]
-
+        # PEDCALIB sequence: optional if already calibrated
         if sequence.type == "PEDCALIB":
             if not plan.needs_calibration:
                 log.info(
@@ -612,67 +741,101 @@ def submit_jobs(sequence_list, batch_command="sbatch"):
                 )
                 continue
 
-            commandargs.append(sequence.script)
-
+            commandargs = [batch_command, "--parsable", no_display_backend]
+            commandargs.append(str(sequence.script))
             if options.simulate or options.no_calib or options.test:
                 log.debug("SIMULATE Launching scripts")
             else:
                 try:
                     log.debug(f"Launching script {sequence.script}")
                     parent_jobid = sp.check_output(
-                        commandargs,
-                        universal_newlines=True,
-                        shell=False,
+                        commandargs, universal_newlines=True, shell=False
                     ).split()[0]
+                    log.info(f"Submitted PEDCALIB for run {sequence.run:05d} -> job {parent_jobid}")
                 except sp.CalledProcessError as error:
                     rc = error.returncode
-                    log.exception(
-                        f"Command '{batch_command}' not found, error {rc}"
-                    )
+                    log.exception(f"Command '{batch_command}' not found, error {rc}")
+                    parent_jobid = None
 
             log.debug(stringify(commandargs))
+            job_list.append(sequence.script)
+            continue
 
-        # Here sequence.jobid has not been redefined, so it keeps the one
-        # from previous time sequencer was launched.
-
-        # Add the job dependencies after calibration sequence
-
+        # DATA sequences: three-phase submit
         if sequence.type == "DATA":
+            # Skip if there is already an active job for this sequence (avoid duplicates)
+            if getattr(sequence, "state", None) in ("RUNNING", "PENDING", "COMPLETING"):
+                log.info(f"Sequence {sequence.jobname} already active (state={sequence.state}), skipping submission.")
+                continue
 
-            if not options.simulate and not options.no_calib and not options.test:
-                if plan.needs_calibration and parent_jobid is not None:
-                    log.debug("Adding dependency on calibration job")
-                    depend_string = f"--dependency=afterok:{parent_jobid}"
-                    commandargs.append(depend_string)
-                else:
-                    log.info(
-                        "No calibration dependency needed "
-                        "(input already calibrated)"
-                    )
+            # 1) submit r0->dl1 array (if not active). Use sequence.script_r0 created by prepare_jobs.
+            cmd_r0 = [batch_command, "--parsable", no_display_backend]
 
-            commandargs.append(sequence.script)
+            # Add dependency on PEDCALIB if calibration is needed
+            if plan.needs_calibration and parent_jobid is not None:
+                log.debug(f"Adding dependency on calibration job {parent_jobid}")
+                cmd_r0.append(f"--dependency=afterok:{parent_jobid}")
+
+            cmd_r0.append(str(sequence.script_r0))
 
             if options.simulate:
-                log.debug("SIMULATE Launching scripts")
-
+                log.info(f"SIMULATE would submit r0->dl1 array for run {sequence.run:05d}: {' '.join(cmd_r0)}")
+                job_id_r0 = None
             elif options.test:
-                log.debug(
-                    "TEST launching datasequence scripts for "
-                    "first subrun without scheduler"
-                )
-                commandargs = ["python", sequence.script]
-                sp.check_output(commandargs, shell=False)
-
+                log.info(f"TEST run of r0->dl1 script for run {sequence.run:05d}")
+                sp.check_output(["python", str(sequence.script_r0)], shell=False)
+                job_id_r0 = None
             else:
-                log.info("Submitting jobs to the cluster.")
                 try:
-                    log.debug(f"Launching script {sequence.script}")
-                    sp.check_output(commandargs, shell=False)
+                    out = sp.check_output(cmd_r0, shell=False).decode()
+                    job_id_r0 = out.split()[0]
+                    log.info(f"Submitted r0->dl1 array for run {sequence.run:05d} -> job {job_id_r0}")
                 except sp.CalledProcessError as error:
-                    log.exception(error)
+                    log.exception(f"Failed to submit r0->dl1 for run {sequence.run:05d}: {error}")
+                    job_id_r0 = None
 
-            log.debug(stringify(commandargs))
+            job_list.append(sequence.script_r0)
 
+            # 2) decide whether CatB/tailcuts are needed for this run
+            need_catb = cfg.getboolean("lstchain", "apply_catB_calibration") and not catB_closed_file_exists(sequence.run)
+            tailcuts_json = Path(cfg.get(options.tel_id, "TAILCUTS_FINDER_DIR")) / f"dl1ab_Run{sequence.run:05d}.json"
+            need_tailcuts = (not cfg.getboolean("lstchain", "apply_standard_dl1b_config")) and (not tailcuts_json.exists())
+
+            job_id_catb = None
+            if need_catb or need_tailcuts:
+                # Safe: require job_id_r0 present (r0 array submitted in this invocation)
+                if job_id_r0 is None and not options.force_submit:
+                    log.info(f"No r0->dl1 jobid for run {sequence.run:05d} available; skipping CatB pilot for now.")
+                else:
+                    job_id_catb = submit_catb_pilot_script(sequence.run, dependency_jobid=job_id_r0)
+                    if job_id_catb:
+                        log.info(f"Submitted CatB pilot for run {sequence.run:05d} -> job {job_id_catb}")
+                    else:
+                        log.info(f"CatB pilot for run {sequence.run:05d} not submitted (simulate/skipped).")
+
+            # 3) submit dl1ab array with dependency on catB (if created) or r0 job
+            cmd_dl1ab = [batch_command, "--parsable", no_display_backend]
+            dep_for_dl1 = job_id_catb if job_id_catb else job_id_r0
+            if dep_for_dl1:
+                cmd_dl1ab.insert(2, f"--dependency=afterok:{dep_for_dl1}")
+            cmd_dl1ab.append(str(sequence.script_dl1ab))
+
+            if options.simulate:
+                log.info(f"SIMULATE would submit dl1ab array for run {sequence.run:05d}: {' '.join(cmd_dl1ab)}")
+            elif options.test:
+                log.info(f"TEST running dl1ab script for run {sequence.run:05d}")
+                sp.check_output(["python", str(sequence.script_dl1ab)], shell=False)
+            else:
+                try:
+                    sp.check_output(cmd_dl1ab, shell=False)
+                    log.info(f"Submitted dl1ab array for run {sequence.run:05d} with dependency {dep_for_dl1}")
+                except sp.CalledProcessError as error:
+                    log.exception(f"Failed to submit dl1ab for run {sequence.run:05d}: {error}")
+
+            job_list.append(sequence.script_dl1ab)
+            continue
+
+        # fallback
         job_list.append(sequence.script)
 
     return job_list
@@ -690,8 +853,7 @@ def run_squeue() -> StringIO:
 
 def get_squeue_output(squeue_output: StringIO) -> pd.DataFrame:
     """
-    Obtain the current job information from squeue output
-    and return a pandas dataframe.
+    Obtain the current job information from squeue output and return a pandas dataframe.
     """
     df = pd.read_csv(squeue_output, delimiter=";")
     df.rename(
@@ -704,13 +866,11 @@ def get_squeue_output(squeue_output: StringIO) -> pd.DataFrame:
         },
     )
 
-    # Keep only the jobs corresponding to OSA sequences
     df = df[df["JobName"].str.contains("LST1")]
 
     try:
-        # Remove the job array part of the jobid
         df["JobID"] = df["JobID"].apply(lambda x: x.split("_")[0]).astype("int")
-    except AttributeError:
+    except Exception:
         log.debug("No job info could be obtained from squeue")
 
     df["CPUTimeRAW"] = df["CPUTime"].apply(time_to_seconds)
@@ -744,16 +904,14 @@ def run_sacct(job_id: str = None) -> StringIO:
         sacct_cmd.extend(["--starttime", start_date])
 
     return StringIO(sp.check_output(sacct_cmd).decode())
-    
+
 
 def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
+    """
+    Fetch the information of jobs using sacct and store it in a pandas dataframe.
+    """
     sacct_output = pd.read_csv(sacct_output, names=FORMAT_SLURM)
 
-    # asegurar tipo string
-    sacct_output["JobID"] = sacct_output["JobID"].astype(str)
-    sacct_output["JobName"] = sacct_output["JobName"].astype(str)
-
-    # Keep only the jobs corresponding to OSA sequences
     sacct_output = sacct_output[
         (~sacct_output["JobID"].str.contains(r"\."))
         | (sacct_output["JobName"].str.contains("LST1"))
@@ -762,7 +920,7 @@ def get_sacct_output(sacct_output: StringIO) -> pd.DataFrame:
     try:
         sacct_output["JobID"] = sacct_output["JobID"].apply(lambda x: x.split("_")[0])
         sacct_output["JobID"] = sacct_output["JobID"].str.strip(".batch").astype(int)
-    except AttributeError:
+    except Exception:
         log.debug("No job info could be obtained from sacct")
 
     return sacct_output
@@ -773,9 +931,15 @@ def get_closer_sacct_output(sacct_output) -> pd.DataFrame:
     Fetch the information of jobs in the queue launched by AUTOCLOSER using the sacct 
     SLURM output and store it in a pandas dataframe.
 
+    Parameters
+    ----------
+    sacct_output : StringIO or pd.DataFrame
+        Output from run_sacct()
+
     Returns
     -------
     queue_list: pd.DataFrame
+        Filtered dataframe with only AUTOCLOSER-related jobs
     """
     sacct_output = pd.read_csv(sacct_output, names=FORMAT_SLURM)
 
@@ -803,7 +967,6 @@ def get_closer_sacct_output(sacct_output) -> pd.DataFrame:
 def filter_jobs(job_info: pd.DataFrame, sequence_list: Iterable):
     """Filter the job info list to get the values of the jobs in the current queue."""
     sequences_info = pd.DataFrame([vars(seq) for seq in sequence_list])
-    # Keep the jobs in the sacct output that are present in the sequence list
     return job_info[job_info["JobName"].isin(sequences_info["jobname"])]
 
 
@@ -811,21 +974,12 @@ def set_queue_values(
     sacct_info: pd.DataFrame, squeue_info: pd.DataFrame, sequence_list: Iterable
 ) -> None:
     """
-    Extract job info from sacct output and
-    fetch them into the table of sequences.
-
-    Parameters
-    ----------
-    sacct_info: pd.DataFrame
-    squeue_info: pd.DataFrame
-    sequence_list: list[Sequence object]
+    Extract job info and fetch them into the sequence objects.
     """
     if sacct_info.empty and squeue_info.empty or sequence_list is None:
         return
 
     job_info = pd.concat([sacct_info, squeue_info])
-
-    # Filter the jobs in the sacct output that are present in the sequence list
     job_info_filtered = filter_jobs(job_info, sequence_list)
 
     for sequence in sequence_list:
@@ -834,7 +988,7 @@ def set_queue_values(
         sequence.action = "Check"
 
         if not df_jobname.empty:
-            sequence.jobid = df_jobname["JobID"].max()  # Get latest JobID
+            sequence.jobid = df_jobname["JobID"].max()
             df_jobid_filtered = df_jobname[df_jobname["JobID"] == sequence.jobid]
             try:
                 sequence.cputime = time.strftime(
@@ -850,11 +1004,6 @@ def set_queue_values(
 def update_sequence_state(sequence, filtered_job_info: pd.DataFrame) -> None:
     """
     Update the state of the sequence based on the job info.
-
-    Parameters
-    ----------
-    sequence: Sequence object
-    filtered_job_info: pd.DataFrame
     """
     if (filtered_job_info.State.values == "COMPLETED").all():
         sequence.state = "COMPLETED"
@@ -884,4 +1033,3 @@ def job_finished_in_timeout(job_id: str) -> bool:
         return True
     else:
         return False
-
