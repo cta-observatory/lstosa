@@ -277,51 +277,74 @@ def data_sequence_cli_parsing():
         opts.dl1_prod_id,
     )
 
-
 def sequencer_argparser():
     """Argument parser for sequencer script."""
+
     parser = ArgumentParser(
         description="Build the jobs for each run and process them for a given date",
         parents=[common_parser],
     )
+
     parser.add_argument(
         "--input-state",
         choices=["legacy_raw", "gain_selected", "catA_calibrated"],
         default="legacy_raw",
         help="Declared preprocessing state of input data",
     )
+
     parser.add_argument(
         "--no-submit",
         action="store_true",
         default=False,
         help="Produce job files but do not submit them",
     )
+
     parser.add_argument(
         "--no-calib",
         action="store_true",
         default=False,
-        help="Skip calibration sequence. Run data sequences assuming "
-        "calibration products already produced (default False)",
+        help=(
+            "Skip calibration sequence. Run data sequences assuming "
+            "calibration products already produced (default False)"
+        ),
     )
+
     parser.add_argument(
         "--no-dl1ab",
         action="store_true",
         default=False,
         help="Do not launch the script lstchain_dl1ab (default False)",
     )
+
     parser.add_argument(
         "--no-gainsel",
         action="store_true",
         default=False,
         help="Do not check if the gain selection finished correctly (default False)",
     )
+
     parser.add_argument(
         "-f",
         "--force-submit",
         action="store_true",
         default=False,
-        help="Force sequencer to submit jobs"
+        help="Force sequencer to submit jobs",
     )
+
+    parser.add_argument(
+        "--overwrite-catB",
+        action="store_true",
+        default=False,
+        help="Overwrite existing CatB calibration products.",
+    )
+
+    parser.add_argument(
+        "--overwrite-tailcuts",
+        action="store_true",
+        default=False,
+        help="Overwrite existing TailCuts configuration files.",
+    )
+
     parser.add_argument(
         "tel_id",
         choices=["ST", "LST1", "LST2", "all"],
@@ -332,11 +355,14 @@ def sequencer_argparser():
 
 
 def sequencer_cli_parsing():
+    """Parse sequencer CLI arguments and populate global options."""
+
     # parse the command line
     opts = sequencer_argparser().parse_args()
 
     # set global variables
     set_common_globals(opts)
+
     options.no_submit = opts.no_submit
     options.no_calib = opts.no_calib
     options.no_dl1ab = opts.no_dl1ab
@@ -344,6 +370,8 @@ def sequencer_cli_parsing():
     options.force_submit = opts.force_submit
     options.input_state = opts.input_state
 
+    options.overwrite_catB = opts.overwrite_catB
+    options.overwrite_tailcuts = opts.overwrite_tailcuts
 
     log.debug(f"the options are {opts}")
 
@@ -352,7 +380,6 @@ def sequencer_cli_parsing():
     # setting the default date and directory if needed
     options.date = set_default_date_if_needed()
     options.directory = analysis_path(options.tel_id)
-
 
 def provprocess_argparser():
     parser = ArgumentParser()
