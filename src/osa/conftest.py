@@ -480,11 +480,16 @@ def sequence_file_list(
     assert merged_run_summary.exists()
 
     run_program("sequencer", "-d", "2020-01-17", "--no-submit", "-t", "LST1")
-    # First sequence in the list corresponds to the calibration run 1809
+
+    def seq_file(run):
+        original = running_analysis_dir / f"sequence_LST1_{run}.py"
+        new = running_analysis_dir / f"sequence_LST1_{run}_2.py"
+        return original if original.exists() else new
+
     return [
         running_analysis_dir / "sequence_LST1_01809.py",
-        running_analysis_dir / "sequence_LST1_01807.py",
-        running_analysis_dir / "sequence_LST1_01808.py",
+        seq_file("01807"),
+        seq_file("01808"),
     ]
 
 
