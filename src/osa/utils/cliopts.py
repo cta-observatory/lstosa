@@ -590,4 +590,3 @@ def autocloser_cli_parser():
     parser.add_argument("tel_id", type=str, choices=["LST1"])
 
     return parser
-
