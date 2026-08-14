@@ -481,19 +481,11 @@ def sequence_file_list(
 
     run_program("sequencer", "-d", "2020-01-17", "--no-submit", "-t", "LST1")
 
-    files = []
-
-    for run in ("01809", "01807", "01808"):
-        original = running_analysis_dir / f"sequence_LST1_{run}.py"
-        new = running_analysis_dir / f"sequence_LST1_{run}_2.py"
-
-        assert original.exists() or new.exists(), (
-            f"Neither {original.name} nor {new.name} exists"
-        )
-
-        files.append(original if original.exists() else new)
-
-    return files
+    return [
+        running_analysis_dir / "sequence_LST1_01809.py",
+        running_analysis_dir / "sequence_LST1_01807.py",
+        running_analysis_dir / "sequence_LST1_01808.py",
+    ]
 
 
 @pytest.fixture(scope="session")
