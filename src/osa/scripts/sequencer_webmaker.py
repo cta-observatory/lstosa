@@ -1,5 +1,7 @@
-"""Produce the HTML file with the processing status from the sequencer report."""
-
+#!/usr/bin/env python3
+"""Produce the HTML file with the processing status from the sequencer report and
+update per-run global history entries based on per-subrun histories and .closed files.
+"""
 
 import logging
 import subprocess as sp
@@ -7,7 +9,7 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from textwrap import dedent
-from typing import Iterable
+from typing import Iterable, List
 
 import pandas as pd
 
@@ -16,30 +18,13 @@ from osa.configs.config import cfg
 from osa.utils.cliopts import sequencer_webmaker_argparser
 from osa.utils.logging import myLogger
 from osa.utils.utils import is_day_closed, date_to_iso, date_to_dir
-from osa.paths import all_dl1ab_config_files_exist
+from osa.paths import all_dl1ab_config_files_exist, analysis_path, catB_closed_file_exists
 
 log = myLogger(logging.getLogger())
 
 
 def html_content(body: str, warnings: str, date: str, title: str) -> str:
-    """Build the HTML content.
-
-    Parameters
-    ----------
-    body : str
-        Table with the sequencer status report.
-    warnings : str
-        HTML block with warnings.
-    date : str
-        Date of the processing YYYY-MM-DD.
-
-    Returns
-    -------
-    str
-        HTML content.
-    """
     time_update = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-
     return dedent(
         f"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -58,30 +43,14 @@ def html_content(body: str, warnings: str, date: str, title: str) -> str:
         </html>"""
     )
 
+
 def get_sequencer_output(
     date: str,
     config: str,
     input_state: str,
     test=False,
     no_gainsel=False,
-) -> list:
-    """Call sequencer to get table with the sequencer status report.
-
-    Parameters
-    ----------
-    date : str
-        Date of the processing YYYY-MM-DD.
-    config : str
-        OSA configuration file to use.
-    input_state : str
-        Input state passed to sequencer.
-    test : bool
-
-    Returns
-    -------
-    list
-        Lines of the sequencer output.
-    """
+) -> List[str]:
     log.info("Calling sequencer...")
 
     commandargs = [
@@ -125,8 +94,7 @@ def get_sequencer_output(
         return output.stdout.splitlines()
 
 
-def lines_to_matrix(lines: Iterable) -> list:
-    """Build the matrix from the sequencer output lines."""
+def lines_to_matrix(lines: Iterable) -> tuple[list, list]:
     matrix = []
     warnings = []
     for line in lines:
@@ -139,10 +107,7 @@ def lines_to_matrix(lines: Iterable) -> list:
 
 
 def matrix_to_html(matrix: list) -> str:
-    """Build the html table with the sequencer status report."""
     log.info("Building the html table from sequencer output")
-    log.info(matrix)
-    log.info(len(matrix))
     if len(matrix) < 2:
         return "<p>No data found</p>"
     df = pd.DataFrame(matrix[1:], columns=matrix[0])
@@ -150,11 +115,117 @@ def matrix_to_html(matrix: list) -> str:
 
 
 def warnings_to_html(warnings: list) -> str:
-    """Build an HTML block displaying warnings."""
     if not warnings:
         return ""
     items = "".join(f"<li>{w}</li>" for w in warnings)
     return f'<div><h2>Warnings</h2><ul>{items}</ul></div>'
+
+
+# --- NEW: update global per-run history based on per-subrun history and .closed ---
+def _history_has_program(history_path: Path, program: str) -> bool:
+    if not history_path.exists():
+        return False
+    try:
+        for line in history_path.read_text().splitlines():
+            parts = line.split()
+            if len(parts) >= 2 and parts[1] == program:
+                return True
+    except Exception:
+        return False
+    return False
+
+
+def update_global_history():
+    """
+    For each DATA run on options.date:
+     - If all per-subrun history files contain lstchain_data_r0_to_dl1 exit 0 -> write R0_ARRAY line
+     - If all per-subrun history files contain lstchain_check_dl1 exit 0 -> write DL1AB_ARRAY line
+    
+    Note: CATB_CLOSED line is written by the SLURM job, not by this script.
+    """
+    log.info("Updating global run histories from per-subrun histories")
+
+    # ensure options.directory is set (and options.prod_id)
+    options.directory = analysis_path(options.tel_id)
+
+    run_table = run_summary_table(options.date)
+    if len(run_table) == 0:
+        log.debug("No runs in summary table")
+        return
+
+    for row in run_table:
+        if row["run_type"] != "DATA":
+            continue
+        run_id = int(row["run_id"])
+
+        # paths
+        global_history = Path(options.directory) / f"{options.tel_id}_{run_id:05d}.history"
+
+        # collect per-subrun history files for this run
+        subrun_hist_files = sorted(Path(options.directory).glob(f"sequence_{options.tel_id}_{run_id:05d}.*.history"))
+        
+        # 1) R0_ARRAY: require every subrun file exists and contains lstchain_data_r0_to_dl1 with exit 0
+        r0_ok = True
+        if not subrun_hist_files:
+            r0_ok = False
+        else:
+            for hf in subrun_hist_files:
+                try:
+                    lines = hf.read_text().splitlines()
+                except Exception:
+                    r0_ok = False
+                    break
+                found = any("lstchain_data_r0_to_dl1" in l and l.strip().endswith(" 0") for l in lines)
+                if not found:
+                    r0_ok = False
+                    break
+        if r0_ok and not _history_has_program(global_history, "R0_ARRAY"):
+            # append summary line
+            try:
+                version = get_major_version(get_lstchain_version()) if get_lstchain_version() else "unknown"
+            except Exception:
+                version = "unknown"
+            ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+            line = f"{run_id:05d} R0_ARRAY {version} {ts} None None 0\n"
+            if not options.simulate:
+                global_history.parent.mkdir(parents=True, exist_ok=True)
+                with open(global_history, "a") as fh:
+                    fh.write(line)
+                log.info(f"Wrote R0_ARRAY summary for run {run_id} in {global_history.name}")
+            else:
+                log.info(f"[SIMULATE] Would write R0_ARRAY -> {global_history}: {line.strip()}")
+
+        # 2) DL1AB_ARRAY (check_dl1): every subrun history file contains lstchain_check_dl1 exit 0
+        dl1ab_ok = True
+        if not subrun_hist_files:
+            dl1ab_ok = False
+        else:
+            for hf in subrun_hist_files:
+                try:
+                    lines = hf.read_text().splitlines()
+                except Exception:
+                    dl1ab_ok = False
+                    break
+                found = any("lstchain_check_dl1" in l and l.strip().endswith(" 0") for l in lines)
+                if not found:
+                    dl1ab_ok = False
+                    break
+        if dl1ab_ok and not _history_has_program(global_history, "DL1AB_ARRAY"):
+            try:
+                version = get_major_version(get_lstchain_version()) if get_lstchain_version() else "unknown"
+            except Exception:
+                version = "unknown"
+            ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+            line = f"{run_id:05d} DL1AB_ARRAY {version} {ts} None None 0\n"
+            if not options.simulate:
+                global_history.parent.mkdir(parents=True, exist_ok=True)
+                with open(global_history, "a") as fh:
+                    fh.write(line)
+                log.info(f"Wrote DL1AB_ARRAY summary for run {run_id} in {global_history.name}")
+            else:
+                log.info(f"[SIMULATE] Would write DL1AB_ARRAY -> {global_history}: {line.strip()}")
+
+# --- end of update_global_history ------------------------------------------------
 
 
 def main():
@@ -164,10 +235,13 @@ def main():
 
     args = sequencer_webmaker_argparser().parse_args()
 
+    # set tel_id if provided by the parser (it usually is)
+    if hasattr(args, "tel_id") and args.tel_id:
+        options.tel_id = args.tel_id
+
     if args.date:
         flat_date = date_to_dir(args.date)
         options.date = args.date
-
     else:
         # yesterday by default
         yesterday = datetime.now() - timedelta(days=1)
@@ -189,6 +263,12 @@ def main():
 
     log.info(f"Using input_state={args.input_state}")
 
+    # NEW: update global history entries before asking sequencer for the table
+    try:
+        update_global_history()
+    except Exception:
+        log.exception("update_global_history failed but continuing to build HTML")
+
     # Get the table with the sequencer status report:
     lines = get_sequencer_output(
         date,
@@ -198,25 +278,17 @@ def main():
         no_gainsel=args.no_gainsel,
     )
 
-    log.info(f"{lines}")
-
     # Build the html sequencer table that will be placed in the body
     matrix, warnings = lines_to_matrix(lines)
 
     html_table = matrix_to_html(matrix)
     html_warnings = warnings_to_html(warnings)
 
-    log.info(f"{html_table}")
-
     # Save the HTML file
-    log.info("Saving the HTML file")
-
     directory = Path(cfg.get("LST1", "SEQUENCER_WEB_DIR"))
     directory.mkdir(parents=True, exist_ok=True)
 
     html_file = directory / f"osa_status_{flat_date}.html"
-
-    log.info(f"{html_file}")
 
     html_file.write_text(
         html_content(
@@ -233,4 +305,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
