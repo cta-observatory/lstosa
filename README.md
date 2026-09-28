@@ -156,6 +156,7 @@ graph LR
     subgraph Onsite processing
         A[DL1a]
         CA[Cat-A datacheck]
+        muons[muons]
         B[Cat-B calibration]
         TC[Tailcuts configuration]
         AB[DL1ab / datacheck]
@@ -166,6 +167,7 @@ graph LR
         C1 --> A
         C2 --> A
         A --> CA --> B
+        A --> muons --> AB
         B --> AB
         TC --> AB
         A --> AB
