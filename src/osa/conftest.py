@@ -483,7 +483,7 @@ def sequence_file_list(
     assert gain_selection_flag_file.exists()
     assert merged_run_summary.exists()
 
-    run_program("sequencer", "-d", "2020-01-17", "--no-submit", "-t", "LST1")
+    run_program("sequencer", "-d", "2020-01-17", "--no-submit", "-s", "-t", "LST1")
     # First sequence in the list corresponds to the calibration run 1809
     return [
         running_analysis_dir / "sequence_LST1_01809.py",
