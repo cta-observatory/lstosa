@@ -445,45 +445,28 @@ def job_header_template(sequence) -> str:
 
 def set_cache_dirs():
     """
-    Export cache directories for the jobs provided they
-    are defined in the config file.
-
-    Returns
-    -------
-    content: string
-        String with the command to export the cache directories
+    Export cache directories for the jobs provided they are defined in the config file.
     """
-
     ctapipe_cache = cfg.get("CACHE", "CTAPIPE_CACHE")
     ctapipe_svc_path = cfg.get("CACHE", "CTAPIPE_SVC_PATH")
     mpl_config_path = cfg.get("CACHE", "MPLCONFIGDIR")
 
     content = []
-
-    # Astropy shared config/cache
-    content.append(
-        "os.environ['XDG_CONFIG_HOME'] = '/fefs/aswg/data/aux'"
-    )
-    content.append(
-        "os.environ['XDG_CACHE_HOME'] = '/fefs/aswg/data/aux'"
-    )
-
     if ctapipe_cache:
-        content.append(
-            f"os.environ['CTAPIPE_CACHE'] = '{ctapipe_cache}'"
-        )
+        content.append(f"os.environ['CTAPIPE_CACHE'] = '{ctapipe_cache}'")
 
     if ctapipe_svc_path:
-        content.append(
-            f"os.environ['CTAPIPE_SVC_PATH'] = '{ctapipe_svc_path}'"
-        )
+        content.append(f"os.environ['CTAPIPE_SVC_PATH'] = '{ctapipe_svc_path}'")
 
     if mpl_config_path:
-        content.append(
-            f"os.environ['MPLCONFIGDIR'] = '{mpl_config_path}'"
-        )
+        content.append(f"os.environ['MPLCONFIGDIR'] = '{mpl_config_path}'")
 
     return "\n".join(content)
+
+
+def _cache_dirs_block() -> str:
+    """Cache/env exports for the job scripts (none when running locally in test mode)."""
+    return "" if options.test else set_cache_dirs()
 
 
 def _render_script(header: str, expressions: list, prologue_lines: Iterable[str] = ()) -> str:
@@ -494,10 +477,9 @@ def _render_script(header: str, expressions: list, prologue_lines: Iterable[str]
     f-strings to be evaluated at job runtime) forming the subprocess argv.
     """
     prologue = [line for line in prologue_lines]
-    if not options.test:
-        cache = set_cache_dirs()
-        if cache:
-            prologue.insert(0, cache)
+    cache = _cache_dirs_block()
+    if cache:
+        prologue.insert(0, cache)
 
     parts = [header, "\n", PYTHON_IMPORTS, "\n"]
     if prologue:
@@ -537,8 +519,6 @@ def _datasequence_base_args() -> list:
         args.append("-v")
     if options.simulate:
         args.append("-s")
-    if options.test:
-        args.append("-t") 
     if options.configfile:
         args.extend(("--config", str(Path(options.configfile).resolve())))
     args.append(f"--input-state={options.input_state}")
@@ -663,7 +643,11 @@ def write_catb_pilot_script(run_id: int) -> Path:
     header = _sbatch_header(catb_jobname(run_id), "DATA")
 
     # The pipeline writes its own history entries; nothing else is logged here.
-    content = header + "\nimport subprocess\nimport sys\n\nproc = subprocess.run([\n"
+    content = header + "\nimport os\nimport subprocess\nimport sys\n\n"
+    cache = _cache_dirs_block()
+    if cache:
+        content += cache + "\n\n"
+    content += "proc = subprocess.run([\n"
     content += "".join(f"{TAB}{a!r},\n" for a in argv)
     content += "])\nsys.exit(proc.returncode)\n"
 
@@ -683,8 +667,6 @@ def calibration_sequence_job_template(sequence) -> str:
         commandargs.append("-v")
     if options.simulate:
         commandargs.append("-s")
-    if options.test:
-        commandargs.append("-t") 
     if options.configfile:
         commandargs.extend(("--config", f"{Path(options.configfile).resolve()}"))
     commandargs.extend(
@@ -958,8 +940,8 @@ def submit_jobs(sequence_list, batch_command: str = "sbatch") -> list:
       - PEDCALIB: only if the processing plan needs calibration
       - DATA: r0->dl1 array -> CatB/tailcuts pilot -> dl1ab array
 
-    Honors --simulate, --test, --no-submit and --force-submit. Returns the
-    list of job ids submitted (or found already active) during this call.
+    Honors --simulate, --test and --force-submit. Returns the list of job ids
+    submitted (or found already active) during this call.
     """
     plan = build_processing_plan(options.input_state)
     calib_jobid = None  # persists across iterations for the PEDCALIB -> DATA dependency
@@ -967,18 +949,6 @@ def submit_jobs(sequence_list, batch_command: str = "sbatch") -> list:
 
     n_runs = sum(1 for seq in sequence_list if seq.type == "DATA")
     log.info(f"Checking {n_runs} DATA run(s) for job submission.")
-
-    if options.no_submit:
-        # --no-submit: produce job scripts but do not submit or run them.
-        # PEDCALIB scripts are already written by prepare_jobs(); here we just
-        # write the DATA r0->dl1 script for each run, without ever calling
-        # sbatch_submit (which is what would run something for real in test
-        # mode, or submit to SLURM otherwise).
-        log.info("--no-submit: writing job scripts only, nothing will be run or submitted.")
-        for sequence in sequence_list:
-            if sequence.type == "DATA":
-                write_r0_script(sequence)
-        return job_ids
 
     for sequence in sequence_list:
         if sequence.type == "PEDCALIB":
@@ -994,6 +964,7 @@ def submit_jobs(sequence_list, batch_command: str = "sbatch") -> list:
         log.info("No jobs submitted in this call.")
 
     return job_ids
+
 
 # ---------------------------------------------------------------------------
 # squeue / sacct
