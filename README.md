@@ -76,8 +76,7 @@ flowchart LR
     catA --> pilot[Cat-B calibration\nand tailcuts pilot]
     pilot --> dl1ab[DL1 to DL1ab\nSLURM array]
     r0 -->|when pilot is not needed| dl1ab
-    dl1ab --> check[DL1b datacheck]
-    check --> autocloser[autocloser]
+    dl1ab --> autocloser[autocloser]
     autocloser --> products[Merge, move products\nand provenance]
 ```
 
