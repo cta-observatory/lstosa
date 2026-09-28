@@ -33,6 +33,7 @@ making use of the `cta-lstchain`_ analysis library.
    introduction/index
    components/index
    workflow/index
+   workflow/global_sequencer
    howto/index
    documents/index
    contribute
