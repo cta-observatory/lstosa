@@ -3,22 +3,25 @@
 Workflow
 ********
 
-The workflow process starts with a summary of the observations of the night, it is then decomposed in sequences
-of observations and calibrations. A pilot job is built for each sequence, and they are sent to the scheduling
-system SLURM, which takes care of allocating the resources and provides a first level of parallelization.
+The LSTOSA workflow is driven by the observation summary of a night. The
+summary is converted into calibration and data sequences, and the ``sequencer``
+creates and submits the SLURM jobs required by each sequence. DATA runs are
+processed at subrun level: a run contains multiple subruns, and each SLURM
+array task processes one subrun.
 
-Each observation, usually called a *run* is normally composed of a set of ~100 files sometimes
-called *sub-runs*, each one comprising less than 10 seconds of data taking. The pilot jobs launch one job
-for each sub-runs comprising the observation, using the SLURM job array capabilities. This provides a
-second level of parallelization. Once all jobs are finished, the results are copied to the final storage
-locations and merged, where data check plots are provided to the collaboration through a web interface.
+Unlike the previous single-job workflow, the current sequencer separates the
+processing into stages. It tracks each stage in the history files and uses
+SLURM dependencies to make sure that a job starts only after its inputs are
+ready.
 
-Step by step:
+Night summary
+=============
 
-1. A cron job creates a list of all the runs taken in the night which takes around 10 minutes. The list is written in
-   the **NightSummary** file. An example is shown below:
+A cron job or the data-check system creates a list of the runs taken during the
+night. The list is written in the **NightSummary** file. A representative
+example is:
 
-.. code-block:: bash
+.. code-block:: text
 
      01872    5 DRS4  2020-01-27 19:51:44 0001 1580154753739954334 5739954100 0001 1580154753739954334 5739951300
      01873    5 CALI  2020-01-27 20:23:43 0001 1580156670887160057 1887159800 0001 1580156670887160057 1887158800
@@ -31,32 +34,102 @@ Step by step:
      01880  203 DATA  2020-01-27 22:55:31 0003 1580165786211720504 7211720200 nan nan nan
      01881  207 DATA  2020-01-27 23:17:52 0001 1580167122989548546 3989548300 nan nan nan
 
-2. A **sequencer** script prepares a job for each run. There is always a first calibration sequence which produces
-   the DRS4 pedestal, charge and time calibration files. The rest of the sequences correspond to sky-data runs which
-   make use of the previously produced calibration files.
+The run type is used to determine whether a sequence is a calibration sequence
+or a DATA sequence. Calibration products are shared by the DATA sequences that
+use them.
 
-3. These jobs are sent to the **SLURM** batch system as array jobs which process each subrun in parallel.
+Processing stages
+==================
 
-4. In each **subrun** two steps are performed:
+The sequencer submits the following stages for a DATA run.
 
-   A. **R0 to DL1**: DL1 file production, DL1 datacheck and muon analysis. In this step low and high level (TBC)
-      calibration of the camera images is performed, afterward a cleaning is applied and the remaining images are
-      parameterized to obtain the so-called Hillas parameters. All together take around 50 minutes per sub-run.
+1. **PEDCALIB**
 
-   B. **DL1 to DL2**: DL2 event-wise files are generated containing reconstructed energy, direction and type of
-      particle. Previously trained RF models are applied to perform the reconstruction. This step takes a few minutes
-      per sub-run.
+   The calibration sequence produces the DRS4 pedestal and the charge/time
+   calibration products. It is submitted first when the selected processing
+   plan requires calibration.
 
-5. A **closer script** checks all the sequences and merges the subrun results. Files are moved to are moved to
-   their final locations.
+2. **R0 to DL1**
 
-6. Data check plots are transferred to the LST-1 data-check web server (password protected)
+   ``r0_to_dl1`` processes one subrun per SLURM array task. It produces the
+   DL1a file and the per-subrun Cat-A datacheck. The Cat-A datacheck is stored
+   in the ``datacheck_cat_a`` directory below the analysis directory.
 
-- DRS4 calibration data-check: http://www.lst1.iac.es/datacheck/drs4/
-- Excess noise factor calibration data-check: http://www.lst1.iac.es/datacheck/enf_calibration/
-- DL1 data-check (including also a long-term DL1 check): http://www.lst1.iac.es/datacheck/dl1/
+3. **Cat-A datacheck merge**
 
-The basic scheme is shown in :numref:`data_flow`:
+   The ``catb_tailcuts_pipeline`` waits until all Cat-A datachecks of a run are
+   available and merges them into one per-run datacheck. This merge must happen
+   before Cat-B or DL1ab processing changes the DL1 products.
+
+4. **Cat-B calibration and tailcuts**
+
+   The same per-run pilot can create the Cat-B calibration product and find a
+   run-specific tailcuts configuration. The pilot creates a
+   ``catB_<run>.closed`` marker after successful completion.
+
+5. **DL1 to DL1ab**
+
+   ``dl1ab`` is submitted as a second SLURM array. It uses the Cat-B/tailcuts
+   products when they are required and produces the DL1b data.
+
+6. **DL1b datacheck and closing**
+
+   The DL1b datacheck is run after DL1ab. The ``autocloser`` subsequently merges
+   the products, moves them to their final locations, records provenance, and
+   launches the long-term datachecks.
+
+Job dependencies
+================
+
+The dependency graph is:
+
+.. code-block:: text
+
+   PEDCALIB -> R0/DL1 + Cat-A datacheck -> Cat-B/tailcuts -> DL1ab -> DL1b datacheck
+
+If Cat-B calibration and a non-standard tailcuts configuration are not needed,
+DL1ab depends directly on the R0/DL1 job. The dependencies are submitted to
+SLURM using ``afterok``. The sequencer also checks ``squeue`` and ``sacct`` and
+will not submit a job that is already active.
+
+Job names are generated per run:
+
+* ``LST1_<run>``: R0/DL1 array;
+* ``LST1_catB_tailcuts_<run>``: Cat-B/tailcuts pilot;
+* ``LST1_dl1ab_<run>``: DL1ab array.
+
+History and restart behavior
+============================
+
+Every subrun has a history file. The DATA processing levels are:
+
+* ``4``: R0 to DL1 is pending;
+* ``3``: Cat-A datacheck is pending;
+* ``2``: DL1ab is pending;
+* ``1``: DL1b datacheck is pending;
+* ``0``: the subrun is complete.
+
+The sequencer uses these histories to resume an interrupted run without
+repeating completed stages. It also writes global run-level entries for
+completed array stages, such as ``R0_ARRAY`` and ``DL1AB_ARRAY``.
+
+The main sequencer table is written to ``sequencer_table.txt`` in the analysis
+directory. Timestamped copies are stored in its ``log`` subdirectory.
+
+Step-by-step operation
+======================
+
+1. The sequencer reads the NightSummary and builds the sequences.
+2. Calibration jobs are submitted when required.
+3. R0/DL1 array jobs are submitted for DATA runs that are not complete or active.
+4. The Cat-B/tailcuts pilot is submitted after R0/DL1 when Cat-B or tailcuts
+   products are needed.
+5. DL1ab is submitted after the pilot, or directly after R0/DL1 when no pilot
+   is needed.
+6. The autocloser waits for the processing stages, merges and moves products,
+   and generates provenance and long-term datachecks.
+
+The overall data flow is shown in :numref:`data_flow`.
 
 .. figure:: LSTOSA_flow.png
    :name: data_flow
