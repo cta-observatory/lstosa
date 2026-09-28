@@ -123,7 +123,7 @@ def format_sequence_table(sequence_list) -> str:
     for row in matrix:
         stringrow = ""
         for j, col in enumerate(row):
-            col_str = "None" if col is None else str(col)
+            col_str = "" if col is None else str(col)
             lpad = (max_field_length[j] - len(col_str)) * " "
             # right-align integers
             if isinstance(col, int):
@@ -155,7 +155,7 @@ def get_status_for_sequence(sequence, data_level) -> int:
     try:
         if data_level == "DL1AB":
             directory = options.directory / sequence.dl1_prod_id
-            files = list(directory.glob(f"dl1_LST-1*{sequence.run}*.h5"))
+            files = list(directory.glob(f"dl1_LST-1*{sequence.run}*.0*.h5"))
         elif data_level == "DATACHECK_A":
             directory = options.directory / CAT_A_DATACHECK_DIR
             files = list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.0*.h5"))
@@ -167,14 +167,14 @@ def get_status_for_sequence(sequence, data_level) -> int:
             files = []
             try:
                 directory = options.directory / sequence.dl1_prod_id
-                files += list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5"))
+                files += list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.0*.h5"))
             except Exception:
                 pass
             try:
                 alternative_directory = destination_dir(
                     concept="DATACHECK", create_dir=False, dl1_prod_id=sequence.dl1_prod_id
                 )
-                files += list(alternative_directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.h5"))
+                files += list(alternative_directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.0*.h5"))
             except Exception:
                 pass
         else:
