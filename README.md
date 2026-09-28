@@ -158,8 +158,8 @@ graph LR
         CA[Cat-A datacheck]
         B[Cat-B calibration]
         TC[Tailcuts configuration]
-        AB[DL1ab / DL1b]
-        CHECK[DL1b datacheck]
+        AB[DL1ab / datacheck]
+        CHECK[DL1b]
         DL2[DL2]
         R0 --> A
         POINT --> A
