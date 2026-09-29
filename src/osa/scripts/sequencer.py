@@ -156,37 +156,73 @@ def get_status_for_sequence(sequence, data_level) -> int:
         if data_level == "DL1AB":
             directory = options.directory / sequence.dl1_prod_id
             files = list(directory.glob(f"dl1_LST-1*{sequence.run}*.0*.h5"))
+
         elif data_level == "DATACHECK_A":
             directory = options.directory / CAT_A_DATACHECK_DIR
             files = list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.0*.h5"))
+
         elif data_level == "DL2":
-            directory = destination_dir(concept="DL2", create_dir=False, dl2_prod_id=sequence.dl2_prod_id)
+            directory = destination_dir(
+                concept="DL2",
+                create_dir=False,
+                dl2_prod_id=sequence.dl2_prod_id,
+            )
             files = list(directory.glob(f"dl2_LST-1*{sequence.run}*.h5"))
+
         elif data_level == "DATACHECK":
             # try both options.directory/<dl1_prod_id> and DATACHECK destination_dir
             files = []
+
             try:
                 directory = options.directory / sequence.dl1_prod_id
-                files += list(directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.0*.h5"))
+                files += list(
+                    directory.glob(
+                        f"datacheck_dl1_LST-1*{sequence.run}*.0*.h5"
+                    )
+                )
             except Exception:
-                pass
+                log.debug(
+                    f"get_status_for_sequence: could not list DATACHECK files "
+                    f"in options.directory for run "
+                    f"{getattr(sequence, 'run', None)}",
+                    exc_info=True,
+                )
+
             try:
                 alternative_directory = destination_dir(
-                    concept="DATACHECK", create_dir=False, dl1_prod_id=sequence.dl1_prod_id
+                    concept="DATACHECK",
+                    create_dir=False,
+                    dl1_prod_id=sequence.dl1_prod_id,
                 )
-                files += list(alternative_directory.glob(f"datacheck_dl1_LST-1*{sequence.run}*.0*.h5"))
+                files += list(
+                    alternative_directory.glob(
+                        f"datacheck_dl1_LST-1*{sequence.run}*.0*.h5"
+                    )
+                )
             except Exception:
-                pass
+                log.debug(
+                    f"get_status_for_sequence: could not list DATACHECK files "
+                    f"in the destination_dir for run "
+                    f"{getattr(sequence, 'run', None)}",
+                    exc_info=True,
+                )
+
         else:
             prefix = cfg.get("PATTERN", f"{data_level}PREFIX")
             suffix = cfg.get("PATTERN", f"{data_level}SUFFIX")
-            files = list(options.directory.glob(f"{prefix}*{sequence.run}*{suffix}"))
+            files = list(
+                options.directory.glob(
+                    f"{prefix}*{sequence.run}*{suffix}"
+                )
+            )
+
     except AttributeError:
         return 0
+
     except Exception:
         log.debug(
-            f"get_status_for_sequence: unexpected error for run {getattr(sequence, 'run', None)} "
-            f"and level {data_level}",
+            f"get_status_for_sequence: unexpected error for run "
+            f"{getattr(sequence, 'run', None)} and level {data_level}",
             exc_info=True,
         )
         return 0
