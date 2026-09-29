@@ -72,9 +72,9 @@ The sequencer submits the following stages for a DATA run.
    ``dl1ab`` is submitted as a second SLURM array. It uses the Cat-B/tailcuts
    products when they are required and produces the DL1b data.
 
-6. **DL1b datacheck and closing**
+6. **DL1ab datacheck and closing**
 
-   The DL1b datacheck is run after DL1ab. The ``autocloser`` subsequently merges
+   The DL1ab datacheck is run after DL1ab. The ``autocloser`` subsequently merges
    the products, moves them to their final locations, records provenance, and
    launches the long-term datachecks.
 
