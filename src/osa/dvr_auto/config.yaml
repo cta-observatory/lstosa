@@ -1,0 +1,59 @@
+# Default profile. Can be changed with: --profile lstanalyzer
+profile: lstanalyzer
+
+paths:
+  # ---- inputs (read-only) ----
+  dl1_root: /fefs/onsite/data/lst-pipe/LSTN-01/DL1
+  dl1_version: v0.12
+  run_summary_dir: /fefs/onsite/data/lst-pipe/LSTN-01/monitoring/RunSummary
+  r0v_input_root: /fefs/onsite/data/R0/LSTN-01/lst-arraydaq/events   # ASSUMED R0G (the official launcher reads from R0/.../events)
+
+  # ---- outputs: defined in each profile ----
+  r0v_output_root: null    # R0V/<date>/ and R0V/log/<date>/
+  pixmask_dir: null        # where Pixel_selection_LST*.h5 files are moved
+  pixmask_extra_dirs: []   # READ-ONLY directories where existing masks are searched
+  workdir: null            # state/scripts/logs for each execution
+
+env:
+  conda_sh: /fefs/aswg/software/conda/etc/profile.d/conda.sh
+  lstchain_env: lstchain-v0.12.3        # environment activated by each job
+  extra_lines:
+    - export LD_LIBRARY_PATH=/usr/lib64/
+
+slurm:
+  account: osa
+  poll_seconds: 120
+  max_queued_jobs: 1500                 # queue throttling
+  settings: {partition: long, extra: ["--mem-per-cpu=20G"]}  # Previously short --mem-per-cpu=8G
+  pixmask:  {partition: long,  extra: ["--mem-per-cpu=20G"]} # Previously long --mem-per-cpu=16G
+  r0v:      {partition: long,  extra: ["--mem=20G"]}         # Previously long --mem=4000
+
+logs:
+  success_marker: success               # as in `ugrep -L success`
+  check_masks: true                     # true = also require the marker in settings/pixmask .out files
+  check_r0v: true                       # require the marker in dvr_<run>_<subrun>.log
+
+r0v:
+  chunk_threshold: 190                  # runs with >= N subruns to reduce are split into multiple jobs
+  chunk_size: 100
+
+pipeline:
+  max_retries: 0                        # R0V retries only for missing subruns
+
+profiles:
+  cp02:                                 # testing: does NOT write to production
+    paths:
+      r0v_output_root: /fefs/aswg/workspace/.../R0V
+      pixmask_dir: /fefs/aswg/workspace/.../PixelMasks
+      pixmask_extra_dirs: []
+       # - /fefs/aswg/data/real/auxiliary/DataVolumeReduction/PixelMasks
+       # - /fefs/aswg/data/real/auxiliary/DataVolumeReduction/PixelMasks/recreated
+      workdir: fefs/aswg/workspace/.../auto
+
+  lstanalyzer:                          # production (tcs06)
+    paths:
+      r0v_output_root: /fefs/onsite/data/lst-pipe/LSTN-01/R0V
+      pixmask_dir: /fefs/aswg/data/real/auxiliary/DataVolumeReduction/PixelMasks
+      pixmask_extra_dirs:
+        - /fefs/aswg/data/real/auxiliary/DataVolumeReduction/PixelMasks/recreated
+      workdir: /fefs/aswg/lstosa/DVR/auto
