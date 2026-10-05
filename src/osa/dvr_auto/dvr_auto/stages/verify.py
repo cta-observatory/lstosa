@@ -1,6 +1,6 @@
 """Stage 6: compare input vs R0V per (run, subrun), using RunSummary to classify.
 Missing non-DATA files are copied (legit). Missing DATA subruns are real failures."""
-from ..common import (Context, StageError, copy_files, find_subruns, list_dates, log,
+from ..common import (Context, copy_files, find_subruns, list_dates, log,
                       read_run_types)
 
 
