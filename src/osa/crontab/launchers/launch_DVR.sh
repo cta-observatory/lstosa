@@ -47,6 +47,6 @@ fi
 cd "$PROJECT_DIR" || { echo "Cannot cd to $PROJECT_DIR" >> "$LOGFILE"; exit 1; }
 
 {
-    python -m dvr_auto.cli 20261001 "$obsdate" --profile lstanalyzer
+    python -m dvr_auto.cli "$obsdate" "$obsdate" --profile lstanalyzer
 
 }  >> "$LOGFILE" 2>&1
