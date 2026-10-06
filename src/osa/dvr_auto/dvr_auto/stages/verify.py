@@ -1,5 +1,6 @@
-"""Stage 6: compare input vs R0V per (run, subrun), using RunSummary to classify.
-Missing non-DATA files are copied (legit). Missing DATA subruns are real failures."""
+"""Stage 6: compare input vs R0V per (run, subrun, stream file), using
+RunSummary to classify. Missing non-DATA files are copied (legit). Missing
+DATA subruns are real failures."""
 from ..common import (Context, copy_files, find_subruns, list_dates, log,
                       read_run_types)
 
@@ -14,13 +15,19 @@ def run(ctx: Context):
         types = read_run_types(cfg, date)
         for run, subs in src.items():
             for sr, files in subs.items():
-                if sr in dst.get(run, {}):
+                # Compare per FILE (stream), not just "does this subrun key
+                # exist at all": a subrun with only 1 of 4 streams copied
+                # used to be accepted as complete.
+                present_names = {p.name for p in dst.get(run, {}).get(sr, [])}
+                if all(f.name in present_names for f in files):
                     continue
                 if types is None:
                     unclassified.append((date, run, sr))
                 elif types.get(run) == "DATA":
                     missing_data.append((date, run, sr))
                 else:
+                    # copy_files() creates out_root/date itself if needed,
+                    # and skips any stream file already present.
                     fixed += copy_files(files, out_root / date, ctx.dry_run)
     log.info("verify: %d non-DATA files copied", fixed)
     if unclassified:
