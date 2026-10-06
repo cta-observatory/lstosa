@@ -64,9 +64,7 @@ def test_all_help(script):
         from osa.utils.utils import is_day_closed, date_to_iso, date_to_dir, get_lstchain_version
         from osa.paths import get_major_version, all_dl1ab_config_files_exist, analysis_path
 
-    `simulate_processing --help` failing is unrelated to the above and I
-    don't have the source of that script - please send it if it's still
-    failing after the import fix.
+    `simulate_processing --help`
     """
     run_program(script, "--help")
 
