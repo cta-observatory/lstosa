@@ -33,6 +33,8 @@ def run_pipeline(ctx, selected):
         elif name == "verify" and "r0v" in selected:
             continue                      # already done inside the r0v retry loop
         elif name == "r0v":
-            r0v.run(ctx)
+            problems = r0v.run(ctx)
+            if problems:
+                raise StageError(f"R0V failed for {len(problems)} subrun(s) (see errors above)")
         else:
             SIMPLE[name](ctx)
