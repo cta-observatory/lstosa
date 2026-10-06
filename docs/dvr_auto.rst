@@ -140,7 +140,7 @@ Paths
 ``dl1_root``
     Root of the DL1 data (``/fefs/onsite/data/lst-pipe/LSTN-01/DL1``).
 ``dl1_version``
-    Version subfolder inside each day (``v0.11``).
+    Version subfolder inside each day (``v0.12``).
 ``run_summary_dir``
     Location of the ``RunSummary_YYYYMMDD.ecsv`` files.
 ``r0v_input_root``
