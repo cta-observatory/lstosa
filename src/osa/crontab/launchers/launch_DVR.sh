@@ -5,10 +5,9 @@
 # once the night has been closed by OSA (NightFinished.txt exists).
 # --------------------------------------------------------------------
 
-# Export parameters from osa-env.sh (OBS_DATE, CFG, CONDA_ENV, LSTN1,
-# INPUT_STATE). osa-env.sh already activates conda (osa-dev) at the end,
-# so the environment is ready to use right after this line.
+
 source /local/home/lstanalyzer/osa-env.sh
+source "$CONDA_ENV"
 
 # Convert YYYY-MM-DD to YYYYMMDD
 obsdate=$(date -d "$OBS_DATE" +%Y%m%d)
