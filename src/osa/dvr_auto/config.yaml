@@ -43,12 +43,12 @@ pipeline:
 profiles:
   cp02:                                 # testing: does NOT write to production
     paths:
-      r0v_output_root: /fefs/aswg/workspace/.../R0V
-      pixmask_dir: /fefs/aswg/workspace/.../PixelMasks
+      r0v_output_root: /fefs/aswg/workspace/tu_ruta/R0V
+      pixmask_dir: /fefs/aswg/workspace/tu_ruta/PixelMasks
       pixmask_extra_dirs: []
        # - /fefs/aswg/data/real/auxiliary/DataVolumeReduction/PixelMasks
        # - /fefs/aswg/data/real/auxiliary/DataVolumeReduction/PixelMasks/recreated
-      workdir: fefs/aswg/workspace/.../auto
+      workdir: /fefs/aswg/workspace/.../auto
 
   lstanalyzer:                          # production (tcs06)
     paths:
