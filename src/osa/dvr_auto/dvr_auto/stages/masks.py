@@ -1,7 +1,7 @@
 """Stages 3-4: DVR settings and PixMask creation (one sbatch per run)."""
 import shutil
 
-from ..common import StageError, has_marker, has_pixmask, log, run_id_from_text
+from ..common import StageError, has_marker, log, missing_pixmask_subruns, run_id_from_text
 
 SETTINGS_CMD = 'lstchain_dvr_pixselector -n 1 -f "{pat}"'
 PIXMASK_CMD = 'lstchain_dvr_pixselector --action create_pixel_masks -f "{pat}"'
@@ -14,6 +14,11 @@ def _work(ctx):
 
 
 def _pending(ctx):
+    """Runs (and their DL1 pattern) that still need settings/pixmask work.
+    A run is pending if --force was given, or if ANY of its subruns (per the
+    DL1 files actually matching its pattern) still lacks a mask -- not just
+    "this run has zero masks", which let a partially-generated run slip
+    through as if it were complete."""
     f = ctx.outdir / "all_runs.txt"
     if not f.exists():
         raise StageError(f"{f} not found (run stage find_runs first)")
@@ -22,7 +27,12 @@ def _pending(ctx):
         run = run_id_from_text(pat)
         if run is None:
             log.warning("cannot parse run id from %s", pat)
-        elif ctx.force or not has_pixmask(ctx.cfg, run):
+            continue
+        if ctx.force:
+            out.append((run, pat))
+            continue
+        missing = missing_pixmask_subruns(ctx.cfg, run, pat)
+        if missing:
             out.append((run, pat))
     return out
 
@@ -57,13 +67,13 @@ def _run_jobs(ctx, name, template, pending):
 
 def run_settings(ctx):
     pending = _pending(ctx)
-    log.info("settings: %d runs without PixMask", len(pending))
+    log.info("settings: %d runs with missing/partial PixMask", len(pending))
     _run_jobs(ctx, "settings", SETTINGS_CMD, pending)
 
 
 def run_pixmask(ctx):
     pending = _pending(ctx)
-    log.info("pixmask: %d runs without PixMask", len(pending))
+    log.info("pixmask: %d runs with missing/partial PixMask", len(pending))
     _run_jobs(ctx, "pixmask", PIXMASK_CMD, pending)
     if ctx.dry_run:
         return
