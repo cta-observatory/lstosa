@@ -1,6 +1,6 @@
 """Stage 5: R0G -> R0V. DATA subruns with PixMask are reduced via sbatch;
 everything else (calibration runs, subruns without mask) is copied.
-Idempotent: subruns already present in the output are skipped."""
+Idempotent: subruns already fully present in the output are skipped."""
 import time
 
 from ..common import (copy_files, find_pixmask, find_subruns, has_marker, list_dates,
@@ -9,8 +9,10 @@ from ..common import (copy_files, find_pixmask, find_subruns, has_marker, list_d
 
 def _script(cfg, run, chunk, outdir, logdir):
     lines = [cfg.job_preamble(), "rc=0"]
-    for sr, f, mask in chunk:
-        lines.append(f"lstchain_r0g_to_r0v -f {f} -o {outdir} --pixselection-file {mask} "
+    for sr, files, mask in chunk:
+        input_file = files[0]        # one representative stream; lstchain_r0g_to_r0v
+                                      # produces the output for every stream of the subrun
+        lines.append(f"lstchain_r0g_to_r0v -f {input_file} -o {outdir} --pixselection-file {mask} "
                      f"--log {logdir}/dvr_{run:05d}_{sr:04d}.log || rc=1")
     lines.append("exit $rc")          # job fails if any subrun failed
     return "\n".join(lines) + "\n"
@@ -47,11 +49,14 @@ def run(ctx):
             is_data = types.get(run) == "DATA"
             todo = []
             for sr, files in sorted(subs.items()):
-                if not ctx.force and any((outd / f.name).exists() for f in files):
+                # Require ALL streams of the subrun to already be present to
+                # call it done; a single matching stream (e.g. left over from
+                # an interrupted copy or reduction) is not enough.
+                if not ctx.force and all((outd / f.name).exists() for f in files):
                     continue
                 mask = find_pixmask(cfg, run, sr) if is_data else None
                 if mask:
-                    todo.append((sr, files[0], mask))
+                    todo.append((sr, files, mask))   # keep the full file list, not just files[0]
                 else:
                     ncopy += copy_files(files, outd, ctx.dry_run)   # no DATA or no mask
             chunks = [todo] if len(todo) < thr else [todo[i:i + size] for i in range(0, len(todo), size)]
@@ -71,14 +76,18 @@ def run(ctx):
 
     problems = []
     for jid, (run, outd, logd, chunk) in jobs.items():
-        for sr, f, _ in chunk:
+        for sr, files, _ in chunk:
             lg = logd / f"dvr_{run:05d}_{sr:04d}.log"
             fresh = lg.exists() and lg.stat().st_mtime >= t0
             ok = states.get(jid) == "COMPLETED" or (fresh and has_marker(lg, marker))
             if ok and strict:
                 ok = fresh and has_marker(lg, marker)
             if not ok:
-                (outd / f.name).unlink(missing_ok=True)   # drop partial output so a retry redoes it
+                # Drop ALL stream outputs of this subrun, not just the
+                # representative one, so a retry redoes the whole subrun
+                # instead of being fooled by leftover partial files.
+                for f in files:
+                    (outd / f.name).unlink(missing_ok=True)
                 problems.append(f"run {run} subrun {sr}: job {jid} {states.get(jid)} / log {lg}")
     for p in problems:
         log.error("r0v failure: %s", p)
