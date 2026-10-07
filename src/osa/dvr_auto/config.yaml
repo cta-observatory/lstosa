@@ -48,7 +48,7 @@ profiles:
       pixmask_extra_dirs: []
        # - /fefs/aswg/data/real/auxiliary/DataVolumeReduction/PixelMasks
        # - /fefs/aswg/data/real/auxiliary/DataVolumeReduction/PixelMasks/recreated
-      workdir: /fefs/aswg/workspace/.../auto
+      workdir: /fefs/aswg/workspace/tu_ruta/auto
 
   lstanalyzer:                          # production (tcs06)
     paths:
