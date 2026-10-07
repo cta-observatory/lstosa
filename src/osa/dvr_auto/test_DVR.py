@@ -167,8 +167,10 @@ def test_find_subruns_groups_by_run_and_subrun(cfg):
 
 
 def test_copy_files_creates_dest_skips_existing_and_respects_dry_run(tmp_path):
-    src = tmp_path / "src"; src.mkdir()
-    f1 = src / "a.txt"; f1.write_text("hi")
+    src = tmp_path / "src"
+    src.mkdir()
+    f1 = src / "a.txt"
+    f1.write_text("hi")
 
     dest = tmp_path / "newdir" / "sub"
     assert copy_files([f1], dest) == 1
@@ -182,7 +184,8 @@ def test_copy_files_creates_dest_skips_existing_and_respects_dry_run(tmp_path):
 
 def test_find_pixmask_searches_primary_then_extra_dirs(cfg, tmp_path):
     write_mask(cfg, 300, 0)
-    extra = tmp_path / "extra_masks"; extra.mkdir()
+    extra = tmp_path / "extra_masks"
+    extra.mkdir()
     (extra / "Pixel_selection_LST-1.Run00300.0001.h5").write_text("x")
     cfg.raw["paths"]["pixmask_extra_dirs"] = [str(extra)]
 
@@ -358,7 +361,8 @@ def test_run_pixmask_moves_generated_masks(cfg):
     (ctx.outdir / "all_runs.txt").write_text(pat + "\n")
     ctx.slurm = FakeSlurm()
 
-    work = ctx.outdir / "pixmask_work"; work.mkdir(parents=True, exist_ok=True)
+    work = ctx.outdir / "pixmask_work"
+    work.mkdir(parents=True, exist_ok=True)
     (work / "Pixel_selection_LST-1.Run00900.0000.h5").write_text("x")
     (work / "Pixel_selection_LST-1.Run00900.0001.h5").write_text("x")
 
