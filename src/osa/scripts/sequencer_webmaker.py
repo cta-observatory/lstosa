@@ -1,5 +1,7 @@
-"""Produce the HTML file with the processing status from the sequencer report."""
-
+#!/usr/bin/env python3
+"""Produce the HTML file with the processing status from the sequencer report and
+update per-run global history entries based on per-subrun histories and .closed files.
+"""
 
 import logging
 import subprocess as sp
@@ -7,39 +9,24 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from textwrap import dedent
-from typing import Iterable
+from typing import Iterable, List
 
 import pandas as pd
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.job import r0_job_completed, run_fully_processed
+from osa.nightsummary.nightsummary import run_summary_table
 from osa.utils.cliopts import sequencer_webmaker_argparser
 from osa.utils.logging import myLogger
-from osa.utils.utils import is_day_closed, date_to_iso, date_to_dir
-from osa.paths import all_dl1ab_config_files_exist
+from osa.utils.utils import is_day_closed, date_to_iso, date_to_dir, get_lstchain_version
+from osa.paths import get_major_version, all_dl1ab_config_files_exist, analysis_path
 
 log = myLogger(logging.getLogger())
 
 
 def html_content(body: str, warnings: str, date: str, title: str) -> str:
-    """Build the HTML content.
-
-    Parameters
-    ----------
-    body : str
-        Table with the sequencer status report.
-    warnings : str
-        HTML block with warnings.
-    date : str
-        Date of the processing YYYY-MM-DD.
-
-    Returns
-    -------
-    str
-        HTML content.
-    """
     time_update = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-
     return dedent(
         f"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -58,30 +45,14 @@ def html_content(body: str, warnings: str, date: str, title: str) -> str:
         </html>"""
     )
 
+
 def get_sequencer_output(
     date: str,
     config: str,
     input_state: str,
     test=False,
     no_gainsel=False,
-) -> list:
-    """Call sequencer to get table with the sequencer status report.
-
-    Parameters
-    ----------
-    date : str
-        Date of the processing YYYY-MM-DD.
-    config : str
-        OSA configuration file to use.
-    input_state : str
-        Input state passed to sequencer.
-    test : bool
-
-    Returns
-    -------
-    list
-        Lines of the sequencer output.
-    """
+) -> List[str]:
     log.info("Calling sequencer...")
 
     commandargs = [
@@ -125,13 +96,24 @@ def get_sequencer_output(
         return output.stdout.splitlines()
 
 
-def lines_to_matrix(lines: Iterable) -> list:
-    """Build the matrix from the sequencer output lines."""
+def lines_to_matrix(lines: Iterable) -> tuple[list, list]:
+    """
+    Extract the sequencer table (header + data rows) from the sequencer's stdout.
+
+    The header row is the one starting with "Tel Seq" (see
+    `format_sequence_table` in sequencer.py). Its number of fields is used to
+    recognize the following data rows, instead of a hard-coded column count,
+    so this does not silently break whenever a column is added to or removed
+    from the sequencer table.
+    """
     matrix = []
     warnings = []
+    n_fields = None
     for line in lines:
         l_fields = line.split()
-        if len(l_fields) == 19:
+        if n_fields is None and l_fields[:2] == ["Tel", "Seq"]:
+            n_fields = len(l_fields)
+        if n_fields is not None and len(l_fields) == n_fields:
             matrix.append(l_fields)
         elif "No source information found in the database" in line:
             warnings.append(line)
@@ -139,10 +121,7 @@ def lines_to_matrix(lines: Iterable) -> list:
 
 
 def matrix_to_html(matrix: list) -> str:
-    """Build the html table with the sequencer status report."""
     log.info("Building the html table from sequencer output")
-    log.info(matrix)
-    log.info(len(matrix))
     if len(matrix) < 2:
         return "<p>No data found</p>"
     df = pd.DataFrame(matrix[1:], columns=matrix[0])
@@ -150,11 +129,86 @@ def matrix_to_html(matrix: list) -> str:
 
 
 def warnings_to_html(warnings: list) -> str:
-    """Build an HTML block displaying warnings."""
     if not warnings:
         return ""
     items = "".join(f"<li>{w}</li>" for w in warnings)
     return f'<div><h2>Warnings</h2><ul>{items}</ul></div>'
+
+
+# --- update global per-run history based on per-subrun history ---
+def _history_has_program(history_path: Path, program: str) -> bool:
+    if not history_path.exists():
+        return False
+    try:
+        for line in history_path.read_text().splitlines():
+            parts = line.split()
+            if len(parts) >= 2 and parts[1] == program:
+                return True
+    except Exception:
+        return False
+    return False
+
+
+def _append_global_history_line(global_history: Path, run_id: int, tag: str, version: str) -> None:
+    """Append a `tag` completion line to the run's global history file (once)."""
+    if _history_has_program(global_history, tag):
+        return
+
+    ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+    line = f"{run_id:05d} {tag} {version} {ts} None None 0\n"
+
+    if options.simulate:
+        log.info(f"[SIMULATE] Would write {tag} -> {global_history}: {line.strip()}")
+        return
+
+    global_history.parent.mkdir(parents=True, exist_ok=True)
+    with open(global_history, "a") as fh:
+        fh.write(line)
+    log.info(f"Wrote {tag} summary for run {run_id} in {global_history.name}")
+
+
+def update_global_history():
+    """
+    For each DATA run on options.date, append a summary line to the run's
+    global history file once each stage is complete for every subrun:
+      - R0_ARRAY: r0->dl1 (+ Cat-A datacheck) done -> osa.job.r0_job_completed
+      - DL1AB_ARRAY: dl1ab (+ DL1b datacheck) done -> osa.job.run_fully_processed
+
+    These use the same, order-aware criteria as the sequencer itself, so a
+    Cat-A datacheck (which also runs `lstchain_check_dl1`, right after
+    r0->dl1) is not mistaken for the DL1b one.
+
+    Note: the CATB_CLOSED line is written by the SLURM job, not by this script.
+    """
+    log.info("Updating global run histories from per-subrun histories")
+
+    # ensure options.directory is set (and options.prod_id)
+    options.directory = analysis_path(options.tel_id)
+
+    run_table = run_summary_table(options.date)
+    if len(run_table) == 0:
+        log.debug("No runs in summary table")
+        return
+
+    try:
+        version = get_major_version(get_lstchain_version())
+    except Exception:
+        version = "unknown"
+
+    for row in run_table:
+        if row["run_type"] != "DATA":
+            continue
+        run_id = int(row["run_id"])
+
+        global_history = Path(options.directory) / f"{options.tel_id}_{run_id:05d}.history"
+
+        if r0_job_completed(run_id):
+            _append_global_history_line(global_history, run_id, "R0_ARRAY", version)
+
+        if run_fully_processed(run_id):
+            _append_global_history_line(global_history, run_id, "DL1AB_ARRAY", version)
+
+# --- end of update_global_history ------------------------------------------------
 
 
 def main():
@@ -164,10 +218,13 @@ def main():
 
     args = sequencer_webmaker_argparser().parse_args()
 
+    # set tel_id if provided by the parser (it usually is)
+    if hasattr(args, "tel_id") and args.tel_id:
+        options.tel_id = args.tel_id
+
     if args.date:
         flat_date = date_to_dir(args.date)
         options.date = args.date
-
     else:
         # yesterday by default
         yesterday = datetime.now() - timedelta(days=1)
@@ -189,6 +246,12 @@ def main():
 
     log.info(f"Using input_state={args.input_state}")
 
+    # Update global history entries before asking sequencer for the table
+    try:
+        update_global_history()
+    except Exception:
+        log.exception("update_global_history failed but continuing to build HTML")
+
     # Get the table with the sequencer status report:
     lines = get_sequencer_output(
         date,
@@ -198,25 +261,17 @@ def main():
         no_gainsel=args.no_gainsel,
     )
 
-    log.info(f"{lines}")
-
     # Build the html sequencer table that will be placed in the body
     matrix, warnings = lines_to_matrix(lines)
 
     html_table = matrix_to_html(matrix)
     html_warnings = warnings_to_html(warnings)
 
-    log.info(f"{html_table}")
-
     # Save the HTML file
-    log.info("Saving the HTML file")
-
     directory = Path(cfg.get("LST1", "SEQUENCER_WEB_DIR"))
     directory.mkdir(parents=True, exist_ok=True)
 
     html_file = directory / f"osa_status_{flat_date}.html"
-
-    log.info(f"{html_file}")
 
     html_file.write_text(
         html_content(
@@ -233,4 +288,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

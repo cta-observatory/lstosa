@@ -7,7 +7,7 @@ from pathlib import Path
 from osa.processing_plan import build_processing_plan
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import historylevel
+from osa.job import CAT_A_DATACHECK_DIR, historylevel
 from osa.workflow.stages import AnalysisStage
 from osa.provenance.capture import trace
 from osa.paths import get_catB_calibration_filename
@@ -36,6 +36,17 @@ def data_sequence(
     """
     Performs all the steps to process a whole run.
 
+    The steps (levels) are, in order:
+        4: r0 -> dl1 (DL1a)
+        3: datacheck of the DL1a file (cat A), written in `CAT_A_DATACHECK_DIR`
+        2: dl1ab (DL1b)
+        1: datacheck of the DL1b file
+        0: done
+
+    The first job of the sequencer (`--no-dl1ab`) runs levels 4 and 3; the second
+    one (dl1ab) runs levels 2 and 1. The starting level is read from the history file.
+    If a step fails, the following ones are not executed.
+
     Parameters
     ----------
     calibration_file: pathlib.Path
@@ -55,10 +66,10 @@ def data_sequence(
     history_file = Path(options.directory) / f"sequence_{options.tel_id}_{run_str}.history"
     # Set the starting level and corresponding return code from last analysis step
     # registered in the history file.
-    level, rc = (3, 0) if options.simulate else historylevel(history_file, "DATA")
+    level, rc = (4, 0) if options.simulate else historylevel(history_file, "DATA")
     log.info(f"Going to level {level}")
 
-    if level == 3:
+    if level == 4:
         rc = r0_to_dl1(
             calibration_file,
             pedestal_file,
@@ -69,6 +80,19 @@ def data_sequence(
             pedestal_ids_file,
             run_str,
         )
+        if rc != 0:
+            log.error(f"r0_to_dl1 failed with rc={rc} for sequence {run_str}. Stopping.")
+            return rc
+        level -= 1
+        log.info(f"Going to level {level}")
+
+    if level == 3:
+        # Datacheck of the DL1a file (cat A): input in the analysis directory,
+        # output in its own subdirectory.
+        rc = dl1_datacheck(run_str, CAT_A_DATACHECK_DIR, input_dir=Path(options.directory))
+        if rc != 0:
+            log.error(f"Cat A datacheck failed with rc={rc} for sequence {run_str}. Stopping.")
+            return rc
         level -= 1
         log.info(f"Going to level {level}")
 
@@ -107,7 +131,7 @@ def r0_to_dl1(
     pedestal_ids_file: Path,
     run_str: str,
 ) -> int:
-    
+
     command = cfg.get("lstchain", "r0_to_dl1")
     night_dir = date_to_dir(options.date)
     r0_dir = Path(cfg.get("LST1", "R0_DIR")) / night_dir
@@ -125,7 +149,7 @@ def r0_to_dl1(
         f"--run-summary-path={run_summary}",
     ]
 
-    # control de calibración
+    # calibration control
     if plan.needs_calibration:
         cmd.extend([
             f"--pedestal-file={pedestal_file}",
@@ -151,6 +175,7 @@ def r0_to_dl1(
     analysis_step.execute()
     return analysis_step.rc
 
+
 @trace
 def dl1ab(run_str: str, dl1b_config: Path, dl1_prod_id: str) -> int:
     """
@@ -167,10 +192,10 @@ def dl1ab(run_str: str, dl1b_config: Path, dl1_prod_id: str) -> int:
     rc: int
         Return code of the executed command.
     """
-    
+
     # Prepare and launch the actual lstchain script
     command = cfg.get("lstchain", "dl1ab")
-    
+
     # Create a new subdirectory for the dl1ab output
     dl1ab_subdirectory = Path(options.directory) / dl1_prod_id
     dl1ab_subdirectory.mkdir(parents=True, exist_ok=True)
@@ -185,7 +210,7 @@ def dl1ab(run_str: str, dl1b_config: Path, dl1_prod_id: str) -> int:
         f"--output-file={output_dl1_datafile}",
         f"--config={dl1b_config}",
     ]
-    
+
     if not cfg.getboolean("lstchain", "store_image_dl1ab"):
         cmd.append("--no-image=True")
 
@@ -209,22 +234,27 @@ def dl1ab(run_str: str, dl1b_config: Path, dl1_prod_id: str) -> int:
 
 
 @trace
-def dl1_datacheck(run_str: str, dl1_prod_id: str) -> int:
+def dl1_datacheck(run_str: str, dl1_prod_id: str, input_dir: Path | None = None) -> int:
     """
-    Run datacheck script
+    Run datacheck script (lstchain_check_dl1) on a DL1 file.
 
     Parameters
     ----------
     run_str: str
+    dl1_prod_id: str
+        Name of the subdirectory of `options.directory` where the datacheck is written
+        (the DL1b prod id, or `CAT_A_DATACHECK_DIR` for the DL1a datacheck).
+    input_dir: pathlib.Path, optional
+        Directory of the input DL1 file. By default the same subdirectory as the
+        output (DL1b case). For the cat A datacheck it is `options.directory`.
 
     Returns
     -------
     rc: int
     """
-    # Create a new subdirectory for the dl1ab output
-    dl1ab_subdirectory = Path(options.directory) / dl1_prod_id
-    input_dl1_datafile = dl1ab_subdirectory / f"dl1_LST-1.Run{run_str}.h5"
     output_directory = Path(options.directory) / dl1_prod_id
+    input_directory = Path(input_dir) if input_dir is not None else output_directory
+    input_dl1_datafile = input_directory / f"dl1_LST-1.Run{run_str}.h5"
     output_directory.mkdir(parents=True, exist_ok=True)
 
     # Prepare and launch the actual lstchain script
@@ -266,7 +296,7 @@ def main():
     else:
         log.setLevel(logging.INFO)
 
-# Run the routine piping all the analysis steps
+    # Run the routine piping all the analysis steps
     rc = data_sequence(
         drive_file=drive_log_file,
         run_summary=run_summary_file,
@@ -284,4 +314,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -3,16 +3,20 @@
 Components
 **********
 
-LSTOSA is a set of python scripts and cron jobs that pipes the different analysis steps of lstchain, using SLURM as
-resource manager. It is thought to run on the LST IT container at La Palma using the ``lstanalyzer`` account.
+LSTOSA is a collection of Python modules, command-line scripts, and cron jobs
+that connect the different analysis stages of ``lstchain``. It uses SLURM as
+resource manager and is intended to run in the LST IT container at La Palma,
+using the ``lstanalyzer`` account.
 
 .. _lstchain_section:
 
 lstchain
 ========
 
-`lstchain`_ is the analysis library developed for the commissioning of the LST-1 prototype.
-It is heavily based on the the Prototype CTA Pipeline Framework `ctapipe`_.
+`lstchain`_ is the analysis library developed for the commissioning and
+operation of the LST-1 prototype. It is heavily based on the Prototype CTA
+Pipeline Framework `ctapipe`_. LSTOSA builds the onsite workflow around the
+lstchain commands for calibration, reconstruction, datachecks, and merging.
 
 .. _`lstchain`: https://github.com/cta-observatory/cta-lstchain
 .. _`ctapipe`: https://github.com/cta-observatory/ctapipe
@@ -22,75 +26,115 @@ It is heavily based on the the Prototype CTA Pipeline Framework `ctapipe`_.
 SLURM
 =====
 
-SLURM is the resource manager used at the LST IT container. Most LSTOSA scripts, specially those devoted to analyze
-data (heavy duty ones) run through SLURM. Its capabilities are used to send chained jobs, that are executed only after
-the *parent* job finished. This is used for calibration sequences, whose end triggers the analysis sequences for the
-``DATA`` runs. The code in ``job.py`` interacts with the resource manager.
+SLURM executes the computationally expensive analysis stages and provides
+parallelization through job arrays. LSTOSA also uses SLURM dependencies to
+connect the stages of a run:
+
+.. code-block:: text
+
+   PEDCALIB -> R0/DL1 -> Cat-B/tailcuts -> DL1ab -> datacheck
+
+The Cat-B/tailcuts stage is optional. If it is not needed, the DL1ab job can
+depend directly on the R0/DL1 job. The ``osa.job`` module generates SBATCH
+scripts, submits jobs, queries ``squeue`` and ``sacct``, detects active jobs,
+and interprets array-job status.
 
 More information: https://slurm.schedmd.com/
 
-.. _Cron Jobs:
+.. _cron_jobs:
 
-Cron Jobs
+Cron jobs
 =========
 
-A set of cron jobs automatize LSTOSA execution. 
+Cron jobs automate the daily execution of LSTOSA. The exact schedule is
+site-dependent, but the workflow contains the following responsibilities:
 
-1. Production of *NightSummary* file, launched each morning at 7 UTC. They are currently not produced by LSTOSA, but
-   generated independently by the Data-Check software being developed by I. Aguado. These files sometimes need to be
-   modified to assure that only one DRS4 and CALIBRATION runs are present each day. Therefore next steps cannot be
-   fully automatized until runs are properly and reliably tagged.
-
-2. Sequencer: Cron job for sequencer script to be implemented.
-
-3. Closer: Cron job for closer script to be implemented.
+1. **Night summary:** the data-check system or a related service produces the
+   NightSummary file containing the runs of the night.
+2. **Sequencer:** builds the processing jobs and submits the calibration, R0/DL1,
+   Cat-B/tailcuts, and DL1ab stages when their inputs are available.
+3. **Autocloser:** checks completed jobs, merges and moves products, records
+   provenance, and starts the long-term datachecks.
+4. **Datacheck copy:** copies the available datacheck products, including the
+   long-term Cat-A datacheck, to the web server.
 
 .. _sequencer:
 
 Sequencer
 =========
 
-``sequencer.py`` is the main script controlling LSTOSA execution. It takes as input a configuration file and a
-``NightSummary.txt`` file. The first one contains all the needed parameters and paths. The ``NightSummary`` file
-contains the list of runs to process, tagged as ``DRS4``, ``CALIBRATION`` or ``DATA`` based on the percentage of
-pedestal events in each sub-run file. Each run forms a so-called sequence. Sequencer builds a job for each run,
-depending on its type the job will call either ``calibrationsequence.py`` or ``datasequence.py``. Each job is an array
-job which processes all the sub-runs contained in the run in parallel.
+``sequencer.py`` is the top-level orchestration script. It takes a
+configuration file, a date, and a telescope identifier. It reads the
+NightSummary and builds calibration and DATA sequences.
 
-It uses ``nightsummary.py`` and ``extract.py`` to read the ``NightSummary.txt`` file and extract the sequences.
+The sequencer delegates job generation and submission to ``osa.job``. For a
+DATA run it can create three different jobs:
+
+* ``LST1_<run>``: an R0/DL1 SLURM array. It runs ``r0_to_dl1`` and the Cat-A
+  datacheck for each subrun.
+* ``LST1_catB_tailcuts_<run>``: a per-run pilot that merges Cat-A datachecks,
+  creates Cat-B calibration products, and finds tailcuts when required.
+* ``LST1_dl1ab_<run>``: a DL1ab SLURM array. It resolves the DL1b configuration
+  at runtime so that products created by the pilot are available.
+
+The sequencer uses ``squeue`` and ``sacct`` to avoid duplicate submissions,
+and it uses per-subrun history files to resume incomplete processing. The
+``--simulate`` and ``--test`` modes are available for development and
+validation; ``--force-submit`` can be used when the normal dependency checks
+need to be overridden.
+
+Cat-B and tailcuts pipeline
+===========================
+
+``catb_tailcuts_pipeline`` performs the per-run operations between the DL1a
+and DL1b stages. It:
+
+1. waits for all per-subrun Cat-A datachecks;
+2. merges them into a per-run Cat-A datacheck;
+3. runs the Cat-B calibration if enabled;
+4. runs the tailcuts finder if a standard DL1b configuration is not selected;
+5. writes the ``catB_<run>.closed`` marker after successful completion.
+
+The Cat-A files are kept in the ``datacheck_cat_a`` directory below the
+analysis directory. This separate location prevents the Cat-A products from
+being confused with the DL1b datachecks.
 
 .. _closer:
 
-Closer
-======
+Autocloser
+==========
 
-The ``closer`` is an error handler and closer for LSTOSA. It processes the sequencer table and *closes* the
-successfully analyzed sequences or tries to solve known issues in an automatic way. For details see ``closer.py``.
+The ``autocloser`` is responsible for the finalization of the processing. It
+checks the job and sequence state, merges subrun products, moves files to their
+final destinations, and captures provenance. It also launches the long-term
+Cat-A datacheck once the per-run Cat-A products are available.
 
 .. _provenance_component:
 
 Provenance
 ==========
 
-The data analysis steps executed to create DL1 and DL2 level data are captured for each run, together with the
-configuration parameters and files needed as well as intermediate files produced. This information is serialized in
-``.json`` formatted files, following the *IVOA Provenance Model Recommendation* [IVOAProvenance]_. Provenance
-graphs are also provided in ``.pdf`` formatted files, rendering a detailed complete view of the data analysis
-process which improves process inspection and helps achieving reproducibility. Tracking of the calibration steps
-will be implemented shortly, and a more detailed provenance query tool is also foreseen, which would need to store
-the provenance information in a database.
+The data-analysis steps used to create DL1 and DL2-level data are captured for
+each run, together with the configuration parameters, input files, and
+intermediate products. This information is serialized in ``.json`` files,
+following the `IVOA Provenance Model Recommendation`_. Provenance graphs are
+also provided in ``.pdf`` format, giving a detailed view of the analysis
+process and improving reproducibility.
+
+.. _`IVOA Provenance Model Recommendation`: https://www.ivoa.net/documents/ProvenanceDM/
 
 .. _highlevel:
 
-HighLevel
-=========
+High-level analysis
+===================
 
-The production of DL3 file is not implemented yet. Further high-level analysis as obtaining the significance level
-of the source detection, sky maps, spectra and light curves are to be implemented.
+The production of DL3 files and higher-level results is not yet part of the
+standard onsite workflow. Significance estimates, sky maps, spectra, and
+light curves are planned for future high-level analysis stages.
 
 .. _database:
 
-MySQL Database
-==============
+Database
+========
 
-Not implemented yet.
+Database-backed provenance queries are not currently implemented in LSTOSA.

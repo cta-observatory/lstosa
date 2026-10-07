@@ -464,7 +464,7 @@ def main():
     # create telescope and sequence objects
     log.info("Simulating sequencer...")
 
-    telescope = Telescope(args.tel_id, date, args.config, no_gainsel=args.no_gainsel, input_state=args.input_state)
+    telescope = Telescope(args.tel_id, date, args.config, test=args.test, no_gainsel=args.no_gainsel, input_state=args.input_state)
 
     log.info(f"Processing {args.tel_id}...")
 

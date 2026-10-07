@@ -9,7 +9,9 @@ from pathlib import Path
 
 from osa.configs import options
 from osa.configs.config import cfg
+from osa.job import CAT_A_DATACHECK_DIR
 from osa.paths import (
+    analysis_path,
     datacheck_directory,
     get_datacheck_files,
 )
@@ -48,6 +50,28 @@ def are_files_copied(data_type: str, files: list) -> bool:
     return True
 
 
+def copy_cat_a_longterm_datacheck() -> None:
+    """
+    Copy the Cat-A longterm datacheck to the webserver.
+
+    It is produced at the end of the night by the closer, from the per-run
+    Cat-A datacheck files merged earlier by the CatB/tailcuts pipeline, and
+    lives directly under the analysis directory (not under the usual
+    datacheck webserver source tree), so it is handled here on its own.
+    """
+    nightdir = date_to_dir(options.date)
+    directory = analysis_path("LST1") / CAT_A_DATACHECK_DIR
+    files = sorted(directory.glob("DL1_datacheck_cat_A*"))
+
+    log.info(f"Looking for the Cat-A longterm datacheck in {directory}")
+
+    if not files:
+        log.warning("No Cat-A longterm datacheck files found.")
+        return
+
+    copy_to_webserver(files, "LONGTERM_CAT_A", nightdir, options.prod_id)
+
+
 def main():
     """Copy datacheck products to the webserver."""
     log.setLevel(logging.INFO)
@@ -76,6 +100,8 @@ def main():
 
         # Check if all files are copied
         all_files_are_copied = are_files_copied(data_type, files)
+
+    copy_cat_a_longterm_datacheck()
 
     if all_files_are_copied:
         log.info("All datacheck files copied. No more files are expected.")

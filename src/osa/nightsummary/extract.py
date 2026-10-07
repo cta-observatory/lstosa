@@ -19,12 +19,14 @@ from osa.configs.datamodel import (
     SequenceCalibration,
     SequenceData,
 )
+#from osa.configs.datamodel import Sequence
 from osa.job import sequence_filenames
 from osa.nightsummary import database
 from osa.nightsummary.nightsummary import run_summary_table
 from osa.paths import sequence_calibration_files, get_run_date, get_dl1_prod_id_and_config, get_dl2_prod_id
 from osa.utils.logging import myLogger
 from osa.utils.utils import date_to_iso, date_to_dir, get_RF_model
+from osa.paths import catB_closed_file_exists
 
 log = myLogger(logging.getLogger(__name__))
 
@@ -210,6 +212,10 @@ def extract_runs(summary_table):
     return run_list
 
 
+
+
+
+
 def extract_sequences(date: datetime, run_obj_list: List[RunObj]) -> List:
     """
     Create calibration and data sequences from run objects.
@@ -282,20 +288,21 @@ def extract_sequences(date: datetime, run_obj_list: List[RunObj]) -> List:
                 f"Ped-Cal {required_pedcal_run})"
             )
 
-            if not options.no_dl1ab and sequence.type == "DATA":
+            if (
+                not options.no_dl1ab
+                and sequence.type == "DATA"
+                and catB_closed_file_exists(sequence.run)
+            ):
                 dl1_prod_id, dl1b_config = get_dl1_prod_id_and_config(
                     sequence.run
                 )
+
                 sequence.dl1_prod_id = dl1_prod_id
                 sequence.dl1b_config = dl1b_config
 
-            if (
-                not options.no_dl2
-                and not options.no_dl1ab
-                and sequence.type == "DATA"
-            ):
-                sequence.dl2_prod_id = get_dl2_prod_id(sequence.run)
-                sequence.rf_model = get_RF_model(sequence.run)
+                if not options.no_dl2:
+                    sequence.dl2_prod_id = get_dl2_prod_id(sequence.run)
+                    sequence.rf_model = get_RF_model(sequence.run)
 
             sequence_list.append(sequence)
 
@@ -306,6 +313,9 @@ def extract_sequences(date: datetime, run_obj_list: List[RunObj]) -> List:
     log.debug("Sequence list extracted")
 
     return sequence_list
+
+
+
 
 def build_sequences(date: datetime) -> List:
     """Build the list of sequences to process from a given date."""
@@ -346,4 +356,3 @@ def get_source_list(date: datetime) -> dict:
         sys.exit("No sources found. Check the access to database. Exiting.")
 
     return dict(source_dict_grouped)
-

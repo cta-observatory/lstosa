@@ -14,7 +14,7 @@ import yaml
 
 from osa.configs import options
 from osa.configs.config import cfg
-from osa.job import calibration_sequence_job_template, data_sequence_job_template
+from osa.job import calibration_sequence_job_template, write_r0_script
 from osa.nightsummary.extract import build_sequences
 from osa.provenance.utils import get_log_config
 from osa.utils.cliopts import simprocparsing
@@ -156,8 +156,9 @@ def simulate_processing():
             simulate_calibration(args_cal)
         elif sequence.type == "DATA":
             with mp.Pool() as poolproc:
+                r0_content = write_r0_script(sequence).read_text()
                 args_proc = [
-                    parse_template(data_sequence_job_template(sequence), subrun_idx)
+                    parse_template(r0_content, subrun_idx)
                     for subrun_idx in range(sequence.subruns)
                 ]
                 processed = poolproc.map(simulate_subrun_processing, args_proc)

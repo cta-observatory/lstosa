@@ -8,6 +8,7 @@ To see who contributed to LSTOSA repository, please visit the
 (in alphabetical order):
 
 * Andrés Baquero, UCM, Spain
+* Manuel Martinez, UCM, Spain
 * María Láinez, UCM, Spain
 * Daniel Morcuende, UCM, Spain
 * José Enrique Ruiz, IAA-CSIC, Spain

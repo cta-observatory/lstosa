@@ -462,11 +462,15 @@ def sequence_file_list(
     drs4_time_calibration_files,
     systematic_correction_files,
     r0_data,
+    r0g_data,              # <-- añadido
     gain_selection_flag_file,
     merged_run_summary,
 ):
     for r0_file in r0_data:
         assert r0_file.exists()
+
+    for r0g_file in r0g_data:   # <-- añadido
+        assert r0g_file.exists()
 
     for file in drs4_time_calibration_files:
         assert file.exists()
@@ -479,14 +483,13 @@ def sequence_file_list(
     assert gain_selection_flag_file.exists()
     assert merged_run_summary.exists()
 
-    run_program("sequencer", "-d", "2020-01-17", "--no-submit", "-t", "LST1")
+    run_program("sequencer", "-d", "2020-01-17", "--no-submit", "-s", "-t", "LST1")
     # First sequence in the list corresponds to the calibration run 1809
     return [
         running_analysis_dir / "sequence_LST1_01809.py",
         running_analysis_dir / "sequence_LST1_01807.py",
         running_analysis_dir / "sequence_LST1_01808.py",
     ]
-
 
 @pytest.fixture(scope="session")
 def txt_file_test(running_analysis_dir):

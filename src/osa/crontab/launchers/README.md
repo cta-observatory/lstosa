@@ -26,14 +26,11 @@ Both of them are planned for removal when GainSel is no longer needed.
 
 Future option: trigger when the first `gainselection*.closed` file exists.
 
-`launch_SequencerCatB.sh`
 
-- Launches `sequencer_catB_tailcuts`  
-- Starts when the date directory is created in running_analysis
+- Launches catB & tailcuts  
 
-`launch_Sequencer2.sh`
 
-- Starts DL1ab production using the first config file  
+- Starts DL1ab production
 - Includes an alternative condition (commented out, fallback option)  
 
 `launch_SequencerWeb.sh`
